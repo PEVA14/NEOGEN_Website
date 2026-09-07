@@ -1,0 +1,91 @@
+/*
+ * NEOGEN — Product Worlds
+ * ---------------------------------------------------------------------------
+ * "The product doesn't adapt to the interface. The interface reacts to the
+ *  product." — CLAUDE.md
+ *
+ * A world is applied with a `data-world` attribute on a SECTION, never on
+ * <html> or <body>. Quiet Mode surfaces (commerce, specs, forms, research
+ * reading) stay on the neutral system; only Experience Mode sections take on a
+ * product world. That is what keeps the worlds from degrading into global UI
+ * accent colours.
+ *
+ *   <Section world="reta" mode="impact"> ... </Section>
+ *
+ * Palettes: docs/NEOGEN_DESIGN_BIBLE.md
+ */
+
+[data-world] {
+  /* Inside a world, surfaces and ink invert to the world's void. */
+  --surface-base: var(--world-void);
+  --surface-raised: color-mix(in oklab, var(--world-void) 88%, var(--world-light));
+  --surface-sunken: color-mix(in oklab, var(--world-void) 96%, #000);
+  --surface-inverse: var(--world-light);
+
+  --ink-primary: var(--world-light);
+  --ink-secondary: color-mix(in oklab, var(--world-light) 78%, var(--world-void));
+  --ink-muted: color-mix(in oklab, var(--world-light) 52%, var(--world-void));
+  --ink-inverse: var(--world-void);
+
+  --border-subtle: color-mix(in oklab, var(--world-light) 14%, transparent);
+  --border-default: color-mix(in oklab, var(--world-light) 26%, transparent);
+  --border-strong: color-mix(in oklab, var(--world-accent) 70%, transparent);
+
+  --accent: var(--world-accent);
+  --accent-contrast: var(--world-void);
+
+  --focus-ring: var(--world-light);
+  --focus-ring-offset: var(--world-void);
+
+  --status-pending-surface: color-mix(in oklab, var(--world-void) 85%, var(--world-light));
+  --status-pending-border: var(--border-default);
+  --status-pending-ink: var(--ink-secondary);
+
+  background-color: var(--surface-base);
+  color: var(--ink-primary);
+}
+
+/* RETA — Precision. "The environment becomes precision."
+   Cold, technical, controlled. Crisp edges, tight alignment, restrained blue. */
+[data-world="reta"] {
+  --world-void: #07090d;
+  --world-accent: #2459d3;
+  --world-light: #c9e4ff;
+  --world-atmosphere: radial-gradient(
+    120% 90% at 50% 0%,
+    color-mix(in oklab, #2459d3 22%, transparent) 0%,
+    transparent 65%
+  );
+}
+
+/* GLOW — Light. "The environment becomes light."
+   Luminous amber, atmospheric, warm. Light reveals surfaces. */
+[data-world="glow"] {
+  --world-void: #160d06;
+  --world-accent: #c88722;
+  --world-light: #ffd78a;
+  --world-atmosphere: radial-gradient(
+    110% 85% at 50% 15%,
+    color-mix(in oklab, #ffd78a 26%, transparent) 0%,
+    transparent 68%
+  );
+}
+
+/* GHK-Cu — Material. "The environment becomes material."
+   Copper/bronze, tactile, physical depth. Secondary patina teal. */
+[data-world="ghk-cu"] {
+  --world-void: #1a100c;
+  --world-accent: #b5683c;
+  --world-light: #f0d9cb;
+  --world-patina: #3f756d;
+  --world-atmosphere: radial-gradient(
+    115% 95% at 50% 10%,
+    color-mix(in oklab, #b5683c 24%, transparent) 0%,
+    transparent 66%
+  );
+}
+
+/* Opt-in atmospheric wash. Static gradient only — no animation lives here. */
+[data-world][data-atmosphere="true"] {
+  background-image: var(--world-atmosphere);
+}

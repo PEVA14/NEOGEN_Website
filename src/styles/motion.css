@@ -1,0 +1,117 @@
+/*
+ * NEOGEN — Motion System
+ * ---------------------------------------------------------------------------
+ * "Nothing moves unless it communicates hierarchy, product character, state,
+ *  progression or spatial relationship." — CLAUDE.md
+ *
+ * TWO TIERS, deliberately separated:
+ *
+ *   1. INTERFACE motion  (--motion-*)
+ *      Focus, hover, pressed, open/close, validation. This is *state feedback*.
+ *      It is an accessibility affordance and survives reduced-motion, merely
+ *      shortened. Removing it makes the UI feel broken and harms users who
+ *      rely on state change to understand what happened.
+ *
+ *   2. CINEMATIC motion  (--cinematic-*)
+ *      Scroll-linked choreography, parallax, 3D camera moves, reveals, hero
+ *      transitions. This is *storytelling*. Under reduced-motion it collapses
+ *      to its resolved end state — content, hierarchy, product identity,
+ *      navigation and commerce all remain fully intact.
+ *
+ * Authoring rule: anything in tier 2 MUST carry [data-motion="cinematic"] so
+ * this stylesheet can neutralise it without a blanket `*` reset.
+ */
+
+:root {
+  /* Tier 1 — interface feedback */
+  --motion-duration-instant: 80ms;
+  --motion-duration-fast: 140ms;
+  --motion-duration-base: 220ms;
+  --motion-duration-slow: 340ms;
+
+  /* Tier 2 — cinematic / Experience Mode */
+  --cinematic-duration-sm: 600ms;
+  --cinematic-duration-md: 1000ms;
+  --cinematic-duration-lg: 1600ms;
+  --cinematic-duration-xl: 2400ms;
+
+  /* Easing. Restrained and precise — no bouncy/elastic curves in NEOGEN. */
+  --ease-standard: cubic-bezier(0.2, 0, 0.1, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-precision: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* Cinematic amplitude. Scale these down rather than deleting keyframes when
+     motion needs to be reduced but not removed (e.g. mobile). */
+  --cinematic-travel: 2.5rem;
+  --cinematic-parallax: 1;
+
+  /* Set to 1 by useReducedMotion consumers / this stylesheet. Lets JS and 3D
+     read a single source of truth without re-querying matchMedia. */
+  --reduced-motion: 0;
+}
+
+/*
+ * MOBILE: not a smaller desktop. Cinematic amplitude is reduced at the source
+ * so every scroll-linked effect inherits a calmer choreography on touch
+ * devices, without any component branching on viewport in JavaScript.
+ */
+@media (max-width: 48rem) {
+  :root {
+    --cinematic-travel: 1.25rem;
+    --cinematic-parallax: 0.45;
+    --cinematic-duration-lg: 1100ms;
+    --cinematic-duration-xl: 1500ms;
+  }
+}
+
+/*
+ * REDUCED MOTION
+ * Tier 2 is neutralised. Tier 1 is preserved but tightened.
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --reduced-motion: 1;
+
+    /* Interface feedback is KEPT — shortened, not deleted. */
+    --motion-duration-instant: 50ms;
+    --motion-duration-fast: 80ms;
+    --motion-duration-base: 110ms;
+    --motion-duration-slow: 140ms;
+
+    /* Cinematic motion collapses to its end state. */
+    --cinematic-duration-sm: 1ms;
+    --cinematic-duration-md: 1ms;
+    --cinematic-duration-lg: 1ms;
+    --cinematic-duration-xl: 1ms;
+    --cinematic-travel: 0rem;
+    --cinematic-parallax: 0;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+
+  /* Explicitly opted-in cinematic elements stop animating and resolve. */
+  [data-motion="cinematic"],
+  [data-motion="cinematic"] * {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+  }
+
+  /* Decorative-only motion is removed outright: it communicates nothing. */
+  [data-motion="decorative"] {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Smooth scrolling is a cinematic affordance, opted into per-document. */
+@media (prefers-reduced-motion: no-preference) {
+  html:focus-within {
+    scroll-behavior: smooth;
+  }
+}

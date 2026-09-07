@@ -1,0 +1,10 @@
+.next/
+out/
+node_modules/
+package-lock.json
+public/models/
+
+# Source requirement documents — authored by the project owner, not ours to reformat.
+docs/NEOGEN_DESIGN_BIBLE.md
+docs/NEOGEN_MVP_SCOPE.md
+CLAUDE.md

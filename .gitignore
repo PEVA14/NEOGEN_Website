@@ -49,3 +49,5 @@ coverage/
 *.blend
 *.blend1
 *.blend2
+# Claude Code
+.claude/

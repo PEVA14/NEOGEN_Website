@@ -1,0 +1,149 @@
+/*
+ * NEOGEN — Design Tokens
+ * ---------------------------------------------------------------------------
+ * CSS custom properties are the CANONICAL design-token layer for this project.
+ * Tailwind consumes these (see globals.css `@theme inline`); it does not own
+ * them. CSS Modules for Experience Mode read the same variables, so both
+ * styling idioms resolve to one system.
+ *
+ * Source: docs/NEOGEN_DESIGN_BIBLE.md
+ * Never hard-code a raw hex, duration or easing curve outside this file.
+ */
+
+:root {
+  /* --- Core neutral palette (Design Bible) ------------------------------- */
+  --neogen-paper: #faf9f6;
+  --neogen-warm-stone: #f3f0ea;
+  --neogen-chalk: #e8e4dc;
+  --neogen-graphite: #2a2a2a;
+  --neogen-charcoal: #111111;
+
+  /* --- Semantic surface / ink roles -------------------------------------
+   * Components reference these, never the raw palette above. This is what
+   * lets a section flip into a product world without touching component code.
+   */
+  --surface-base: var(--neogen-paper);
+  --surface-raised: var(--neogen-warm-stone);
+  --surface-sunken: var(--neogen-chalk);
+  --surface-inverse: var(--neogen-charcoal);
+
+  --border-subtle: color-mix(in oklab, var(--neogen-graphite) 12%, transparent);
+  --border-default: color-mix(in oklab, var(--neogen-graphite) 22%, transparent);
+  --border-strong: color-mix(in oklab, var(--neogen-graphite) 45%, transparent);
+
+  --ink-primary: var(--neogen-charcoal);
+  --ink-secondary: var(--neogen-graphite);
+  --ink-muted: color-mix(in oklab, var(--neogen-graphite) 62%, var(--neogen-paper));
+  --ink-inverse: var(--neogen-paper);
+
+  /* --- Accent -----------------------------------------------------------
+   * Quiet Mode is deliberately near-monochrome. `--accent` resolves to ink by
+   * default and is overridden ONLY inside a product world (see worlds.css).
+   * This enforces "do not simply make every CTA blue".
+   */
+  --accent: var(--ink-primary);
+  --accent-contrast: var(--ink-inverse);
+
+  /* --- Focus ------------------------------------------------------------- */
+  --focus-ring: var(--neogen-charcoal);
+  --focus-ring-offset: var(--surface-base);
+  --focus-ring-width: 2px;
+  --focus-ring-offset-width: 2px;
+
+  /* --- Status (neutral, non-committal by design) -------------------------
+   * NEOGEN must never present unverified business data as fact. These carry
+   * no semantic colour of approval — see components/ui/StatusNote.
+   */
+  --status-pending-surface: var(--neogen-warm-stone);
+  --status-pending-border: var(--border-default);
+  --status-pending-ink: var(--ink-secondary);
+
+  /* --- Typography -------------------------------------------------------
+   * Families are injected by next/font in app/[locale]/layout.tsx.
+   */
+  --font-sans: var(--font-instrument-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), ui-monospace, "SFMono-Regular", monospace;
+
+  /* Display uses the SAME family via Instrument Sans' variable width axis
+     (font-stretch 75%-100%), not a separate condensed font file. */
+  --font-display: var(--font-sans);
+  --font-stretch-display: 78%;
+  --font-stretch-normal: 100%;
+
+  /* Fluid type scale. clamp() keeps mobile intentional rather than scaled-down. */
+  --text-2xs: 0.6875rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: clamp(1.0625rem, 0.99rem + 0.36vw, 1.1875rem);
+  --text-xl: clamp(1.25rem, 1.16rem + 0.45vw, 1.5rem);
+  --text-2xl: clamp(1.5rem, 1.32rem + 0.9vw, 2rem);
+  --text-3xl: clamp(1.875rem, 1.55rem + 1.6vw, 2.75rem);
+  --text-4xl: clamp(2.25rem, 1.65rem + 3vw, 4rem);
+  --text-5xl: clamp(2.75rem, 1.7rem + 5.2vw, 6rem);
+  --text-6xl: clamp(3.25rem, 1.4rem + 9.2vw, 8.5rem);
+
+  --leading-tight: 1.02;
+  --leading-snug: 1.15;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.65;
+  --leading-editorial: 1.7;
+
+  --tracking-display: -0.03em;
+  --tracking-tight: -0.015em;
+  --tracking-normal: 0em;
+  --tracking-wide: 0.04em;
+  --tracking-label: 0.12em;
+
+  /* --- Spacing (4px base) ------------------------------------------------ */
+  --space-3xs: 0.25rem;
+  --space-2xs: 0.5rem;
+  --space-xs: 0.75rem;
+  --space-sm: 1rem;
+  --space-md: 1.5rem;
+  --space-lg: 2rem;
+  --space-xl: 3rem;
+  --space-2xl: 4rem;
+  --space-3xl: 6rem;
+  --space-4xl: 8rem;
+
+  /* Section rhythm — Quiet sections breathe, Experience sections dominate. */
+  --section-pad-quiet: clamp(3.5rem, 2.5rem + 5vw, 7rem);
+  --section-pad-impact: clamp(5rem, 3rem + 10vw, 11rem);
+
+  /* --- Layout ------------------------------------------------------------ */
+  --container-max: 90rem;
+  --container-content: 72rem;
+  --container-prose: 44rem;
+  --gutter: clamp(1.25rem, 0.9rem + 1.8vw, 2.5rem);
+  --grid-columns: 12;
+
+  /* --- Radius ------------------------------------------------------------ */
+  --radius-none: 0;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-pill: 999px;
+
+  /* --- Elevation ---------------------------------------------------------
+   * Restrained. NEOGEN is editorial + material, not floating-card SaaS.
+   */
+  --shadow-sm: 0 1px 2px color-mix(in oklab, var(--neogen-charcoal) 8%, transparent);
+  --shadow-md: 0 4px 16px color-mix(in oklab, var(--neogen-charcoal) 10%, transparent);
+  --shadow-lg: 0 16px 48px color-mix(in oklab, var(--neogen-charcoal) 14%, transparent);
+
+  /* --- Z-index scale ----------------------------------------------------- */
+  --z-base: 0;
+  --z-canvas: 1;
+  --z-content: 10;
+  --z-sticky: 20;
+  --z-header: 30;
+  --z-drawer: 40;
+  --z-modal: 50;
+  --z-skip-link: 60;
+}
+
+/* Breakpoint reference (CSS-first; these are documentation, not JS inputs).
+   sm 40rem | md 48rem | lg 64rem | xl 80rem | 2xl 96rem
+   Layout MUST be handled in CSS. JS viewport awareness is reserved for
+   3D/interaction behaviour that genuinely cannot be expressed in CSS. */
