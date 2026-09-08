@@ -1,0 +1,442 @@
+/*
+ * RETA Experience — Experience Mode, pinned composition.
+ *
+ * "The product doesn't adapt to the interface. The interface reacts to the
+ *  product." The canvas is full-bleed and the copy overlays it, so the vial is
+ *  the composition rather than an object parked in a column.
+ *
+ * CONVENTIONS §1: bespoke experiential composition belongs in a CSS Module.
+ * Every value here is a token — no raw hexes, durations or easing curves.
+ */
+
+/* --- Track & pinned viewport --------------------------------------------- */
+
+.track {
+  position: relative;
+  /* Scroll distance the pinned composition plays across. Enough to read as a
+     deliberate sequence; short enough that it never feels like a hijacked page. */
+  block-size: 300vh;
+}
+
+.track[data-tier="compact"] {
+  /* Phones get their own composition, and a shorter one: long pins feel like
+     scroll-jacking on a small screen. */
+  block-size: 220vh;
+}
+
+.viewport {
+  position: sticky;
+  inset-block-start: 0;
+  block-size: 100dvh;
+  overflow: hidden;
+  display: grid;
+  /* Canvas and overlay share one cell: the copy sits ON the environment. */
+  grid-template-areas: "stage";
+}
+
+/* --- Canvas -------------------------------------------------------------- */
+
+.canvasLayer {
+  grid-area: stage;
+  position: relative;
+  inline-size: 100%;
+  block-size: 100%;
+  /* Behind the copy, above the section background. */
+  z-index: var(--z-canvas);
+}
+
+.canvasLayer canvas {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+/* --- Copy overlay -------------------------------------------------------- */
+
+/*
+ * A full-viewport 12x12 grid, so each scroll state can place its typography
+ * somewhere genuinely different. Without this every state collapses back into
+ * "text left, product right", which is the layout this composition exists to
+ * escape.
+ */
+.overlay {
+  grid-area: stage;
+  position: relative;
+  z-index: var(--z-content);
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-template-rows: repeat(12, 1fr);
+  padding-inline: var(--gutter);
+  padding-block: var(--space-2xl);
+  /* Copy must never eat the pointer: the environment behind stays scrollable. */
+  pointer-events: none;
+}
+
+/*
+ * A scrim under the copy only — not a panel behind the canvas.
+ *
+ * It follows the copy: as the typography moves between states, so does the
+ * falloff that keeps it legible over a brightly lit product. It always fades to
+ * nothing well before the subject, so it reads as light falloff, never a box.
+ */
+.overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  transition: background var(--cinematic-duration-md) var(--ease-standard);
+  background: linear-gradient(
+    to right,
+    var(--world-void) 0%,
+    color-mix(in oklab, var(--world-void) 70%, transparent) 32%,
+    transparent 58%
+  );
+}
+
+/* 02 MATERIAL — the vial fills the centre, so the copy drops to the floor. */
+.viewport[data-beat="1"] .overlay::before {
+  background: linear-gradient(
+    to top,
+    var(--world-void) 0%,
+    color-mix(in oklab, var(--world-void) 72%, transparent) 34%,
+    transparent 62%
+  );
+}
+
+/* 03 DETAIL — the vial holds the upper right, so the light falls from above. */
+.viewport[data-beat="2"] .overlay::before {
+  background: linear-gradient(
+    to bottom,
+    var(--world-void) 0%,
+    color-mix(in oklab, var(--world-void) 66%, transparent) 30%,
+    transparent 58%
+  );
+}
+
+/* 04 RESOLVE — centred object, copy along the base, handing off downward. */
+.viewport[data-beat="3"] .overlay::before {
+  background: linear-gradient(
+    to top,
+    var(--world-void) 0%,
+    color-mix(in oklab, var(--world-void) 68%, transparent) 30%,
+    transparent 56%
+  );
+}
+
+/* --- Beats --------------------------------------------------------------- */
+
+.beat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  max-inline-size: 34rem;
+  opacity: 0;
+  transform: translateY(var(--cinematic-travel));
+  /*
+   * NO `visibility: hidden`, deliberately.
+   *
+   * visibility:hidden would drop the inactive beats out of the accessibility
+   * tree, making three quarters of the copy reachable only by scrolling — the
+   * "essential information available only through animation" the accessibility
+   * rules forbid. Opacity keeps every beat in the a11y tree and in the DOM at
+   * all times; the crossfade is purely visual.
+   *
+   * Safe because beats contain no interactive elements. Revisit if one ever
+   * gains a control.
+   */
+  pointer-events: none;
+  transition:
+    opacity var(--cinematic-duration-sm) var(--ease-out),
+    transform var(--cinematic-duration-sm) var(--ease-out);
+}
+
+/*
+ * Four placements, four silhouettes. Each state anchors its typography in the
+ * negative space the product is NOT occupying at that moment.
+ */
+.beat[data-beat-index="0"] {
+  /* 01 REVEAL — left, optically centred against a whole vial on the right. */
+  grid-column: 1 / span 5;
+  grid-row: 5 / span 5;
+  align-self: center;
+}
+
+.beat[data-beat-index="1"] {
+  /* 02 MATERIAL — the crop dominates; copy retreats to the lower left. */
+  grid-column: 1 / span 6;
+  grid-row: 9 / span 4;
+  align-self: end;
+}
+
+.beat[data-beat-index="2"] {
+  /* 03 DETAIL — vial reframes high right, so the copy takes the top left. */
+  grid-column: 1 / span 5;
+  grid-row: 2 / span 4;
+  align-self: start;
+}
+
+.beat[data-beat-index="3"] {
+  /* 04 RESOLVE — centred object, copy spanning the base as a handoff. */
+  grid-column: 4 / span 8;
+  grid-row: 9 / span 4;
+  align-self: end;
+  max-inline-size: 46rem;
+}
+
+.viewport[data-beat="0"] .beat[data-beat-index="0"],
+.viewport[data-beat="1"] .beat[data-beat-index="1"],
+.viewport[data-beat="2"] .beat[data-beat-index="2"],
+.viewport[data-beat="3"] .beat[data-beat-index="3"] {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/*
+ * COMPACT — one composition, not four. On a portrait screen there is no usable
+ * negative space to move typography around in, so every beat anchors to the
+ * bottom and the vial keeps the upper half. The scroll sequence still reads
+ * through the 3D, not through the layout.
+ */
+@media (max-width: 47.999rem) {
+  .overlay {
+    padding-block-end: var(--space-3xl);
+  }
+
+  .beat,
+  .beat[data-beat-index="0"],
+  .beat[data-beat-index="1"],
+  .beat[data-beat-index="2"],
+  .beat[data-beat-index="3"] {
+    grid-column: 1 / -1;
+    grid-row: 8 / span 5;
+    align-self: end;
+    max-inline-size: none;
+  }
+
+  .overlay::before,
+  .viewport[data-beat="1"] .overlay::before,
+  .viewport[data-beat="2"] .overlay::before,
+  .viewport[data-beat="3"] .overlay::before {
+    background: linear-gradient(
+      to top,
+      var(--world-void) 0%,
+      color-mix(in oklab, var(--world-void) 78%, transparent) 44%,
+      transparent 74%
+    );
+  }
+}
+
+.statement {
+  color: var(--ink-primary);
+  text-wrap: balance;
+}
+
+.annotations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs) var(--space-lg);
+  padding-block-start: var(--space-md);
+  border-block-start: 1px solid var(--border-subtle);
+}
+
+.annotation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+}
+
+.annotationKey {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.annotationValue {
+  color: var(--ink-secondary);
+}
+
+/* --- Progress readout ----------------------------------------------------- */
+
+.readout {
+  position: absolute;
+  inset-block-end: var(--space-lg);
+  inset-inline-start: var(--gutter);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+}
+
+.readoutTrack {
+  inline-size: var(--space-3xl);
+  block-size: 1px;
+  background-color: var(--border-default);
+}
+
+.readoutFill {
+  display: block;
+  block-size: 100%;
+  background-color: var(--accent);
+  transform-origin: left center;
+  transition: transform var(--cinematic-duration-sm) var(--ease-out);
+}
+
+.viewport[data-beat="0"] .readoutFill {
+  transform: scaleX(0.25);
+}
+.viewport[data-beat="1"] .readoutFill {
+  transform: scaleX(0.5);
+}
+.viewport[data-beat="2"] .readoutFill {
+  transform: scaleX(0.75);
+}
+.viewport[data-beat="3"] .readoutFill {
+  transform: scaleX(1);
+}
+
+/* --- Fallback (loading · reduced motion · no WebGL) ----------------------- */
+
+.fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  padding: var(--space-2xl);
+}
+
+.poster {
+  inline-size: auto;
+  block-size: 100%;
+  max-inline-size: 100%;
+  object-fit: contain;
+}
+
+.silhouette {
+  inline-size: auto;
+  block-size: min(52%, 22rem);
+  max-inline-size: 100%;
+  /* Deliberately diagrammatic: a stand-in for a rendered still, and it should
+     look like one rather than impersonate a product photo. */
+  opacity: 0.55;
+  transform: rotate(-18deg);
+}
+
+.silhouetteCap {
+  fill: var(--ink-muted);
+}
+
+.silhouetteNeck {
+  fill: var(--ink-muted);
+  opacity: 0.7;
+}
+
+.silhouetteBody {
+  fill: none;
+  stroke: var(--ink-secondary);
+  stroke-width: 2;
+}
+
+.silhouetteLabel {
+  fill: var(--accent);
+  opacity: 0.25;
+}
+
+.fallbackLabel {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  text-align: center;
+}
+
+/* Loading pulses. This is STATE feedback (tier 1), so it survives reduced
+   motion — shortened, not deleted — because it says something is in flight. */
+.fallback[data-loading="true"] .fallbackLabel {
+  animation: pulse var(--cinematic-duration-md) var(--ease-standard) infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/*
+ * REDUCED MOTION — a strong static composed frame.
+ *
+ * The pin is released, every beat is shown at once in normal flow, and the vial
+ * holds its resolved diagonal pose (VialModel uses RESTING_PROGRESS, not the
+ * entry pose). Nothing is hidden behind a scroll the user is not making:
+ * complete content, complete product, no movement.
+ *
+ * Expressed in CSS rather than branched in JavaScript, so there is no hydration
+ * layout shift and no second code path to keep correct.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .track,
+  .track[data-tier="compact"] {
+    block-size: auto;
+  }
+
+  .viewport {
+    position: static;
+    block-size: auto;
+    min-block-size: 100dvh;
+  }
+
+  .overlay {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--space-2xl);
+    padding-block: var(--space-4xl);
+  }
+
+  .overlay::before,
+  .viewport[data-beat="1"] .overlay::before,
+  .viewport[data-beat="2"] .overlay::before,
+  .viewport[data-beat="3"] .overlay::before {
+    background: linear-gradient(
+      to right,
+      var(--world-void) 0%,
+      color-mix(in oklab, var(--world-void) 76%, transparent) 40%,
+      transparent 68%
+    );
+  }
+
+  .beat,
+  .beat[data-beat-index="0"],
+  .beat[data-beat-index="1"],
+  .beat[data-beat-index="2"],
+  .beat[data-beat-index="3"] {
+    grid-column: auto;
+    grid-row: auto;
+    align-self: auto;
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+    transition: none;
+  }
+
+  .readout {
+    display: none;
+  }
+}
+
+/*
+ * NO JAVASCRIPT is handled by a <noscript> stylesheet in RetaExperience.tsx,
+ * NOT by a selector here.
+ *
+ * `RetaStage` is a client component but still server-renders, so `data-beat`
+ * is already in the HTML — a `:not([data-beat])` rule would never match, and
+ * sighted users without JS would be left with one beat out of three.
+ */

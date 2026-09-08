@@ -1,0 +1,266 @@
+/*
+ * HERO — Experience Mode, brand-first.
+ *
+ * Three stacked layers in one grid cell:
+ *   1. wordmark   (behind)
+ *   2. canvas     (the vial, overlapping it)
+ *   3. copy       (above both)
+ *
+ * The overlap is the composition. Nothing here is a column.
+ */
+
+.section {
+  /*
+   * The brand's own dark, not a product world's void: the hero introduces
+   * NEOGEN, and a world would make it read as a RETA page.
+   *
+   * The SEMANTIC TOKENS are remapped rather than colours being hard-coded per
+   * rule. Without this, shared components keep resolving `--ink-primary` to
+   * charcoal and render dark-on-dark — which is exactly how the CTA went
+   * invisible. This is the same mechanism `worlds.css` uses, minus the product
+   * identity.
+   */
+  --surface-base: var(--neogen-charcoal);
+  --ink-primary: var(--neogen-paper);
+  --ink-secondary: color-mix(in oklab, var(--neogen-paper) 82%, var(--neogen-charcoal));
+  --ink-muted: color-mix(in oklab, var(--neogen-paper) 55%, var(--neogen-charcoal));
+  --border-subtle: color-mix(in oklab, var(--neogen-paper) 14%, transparent);
+  --border-default: color-mix(in oklab, var(--neogen-paper) 28%, transparent);
+  --focus-ring: var(--neogen-paper);
+  --focus-ring-offset: var(--neogen-charcoal);
+
+  background-color: var(--surface-base);
+  color: var(--ink-primary);
+}
+
+.viewport {
+  position: relative;
+  display: grid;
+  grid-template-areas: "hero";
+  /* Full viewport minus the sticky header, so the composition is never cropped
+     by the bar sitting over it. */
+  min-block-size: calc(100dvh - 4rem);
+  overflow: hidden;
+}
+
+.viewport > * {
+  grid-area: hero;
+}
+
+/* --- 0. Grid ------------------------------------------------------------- */
+
+/*
+ * Four hairlines at the column positions. Barely visible, but they give the
+ * composition a measurable structure — the vial crossing a rule reads as
+ * spatial, where the same vial on an empty field reads as pasted on.
+ */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding-inline: var(--gutter);
+  pointer-events: none;
+  z-index: var(--z-base);
+}
+
+.grid > span {
+  border-inline-start: 1px solid color-mix(in oklab, var(--neogen-paper) 7%, transparent);
+}
+
+.grid > span:first-child {
+  border-inline-start: none;
+}
+
+/* --- 1. Wordmark --------------------------------------------------------- */
+
+.wordmarkLayer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding-inline-start: var(--gutter);
+  pointer-events: none;
+  overflow: hidden;
+  /* Behind the canvas. */
+  z-index: var(--z-base);
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  line-height: 0.82;
+  letter-spacing: -0.045em;
+  /* Deliberately larger than the type scale's ceiling: this is a graphic mark,
+     not body copy, and it is meant to run past the measure. */
+  /* Larger than the frame on purpose: the mark is cropped by both edges, so
+     the viewport reads as a detail of a bigger poster. */
+  font-size: clamp(6rem, 31vw, 26rem);
+  color: color-mix(in oklab, var(--neogen-paper) 10%, transparent);
+  white-space: nowrap;
+  margin-inline-start: -0.06em;
+}
+
+/* --- 2. Canvas ----------------------------------------------------------- */
+
+.stage {
+  position: relative;
+  inline-size: 100%;
+  block-size: 100%;
+  z-index: var(--z-canvas);
+  pointer-events: none;
+}
+
+.stage canvas {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+/* --- 3. Copy ------------------------------------------------------------- */
+
+.copyLayer {
+  position: relative;
+  z-index: var(--z-content);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding-block: var(--space-2xl) var(--space-lg);
+  pointer-events: none;
+}
+
+.copyLayer a {
+  pointer-events: auto;
+}
+
+.opening {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+.eyebrow {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+/*
+ * The h1 carries the same text as the graphic wordmark, so it is removed from
+ * the visual composition but left in the accessibility tree and the document
+ * outline. Not `display:none` — that would remove it from both.
+ */
+.srTitle {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/*
+ * Lower third, not vertically centred: the wordmark's optical centre is where
+ * the vial crosses it, and copy placed there fights both.
+ */
+.statement {
+  align-self: end;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-md);
+  max-inline-size: 28rem;
+  padding-block-end: var(--space-2xl);
+}
+
+.lede {
+  color: var(--ink-secondary);
+  font-style: italic;
+  text-wrap: pretty;
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding-block-start: var(--space-md);
+  border-block-start: 1px solid var(--border-subtle);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs) var(--space-lg);
+}
+
+.metaItem {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.scrollCue {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+}
+
+.scrollCueLine {
+  display: block;
+  inline-size: var(--space-xl);
+  block-size: 1px;
+  background-color: var(--border-default);
+  transform-origin: left center;
+}
+
+/* Decorative only: the label already carries the meaning, so reduced motion
+   removes this outright (CONVENTIONS §4). */
+@media (prefers-reduced-motion: no-preference) {
+  .scrollCueLine {
+    animation: draw var(--cinematic-duration-xl) var(--ease-standard) infinite;
+  }
+}
+
+@keyframes draw {
+  0%,
+  100% {
+    transform: scaleX(0.3);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+/*
+ * COMPACT — recomposed, not scaled.
+ *
+ * On a portrait screen the wordmark cannot run behind the product without both
+ * becoming illegible, so the composition restacks: wordmark high and smaller,
+ * the vial holding the upper-middle, copy owning the lower third.
+ */
+@media (max-width: 47.999rem) {
+  /* Below the eyebrow, not behind it: on a portrait screen the two collide at
+     the top edge and neither reads. */
+  .wordmarkLayer {
+    align-items: flex-start;
+    padding-block-start: var(--space-4xl);
+  }
+
+  .wordmark {
+    font-size: clamp(3rem, 19vw, 6rem);
+    color: color-mix(in oklab, var(--neogen-paper) 14%, transparent);
+  }
+
+  .statement {
+    align-self: end;
+    max-inline-size: none;
+    padding-block-end: var(--space-lg);
+  }
+
+  .foot {
+    gap: var(--space-sm);
+  }
+}

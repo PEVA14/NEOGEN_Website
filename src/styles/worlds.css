@@ -15,6 +15,22 @@
  * Palettes: docs/NEOGEN_DESIGN_BIBLE.md
  */
 
+/*
+ * TWO SCOPES, deliberately separated.
+ *
+ *   [data-world]      — the full ENVIRONMENT. Surfaces, ink, borders and
+ *                       `--accent` all invert. Experience Mode sections only.
+ *
+ *   [data-world-tint] — the world's PALETTE VARIABLES ONLY, with no surface or
+ *                       ink inversion. For small identity marks inside Quiet
+ *                       Mode, such as the `● PRECISION` dot on a product card.
+ *                       SYSTEM STATUS V1 allows product identity below the
+ *                       image; it forbids product colour becoming UI action
+ *                       colour, and this scope is what keeps those apart.
+ *
+ * Both read the same per-world palette below, so there is still one source of
+ * truth for every world colour.
+ */
 [data-world] {
   /* Inside a world, surfaces and ink invert to the world's void. */
   --surface-base: var(--world-void);
@@ -47,7 +63,8 @@
 
 /* RETA — Precision. "The environment becomes precision."
    Cold, technical, controlled. Crisp edges, tight alignment, restrained blue. */
-[data-world="reta"] {
+[data-world="reta"],
+[data-world-tint="reta"] {
   --world-void: #07090d;
   --world-accent: #2459d3;
   --world-light: #c9e4ff;
@@ -60,7 +77,8 @@
 
 /* GLOW — Light. "The environment becomes light."
    Luminous amber, atmospheric, warm. Light reveals surfaces. */
-[data-world="glow"] {
+[data-world="glow"],
+[data-world-tint="glow"] {
   --world-void: #160d06;
   --world-accent: #c88722;
   --world-light: #ffd78a;
@@ -73,7 +91,8 @@
 
 /* GHK-Cu — Material. "The environment becomes material."
    Copper/bronze, tactile, physical depth. Secondary patina teal. */
-[data-world="ghk-cu"] {
+[data-world="ghk-cu"],
+[data-world-tint="ghk-cu"] {
   --world-void: #1a100c;
   --world-accent: #b5683c;
   --world-light: #f0d9cb;
@@ -83,6 +102,21 @@
     color-mix(in oklab, #b5683c 24%, transparent) 0%,
     transparent 66%
   );
+}
+
+/*
+ * THE SEAM.
+ *
+ * Every Experience section opens on a 1px rule in its own accent. It is the
+ * only place a world colour touches the boundary with Quiet Mode, and it does
+ * the work of a transition: paper stops, a precise coloured line marks the cut,
+ * the world begins. Without it the page reads as stacked components; with it,
+ * entering a world feels deliberate.
+ *
+ * A rule, not a gradient — the transition should read as an instrument mark.
+ */
+[data-world][data-mode="impact"] {
+  border-block-start: 1px solid var(--world-accent);
 }
 
 /* Opt-in atmospheric wash. Static gradient only — no animation lives here. */

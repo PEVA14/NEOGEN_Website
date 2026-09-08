@@ -1,0 +1,135 @@
+/*
+ * Catalogue index.
+ *
+ * Asymmetric by construction: index hangs in a narrow margin column, the
+ * category name takes the largest share, the description is held to a reading
+ * measure, and the action sits hard right. Dense left, open right.
+ */
+
+.list {
+  display: flex;
+  flex-direction: column;
+  border-block-start: 1px solid var(--border-default);
+}
+
+.item {
+  border-block-end: 1px solid var(--border-subtle);
+}
+
+.item:last-child {
+  border-block-end: 1px solid var(--border-default);
+}
+
+.link {
+  display: grid;
+  align-items: baseline;
+  gap: var(--space-2xs) var(--space-lg);
+  padding-block: var(--space-lg);
+  /* Interface tier: state feedback, so it survives reduced motion. */
+  transition:
+    padding-inline-start var(--motion-duration-base) var(--ease-out),
+    background-color var(--motion-duration-base) var(--ease-standard);
+  /* Body and action hang under the TITLE, not under the index — otherwise the
+     entry has two competing left edges and reads as sloppy rather than
+     deliberate. */
+  grid-template-areas:
+    "index title"
+    ".     body"
+    ".     action";
+  grid-template-columns: 2.5rem minmax(0, 1fr);
+}
+
+/*
+ * The catalogue proportion. The name column is deliberately the widest thing
+ * on the page at this point, and the description is squeezed into a measure
+ * that forces two or three lines — that density contrast is what makes it read
+ * as a catalogue entry rather than a card.
+ */
+@media (min-width: 64rem) {
+  .link {
+    grid-template-areas: "index title body action";
+    grid-template-columns: 3.5rem minmax(0, 6fr) minmax(0, 4fr) auto;
+    gap: var(--space-2xl);
+    padding-block: var(--space-2xl);
+    align-items: center;
+  }
+}
+
+/* The row shifts on hover — the entry advances rather than lighting up. */
+.link:hover {
+  background-color: var(--surface-raised);
+  padding-inline-start: var(--space-sm);
+}
+
+.index {
+  grid-area: index;
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+}
+
+.title {
+  grid-area: title;
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-4xl);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-display);
+  color: var(--ink-primary);
+  text-transform: uppercase;
+}
+
+.body {
+  grid-area: body;
+  color: var(--ink-secondary);
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  max-inline-size: 34rem;
+  text-wrap: pretty;
+}
+
+.action {
+  grid-area: action;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  color: var(--ink-muted);
+  transition: color var(--motion-duration-fast) var(--ease-standard);
+}
+
+.link:hover .action {
+  color: var(--ink-primary);
+}
+
+.actionLabel {
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.arrow {
+  display: inline-block;
+  transition: transform var(--motion-duration-base) var(--ease-out);
+}
+
+.link:hover .arrow {
+  transform: translateX(0.25rem);
+}
+
+/* --- Compact -------------------------------------------------------------
+ * The name shrinks but stays the loudest element; index and action share a row
+ * so the entry keeps its catalogue shape instead of becoming a stacked card.
+ */
+@media (max-width: 47.999rem) {
+  .title {
+    font-size: var(--text-3xl);
+  }
+
+  .link {
+    gap: var(--space-xs) var(--space-md);
+    padding-block: var(--space-lg);
+  }
+
+  .link:hover {
+    padding-inline-start: 0;
+  }
+}

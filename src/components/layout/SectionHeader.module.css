@@ -1,0 +1,70 @@
+/*
+ * The Quiet spine.
+ *
+ * Structure comes from a hairline, a mono index and a large condensed title —
+ * no boxes, no decoration. This is the editorial skeleton the Experience beats
+ * interrupt, so it has to be confident without being loud.
+ */
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-block-end: var(--space-3xl);
+}
+
+/* The rule sits ABOVE the index, so each section opens on a line rather than
+   closing on one. It reads as a register mark, not a divider. */
+.rule {
+  block-size: 1px;
+  inline-size: 100%;
+  background-color: var(--border-default);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.identity {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2xs);
+}
+
+.index {
+  color: var(--ink-primary);
+  letter-spacing: var(--tracking-label);
+}
+
+.label {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.action {
+  margin-inline-start: auto;
+}
+
+.title {
+  /* Caps: the reference homepage sets its section titles in condensed capitals,
+     which is what separates a spine entry from an article heading. */
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  max-inline-size: 20ch;
+}
+
+.lede {
+  margin-block-start: var(--space-md);
+  max-inline-size: var(--container-content);
+  font-size: var(--text-lg);
+  font-style: italic;
+  line-height: var(--leading-relaxed);
+  color: var(--ink-secondary);
+  text-wrap: pretty;
+}

@@ -1,4 +1,6 @@
-import type { ElementType, ReactNode } from "react";
+import type { ReactNode } from "react";
+
+import type { DOMTag } from "@/types/polymorphic";
 
 import { cn } from "@/lib/cn";
 
@@ -30,7 +32,7 @@ interface BaseProps {
   children: ReactNode;
   size?: Size;
   tone?: Tone;
-  as?: ElementType;
+  as?: DOMTag;
   id?: string;
   className?: string;
 }
@@ -69,7 +71,7 @@ export function Heading({
   id,
   className,
 }: Omit<BaseProps, "as"> & { level?: 1 | 2 | 3 | 4 | 5 | 6 }) {
-  const Tag = `h${level}` as ElementType;
+  const Tag = `h${level}` as DOMTag;
   return (
     <Tag id={id} className={cn("neogen-heading", sizeClass[size], toneClass[tone], className)}>
       {children}

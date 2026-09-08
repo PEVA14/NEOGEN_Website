@@ -1,8 +1,10 @@
-import type { ElementType, ReactNode } from "react";
+import type { ReactNode } from "react";
+
+import type { DOMTag } from "@/types/polymorphic";
 
 interface VisuallyHiddenProps {
   children: ReactNode;
-  as?: ElementType;
+  as?: DOMTag;
 }
 
 /**

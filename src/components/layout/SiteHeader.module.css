@@ -1,0 +1,142 @@
+/*
+ * Global header.
+ *
+ * Two surfaces: Quiet (paper) by default, inverted while the bar sits over an
+ * Experience Mode section. The inversion is driven by `data-surface`, set by
+ * HeaderSurfaceSync, and every colour resolves from tokens so the dark state is
+ * the world's own void rather than an arbitrary black.
+ */
+
+.header {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: var(--z-header);
+  border-block-end: 1px solid var(--border-subtle);
+  background-color: color-mix(in oklab, var(--surface-base) 88%, transparent);
+  backdrop-filter: blur(8px);
+  /* Interface tier: this is state feedback, so it survives reduced motion. */
+  transition:
+    background-color var(--motion-duration-slow) var(--ease-standard),
+    border-color var(--motion-duration-slow) var(--ease-standard),
+    color var(--motion-duration-slow) var(--ease-standard);
+}
+
+/*
+ * Over an Experience section. Colours are pulled from the RETA/GLOW/GHK-Cu
+ * neutral end rather than a hard-coded black: the header is still Quiet Mode,
+ * just inverted, so it must not adopt a product accent.
+ */
+.header[data-surface="dark"] {
+  /*
+   * Remap the SEMANTIC TOKENS, don't restyle individual classes. The header
+   * contains components it does not own — the language switcher resolves
+   * `--ink-muted` itself — so listing classes here would leave anything not
+   * enumerated rendering dark-on-dark. Remapping fixes every descendant at once
+   * and keeps the token layer as the single mechanism.
+   */
+  --ink-primary: var(--neogen-paper);
+  --ink-secondary: color-mix(in oklab, var(--neogen-paper) 78%, var(--neogen-charcoal));
+  --ink-muted: color-mix(in oklab, var(--neogen-paper) 52%, var(--neogen-charcoal));
+  --surface-raised: color-mix(in oklab, var(--neogen-paper) 12%, transparent);
+  --focus-ring: var(--neogen-paper);
+  --focus-ring-offset: var(--neogen-charcoal);
+
+  background-color: color-mix(in oklab, var(--neogen-charcoal) 72%, transparent);
+  border-block-end-color: color-mix(in oklab, var(--neogen-paper) 14%, transparent);
+  color: var(--ink-primary);
+}
+
+/* --- Layout -------------------------------------------------------------- */
+
+.inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  min-block-size: 4rem;
+}
+
+.nav {
+  display: block;
+}
+
+.navList {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+/*
+ * COMPACT — the links move to their own row rather than vanishing. Two rows of
+ * real links beat one row plus a hidden menu.
+ */
+@media (max-width: 39.999rem) {
+  .inner {
+    flex-wrap: wrap;
+    padding-block: var(--space-2xs);
+    min-block-size: 0;
+  }
+
+  .nav {
+    order: 3;
+    inline-size: 100%;
+    padding-block-start: var(--space-2xs);
+    border-block-start: 1px solid var(--border-subtle);
+  }
+
+  .navList {
+    gap: var(--space-md);
+  }
+}
+
+/* --- Wordmark ------------------------------------------------------------ */
+
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  color: var(--ink-primary);
+}
+
+/* The reference wordmark is preceded by a small solid dot. */
+.wordmarkDot {
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  border-radius: var(--radius-pill);
+  background-color: currentColor;
+}
+
+/* --- Navigation ---------------------------------------------------------- */
+
+.navLink {
+  color: var(--ink-secondary);
+  font-size: var(--text-sm);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 6px;
+  transition:
+    color var(--motion-duration-fast) var(--ease-standard),
+    text-decoration-color var(--motion-duration-fast) var(--ease-standard);
+}
+
+.navLink:hover {
+  color: var(--ink-primary);
+  text-decoration-color: var(--ink-primary);
+}
+
+/* --- Bag ----------------------------------------------------------------- */
+
+.bag {
+  color: var(--ink-primary);
+  transition: opacity var(--motion-duration-fast) var(--ease-standard);
+}
+
+.bag:hover {
+  opacity: 0.7;
+}

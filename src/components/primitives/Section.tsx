@@ -1,4 +1,6 @@
-import type { ElementType, ReactNode } from "react";
+import type { ReactNode } from "react";
+
+import type { DOMTag } from "@/types/polymorphic";
 
 import type { WorldId } from "@/config/worlds";
 import { cn } from "@/lib/cn";
@@ -26,7 +28,22 @@ interface SectionProps {
   world?: WorldId;
   /** Opt into the world's atmospheric gradient wash. Static, not animated. */
   atmosphere?: boolean;
-  as?: ElementType;
+  /**
+   * Whether this section paints a dark surface.
+   *
+   * Defaults to dark whenever a world is applied. Set explicitly for a dark
+   * section that carries no product world — the brand hero, the footer. The
+   * resulting `data-surface` is what lets the sticky header know to invert.
+   */
+  surface?: "paper" | "dark";
+  /**
+   * Set false for a section that owns its own vertical rhythm — a pinned,
+   * full-viewport Experience Mode composition has no use for section padding.
+   * `cn` deliberately does not tailwind-merge, so padding cannot be overridden
+   * from `className`; it has to be opted out of here.
+   */
+  padded?: boolean;
+  as?: DOMTag;
   /** Anchor target / skip-link destination. */
   id?: string;
   /** Accessible name when the section has no visible heading. */
@@ -45,6 +62,8 @@ export function Section({
   mode = "quiet",
   world,
   atmosphere = false,
+  surface,
+  padded = true,
   as: Tag = "section",
   id,
   className,
@@ -56,7 +75,8 @@ export function Section({
       data-mode={mode}
       data-world={world}
       data-atmosphere={world && atmosphere ? "true" : undefined}
-      className={cn("relative w-full", modeClass[mode], className)}
+      data-surface={(surface ?? (world ? "dark" : "paper")) === "dark" ? "dark" : undefined}
+      className={cn("relative w-full", padded && modeClass[mode], className)}
       {...aria}
     >
       {children}

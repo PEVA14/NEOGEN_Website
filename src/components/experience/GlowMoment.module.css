@@ -1,0 +1,228 @@
+/*
+ * GLOW — "the environment becomes light."
+ *
+ * The mechanism is luminance, not object choreography. Two soft light bodies
+ * grow and brighten across the section's scroll, and the typography sits inside
+ * that light rather than next to a product.
+ *
+ * All motion is CSS on a view() timeline: the RESOLVED (fully lit) state is the
+ * default, and the animation is layered on only where it is supported and
+ * wanted. A browser without scroll timelines, and a reduced-motion user, both
+ * simply get the finished composition — the light is never a gate on content.
+ */
+
+.section {
+  overflow: hidden;
+}
+
+.viewport {
+  position: relative;
+  display: grid;
+  grid-template-areas: "glow";
+  min-block-size: min(88vh, 52rem);
+  align-items: center;
+}
+
+.viewport > * {
+  grid-area: glow;
+}
+
+/*
+ * A centring layer for the light.
+ *
+ * Grid centring, not absolute centring: both light bodies are wider than the
+ * frame on purpose, and `inset: 0; margin: auto` is over-constrained in that
+ * case — the browser resolves it by pushing the box to one side. `place-items:
+ * center` keeps an oversized child centred and lets it overflow symmetrically.
+ */
+.lights {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  /* The track must be pinned to the container, not sized by its content:
+     `place-items: center` centres within the TRACK, and an auto track grows to
+     the oversized child, which just moves the whole thing off to one side. */
+  grid-template-columns: 100%;
+  grid-template-rows: 100%;
+  place-items: center;
+  pointer-events: none;
+}
+
+/* --- The light ----------------------------------------------------------- */
+
+/*
+ * ABSOLUTE, not grid items.
+ *
+ * These are deliberately wider than the viewport, and as grid items they sized
+ * the shared track — stretching the copy to 150vw and pushing the annotations
+ * off-screen on narrow viewports. Taking them out of flow lets the light exceed
+ * the frame without the layout following it.
+ *
+ * Both occupy the same cell of `.lights`, so they stack concentrically and the
+ * ignite keyframes keep `transform` entirely to themselves.
+ */
+.bloom,
+.halo {
+  grid-area: 1 / 1;
+  pointer-events: none;
+  border-radius: var(--radius-pill);
+  /* Resolved state: fully present. */
+  opacity: 1;
+  transform: scale(1);
+}
+
+.bloom {
+  inline-size: min(120vw, 62rem);
+  aspect-ratio: 1;
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in oklab, var(--world-light) 34%, transparent) 0%,
+    color-mix(in oklab, var(--world-accent) 20%, transparent) 34%,
+    transparent 68%
+  );
+  filter: blur(12px);
+}
+
+/* A tighter, hotter core. Two bodies read as depth; one reads as a flat disc. */
+.halo {
+  inline-size: min(60vw, 26rem);
+  aspect-ratio: 1;
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in oklab, var(--world-light) 42%, transparent) 0%,
+    transparent 62%
+  );
+  filter: blur(6px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .bloom {
+      animation: ignite auto linear both;
+      animation-timeline: view();
+      animation-range: entry 5% cover 62%;
+    }
+
+    .halo {
+      animation: ignite auto linear both;
+      animation-timeline: view();
+      animation-range: entry 18% cover 74%;
+    }
+  }
+}
+
+@keyframes ignite {
+  from {
+    opacity: 0.12;
+    transform: scale(0.62);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* --- Content ------------------------------------------------------------- */
+
+.content {
+  position: relative;
+  z-index: var(--z-content);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: var(--space-2xl);
+  padding-block: var(--space-3xl);
+  min-block-size: inherit;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.eyebrow,
+.mediaSlot {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+/*
+ * Centred, not columnar. RETA composes around an object at the right; GLOW has
+ * no object, so its type sits in the middle of the light.
+ */
+.centre {
+  align-self: center;
+  justify-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-lg);
+  max-inline-size: 46rem;
+  text-align: center;
+}
+
+.statement {
+  color: var(--ink-primary);
+  text-wrap: balance;
+}
+
+.body {
+  color: var(--ink-secondary);
+  max-inline-size: 34rem;
+  text-wrap: pretty;
+}
+
+.annotations {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-sm) var(--space-2xl);
+  padding-block-start: var(--space-md);
+  border-block-start: 1px solid var(--border-subtle);
+}
+
+.annotation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+  text-align: center;
+}
+
+.annotationKey {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.annotationValue {
+  color: var(--ink-secondary);
+}
+
+/* --- Compact ------------------------------------------------------------- */
+
+@media (max-width: 47.999rem) {
+  .viewport {
+    min-block-size: min(78vh, 40rem);
+  }
+
+  .bloom {
+    inline-size: 150vw;
+  }
+
+  .centre {
+    text-align: start;
+    align-items: flex-start;
+  }
+
+  .annotations {
+    justify-content: flex-start;
+    gap: var(--space-sm) var(--space-lg);
+  }
+
+  .annotation {
+    text-align: start;
+  }
+}

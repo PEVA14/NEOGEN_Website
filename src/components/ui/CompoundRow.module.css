@@ -1,0 +1,108 @@
+/*
+ * Compound index row.
+ *
+ * Desktop: a register — identity on the left, attributes ranged across the
+ * right, hairline between rows. Mobile: the same information recomposed as a
+ * stacked card, because a seven-column table on a 375px screen is unreadable
+ * whatever you do to the type.
+ */
+
+.row {
+  display: grid;
+  gap: var(--space-sm);
+  padding-block: var(--space-lg);
+  border-block-start: 1px solid var(--border-subtle);
+}
+
+.row:last-child {
+  border-block-end: 1px solid var(--border-subtle);
+}
+
+.identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-sm);
+}
+
+.index {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+}
+
+.name {
+  color: var(--ink-primary);
+}
+
+/* Product identity is allowed here — it is an identifier, not an action. */
+.dot {
+  margin-inline-start: var(--space-2xs);
+}
+
+.fields {
+  display: grid;
+  gap: var(--space-sm);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+}
+
+.fieldKey {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.fieldValue {
+  color: var(--ink-secondary);
+}
+
+/*
+ * Column heads — the device that turns a list into a publication table.
+ * Hidden below the width where the register is actually tabular.
+ */
+.head {
+  display: none;
+}
+
+.headFields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-lg);
+}
+
+.headLabel {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+/* Register layout: identity holds the left, attributes range across the right. */
+@media (min-width: 64rem) {
+  .head {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: var(--space-2xl);
+    padding-block-end: var(--space-2xs);
+  }
+
+  /* The row's own field labels are redundant once heads are visible. */
+  .row .fieldKey {
+    display: none;
+  }
+
+  .row {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    align-items: baseline;
+    gap: var(--space-2xl);
+  }
+
+  .fields {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-lg);
+  }
+}

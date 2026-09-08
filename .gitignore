@@ -49,5 +49,10 @@ coverage/
 *.blend
 *.blend1
 *.blend2
+
+# Local 3D staging. Source/working copies of models live here and are NOT
+# tracked. The served asset is public/models/NEOGEN_RETA.glb — that is the
+# single tracked copy, and the only one Next serves.
+3d assets/
 # Claude Code
 .claude/

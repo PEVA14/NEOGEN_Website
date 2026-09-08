@@ -1,10 +1,18 @@
 import type es from "./dictionaries/es";
 
-/** Recursively strips the `as const` readonly modifiers from the source dictionary. */
+/**
+ * Widens the `as const` source dictionary into the contract every locale meets:
+ * literal strings become `string`, and readonly tuples become readonly arrays
+ * of the widened element type.
+ *
+ * Arrays stay READONLY on purpose. A dictionary is data to read, never to
+ * mutate, and widening `readonly ["a", "b"]` to a mutable `string[]` is not a
+ * legal assertion — it would break the `as Dictionary` cast in getDictionary.
+ */
 type Mutable<T> = T extends string
   ? string
   : T extends readonly (infer U)[]
-    ? Mutable<U>[]
+    ? readonly Mutable<U>[]
     : { -readonly [K in keyof T]: Mutable<T[K]> };
 
 /**

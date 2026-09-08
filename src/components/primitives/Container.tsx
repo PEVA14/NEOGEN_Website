@@ -1,4 +1,6 @@
-import type { ElementType, ReactNode } from "react";
+import type { ReactNode } from "react";
+
+import type { DOMTag } from "@/types/polymorphic";
 
 import { cn } from "@/lib/cn";
 
@@ -14,7 +16,7 @@ interface ContainerProps {
   children: ReactNode;
   /** `prose` is the reading measure for Research; `content` is the default. */
   width?: ContainerWidth;
-  as?: ElementType;
+  as?: DOMTag;
   className?: string;
 }
 

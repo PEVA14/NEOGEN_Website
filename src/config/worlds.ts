@@ -33,12 +33,21 @@ export interface ProductWorld {
   id: WorldId;
   /** Brand name — a proper noun, not translated copy. */
   label: string;
+  /**
+   * Catalogue product name, as it appears on cards and in the compound index.
+   * A proper noun, so it lives in configuration rather than the dictionary and
+   * is identical in every locale (CONVENTIONS §7).
+   */
+  productName: string;
   /** `data-world` attribute value. Matches the CSS selector in worlds.css. */
   dataAttribute: WorldId;
   /**
    * Path to the GLB under /public/models.
    * MVP: all three share the same vial master with different labels.
-   * TODO(phase-2): NEOGEN_RETA.glb is not yet in the repository.
+   *
+   * The web layer normalises whatever it is given — the model is recentred and
+   * scaled to a fixed height in `VialModel` — so an improved GLB can be dropped
+   * in later without re-tuning the camera.
    */
   modelPath: string | null;
   /** Static image shown while the GLB loads, and as the no-3D fallback. */
@@ -50,8 +59,11 @@ export const worlds: Record<WorldId, ProductWorld> = {
   reta: {
     id: "reta",
     label: "RETA",
+    productName: "Retatrutide Research",
     dataAttribute: "reta",
-    modelPath: null, // TODO(phase-2): "/models/NEOGEN_RETA.glb" once provided.
+    modelPath: "/models/NEOGEN_RETA.glb",
+    // TODO(assets): a rendered still of this model. Until it exists the
+    // fallback draws a diagrammatic silhouette rather than fake product imagery.
     posterPath: null,
     environment: {
       lightTemperature: "cold",
@@ -63,6 +75,7 @@ export const worlds: Record<WorldId, ProductWorld> = {
   glow: {
     id: "glow",
     label: "GLOW",
+    productName: "GLOW Peptide Series",
     dataAttribute: "glow",
     modelPath: null, // MVP reuses the RETA vial with a GLOW label.
     posterPath: null,
@@ -76,6 +89,7 @@ export const worlds: Record<WorldId, ProductWorld> = {
   "ghk-cu": {
     id: "ghk-cu",
     label: "GHK-Cu",
+    productName: "Copper Peptide GHK-Cu",
     dataAttribute: "ghk-cu",
     modelPath: null, // MVP reuses the RETA vial with a GHK-Cu label.
     posterPath: null,

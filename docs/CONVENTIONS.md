@@ -149,25 +149,88 @@ label from the dictionary so wording can change without touching components.
 
 ## 9. Dependencies
 
-Current runtime dependencies: `next`, `react`, `react-dom`. That is the whole list.
+Current runtime dependencies: `next`, `react`, `react-dom`, `three`,
+`@react-three/fiber`. That is the whole list.
 
 - Explain any major dependency addition **before** adding it.
 - Do not install overlapping animation / state / UI libraries.
 - Do not install a package because it might be useful later.
 
-Planned, deliberately **not yet installed**:
+Added in Phase 2:
 
-| Package                                                            | Phase    | Why deferred                                                    |
-| ------------------------------------------------------------------ | -------- | --------------------------------------------------------------- |
-| `three`, `@react-three/fiber`, `@react-three/drei`, `@types/three` | 2        | Installed when the RETA scene is actually built                 |
-| `motion`                                                           | 2        | Only when the Hero needs JS-driven animation CSS cannot express |
-| `server-only`                                                      | optional | Would turn a server/client import mistake into a build error    |
+| Package              | Why                                                            |
+| -------------------- | -------------------------------------------------------------- |
+| `three`              | The 3D engine. Pinned to a minor: 0.x does not promise SemVer. |
+| `@react-three/fiber` | React renderer for three. v9 peers `react >=19 <19.3`.         |
+| `@types/three` (dev) | three ships no types of its own.                               |
+
+**`@react-three/drei` was NOT installed**, despite being listed here in Phase 1.
+Only two things were needed from it — GLTF loading and an environment map —
+and `useLoader` plus three's own `RoomEnvironment` + `PMREMGenerator` cover
+both. drei's `<Environment preset>` would also fetch an HDRI from a CDN at
+runtime, which this project does not want.
+
+Still deliberately **not** installed:
+
+| Package       | Why deferred                                                       |
+| ------------- | ------------------------------------------------------------------ |
+| `motion`      | The Hero and RETA choreography are pure CSS. Nothing needs JS yet. |
+| `server-only` | Would turn a server/client import mistake into a build error.      |
 
 Not planned: GSAP, Lenis/smooth-scroll, a state library (React Context +
 `useReducer` is the default when commerce needs one), a component library, a
 CMS, an ORM, an i18n framework.
 
-## 10. Commands
+### Import three's addons from `three/examples/jsm/…`, not `three/addons/…`
+
+`@types/three` only ships declarations under `examples/jsm`. The `addons` alias
+resolves at runtime but has no types, so it silently degrades to `any`.
+
+## 10. The 3D layer (Phase 2)
+
+Established by the RETA scene. GLOW and GHK-Cu reuse this rig by passing their
+own `WorldEnvironment` — no new scene code should be needed.
+
+- **All 3D lives in `src/components/experience/`.** Nothing else imports three.
+- **`three` is never in the initial payload.** `RetaCanvas` is loaded through
+  `next/dynamic` with `ssr: false`. Measured: initial JS 178.6 KB gz, with
+  three isolated in a separate 241 KB gz chunk fetched only when a stage mounts
+  and WebGL is confirmed.
+- **The fallback is server-rendered and paints first.** `useWebGLSupport`
+  returns `false` on the server, so the static state is always the first paint
+  and the canvas replaces it. Loading, reduced-motion and no-WebGL all resolve
+  to that same one component.
+- **Web code owns the asset.** `VialModel` recentres and rescales whatever GLB
+  it is handed, so an improved model drops in without re-tuning the camera.
+- **Colour crosses from CSS to 3D, never the reverse.** `worldPalette.ts` reads
+  `--world-accent` / `--world-light` / `--world-void` off the live element, so
+  `worlds.css` stays the single source of truth (§3). Never hard-code a world
+  colour in TypeScript.
+- **Quality tiers are a 3D concern, not layout.** Below 48rem the glass drops
+  `transmission` and the renderer halves `transmissionResolutionScale`. This is
+  the §5 exception, not a breach of it.
+- **Never mutate objects returned from R3F hooks.** Attach declaratively
+  (`<primitive attach="environment">`) or set the property on the material.
+
+### Consequence: `as` props take `DOMTag`, not `ElementType`
+
+`@react-three/fiber` augments the global JSX namespace:
+
+```ts
+declare module "react" {
+  namespace JSX {
+    interface IntrinsicElements extends ThreeElements {}
+  }
+}
+```
+
+That is project-wide and cannot be scoped. It widens `ElementType` to include
+every three.js object, which collapses a polymorphic `as?: ElementType` prop's
+prop intersection to `never`. The DOM primitives therefore take
+`as?: DOMTag` (`src/types/polymorphic.ts`). This is a tightening: `Container`,
+`Section`, `Stack`, `Text` and `VisuallyHidden` must never render a `<mesh>`.
+
+## 11. Commands
 
 ```bash
 npm run dev          # development server

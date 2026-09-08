@@ -58,6 +58,18 @@
   --status-pending-border: var(--border-default);
   --status-pending-ink: var(--ink-secondary);
 
+  /* --- Verified state ----------------------------------------------------
+   * A SEMANTIC token, deliberately not a brand or world colour: it must never
+   * read as decoration or as a product identity.
+   *
+   * USE ONLY where the underlying fact is genuinely verified — an available
+   * item, a validated document. Never alongside a `pending` or `unavailable`
+   * Verifiable<T>, and never to make an interface look healthier than its data
+   * (CONVENTIONS §8).
+   */
+  --status-verified: #2f7d4f;
+  --status-verified-ink: #1f5c39;
+
   /* --- Typography -------------------------------------------------------
    * Families are injected by next/font in app/[locale]/layout.tsx.
    */
@@ -107,8 +119,9 @@
   --space-3xl: 6rem;
   --space-4xl: 8rem;
 
-  /* Section rhythm — Quiet sections breathe, Experience sections dominate. */
-  --section-pad-quiet: clamp(3.5rem, 2.5rem + 5vw, 7rem);
+  /* Section rhythm — Quiet sections breathe, Experience sections dominate.
+     SYSTEM STATUS V1: "Generous vertical rhythm. Precision over density." */
+  --section-pad-quiet: clamp(4.5rem, 3rem + 7vw, 10rem);
   --section-pad-impact: clamp(5rem, 3rem + 10vw, 11rem);
 
   /* --- Layout ------------------------------------------------------------ */
@@ -118,11 +131,19 @@
   --gutter: clamp(1.25rem, 0.9rem + 1.8vw, 2.5rem);
   --grid-columns: 12;
 
-  /* --- Radius ------------------------------------------------------------ */
+  /* --- Radius ------------------------------------------------------------
+   * ZERO-RADIUS SYSTEM. From SYSTEM STATUS V1: "Zero-radius everywhere.
+   * 1px Chalk structural borders." Sharp, editorial, technical geometry is the
+   * default; softness would read as generic SaaS.
+   *
+   * The scale is kept (rather than deleted) so components can keep expressing
+   * intent, and so a future exception has one place to change.
+   */
   --radius-none: 0;
-  --radius-sm: 2px;
-  --radius-md: 4px;
-  --radius-lg: 8px;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  /* Reserved for genuinely circular affordances (avatars, dots). Not for UI. */
   --radius-pill: 999px;
 
   /* --- Elevation ---------------------------------------------------------

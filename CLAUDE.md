@@ -9,9 +9,14 @@ Creative north star: **Living Laboratory** --- a laboratory that reacts
 to the user.
 
 Before making design or implementation decisions, read: 1.
-`docs/NEOGEN_DESIGN_BIBLE.md` 2. `docs/NEOGEN_MVP_SCOPE.md`
+`docs/NEOGEN_DESIGN_BIBLE.md` 2. `docs/NEOGEN_MVP_SCOPE.md` 3.
+`docs/CONVENTIONS.md`
 
-Treat them as requirements, not loose inspiration.
+Treat the first two as requirements, not loose inspiration.
+`docs/CONVENTIONS.md` records the architectural decisions already made --- the
+token layer, the Quiet/Experience split, the two-tier motion system, the
+CSS-first responsive rule, the localization approach, the `Verifiable<T>`
+claims boundary and the 3D layer. Follow it rather than re-deriving it.
 
 ## Core rule
 

@@ -1,0 +1,343 @@
+/*
+ * GHK-Cu — "the environment becomes material."
+ *
+ * Surface, weight and physical depth. The mechanism is STRATA: horizontal
+ * planes that separate at different rates on scroll, so depth is communicated
+ * by parallax between real layers rather than by moving an object around.
+ *
+ * Texture is built from layered gradients — no imagery, nothing invented.
+ * Copper and patina both come from the world tokens.
+ */
+
+.section {
+  overflow: hidden;
+}
+
+.viewport {
+  position: relative;
+  display: grid;
+  grid-template-areas: "material";
+  min-block-size: min(88vh, 54rem);
+  align-items: center;
+}
+
+.viewport > * {
+  grid-area: material;
+}
+
+/* --- Strata -------------------------------------------------------------- */
+
+.strata {
+  position: relative;
+  block-size: 100%;
+  inline-size: 100%;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.band {
+  position: absolute;
+  inset-inline: -10%;
+  display: block;
+  /* Resolved state: settled. */
+  transform: translateY(0);
+}
+
+/*
+ * Oxidised copper, assembled rather than photographed: a broad copper wash,
+ * a patina bloom offset from it, and a fine directional grain that reads as
+ * machined metal at a glance and as nothing in particular up close.
+ */
+.bandBack {
+  inset-block-start: 8%;
+  block-size: 46%;
+  background:
+    radial-gradient(
+      70% 120% at 22% 40%,
+      color-mix(in oklab, var(--world-patina) 34%, transparent) 0%,
+      transparent 62%
+    ),
+    linear-gradient(
+      100deg,
+      color-mix(in oklab, var(--world-accent) 20%, transparent) 0%,
+      transparent 58%
+    );
+  filter: blur(2px);
+}
+
+.bandMid {
+  inset-block-start: 34%;
+  block-size: 38%;
+  background:
+    repeating-linear-gradient(
+      92deg,
+      color-mix(in oklab, var(--world-light) 5%, transparent) 0px,
+      transparent 2px,
+      transparent 7px
+    ),
+    linear-gradient(
+      82deg,
+      color-mix(in oklab, var(--world-accent) 30%, transparent) 0%,
+      color-mix(in oklab, var(--world-patina) 16%, transparent) 52%,
+      transparent 86%
+    );
+}
+
+.bandFront {
+  inset-block-start: 62%;
+  block-size: 34%;
+  background: linear-gradient(
+    268deg,
+    color-mix(in oklab, var(--world-accent) 26%, transparent) 0%,
+    transparent 64%
+  );
+  filter: blur(1px);
+}
+
+/*
+ * Parallax. Amplitude comes from `--cinematic-parallax`, which motion.css
+ * already reduces below 48rem — so the depth effect calms on touch without any
+ * component branching (CONVENTIONS §5).
+ */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .bandBack,
+    .bandMid,
+    .bandFront {
+      animation: settle auto linear both;
+      animation-timeline: view();
+      animation-range: cover;
+    }
+
+    .bandBack {
+      --band-travel: calc(var(--cinematic-travel) * -1.6 * var(--cinematic-parallax));
+    }
+
+    .bandMid {
+      --band-travel: calc(var(--cinematic-travel) * 0.9 * var(--cinematic-parallax));
+    }
+
+    .bandFront {
+      --band-travel: calc(var(--cinematic-travel) * 2.2 * var(--cinematic-parallax));
+    }
+  }
+}
+
+@keyframes settle {
+  from {
+    transform: translateY(calc(var(--band-travel, 0px) * -1));
+  }
+  to {
+    transform: translateY(var(--band-travel, 0px));
+  }
+}
+
+/* --- Content ------------------------------------------------------------- */
+
+.content {
+  position: relative;
+  z-index: var(--z-content);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xl);
+  padding-block: var(--space-3xl);
+}
+
+.eyebrow {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+/*
+ * Denser than the other two worlds on purpose: material is about weight, so the
+ * grid tightens and the type gets heavier rather than floating in space.
+ */
+.layout {
+  display: grid;
+  gap: var(--space-xl);
+  grid-template-columns: 1fr;
+  align-items: end;
+}
+
+@media (min-width: 64rem) {
+  .layout {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 4fr);
+    gap: var(--space-3xl);
+  }
+}
+
+.statementBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.statement {
+  color: var(--ink-primary);
+  text-wrap: balance;
+  /* Tighter and heavier than GLOW's statement — material has mass. */
+  letter-spacing: -0.03em;
+}
+
+.body {
+  color: var(--ink-secondary);
+  max-inline-size: 34rem;
+  text-wrap: pretty;
+}
+
+/* --- Core sample --------------------------------------------------------- */
+
+/*
+ * A vertical section through the material. Heavier and denser than anything in
+ * GLOW or RETA by construction: hard-edged strata, a rule between each, and a
+ * frame that reads as an instrument mount rather than an image well.
+ */
+.specimen {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-sm);
+  align-items: stretch;
+  border: 1px solid var(--border-default);
+  padding: var(--space-2xs);
+  background-color: color-mix(in oklab, var(--world-void) 70%, #000);
+}
+
+.core {
+  display: grid;
+  grid-auto-rows: 1fr;
+  min-block-size: 18rem;
+}
+
+.coreLayer {
+  display: block;
+  border-block-end: 1px solid color-mix(in oklab, var(--world-void) 60%, #000);
+}
+
+.coreLayer:last-child {
+  border-block-end: none;
+}
+
+/* Each stratum is a different material, built from gradients — no imagery. */
+.coreLayer[data-layer="oxide"] {
+  background:
+    repeating-linear-gradient(
+      88deg,
+      color-mix(in oklab, var(--world-light) 6%, transparent) 0px,
+      transparent 2px,
+      transparent 6px
+    ),
+    linear-gradient(
+      170deg,
+      color-mix(in oklab, var(--world-accent) 52%, transparent) 0%,
+      color-mix(in oklab, var(--world-accent) 22%, transparent) 100%
+    );
+}
+
+.coreLayer[data-layer="copper"] {
+  background: linear-gradient(
+    100deg,
+    color-mix(in oklab, var(--world-accent) 68%, transparent) 0%,
+    color-mix(in oklab, var(--world-accent) 30%, transparent) 55%,
+    color-mix(in oklab, var(--world-patina) 20%, transparent) 100%
+  );
+}
+
+.coreLayer[data-layer="patina"] {
+  background:
+    radial-gradient(
+      80% 140% at 30% 40%,
+      color-mix(in oklab, var(--world-patina) 62%, transparent) 0%,
+      transparent 70%
+    ),
+    linear-gradient(
+      12deg,
+      color-mix(in oklab, var(--world-patina) 34%, transparent) 0%,
+      transparent 90%
+    );
+}
+
+.coreLayer[data-layer="deep"] {
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--world-accent) 24%, transparent) 0%,
+    transparent 80%
+  );
+}
+
+/* Depth markers down the side of the core. */
+.specimenMeta {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-inline: var(--space-3xs);
+}
+
+.specimenLabel {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  /* Reads up the side of the mount, like a specimen label. */
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+}
+
+/* --- Annotations --------------------------------------------------------- */
+
+.annotations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm) var(--space-2xl);
+  padding-block-start: var(--space-md);
+  border-block-start: 1px solid var(--border-subtle);
+}
+
+.annotation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+}
+
+.annotationKey {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.annotationValue {
+  color: var(--ink-secondary);
+}
+
+@media (max-width: 47.999rem) {
+  .viewport {
+    min-block-size: min(80vh, 44rem);
+  }
+
+  /* The core lies down on a portrait screen: a tall column beside stacked copy
+     would leave both starved. Horizontal strata still read as a section. */
+  .core {
+    grid-auto-rows: none;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    min-block-size: 8rem;
+  }
+
+  .coreLayer {
+    border-block-end: none;
+    border-inline-end: 1px solid color-mix(in oklab, var(--world-void) 60%, #000);
+  }
+
+  .coreLayer:last-child {
+    border-inline-end: none;
+  }
+
+  .specimenLabel {
+    writing-mode: horizontal-tb;
+    transform: none;
+  }
+
+  .specimenMeta {
+    align-items: center;
+  }
+}

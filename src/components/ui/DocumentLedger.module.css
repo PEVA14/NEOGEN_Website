@@ -1,0 +1,112 @@
+/*
+ * Document ledger.
+ *
+ * Documentation as material: framed records on paper, with unequal spans so the
+ * ledger never settles into a symmetrical grid.
+ */
+
+.ledger {
+  display: grid;
+  gap: var(--space-xl);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 64rem) {
+  .ledger {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: var(--space-2xl) var(--space-xl);
+  }
+
+  /* 7 / 5 then 5 / 7 — the seam shifts down the page. */
+  .record:nth-child(1) {
+    grid-column: span 7;
+  }
+  .record:nth-child(2) {
+    grid-column: span 5;
+  }
+  .record:nth-child(3) {
+    grid-column: span 5;
+  }
+  .record:nth-child(4) {
+    grid-column: span 7;
+  }
+}
+
+.record {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+/* The frame is the document. Zero radius, 1px chalk, sitting on the page. */
+.frame {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  border: 1px solid var(--border-default);
+  background-color: var(--surface-base);
+}
+
+.frameHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding-block-end: var(--space-2xs);
+  border-block-end: 1px solid var(--border-subtle);
+}
+
+.identifierLabel {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.identifier {
+  color: var(--ink-primary);
+  letter-spacing: var(--tracking-label);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-2xl);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-tight);
+  color: var(--ink-primary);
+  margin: 0;
+}
+
+.state {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+}
+
+/*
+ * Hollow, not filled. A solid dot reads as a status light, and a status light
+ * over unverified data implies a state we cannot claim. The verified token
+ * exists in tokens.css and is deliberately not used here.
+ */
+.stateDot {
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  border: 1px solid var(--ink-muted);
+  border-radius: var(--radius-pill);
+}
+
+.stateLabel {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.body {
+  margin: 0;
+  color: var(--ink-secondary);
+  line-height: var(--leading-relaxed);
+  max-inline-size: 34rem;
+  text-wrap: pretty;
+}

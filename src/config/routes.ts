@@ -18,6 +18,16 @@ export const routes = {
   article: (slug: string) => `/investigacion/${slug}`,
   cart: "/carrito",
   checkout: "/checkout",
+  /**
+   * PREPARED, NOT BUILT. The reference navigation is
+   * `NEOGEN | Products | NEOGEN Research | About NEOGEN | [ BAG: N ]`.
+   * The path is declared here so nav and routing are ready for it, but the
+   * page is out of scope for Phase 3 — so it is deliberately NOT in
+   * `primaryNav` yet. Adding it there before the route exists would ship a
+   * link straight to a 404.
+   * TODO(phase-later): build /nosotros and move this into primaryNav.
+   */
+  about: "/nosotros",
 } as const;
 
 /** Keys into `Dictionary["nav"]`, so navigation carries no hard-coded copy. */
@@ -25,5 +35,8 @@ export const primaryNav = [
   { key: "products", href: routes.products },
   { key: "research", href: routes.research },
 ] as const;
+
+/** Reference nav order, including routes not yet built. Documentation only. */
+export const plannedNav = ["products", "research", "about"] as const;
 
 export type NavKey = (typeof primaryNav)[number]["key"];

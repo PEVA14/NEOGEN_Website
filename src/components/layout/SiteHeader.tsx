@@ -1,11 +1,15 @@
 import Link from "next/link";
 
+import { HeaderSurfaceSync } from "@/components/layout/HeaderSurfaceSync";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { Container } from "@/components/primitives";
+import { Mono } from "@/components/typography";
 import { primaryNav, routes } from "@/config/routes";
 import type { Locale } from "@/i18n/config";
 import { localizePath } from "@/i18n/routing";
 import type { Dictionary } from "@/i18n/types";
+
+import styles from "./SiteHeader.module.css";
 
 interface SiteHeaderProps {
   locale: Locale;
@@ -16,32 +20,41 @@ interface SiteHeaderProps {
  * Global navigation — Quiet Mode.
  *
  * A Server Component: it reads the dictionary directly and ships no JavaScript
- * except the language switcher island.
+ * beyond the language switcher and the surface-sync island.
  *
- * TODO(nav-phase): the mobile disclosure menu and cart affordance are
- * deliberately not built in Phase 1. The header is a structural landmark here,
- * not the finished navigation.
+ * MOBILE IS RECOMPOSED, NOT COLLAPSED. The links wrap onto their own row below
+ * the wordmark rather than disappearing behind a hamburger — with two primary
+ * destinations, a disclosure menu would hide the whole site behind a tap for no
+ * benefit. Every destination stays reachable without JavaScript.
+ *
+ * Active and hover states are communicated with WEIGHT and UNDERLINE, never
+ * with colour. The reference set paints the active item in RETA blue, but that
+ * would make a product world into NEOGEN's generic UI accent — and colour alone
+ * is a weak affordance regardless.
+ *
+ * `About NEOGEN` is routed in `config/routes.ts` but deliberately absent from
+ * the nav until the page exists — a link to a 404 is worse than no link.
  */
 export function SiteHeader({ locale, dict }: SiteHeaderProps) {
   return (
-    <header className="sticky top-0 z-(--z-header) border-b border-(--border-subtle) bg-(--surface-base)/85 backdrop-blur-sm">
+    <header id="site-header" data-surface="light" className={styles.header}>
+      <HeaderSurfaceSync />
+
       <Container width="full">
-        <div className="flex h-16 items-center justify-between gap-(--space-md)">
+        <div className={styles.inner}>
           <Link
             href={localizePath(routes.home, locale)}
-            className="neogen-display text-xl tracking-(--tracking-tight)"
+            className={`neogen-display text-xl tracking-(--tracking-tight) ${styles.wordmark}`}
           >
+            <span aria-hidden="true" className={styles.wordmarkDot} />
             {dict.meta.siteName}
           </Link>
 
-          <nav aria-label={dict.a11y.mainNavigation}>
-            <ul className="flex items-center gap-(--space-md)">
+          <nav aria-label={dict.a11y.mainNavigation} className={styles.nav}>
+            <ul className={styles.navList}>
               {primaryNav.map((item) => (
                 <li key={item.key}>
-                  <Link
-                    href={localizePath(item.href, locale)}
-                    className="text-sm text-(--ink-secondary) transition-colors duration-(--motion-duration-fast) ease-(--ease-standard) hover:text-(--ink-primary)"
-                  >
+                  <Link href={localizePath(item.href, locale)} className={styles.navLink}>
                     {dict.nav[item.key]}
                   </Link>
                 </li>
@@ -49,7 +62,21 @@ export function SiteHeader({ locale, dict }: SiteHeaderProps) {
             </ul>
           </nav>
 
-          <LanguageSwitcher currentLocale={locale} label={dict.a11y.languageSwitcher} />
+          <div className={styles.actions}>
+            <LanguageSwitcher currentLocale={locale} label={dict.a11y.languageSwitcher} />
+
+            {/*
+             * `[ BAG: N ]` — the reference system's bag affordance.
+             * The count is hard 0: no cart state exists yet, and inventing a
+             * number would be fabricating application state. It becomes live
+             * when the cart is built.
+             */}
+            <Link href={localizePath(routes.cart, locale)} className={styles.bag}>
+              <Mono size="2xs" className="tracking-(--tracking-label)">
+                [ {dict.nav.bag}: 0 ]
+              </Mono>
+            </Link>
+          </div>
         </div>
       </Container>
     </header>
