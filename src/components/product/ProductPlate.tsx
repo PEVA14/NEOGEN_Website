@@ -1,5 +1,8 @@
+import Image from "next/image";
+
 import { Mono } from "@/components/typography";
 import { VialSilhouette } from "@/components/ui";
+import { PLATE_SIZES, stillMedia } from "@/content";
 
 import styles from "./ProductPlate.module.css";
 
@@ -18,24 +21,28 @@ import type { ReactNode } from "react";
  * difference is deliberate: a catalogue of 86 products cannot afford, and does
  * not need, 86 bespoke environments.
  *
- * No photography exists yet, so the plate shows the diagrammatic silhouette.
+ * MEDIA IS RESOLVED BY SLUG, THROUGH THE SAME CALL THE CARD MAKES.
+ * ----------------------------------------------------------------
+ * The plate previously looked media up by WORLD. Every product that reaches
+ * this component has `world === null` by construction — the three that have one
+ * open in `ProductStage` — so that lookup could only ever return null, and the
+ * 80 products this template serves had no route to a photograph at all.
  *
- * THE SEAM FOR REAL PHOTOGRAPHY IS `content/media`, AND IT IS NOT WIRED HERE.
- * ---------------------------------------------------------------------------
- * This component used to take a `world` and look an image up by it. Every
- * product that reaches this component has `world === null` by construction —
- * the three that have one open in `ProductStage` instead — so the lookup could
- * only ever return null and the image branch was unreachable. Worse, it aimed
- * the seam at the wrong key: photography will arrive per PRODUCT, not per
- * world, so `content/media` has to be keyed by slug before anything can be
- * wired through it. Removing the dead branch leaves that decision visible
- * instead of appearing to have been made.
+ * Now `stillMedia(slug)` answers, and it is the same function
+ * `ProductCard` calls. A product cannot show a photograph in the catalogue and
+ * a diagram on the page it links to.
+ *
+ * The frame is a fixed 4:5 in both branches, so gaining a photograph changes
+ * what is inside the box and never the box.
  */
 export function ProductPlate({
+  slug,
   mediaLabel,
   meta,
   children,
 }: {
+  /** Product identity — the key its media is registered under. */
+  slug: string;
   mediaLabel: string;
   /**
    * The right-hand end of the caption rail — the compound's catalogue
@@ -46,11 +53,28 @@ export function ProductPlate({
   meta: string;
   children: ReactNode;
 }) {
+  const still = stillMedia(slug);
+
   return (
     <div className={styles.plate}>
       <div className={styles.media}>
         <div className={styles.frame}>
-          <VialSilhouette className={styles.silhouette} />
+          {still.kind === "image" ? (
+            <Image
+              src={still.image.src}
+              alt={still.image.alt}
+              width={still.image.width}
+              height={still.image.height}
+              className={styles.photo}
+              sizes={PLATE_SIZES}
+              /* The plate is this page's largest contentful paint and sits
+                 above the fold, so it is the one image on the site that earns
+                 `priority`. Cards never do. */
+              priority
+            />
+          ) : (
+            <VialSilhouette className={styles.silhouette} />
+          )}
         </div>
         <div className={styles.caption}>
           <Mono size="2xs" className={styles.captionLabel}>

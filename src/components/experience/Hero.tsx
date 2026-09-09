@@ -2,6 +2,7 @@ import { Container, Section } from "@/components/primitives";
 import { Body, Display, Mono } from "@/components/typography";
 import { TextLink } from "@/components/ui/TextLink";
 import { getWorld } from "@/config/worlds";
+import { mediaForWorld } from "@/content";
 
 import { HeroStage } from "./HeroStage";
 import styles from "./Hero.module.css";
@@ -35,6 +36,9 @@ export interface HeroCopy {
  */
 export function Hero({ copy }: { copy: HeroCopy }) {
   const world = getWorld("reta");
+  /* The object is the RETA product's asset, resolved through the media layer.
+     The world supplies the lighting rig; it no longer owns the file. */
+  const media = mediaForWorld("reta");
 
   return (
     <Section
@@ -70,9 +74,9 @@ export function Hero({ copy }: { copy: HeroCopy }) {
 
         {/* Layer 2 — the product, overlapping the wordmark. */}
         <HeroStage
-          modelPath={world.modelPath}
+          modelPath={media.model}
           environment={world.environment}
-          posterPath={world.posterPath}
+          poster={media.poster}
           posterAlt={copy.vialAlt}
           loadingLabel={copy.loadingLabel}
           staticLabel={copy.staticLabel}

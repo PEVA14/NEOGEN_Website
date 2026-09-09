@@ -1,39 +1,40 @@
-# 3D models
+# Models
 
-Lightweight `.glb` vial assets for the Experience Mode layer.
+Lightweight `.glb` product assets, one per product, named by its **slug**:
 
-## Present
+```
+public/models/<product-slug>.glb
+```
 
-- `NEOGEN_RETA.glb` — 385 KB. glTF 2.0 from Blender. Scene graph is
-  `NEOGEN-VIAL GLASS` (root) with `NEOGEN_VIAL_CAP` as a child, and
-  `NEOGEN_LABEL` alongside. Five materials; the glass carries
-  `KHR_materials_transmission` (factor 1.0, IOR 1.45), which is what makes it
-  read as real glass — and is the single biggest per-frame cost in the scene.
-  No animations, cameras or lights: web code owns all of those.
+`reta.glb` is the only one today. It is intentionally MVP-quality — the web
+layer recentres and rescales whatever it is given (`VialModel`), so an improved
+export can replace it without re-tuning the camera.
 
-  The model sits ~0.6 units off the X origin and is ~0.31 units tall. Nothing
-  depends on that: `VialModel` recentres and rescales it at load.
+## How to add one
 
-For the MVP all three flagships share the same functional vial master with
-different labels (see `docs/NEOGEN_MVP_SCOPE.md`):
+Drop the file here, then declare it in `src/content/media/registry.ts` under
+the product's slug:
 
-| World  | Asset                   | Status                   |
-| ------ | ----------------------- | ------------------------ |
-| RETA   | `NEOGEN_RETA.glb`       | **in repository**        |
-| GLOW   | same vial + GLOW label  | pending                  |
-| GHK-Cu | same vial + GHK-Cu label| pending                  |
+```ts
+glow: {
+  model: "/models/glow.glb",
+},
+```
 
-## Conventions
+A model is **media, keyed by product**, not a property of an Experience world.
+That is why GLOW and GHK-Cu have worlds — full amber and copper environments —
+without a GLB, and why their product pages open in those environments with the
+static plate rather than an empty canvas.
 
-- Paths are declared in `src/config/worlds.ts` (`modelPath`), never hard-coded
-  in components.
-- Files here are served with a one-year immutable cache header
-  (see `next.config.ts`). **Version the filename when an asset changes.**
-- Web code owns camera, lighting, environment, positioning, scroll response,
-  responsive behaviour, performance and fallbacks. The GLB supplies geometry
-  and materials only.
-- Every world must also have a poster still for the loading state and the
-  no-3D / reduced-motion fallback. Declare it in `src/content/media.ts` under
-  `poster`, not as a bare path in a component.
-- Blender polish is explicitly **not** an MVP blocker. MVP-quality assets are
-  expected and acceptable.
+Declaring a model turns on the live viewer, the cursor-responsive hint and the
+card's hover preload for that product. Nothing else has to change.
+
+Pair it with a `poster` entry once a still has been captured from the settled
+scene: the poster is what paints while the GLB is in flight and what stands in
+for anyone without WebGL or with reduced motion.
+
+## Budget
+
+Keep exports under ~500 KB. `reta.glb` is ~385 KB. They are served with a
+one-year immutable cache header (`next.config.ts`), so version the filename
+when the geometry changes.

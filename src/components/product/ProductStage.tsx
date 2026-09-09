@@ -8,6 +8,7 @@ import { useVialStage } from "@/components/experience/useVialStage";
 import { VialFallback } from "@/components/experience/VialFallback";
 import type { PointerState, StageAnchor } from "@/components/experience/VialModel";
 import { Mono } from "@/components/typography";
+import type { ProductImage } from "@/content";
 import type { WorldEnvironment, WorldId } from "@/config/worlds";
 import { useFinePointer } from "@/hooks/useFinePointer";
 
@@ -26,7 +27,9 @@ interface ProductStageProps {
   world: WorldId;
   modelPath: string | null;
   environment: WorldEnvironment;
-  posterPath: string | null;
+  /** The rendered still, from `content/media`. */
+  poster: ProductImage | null;
+  /** Accessible name for the object, used by the frame and by the diagram. */
   posterAlt: string;
   loadingLabel: string;
   staticLabel: string;
@@ -67,7 +70,7 @@ export function ProductStage({
   world,
   modelPath,
   environment,
-  posterPath,
+  poster,
   posterAlt,
   loadingLabel,
   staticLabel,
@@ -177,7 +180,7 @@ export function ProductStage({
 
   const fallback = (
     <div className={styles.mediaWell}>
-      <VialFallback posterPath={posterPath} posterAlt={posterAlt} label={staticLabel} />
+      <VialFallback poster={poster} diagramLabel={posterAlt} label={staticLabel} />
     </div>
   );
 
@@ -199,8 +202,8 @@ export function ProductStage({
               fallback={
                 <div className={styles.mediaWell}>
                   <VialFallback
-                    posterPath={posterPath}
-                    posterAlt={posterAlt}
+                    poster={poster}
+                    diagramLabel={posterAlt}
                     label={loadingLabel}
                     loading
                   />

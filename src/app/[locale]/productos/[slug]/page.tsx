@@ -7,7 +7,7 @@ import { Body } from "@/components/typography";
 import { DocumentLedger, ProductCard, TextLink } from "@/components/ui";
 import { routes } from "@/config/routes";
 import { getWorld } from "@/config/worlds";
-import { documentFile, documentKinds } from "@/content";
+import { documentFile, documentKinds, productMedia } from "@/content";
 import {
   formatStrength,
   getProduct,
@@ -20,7 +20,7 @@ import { isLocale, localeTags } from "@/i18n/config";
 import { getDictionary } from "@/i18n/getDictionary";
 import { localizePath } from "@/i18n/routing";
 import { alternates } from "@/lib/alternates";
-import { fillTemplate, presentationSummary } from "@/lib/meta";
+import { fillTemplate, presentationSummary, socialMetadata } from "@/lib/meta";
 
 import type { Metadata } from "next";
 
@@ -62,11 +62,29 @@ export async function generateMetadata({
     presentations: presentationSummary(product.variants.map((v) => formatStrength(v.strength))),
   });
 
+  /*
+   * THE SOCIAL CARD USES A PHOTOGRAPH OR THE BRAND CARD — never the diagram.
+   *
+   * Where a product has real primary media, that becomes its share image: one
+   * asset, registered once, reaching the card, the page and the link preview.
+   * Where it does not, `socialMetadata` falls back to the locale's generated
+   * brand card.
+   *
+   * The DIAGRAM is deliberately not a candidate. On the page it sits in a
+   * framed plate that reads as a technical drawing; in a link preview it would
+   * arrive with no frame and no context, where it reads as a photograph of a
+   * product we have not photographed.
+   */
   return {
     title: product.name,
     description,
-    openGraph: { title: product.name, description },
-    twitter: { title: product.name, description },
+    ...socialMetadata({
+      locale,
+      path: routes.product(product.slug),
+      title: product.name,
+      description,
+      image: productMedia(product.slug).primary,
+    }),
     alternates: alternates(locale, routes.product(product.slug)),
   };
 }
@@ -98,8 +116,11 @@ export default async function ProductPage({
   const placeholder = dict.status.placeholder;
   const path = (to: string) => localizePath(to, locale);
 
-  /* Only the three flagships have an Experience world and a 3D viewer. */
+  /* Only the three flagships have an Experience world. Whether one also has a
+     3D viewer is a MEDIA question, not a world question: GLOW and GHK-Cu have
+     worlds and no model, and open in their environment with the static plate. */
   const world = product.world ? getWorld(product.world) : null;
+  const media = productMedia(product.slug);
 
   const commerce = await getPrices(product.variants.map((v) => v.id));
   const cheapest = product.variants
@@ -161,9 +182,11 @@ export default async function ProductPage({
         >
           <ProductStage
             world={world.id}
-            modelPath={world.modelPath}
+            /* Assets come from the media layer, keyed by this product's slug —
+               the same lookup the card and the social card make. */
+            modelPath={media.model}
             environment={world.environment}
-            posterPath={world.posterPath}
+            poster={media.poster}
             posterAlt={dict.home.reta.vialAlt}
             loadingLabel={dict.home.reta.loadingLabel}
             staticLabel={dict.home.reta.staticLabel}
@@ -177,6 +200,7 @@ export default async function ProductPage({
         <Section mode="quiet" aria-label={product.name}>
           <Container width="full">
             <ProductPlate
+              slug={product.slug}
               mediaLabel={pdp.inspectionLabel}
               meta={dict.products.catalog.categoryLabels[product.category]}
             >
@@ -293,6 +317,7 @@ export default async function ProductPage({
                   }
                 >
                   <ProductCard
+                    slug={item.slug}
                     world={item.world}
                     worldLabel={item.world ? dict.home.products.worldLabels[item.world] : undefined}
                     eyebrow={dict.products.catalog.categoryLabels[item.category]}

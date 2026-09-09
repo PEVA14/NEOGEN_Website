@@ -311,6 +311,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 }
               >
                 <ProductCard
+                  slug={product.slug}
                   world={product.world}
                   worldLabel={product.world ? home.products.worldLabels[product.world] : undefined}
                   name={product.name}

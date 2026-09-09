@@ -10,6 +10,7 @@ import { formatStrength, publishedProducts } from "@/data/catalog";
 import { formatPrice, getPrices } from "@/data/commerce";
 import { getDictionary } from "@/i18n/getDictionary";
 import { alternates } from "@/lib/alternates";
+import { socialMetadata } from "@/lib/meta";
 import { localizePath } from "@/i18n/routing";
 
 import type { Metadata } from "next";
@@ -26,8 +27,12 @@ export async function generateMetadata({
   return {
     title: dict.research.title,
     description,
-    openGraph: { title: dict.research.title, description },
-    twitter: { title: dict.research.title, description },
+    ...socialMetadata({
+      locale,
+      path: routes.research,
+      title: dict.research.title,
+      description,
+    }),
     alternates: alternates(locale, routes.research),
   };
 }

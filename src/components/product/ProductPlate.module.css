@@ -67,6 +67,13 @@
   border-inline-start: 0;
 }
 
+/* Fills the plate exactly, so the registration marks stay on the image edge. */
+.photo {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
 .silhouette {
   block-size: 62%;
   inline-size: auto;

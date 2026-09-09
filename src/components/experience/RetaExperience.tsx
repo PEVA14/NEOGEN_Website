@@ -1,6 +1,7 @@
 import { Section } from "@/components/primitives";
 import { Body, Display, Eyebrow, Mono } from "@/components/typography";
 import { getWorld } from "@/config/worlds";
+import { mediaForWorld } from "@/content";
 
 import { RetaStage } from "./RetaStage";
 import styles from "./RetaExperience.module.css";
@@ -38,6 +39,7 @@ export interface RetaExperienceCopy {
  */
 export function RetaExperience({ copy }: { copy: RetaExperienceCopy }) {
   const world = getWorld("reta");
+  const media = mediaForWorld("reta");
 
   return (
     <Section
@@ -68,9 +70,9 @@ export function RetaExperience({ copy }: { copy: RetaExperienceCopy }) {
       </noscript>
 
       <RetaStage
-        modelPath={world.modelPath}
+        modelPath={media.model}
         environment={world.environment}
-        posterPath={world.posterPath}
+        poster={media.poster}
         posterAlt={copy.vialAlt}
         loadingLabel={copy.loadingLabel}
         staticLabel={copy.staticLabel}

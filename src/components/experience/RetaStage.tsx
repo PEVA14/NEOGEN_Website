@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { Suspense, useCallback, useRef, useState, type ReactNode } from "react";
 
 import type { WorldEnvironment } from "@/config/worlds";
+import type { ProductImage } from "@/content";
 import { useSectionProgress } from "@/hooks/useSectionProgress";
 
 import { CanvasErrorBoundary } from "./CanvasErrorBoundary";
@@ -22,7 +23,9 @@ const RetaCanvas = dynamic(() => import("./RetaCanvas"), { ssr: false });
 interface RetaStageProps {
   modelPath: string | null;
   environment: WorldEnvironment;
-  posterPath: string | null;
+  /** The rendered still, from `content/media`. */
+  poster: ProductImage | null;
+  /** Accessible name for the object, used by the frame and by the diagram. */
   posterAlt: string;
   loadingLabel: string;
   staticLabel: string;
@@ -48,7 +51,7 @@ interface RetaStageProps {
 export function RetaStage({
   modelPath,
   environment,
-  posterPath,
+  poster,
   posterAlt,
   loadingLabel,
   staticLabel,
@@ -72,9 +75,7 @@ export function RetaStage({
 
   const progress = useSectionProgress(track, { mode: "pinned", onSample });
 
-  const fallback = (
-    <VialFallback posterPath={posterPath} posterAlt={posterAlt} label={staticLabel} />
-  );
+  const fallback = <VialFallback poster={poster} diagramLabel={posterAlt} label={staticLabel} />;
 
   return (
     <div ref={track} className={styles.track} data-tier={tier}>
@@ -97,8 +98,8 @@ export function RetaStage({
               <Suspense
                 fallback={
                   <VialFallback
-                    posterPath={posterPath}
-                    posterAlt={posterAlt}
+                    poster={poster}
+                    diagramLabel={posterAlt}
                     label={loadingLabel}
                     loading
                   />

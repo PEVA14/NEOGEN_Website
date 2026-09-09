@@ -11,6 +11,8 @@ import styles from "./CatalogBrowser.module.css";
 export interface CatalogProduct {
   id: string;
   index: string;
+  /** Identity key — drives the media lookup as well as the link. */
+  slug: string;
   name: string;
   category: string;
   categoryLabel: string;
@@ -246,6 +248,7 @@ export function CatalogBrowser({
           {results.map((product) => (
             <div key={product.id} className={styles.cell}>
               <ProductCard
+                slug={product.slug}
                 world={product.world}
                 worldLabel={product.worldLabel}
                 eyebrow={product.categoryLabel}

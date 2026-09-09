@@ -20,13 +20,18 @@
  *
  * `dataAttribute` went with them: it was always identical to `id`, so it was a
  * second name for the same value that could only ever disagree by mistake.
+ *
+ * `modelPath` and `posterPath` went the same way, to `src/content/media`. A
+ * GLB depicts a PRODUCT, not an art direction — which is why GLOW and GHK-Cu
+ * had to carry `modelPath: null` to say "this world exists but has no object".
+ * Media is keyed by slug now, and a world is purely an environment again.
  */
 
 export const worldIds = ["reta", "glow", "ghk-cu"] as const;
 
 export type WorldId = (typeof worldIds)[number];
 
-/** Camera/lighting intent consumed by the Phase 2 3D layer. */
+/** Camera/lighting intent consumed by the 3D layer. */
 export interface WorldEnvironment {
   /** Dominant light temperature. Drives directional light colour in R3F. */
   lightTemperature: "cold" | "warm" | "neutral";
@@ -42,17 +47,6 @@ export interface ProductWorld {
   id: WorldId;
   /** Brand name — a proper noun, not translated copy. */
   label: string;
-  /**
-   * Path to the GLB under /public/models.
-   * MVP: all three share the same vial master with different labels.
-   *
-   * The web layer normalises whatever it is given — the model is recentred and
-   * scaled to a fixed height in `VialModel` — so an improved GLB can be dropped
-   * in later without re-tuning the camera.
-   */
-  modelPath: string | null;
-  /** Static image shown while the GLB loads, and as the no-3D fallback. */
-  posterPath: string | null;
   environment: WorldEnvironment;
 }
 
@@ -60,10 +54,6 @@ export const worlds: Record<WorldId, ProductWorld> = {
   reta: {
     id: "reta",
     label: "RETA",
-    modelPath: "/models/NEOGEN_RETA.glb",
-    // TODO(assets): a rendered still of this model. Until it exists the
-    // fallback draws a diagrammatic silhouette rather than fake product imagery.
-    posterPath: null,
     environment: {
       lightTemperature: "cold",
       keyLightIntensity: 0.85,
@@ -74,8 +64,6 @@ export const worlds: Record<WorldId, ProductWorld> = {
   glow: {
     id: "glow",
     label: "GLOW",
-    modelPath: null, // MVP reuses the RETA vial with a GLOW label.
-    posterPath: null,
     environment: {
       lightTemperature: "warm",
       keyLightIntensity: 0.7,
@@ -86,8 +74,6 @@ export const worlds: Record<WorldId, ProductWorld> = {
   "ghk-cu": {
     id: "ghk-cu",
     label: "GHK-Cu",
-    modelPath: null, // MVP reuses the RETA vial with a GHK-Cu label.
-    posterPath: null,
     environment: {
       lightTemperature: "neutral",
       keyLightIntensity: 0.75,

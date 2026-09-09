@@ -172,14 +172,41 @@ lifecycles**, and nothing may collapse them:
   build step. It reads a gitignored private document and emits
   `generated.ts` — supplier codes and supplier cost never reach the output.
 
+### Product media
+
+Media is a **content layer keyed by product slug**, separate from the catalogue
+registry. The catalogue says what a product is; `src/content/media` says what it
+looks like. They have different lifecycles, and merging them would mean
+regenerating supplier-derived data every time a photograph arrives.
+
+- **One lookup drives every surface.** The catalogue card, the product page
+  plate, the flagship 3D stage and the social card all resolve through
+  `productMedia(slug)` / `stillMedia(slug)`. There is no second convention and
+  no per-page path.
+- **A GLB is media, not a world.** Models live under the product's slug, not in
+  `config/worlds.ts` — which is why GLOW and GHK-Cu can have full Experience
+  environments and no 3D object.
+- **`alt` is required and `width`/`height` are the file's real pixels.**
+  `npm run check:media` reads the dimensions back off the file, so a mistyped
+  size is caught rather than shipped as a layout shift.
+- **The diagram never becomes a social card.** `VialSilhouette` is a deliberate,
+  visibly non-photographic fallback. In a link preview it would arrive with no
+  frame and read as a product shot.
+- Files go in `public/images/products/<slug>/`, models in
+  `public/models/<slug>.glb`. See `public/images/README.md`.
+
 ### The checks
 
-Two scripts guard the invariants that have actually broken before. Both run
+Three scripts guard the invariants that have actually broken before. All run
 in `npm run check`:
 
 - `npm run check:catalog` — imports the real registry and asserts slug and
   variant-id uniqueness, price validity and ordering, derived publishability,
   and that the catalogue, the sitemap and the prerendered routes agree.
+- `npm run check:media` — asserts every declared asset resolves to a real file
+  of a supported type, that its slug is a real product, that alt text is
+  present, that declared dimensions match the file, and that no file is
+  declared in two roles.
 - `npm run check:output` — reads the build and asserts that no supplier term
   or catalogue code appears in anything the browser can fetch, that no
   prototype language is visible to a reader, that no non-public env var is

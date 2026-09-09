@@ -7,10 +7,17 @@ import { useRef } from "react";
 import { Body, Heading, Mono } from "@/components/typography";
 import { VialSilhouette } from "@/components/ui/VialSilhouette";
 import { WorldDot } from "@/components/ui/WorldDot";
-import { getWorld, type WorldId } from "@/config/worlds";
-import { productMedia } from "@/content";
+import type { WorldId } from "@/config/worlds";
+import { CARD_SIZES, productMedia, stillMedia } from "@/content";
 
 interface ProductCardProps {
+  /**
+   * The product's slug — its identity everywhere else in the system, and the
+   * key its media is resolved by. The card used to look media up by WORLD,
+   * which meant the 83 products without one could never show a photograph at
+   * all, however many were shot.
+   */
+  slug: string;
   /**
    * The product's Experience world, when it has one.
    *
@@ -60,6 +67,7 @@ interface ProductCardProps {
  * lands on a warm cache rather than a cold one. See `experience/preloadVial.ts`.
  */
 export function ProductCard({
+  slug,
   world,
   worldLabel,
   name,
@@ -70,7 +78,7 @@ export function ProductCard({
   headingLevel = 3,
 }: ProductCardProps) {
   const warmed = useRef(false);
-  const image = world ? productMedia(world).card : null;
+  const still = stillMedia(slug);
 
   /*
    * WARM THE DESTINATION ON INTENT.
@@ -91,16 +99,13 @@ export function ProductCard({
       .connection;
     if (connection?.saveData) return;
 
-    // Only the flagships have a 3D viewer worth warming.
-    if (!world) return;
-    const target = getWorld(world);
-    if (!target.modelPath) return;
+    // Only products with a model have a viewer worth warming — one, today.
+    const model = productMedia(slug).model;
+    if (!model) return;
 
     warmed.current = true;
     void import("@/components/experience/RetaCanvas");
-    void import("@/components/experience/preloadVial").then((module) =>
-      module.preloadVial(target.modelPath as string),
-    );
+    void import("@/components/experience/preloadVial").then((module) => module.preloadVial(model));
   };
 
   return (
@@ -111,25 +116,29 @@ export function ProductCard({
       {/*
        * Image area — the one place product identity is allowed to take over.
        *
-       * Reads `content/media`. With a photograph it shows the photograph; with
-       * none it shows a diagrammatic silhouette and says so, which is honest
-       * about being a placeholder rather than impersonating product imagery.
-       * The label is dropped once a real image is in: "image pending" over an
-       * actual photograph would be a lie the layout tells.
+       * Resolved by SLUG through `stillMedia`, the same call the product page
+       * makes — so a photograph cannot appear in the catalogue and be missing
+       * on the page it links to.
+       *
+       * The box is a fixed 4:5 whether or not an image exists, so a product
+       * that gains one does not reflow the grid around it.
        */}
       <div
         data-world={world ?? undefined}
         data-atmosphere={world ? "true" : undefined}
         className="relative flex aspect-4/5 items-center justify-center overflow-hidden"
       >
-        {image ? (
+        {still.kind === "image" ? (
           <Image
-            src={image.src}
-            alt={image.alt}
-            width={image.width}
-            height={image.height}
+            src={still.image.src}
+            alt={still.image.alt}
+            width={still.image.width}
+            height={still.image.height}
             className="size-full object-cover"
-            sizes="(min-width: 48rem) 33vw, 100vw"
+            sizes={CARD_SIZES}
+            /* Cards are below the fold on every surface that uses them, and a
+               catalogue page holds 83 of them. Never `priority`. */
+            loading="lazy"
           />
         ) : (
           /* No caption. The silhouette is already visibly diagrammatic; a label

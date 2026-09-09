@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { Suspense, useRef } from "react";
 
 import type { WorldEnvironment } from "@/config/worlds";
+import type { ProductImage } from "@/content";
 import { useSectionProgress } from "@/hooks/useSectionProgress";
 
 import { CanvasErrorBoundary } from "./CanvasErrorBoundary";
@@ -16,7 +17,9 @@ const RetaCanvas = dynamic(() => import("./RetaCanvas"), { ssr: false });
 interface HeroStageProps {
   modelPath: string | null;
   environment: WorldEnvironment;
-  posterPath: string | null;
+  /** The rendered still, from `content/media`. */
+  poster: ProductImage | null;
+  /** Accessible name for the object, used by the frame and by the diagram. */
   posterAlt: string;
   loadingLabel: string;
   staticLabel: string;
@@ -37,7 +40,7 @@ interface HeroStageProps {
 export function HeroStage({
   modelPath,
   environment,
-  posterPath,
+  poster,
   posterAlt,
   loadingLabel,
   staticLabel,
@@ -49,9 +52,7 @@ export function HeroStage({
   // would start it half-way along its own track before the user has scrolled.
   const progress = useSectionProgress(stage, { mode: "exit" });
 
-  const fallback = (
-    <VialFallback posterPath={posterPath} posterAlt={posterAlt} label={staticLabel} />
-  );
+  const fallback = <VialFallback poster={poster} diagramLabel={posterAlt} label={staticLabel} />;
 
   return (
     <div
@@ -66,12 +67,7 @@ export function HeroStage({
         <CanvasErrorBoundary fallback={fallback}>
           <Suspense
             fallback={
-              <VialFallback
-                posterPath={posterPath}
-                posterAlt={posterAlt}
-                label={loadingLabel}
-                loading
-              />
+              <VialFallback poster={poster} diagramLabel={posterAlt} label={loadingLabel} loading />
             }
           >
             <RetaCanvas

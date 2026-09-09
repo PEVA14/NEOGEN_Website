@@ -9,7 +9,7 @@ import { formatPrice, getPrices } from "@/data/commerce";
 import { isLocale, localeTags } from "@/i18n/config";
 import { getDictionary } from "@/i18n/getDictionary";
 import { alternates } from "@/lib/alternates";
-import { fillTemplate } from "@/lib/meta";
+import { fillTemplate, socialMetadata } from "@/lib/meta";
 import { localizePath } from "@/i18n/routing";
 
 import type { Metadata } from "next";
@@ -28,8 +28,12 @@ export async function generateMetadata({
   return {
     title: dict.products.catalog.title,
     description,
-    openGraph: { title: dict.products.catalog.title, description },
-    twitter: { title: dict.products.catalog.title, description },
+    ...socialMetadata({
+      locale,
+      path: routes.products,
+      title: dict.products.catalog.title,
+      description,
+    }),
     alternates: alternates(locale, routes.products),
   };
 }
@@ -76,6 +80,7 @@ export default async function ProductsPage({ params }: { params: Promise<{ local
     return {
       id: product.id,
       index: String(position + 1).padStart(2, "0"),
+      slug: product.slug,
       name: product.name,
       category: product.category,
       categoryLabel: catalog.categoryLabels[product.category] ?? product.category,
