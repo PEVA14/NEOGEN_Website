@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { AriaAttributes, ReactNode } from "react";
 
 import type { DOMTag } from "@/types/polymorphic";
 
@@ -28,13 +28,33 @@ const toneClass: Record<Tone, string> = {
   accent: "text-(--accent)",
 };
 
-interface BaseProps {
+/**
+ * ARIA passes through; everything else does not.
+ *
+ * These primitives used to accept exactly `children/size/tone/as/id/className`
+ * and render only `id` and `className`. Anything else was accepted at the call
+ * site and then silently dropped on the way to the DOM — which cost three real
+ * accessibility features:
+ *
+ *   - the catalogue's result count carried `aria-live="polite"` and was never
+ *     announced, so filtering changed the page silently;
+ *   - two decorative index numerals carried `aria-hidden="true"` and were read
+ *     out as content.
+ *
+ * ARIA is forwarded because it is the one class of attribute a text primitive
+ * genuinely needs and can never express through `size`/`tone`. The prop list
+ * stays otherwise closed: these are typographic primitives, not `div`s, and
+ * opening them to arbitrary DOM props is how a design system stops being one.
+ */
+interface BaseProps extends AriaAttributes {
   children: ReactNode;
   size?: Size;
   tone?: Tone;
   as?: DOMTag;
   id?: string;
   className?: string;
+  /** Only where the element's implicit role is wrong — e.g. `role="status"`. */
+  role?: string;
 }
 
 /**
@@ -48,9 +68,14 @@ export function Display({
   as: Tag = "h1",
   id,
   className,
+  ...aria
 }: BaseProps) {
   return (
-    <Tag id={id} className={cn("neogen-display", sizeClass[size], toneClass[tone], className)}>
+    <Tag
+      id={id}
+      className={cn("neogen-display", sizeClass[size], toneClass[tone], className)}
+      {...aria}
+    >
       {children}
     </Tag>
   );
@@ -70,10 +95,15 @@ export function Heading({
   tone = "primary",
   id,
   className,
+  ...aria
 }: Omit<BaseProps, "as"> & { level?: 1 | 2 | 3 | 4 | 5 | 6 }) {
   const Tag = `h${level}` as DOMTag;
   return (
-    <Tag id={id} className={cn("neogen-heading", sizeClass[size], toneClass[tone], className)}>
+    <Tag
+      id={id}
+      className={cn("neogen-heading", sizeClass[size], toneClass[tone], className)}
+      {...aria}
+    >
       {children}
     </Tag>
   );
@@ -86,9 +116,14 @@ export function Body({
   as: Tag = "p",
   id,
   className,
+  ...aria
 }: BaseProps) {
   return (
-    <Tag id={id} className={cn("neogen-body", sizeClass[size], toneClass[tone], className)}>
+    <Tag
+      id={id}
+      className={cn("neogen-body", sizeClass[size], toneClass[tone], className)}
+      {...aria}
+    >
       {children}
     </Tag>
   );
@@ -102,18 +137,29 @@ export function Mono({
   as: Tag = "span",
   id,
   className,
+  ...aria
 }: BaseProps) {
   return (
-    <Tag id={id} className={cn("neogen-mono", sizeClass[size], toneClass[tone], className)}>
+    <Tag
+      id={id}
+      className={cn("neogen-mono", sizeClass[size], toneClass[tone], className)}
+      {...aria}
+    >
       {children}
     </Tag>
   );
 }
 
 /** Small capitalised label above a heading. */
-export function Eyebrow({ children, as: Tag = "p", id, className }: Omit<BaseProps, "size">) {
+export function Eyebrow({
+  children,
+  as: Tag = "p",
+  id,
+  className,
+  ...aria
+}: Omit<BaseProps, "size">) {
   return (
-    <Tag id={id} className={cn("neogen-eyebrow", className)}>
+    <Tag id={id} className={cn("neogen-eyebrow", className)} {...aria}>
       {children}
     </Tag>
   );

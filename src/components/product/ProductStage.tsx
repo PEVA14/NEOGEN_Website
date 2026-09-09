@@ -82,6 +82,17 @@ export function ProductStage({
   const { tier, reducedMotion, palette, canRender3D } = useVialStage(stage, { modelPath });
   const finePointer = useFinePointer();
 
+  /*
+   * Whether a live viewer will actually mount.
+   *
+   * Only RETA has a GLB; GLOW and GHK-Cu fall back to the static plate. The
+   * cursor hint used to be gated on the POINTER alone, so both of those pages
+   * told a mouse user the view responds to the cursor while showing a flat
+   * silhouette that does not. A hint for an interaction that is not there is
+   * worse than no hint.
+   */
+  const viewer = canRender3D && modelPath && palette ? { modelPath, palette } : null;
+
   /**
    * Where the object sits, measured rather than assumed — and expressed
    * relative to the CANVAS, not the window, so it survives the page scrolling
@@ -182,7 +193,7 @@ export function ProductStage({
        * respond to the cursor across.
        */}
       <div ref={canvasLayer} className={styles.canvasLayer} role="img" aria-label={posterAlt}>
-        {canRender3D && modelPath && palette ? (
+        {viewer ? (
           <CanvasErrorBoundary fallback={fallback}>
             <Suspense
               fallback={
@@ -198,9 +209,9 @@ export function ProductStage({
             >
               <RetaCanvas
                 fill
-                modelPath={modelPath}
+                modelPath={viewer.modelPath}
                 environment={environment}
-                palette={palette}
+                palette={viewer.palette}
                 progress={restingProgress}
                 reducedMotion={reducedMotion}
                 tier={tier}
@@ -230,10 +241,13 @@ export function ProductStage({
             <Mono size="2xs" className={styles.captionLabel}>
               {mediaLabel}
             </Mono>
-            {/* Pure-CSS gate: shown only where a cursor exists to respond to. */}
-            <Mono size="2xs" className={styles.viewerHint}>
-              {viewerHint}
-            </Mono>
+            {/* Two gates: a live viewer to respond, and (in CSS) a cursor to
+                respond to. */}
+            {viewer ? (
+              <Mono size="2xs" className={styles.viewerHint}>
+                {viewerHint}
+              </Mono>
+            ) : null}
           </div>
         </div>
 

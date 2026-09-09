@@ -21,7 +21,7 @@ import {
   TextLink,
 } from "@/components/ui";
 import { routes } from "@/config/routes";
-import { getWorld, worldIds, type WorldId } from "@/config/worlds";
+import { worldIds, type WorldId } from "@/config/worlds";
 import { isLocale, localeTags } from "@/i18n/config";
 import { formatStrength, isPublishable, products } from "@/data/catalog";
 import { formatPrice, getPrices } from "@/data/commerce";
@@ -79,24 +79,32 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   const reta = home.reta;
   /*
-   * "From" price per flagship, batched. `getPrices` resolves locally today and
-   * over a network later; the call shape does not change.
+   * THE FLAGSHIPS, FROM THE REGISTRY.
+   *
+   * This section used to iterate `worldIds` and read names and slugs off
+   * `config/worlds` — a second source of truth for product identity, which the
+   * world config's own header forbids ("no product claims, prices, specs or
+   * availability here"). A world is a property some products have; it is not
+   * where products live. Iterating the registry means a flagship that loses
+   * its world, changes its name or becomes unpublishable cannot leave a stale
+   * card behind.
+   *
+   * "From" prices are batched through `getPrices`, which resolves locally today
+   * and over a network later; the call shape does not change.
    */
-  const flagshipVariants = products
-    .filter((p) => p.world)
-    .flatMap((p) => p.variants.map((v) => v.id));
-  const priceMap = await getPrices(flagshipVariants);
-  const relatedPrices = new Map(
-    products
-      .filter((p) => p.world)
-      .map((p) => {
-        const cheapest = p.variants
-          .map((v) => priceMap.get(v.id))
-          .filter((m): m is NonNullable<typeof m> => Boolean(m))
-          .sort((a, b) => a.amount - b.amount)[0];
-        return [p.world as string, cheapest ? formatPrice(cheapest, localeTags[locale]) : null];
-      }),
-  );
+  const flagships = worldIds
+    .map((id) => products.find((product) => product.world === id && isPublishable(product)))
+    .filter((product): product is NonNullable<typeof product> => Boolean(product));
+
+  const priceMap = await getPrices(flagships.flatMap((p) => p.variants.map((v) => v.id)));
+  const fromPrice = (product: (typeof flagships)[number]) => {
+    const cheapest = product.variants
+      .map((v) => priceMap.get(v.id))
+      .filter((m): m is NonNullable<typeof m> => Boolean(m))
+      .sort((a, b) => a.amount - b.amount)[0];
+    return cheapest ? formatPrice(cheapest, localeTags[locale]) : null;
+  };
+  const relatedPrices = new Map(flagships.map((p) => [p.world as WorldId, fromPrice(p)]));
 
   /*
    * The Experience rails used to carry three unfillable fields each — purity,
@@ -105,7 +113,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
    * what the catalogue actually knows.
    */
   const railFor = (world: WorldId) => {
-    const p = products.find((item) => item.world === world);
+    const p = flagships.find((item) => item.world === world);
     if (!p) return [];
     const from = relatedPrices.get(world);
     return [
@@ -198,9 +206,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       <GlowMoment copy={glowCopy} />
 
       {/*
-       * 06 — Quiet. The compound index, drawn from catalogue configuration.
-       * Codes, document counts and article counts are placeholders: the
-       * register shows real structure without claiming content it lacks.
+       * 06 — Quiet. The compound register, drawn from the product registry.
+       * Category and presentation count are facts; documentation is the one
+       * genuinely unknown field, and it is the only one that says "pending".
        */}
       <Section mode="quiet" aria-labelledby="research-title">
         <Container width="full">
@@ -214,28 +222,35 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           />
           <ul>
             <CompoundIndexHead columns={[...home.research.columns]} />
-            {worldIds.map((id, index) => (
+            {flagships.map((product, index) => (
               <CompoundRow
-                key={id}
+                key={product.id}
                 index={String(index + 1).padStart(2, "0")}
-                world={id}
-                worldLabel={home.products.worldLabels[id]}
-                name={getWorld(id).productName}
-                /* Real values where the catalogue now supplies them. Only
-                   documentation remains genuinely unknown. */
+                world={product.world}
+                worldLabel={
+                  product.world
+                    ? home.products.worldLabels[product.world]
+                    : dict.products.catalog.categoryLabels[product.category]
+                }
+                name={product.name}
+                href={path(routes.product(product.slug))}
+                /*
+                 * Every value is read off the registry except documentation,
+                 * which is genuinely unknown and says so. The row previously
+                 * put the category under "Código" and the VARIANT COUNT under
+                 * "Artículos" — reading, for RETA, as "7 articles", of which
+                 * zero exist.
+                 */
                 fields={[
                   {
-                    key: home.research.fields.code,
-                    value:
-                      dict.products.catalog.categoryLabels[
-                        products.find((p) => p.world === id)?.category ?? "peptides"
-                      ],
+                    key: home.research.fields.category,
+                    value: dict.products.catalog.categoryLabels[product.category],
+                  },
+                  {
+                    key: home.research.fields.presentations,
+                    value: String(product.variants.length),
                   },
                   { key: home.research.fields.documentation, value: dict.status.pending },
-                  {
-                    key: home.research.fields.articles,
-                    value: String(products.find((p) => p.world === id)?.variants.length ?? 0),
-                  },
                 ]}
               />
             ))}
@@ -287,26 +302,20 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
            * been working to avoid.
            */}
           <Grid className="items-start">
-            {worldIds.map((id, position) => (
+            {flagships.map((product, position) => (
               <div
-                key={id}
+                key={product.id}
                 className={
                   "col-span-12 md:col-span-4 " +
                   ["", "md:mt-(--space-2xl)", "md:mt-(--space-4xl)"][position]
                 }
               >
                 <ProductCard
-                  world={id}
-                  worldLabel={home.products.worldLabels[id]}
-                  name={getWorld(id).productName}
-                  // Deep-link where a product page exists; otherwise the
-                  // catalogue, so no card points at a 404.
-                  href={
-                    products.some((p) => p.world === id && isPublishable(p))
-                      ? path(routes.product(getWorld(id).slug))
-                      : path(routes.products)
-                  }
-                  price={relatedPrices.get(id) ?? null}
+                  world={product.world}
+                  worldLabel={product.world ? home.products.worldLabels[product.world] : undefined}
+                  name={product.name}
+                  href={path(routes.product(product.slug))}
+                  price={fromPrice(product)}
                   ctaLabel={home.products.cta}
                 />
               </div>

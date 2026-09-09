@@ -21,13 +21,20 @@ interface SiteFooterProps {
  * Follows the reference structure: oversized wordmark, italic tagline, a 1px
  * rule, then a five-column link grid, then a legal bar.
  *
- * WHAT IS DELIBERATELY ABSENT: the reference footer lists a service area
- * ("GUADALAJARA · DURANGO · NACIONAL") and links for cold shipping and
- * preservation protocols. Those are unverified business facts —
- * `siteConfig.tbd.sameDayDeliveryCities` and `nationalCourier` are explicitly
- * `null` — so presenting them as fact would be exactly the fabrication
- * CONVENTIONS §8 forbids. The column renders a neutral pending note instead,
- * and the real values drop in when they are confirmed.
+ * WHAT IS DELIBERATELY ABSENT, AND WHY IT IS ABSENT RATHER THAN PENDING.
+ * ---------------------------------------------------------------------
+ * The reference footer lists a service area ("GUADALAJARA · DURANGO ·
+ * NACIONAL") and a legal column. Both are unverified business facts —
+ * `siteConfig.tbd.sameDayDeliveryCities`, `nationalCourier` and the legal
+ * documents that have not been written — so stating them would be the
+ * fabrication CONVENTIONS §8 forbids.
+ *
+ * They used to render as "Zona de servicio: Por definir" and a Legal column
+ * containing the words "Por definir". That is worse than either alternative:
+ * it puts an internal to-do in front of a customer on all 176 pages, and a
+ * footer heading with no links under it reads as a broken build, not as
+ * candour. A field nobody can act on is removed; when the values are
+ * confirmed, the field returns with them.
  */
 export function SiteFooter({ locale, dict }: SiteFooterProps) {
   const columns = [
@@ -73,10 +80,6 @@ export function SiteFooter({ locale, dict }: SiteFooterProps) {
             <Body size="sm" className={styles.about}>
               {dict.footer.about}
             </Body>
-            {/* Service area is an unverified business fact — see the note above. */}
-            <Mono size="2xs" className={styles.pending}>
-              {dict.footer.serviceArea}: {dict.status.tbd}
-            </Mono>
           </div>
 
           {columns.map((column) => (
@@ -95,17 +98,6 @@ export function SiteFooter({ locale, dict }: SiteFooterProps) {
               </ul>
             </nav>
           ))}
-
-          <div className={styles.column}>
-            <Mono size="2xs" className={styles.heading}>
-              {dict.footer.columns.legal}
-            </Mono>
-            {/* No Terms, Privacy or compliance pages exist. Listing them would
-                imply legal documents that have not been written or reviewed. */}
-            <Mono size="2xs" className={styles.pending}>
-              {dict.status.tbd}
-            </Mono>
-          </div>
         </div>
 
         <div className={styles.rule} />

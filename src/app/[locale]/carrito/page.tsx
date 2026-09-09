@@ -24,7 +24,11 @@ export async function generateMetadata({
   const { locale } = await params;
   if (!isLocale(locale)) return {};
   const dict = await getDictionary(locale);
-  return { title: dict.cart.title, alternates: alternates(locale, routes.cart) };
+  return {
+    title: dict.cart.title,
+    description: dict.meta.descriptions.cart,
+    alternates: alternates(locale, routes.cart),
+  };
 }
 
 /**
@@ -38,9 +42,13 @@ export async function generateMetadata({
  *   1. states the count as an instrument reading rather than a sad message;
  *   2. says WHY the bag cannot be filled, so emptiness reads as the state of
  *      the site and not as a step the reader failed to complete;
- *   3. shows the order summary architecture, because that structure is real,
- *      is what checkout consumes, and is legible even while every amount in it
- *      is a placeholder.
+ *   3. shows NOTHING ELSE. The order summary used to render here on an empty
+ *      bag with PLACEHOLDER against subtotal, shipping, taxes and total,
+ *      beside a disabled "continue to payment". Four unknown amounts for an
+ *      order that does not exist is not architecture on display, it is
+ *      scaffolding — and a checkout button on an empty bag is blocked by the
+ *      emptiness before any processor question arises. The summary renders
+ *      when there is an order to summarise.
  *
  * WHAT IS DELIBERATELY ABSENT. There is no line-item renderer and no bag
  * drawer. Both would be components that can never render anything, and this
@@ -67,7 +75,7 @@ export default async function CartPage({ params }: { params: Promise<{ locale: s
           as="h1"
         />
 
-        <div className={styles.layout}>
+        <div className={styles.layout} data-empty={bag.count === 0 ? "true" : undefined}>
           <div className={styles.state}>
             {/*
              * The count as a readout: an oversized figure with a mono label
@@ -90,21 +98,24 @@ export default async function CartPage({ params }: { params: Promise<{ locale: s
             <TextLink href={path(routes.products)}>{cart.browse}</TextLink>
           </div>
 
-          <div className={styles.aside}>
-            <BagSummary copy={cart.summary} placeholder={dict.status.placeholder} />
+          {bag.count > 0 ? (
+            <div className={styles.aside}>
+              <BagSummary copy={cart.summary} placeholder={dict.status.placeholder} />
 
-            {/*
-             * Inert, and outlined rather than dimmed — the same treatment ADD TO
-             * BAG gets, so the two read as the same kind of "not yet" instead of
-             * two different failures. The reason names the actual blocker.
-             */}
-            <button type="button" className={styles.checkout} disabled>
-              {cart.checkout}
-            </button>
-            <Mono size="2xs" className={styles.pending}>
-              {cart.checkoutPending}
-            </Mono>
-          </div>
+              {/*
+               * Inert, and outlined rather than dimmed — the same treatment ADD
+               * TO BAG gets, so the two read as the same kind of "not yet"
+               * instead of two different failures. The reason names the actual
+               * blocker.
+               */}
+              <button type="button" className={styles.checkout} disabled>
+                {cart.checkout}
+              </button>
+              <Mono size="2xs" className={styles.pending}>
+                {cart.checkoutPending}
+              </Mono>
+            </div>
+          ) : null}
         </div>
       </Container>
     </Section>

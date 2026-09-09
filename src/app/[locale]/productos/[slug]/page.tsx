@@ -20,6 +20,7 @@ import { isLocale, localeTags } from "@/i18n/config";
 import { getDictionary } from "@/i18n/getDictionary";
 import { localizePath } from "@/i18n/routing";
 import { alternates } from "@/lib/alternates";
+import { fillTemplate, presentationSummary } from "@/lib/meta";
 
 import type { Metadata } from "next";
 
@@ -49,8 +50,23 @@ export async function generateMetadata({
   const product = getProduct(slug);
   if (!product) return {};
 
+  const dict = await getDictionary(locale);
+  /*
+   * A description built from this product's own record. Without it every
+   * product page inherited the site-wide line, so 83 URLs per locale shared one
+   * search-result snippet.
+   */
+  const description = fillTemplate(dict.meta.descriptions.product, {
+    name: product.name,
+    classification: dict.products.catalog.categoryLabels[product.category],
+    presentations: presentationSummary(product.variants.map((v) => formatStrength(v.strength))),
+  });
+
   return {
     title: product.name,
+    description,
+    openGraph: { title: product.name, description },
+    twitter: { title: product.name, description },
     alternates: alternates(locale, routes.product(product.slug)),
   };
 }
@@ -160,7 +176,10 @@ export default async function ProductPage({
       ) : (
         <Section mode="quiet" aria-label={product.name}>
           <Container width="full">
-            <ProductPlate world={product.world} mediaLabel={pdp.inspectionLabel}>
+            <ProductPlate
+              mediaLabel={pdp.inspectionLabel}
+              meta={dict.products.catalog.categoryLabels[product.category]}
+            >
               {commercePanel}
             </ProductPlate>
           </Container>
@@ -180,12 +199,20 @@ export default async function ProductPage({
            * Real values where the catalogue supports them; the rows that only
            * a verified source can fill — storage, molecular mass, purity — are
            * not rendered at all rather than shown as placeholders.
+           *
+           * The category row is labelled CLASSIFICATION, not "Category". It is
+           * a merchandising bucket — four of them across the whole catalogue —
+           * and under a heading that says "Especificaciones del producto",
+           * "Categoría — Péptidos" reads as a statement about what the
+           * substance is. Several compounds filed under Péptidos are not
+           * peptides, so the label has to say that this is where the compound
+           * is filed, not what it is.
            */}
           <SpecTable
             rows={[
               { key: pdp.specifications.compound, value: product.name },
               {
-                key: pdp.specifications.category,
+                key: pdp.specifications.classification,
                 value: dict.products.catalog.categoryLabels[product.category],
               },
               {

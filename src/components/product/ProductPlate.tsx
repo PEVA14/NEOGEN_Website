@@ -1,7 +1,5 @@
 import { Mono } from "@/components/typography";
 import { VialSilhouette } from "@/components/ui";
-import { productMedia } from "@/content";
-import type { WorldId } from "@/config/worlds";
 
 import styles from "./ProductPlate.module.css";
 
@@ -21,30 +19,45 @@ import type { ReactNode } from "react";
  * not need, 86 bespoke environments.
  *
  * No photography exists yet, so the plate shows the diagrammatic silhouette.
- * `content/media` is the seam — one entry there turns this into a real image
- * and a thumbnail strip without touching this component's callers.
+ *
+ * THE SEAM FOR REAL PHOTOGRAPHY IS `content/media`, AND IT IS NOT WIRED HERE.
+ * ---------------------------------------------------------------------------
+ * This component used to take a `world` and look an image up by it. Every
+ * product that reaches this component has `world === null` by construction —
+ * the three that have one open in `ProductStage` instead — so the lookup could
+ * only ever return null and the image branch was unreachable. Worse, it aimed
+ * the seam at the wrong key: photography will arrive per PRODUCT, not per
+ * world, so `content/media` has to be keyed by slug before anything can be
+ * wired through it. Removing the dead branch leaves that decision visible
+ * instead of appearing to have been made.
  */
 export function ProductPlate({
-  world,
   mediaLabel,
+  meta,
   children,
 }: {
-  /** Present only where a product has one; drives the plate's tint. */
-  world: WorldId | null;
   mediaLabel: string;
+  /**
+   * The right-hand end of the caption rail — the compound's catalogue
+   * classification. The rail is a two-column rule (the flagship plate puts the
+   * cursor hint there), and with a single item it read as a stray label rather
+   * than as a specimen caption.
+   */
+  meta: string;
   children: ReactNode;
 }) {
-  const image = world ? productMedia(world).card : null;
-
   return (
     <div className={styles.plate}>
       <div className={styles.media}>
         <div className={styles.frame}>
-          {image ? null : <VialSilhouette className={styles.silhouette} />}
+          <VialSilhouette className={styles.silhouette} />
         </div>
         <div className={styles.caption}>
           <Mono size="2xs" className={styles.captionLabel}>
             {mediaLabel}
+          </Mono>
+          <Mono size="2xs" className={styles.captionMeta}>
+            {meta}
           </Mono>
         </div>
       </div>

@@ -292,8 +292,8 @@ export const generatedProducts: Product[] = [
     id: "tb500",
     slug: "tb500",
     name: "TB500",
-    category: "blends",
-    composition: "Thymosin B4 Acetate",
+    category: "peptides",
+    composition: null,
     world: null,
     variants: [
       {
@@ -426,8 +426,8 @@ export const generatedProducts: Product[] = [
     id: "hgh-high-quality",
     slug: "hgh-high-quality",
     name: "HGH High Quality",
-    category: "blends",
-    composition: "Somatropin",
+    category: "peptides",
+    composition: null,
     world: null,
     variants: [
       {
@@ -549,7 +549,7 @@ export const generatedProducts: Product[] = [
     slug: "glow",
     name: "GLOW Peptide Series",
     category: "blends",
-    composition: "GHK-CU 50mg+TB-500 10mg+BPC-157 10mg",
+    composition: "GHK-CU 50mg + TB-500 10mg + BPC-157 10mg",
     world: "glow",
     variants: [
       {
@@ -567,7 +567,7 @@ export const generatedProducts: Product[] = [
     slug: "klow",
     name: "KLOW",
     category: "blends",
-    composition: "BPC157 10+GHK-CU 50+TB500 10+KPV 10",
+    composition: "BPC157 10 + GHK-CU 50 + TB500 10 + KPV 10",
     world: null,
     variants: [
       {
@@ -703,15 +703,15 @@ export const generatedProducts: Product[] = [
     ],
   },
   {
-    id: "cjc-1295-whitout-dac",
-    slug: "cjc-1295-whitout-dac",
-    name: "CJC-1295 Whitout DAC",
+    id: "cjc-1295-without-dac",
+    slug: "cjc-1295-without-dac",
+    name: "CJC-1295 without DAC",
     category: "peptides",
     composition: null,
     world: null,
     variants: [
       {
-        id: "cjc-1295-whitout-dac-5mg",
+        id: "cjc-1295-without-dac-5mg",
         strength: {
           kind: "solid",
           mg: 5,
@@ -719,7 +719,7 @@ export const generatedProducts: Product[] = [
         vials: 10,
       },
       {
-        id: "cjc-1295-whitout-dac-10mg",
+        id: "cjc-1295-without-dac-10mg",
         strength: {
           kind: "solid",
           mg: 10,
@@ -729,15 +729,15 @@ export const generatedProducts: Product[] = [
     ],
   },
   {
-    id: "cjc-1295-without-dac",
-    slug: "cjc-1295-without-dac",
-    name: "CJC-1295 without DAC",
+    id: "cjc-1295-without-dac-ipamorelin",
+    slug: "cjc-1295-without-dac-ipamorelin",
+    name: "CJC-1295 without DAC + Ipamorelin",
     category: "blends",
-    composition: "5mg + Ipamorelin 5mg",
+    composition: null,
     world: null,
     variants: [
       {
-        id: "cjc-1295-without-dac-5-5mg",
+        id: "cjc-1295-without-dac-ipamorelin-5-5mg",
         strength: {
           kind: "blend",
           componentsMg: [5, 5],
@@ -745,7 +745,7 @@ export const generatedProducts: Product[] = [
         vials: 10,
       },
       {
-        id: "cjc-1295-without-dac-10-10mg",
+        id: "cjc-1295-without-dac-ipamorelin-10-10mg",
         strength: {
           kind: "blend",
           componentsMg: [10, 10],
@@ -874,14 +874,6 @@ export const generatedProducts: Product[] = [
         },
         vials: 10,
       },
-      {
-        id: "ghrp-2-acetate-5mg",
-        strength: {
-          kind: "solid",
-          mg: 5,
-        },
-        vials: 10,
-      },
     ],
   },
   {
@@ -892,6 +884,14 @@ export const generatedProducts: Product[] = [
     composition: null,
     world: null,
     variants: [
+      {
+        id: "ghrp-6-acetate-5mg",
+        strength: {
+          kind: "solid",
+          mg: 5,
+        },
+        vials: 10,
+      },
       {
         id: "ghrp-6-acetate-10mg",
         strength: {
@@ -1556,8 +1556,8 @@ export const generatedProducts: Product[] = [
     id: "slu-pp-332",
     slug: "slu-pp-332",
     name: "SLU-PP-332",
-    category: "blends",
-    composition: "Methonine 15mg choline Chloride 50mg",
+    category: "peptides",
+    composition: null,
     world: null,
     variants: [
       {
@@ -1610,7 +1610,7 @@ export const generatedProducts: Product[] = [
   {
     id: "b12-methylcobalamin-1mg",
     slug: "b12-methylcobalamin-1mg",
-    name: "B12(Methylcobalamin) 1mg",
+    name: "B12 (Methylcobalamin) 1mg",
     category: "peptides",
     composition: null,
     world: null,
@@ -1646,47 +1646,13 @@ export const generatedProducts: Product[] = [
   {
     id: "lemon-bottle",
     slug: "lemon-bottle",
-    name: "Lemon bottle",
+    name: "Lemon Bottle",
     category: "peptides",
     composition: null,
     world: null,
     variants: [
       {
         id: "lemon-bottle-10mg",
-        strength: {
-          kind: "solid",
-          mg: 10,
-        },
-        vials: 10,
-      },
-    ],
-  },
-  {
-    id: "adamax",
-    slug: "adamax",
-    name: "Adamax",
-    category: "blends",
-    composition: "without adamantane",
-    world: null,
-    variants: [
-      {
-        id: "adamax-10mg",
-        strength: {
-          kind: "solid",
-          mg: 10,
-        },
-        vials: 10,
-      },
-      {
-        id: "adamax-5mg",
-        strength: {
-          kind: "solid",
-          mg: 5,
-        },
-        vials: 10,
-      },
-      {
-        id: "adamax-10mg",
         strength: {
           kind: "solid",
           mg: 10,
@@ -1939,8 +1905,8 @@ export const generatedProducts: Product[] = [
     id: "cartalax",
     slug: "cartalax",
     name: "Cartalax",
-    category: "blends",
-    composition: "Gaba 100mg/ml",
+    category: "peptides",
+    composition: null,
     world: null,
     variants: [
       {
@@ -1957,9 +1923,8 @@ export const generatedProducts: Product[] = [
     id: "relaxation-pm",
     slug: "relaxation-pm",
     name: "Relaxation PM",
-    category: "blends",
-    composition:
-      "Arginine 100mg/ml L-Arginine 110mg/10ml L-Ornithin 110mg/10ml L-Citruline 120mg/10ml L-Lysine 70mg/10ml",
+    category: "peptides",
+    composition: null,
     world: null,
     variants: [
       {
@@ -1977,8 +1942,7 @@ export const generatedProducts: Product[] = [
     slug: "super-human-blend",
     name: "SUPER Human Blend",
     category: "blends",
-    composition:
-      "L-Glutamine 40mg/10ml L-Proline 60mg/10ml L-Taurine 60mg/10ml L-Carnitine 220mg/10ml NAC 75mg/10ml NIACINAMIDE50mg/10ml THIAMINEHCL 50mg/10ml",
+    composition: null,
     world: null,
     variants: [
       {
@@ -1994,10 +1958,9 @@ export const generatedProducts: Product[] = [
   {
     id: "healthy-hair-skin-nails-blend",
     slug: "healthy-hair-skin-nails-blend",
-    name: "Healthy Hair skin nails Blend",
+    name: "Healthy Hair Skin Nails Blend",
     category: "blends",
-    composition:
-      "INOSITOL10mg/10ml NIACIN 5mg/10ml BIOTIN 100mcg/10ml FOLIC ACID 100mcg/10ml RIBOFLAVIN100mcg/10ml",
+    composition: null,
     world: null,
     variants: [
       {
@@ -2013,7 +1976,7 @@ export const generatedProducts: Product[] = [
   {
     id: "sterile-water",
     slug: "sterile-water",
-    name: "Sterile water",
+    name: "Sterile Water",
     category: "solvents",
     composition: null,
     world: null,
@@ -2039,7 +2002,7 @@ export const generatedProducts: Product[] = [
   {
     id: "bac-water",
     slug: "bac-water",
-    name: "Bac.water",
+    name: "Bac. Water",
     category: "solvents",
     composition: null,
     world: null,
@@ -2065,7 +2028,7 @@ export const generatedProducts: Product[] = [
   {
     id: "aa-water",
     slug: "aa-water",
-    name: "AA.water",
+    name: "AA. Water",
     category: "solvents",
     composition: null,
     world: null,

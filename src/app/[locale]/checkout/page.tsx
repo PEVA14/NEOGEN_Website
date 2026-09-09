@@ -26,6 +26,7 @@ export async function generateMetadata({
   const dict = await getDictionary(locale);
   return {
     title: dict.checkout.title,
+    description: dict.meta.descriptions.checkout,
     alternates: alternates(locale, routes.checkout),
     // Nothing here should be indexed: it is a transactional surface, and an
     // inert one. Kept explicit rather than left to a robots file.
@@ -107,7 +108,11 @@ export default async function CheckoutPage({ params }: { params: Promise<{ local
               </div>
             ) : null}
 
-            <BagSummary copy={dict.cart.summary} placeholder={dict.status.placeholder} />
+            {/* Only when there is an order to summarise. Four PLACEHOLDER
+                amounts under an empty bag described nothing. */}
+            {bag.count > 0 ? (
+              <BagSummary copy={dict.cart.summary} placeholder={dict.status.placeholder} />
+            ) : null}
 
             {/* Inert, and outlined rather than dimmed — the same treatment ADD
                 TO BAG and CONTINUE TO PAYMENT carry, so every blocked commerce

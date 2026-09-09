@@ -14,6 +14,26 @@ const es = {
     tagline: "Laboratorio Vivo",
     description:
       "Compuestos de investigación con documentación técnica. Catálogo NEOGEN para México.",
+    /**
+     * Per-page description templates.
+     *
+     * Every page used to inherit `meta.description`, so 88 Spanish URLs shipped
+     * the same one-line summary — including all 83 product pages, which is the
+     * text a search result shows and the strongest duplicate-content signal the
+     * site was sending. `{name}`, `{classification}`, `{presentations}` and
+     * `{count}` are filled from the registry, so every value is a fact the
+     * catalogue already holds and none of them is a product claim.
+     */
+    descriptions: {
+      product:
+        "{name} — {classification}. Presentaciones: {presentations}. Catálogo NEOGEN México.",
+      catalog:
+        "{count} compuestos de investigación en cuatro categorías: metabólicos, péptidos, mezclas y disolventes. Catálogo NEOGEN México.",
+      research:
+        "Registro de compuestos NEOGEN y las clases de documentación técnica que acompañan a cada uno.",
+      cart: "Tu bag de NEOGEN México.",
+      checkout: "Proceso de pago de NEOGEN México.",
+    },
   },
 
   a11y: {
@@ -162,14 +182,22 @@ const es = {
       title: "NEOGEN Research",
       action: "Ir a investigación",
       lede: "Perfiles de compuestos, documentación de análisis y literatura de investigación. Cada producto del catálogo conectado con su evidencia.",
-      /** Encabezados de columna del registro y etiquetas del expediente. */
-      columns: ["Código", "Documentación", "Artículos"],
+      /**
+       * Encabezados de columna del registro y etiquetas del expediente.
+       *
+       * Estas columnas eran "Código / Documentación / Artículos". La primera
+       * mostraba la categoría bajo una etiqueta que prometía un identificador,
+       * y la tercera mostraba el número de presentaciones bajo la palabra
+       * "Artículos" — es decir, afirmaba que existen 7 artículos sobre RETA
+       * cuando no existe ninguno. Ahora cada columna nombra lo que muestra.
+       */
+      columns: ["Categoría", "Presentaciones", "Documentación"],
       recordLabel: "Registro",
       stateLabel: "Estado",
       fields: {
-        code: "Código",
+        category: "Categoría",
+        presentations: "Presentaciones",
         documentation: "Documentación",
-        articles: "Artículos",
       },
     },
 
@@ -214,7 +242,6 @@ const es = {
       label: "Productos",
       title: "Compuestos insignia",
       action: "Catálogo completo",
-      meta: "SKU — PLACEHOLDER // PRICE — PLACEHOLDER",
       cta: "Ver producto",
       mediaLabel: "Imagen pendiente",
       worldLabels: {
@@ -234,7 +261,12 @@ const es = {
      * shipping — those are fields with placeholder values, never sentences.
      */
     /** Caption for the media area. Describes the frame, never the contents. */
-    inspectionLabel: "Medio de producto — RETA",
+    /*
+     * Names the FRAME, not the product. It used to read "Medio de producto —
+     * RETA" and was passed to every product page, so eighty compounds carried
+     * another product's name under their own image.
+     */
+    inspectionLabel: "Medio de producto",
     /** Notes that the media responds to the cursor. Desktop pointers only. */
     viewerHint: "Vista sensible al cursor",
     commerce: {
@@ -259,7 +291,14 @@ const es = {
       qualifier: "Ficha técnica",
       title: "Especificaciones del producto",
       compound: "Compuesto",
-      category: "Categoría",
+      /*
+       * "Clasificación", not "Categoría". The value is the catalogue bucket a
+       * compound is filed under — one of four — and labelling it "Categoría"
+       * inside a technical specification table read as a claim about what the
+       * substance IS. Several compounds filed under "Péptidos" are not
+       * peptides.
+       */
+      classification: "Clasificación de catálogo",
       presentation: "Presentaciones",
       composition: "Composición",
     },
@@ -374,7 +413,11 @@ const es = {
         qualifier: "Registro",
         title: "Registro de compuestos",
         action: "Catálogo completo",
-        columns: ["Código", "Documentación", "Literatura"],
+        /* Columnas con datos reales del registro. Antes eran "Código /
+           Documentación / Literatura", y dos de las tres sólo podían mostrar
+           un marcador de posición. */
+        columns: ["Categoría", "Presentaciones", "Desde"],
+        countLabel: "Compuestos publicados",
       },
       documents: {
         index: "03",
@@ -410,7 +453,7 @@ const es = {
      * step the reader failed to complete rather than as the state of the site.
      */
     emptyNote:
-      "La compra aún no está habilitada: los precios y los formatos siguen pendientes de verificación.",
+      "La compra aún no está habilitada. El catálogo puede consultarse por completo; los pedidos se activarán al concluir la revisión regulatoria y la selección de procesador de pagos.",
     browse: "Ver catálogo",
     summary: {
       title: "Resumen del pedido",
@@ -418,7 +461,7 @@ const es = {
       shipping: "Envío",
       taxes: "Impuestos",
       total: "Total",
-      note: "Los importes se calcularán cuando los datos de producto estén verificados.",
+      note: "Los importes de envío e impuestos se calcularán al habilitarse los pedidos.",
     },
     checkout: "Continuar al pago",
     /* Taken from the project's own regulatory position, not invented. */
@@ -442,7 +485,7 @@ const es = {
       shipping: {
         index: "02",
         title: "Envío",
-        note: "La zona de servicio está por definir.",
+        note: "La cobertura de envío se confirmará al habilitarse los pedidos.",
         name: "Nombre completo",
         address: "Dirección",
         city: "Ciudad",
@@ -473,27 +516,24 @@ const es = {
   },
 
   status: {
-    /** Neutral verification vocabulary — see components/ui/StatusNote. */
+    /**
+     * Neutral verification vocabulary.
+     *
+     * `pending` is the only honest state for a document that has not been
+     * produced; `placeholder` marks a field whose value is not yet a business
+     * fact. Neither may ever be paired with a positive assertion.
+     */
     pending: "Pendiente de verificación",
-    notAvailable: "No disponible",
-    tbd: "Por definir",
-    /** Convención técnica de SYSTEM STATUS V1: LABEL — PLACEHOLDER. */
     placeholder: "PLACEHOLDER",
-    /** El campo ya lleva la etiqueta; el valor es sólo el marcador. */
-    lot: "XXXX",
-    placeholderNotice:
-      "Marcador de posición. Este dato aún no ha sido verificado y no debe interpretarse como información definitiva.",
   },
 
   footer: {
     tagline: "Compuestos de investigación. Construidos sobre evidencia.",
     about: "Laboratorio de compuestos de investigación. Metodología orientada a la documentación.",
-    serviceArea: "Zona de servicio",
     columns: {
       products: "Productos",
       research: "Investigación",
       help: "Ayuda",
-      legal: "Legal",
     },
     links: {
       allCompounds: "Todos los compuestos",

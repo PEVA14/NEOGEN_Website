@@ -2,12 +2,12 @@ import { notFound } from "next/navigation";
 
 import { SectionHeader } from "@/components/layout";
 import { Container, Section } from "@/components/primitives";
-import { Body } from "@/components/typography";
+import { Body, Mono } from "@/components/typography";
 import { CompoundIndexHead, CompoundRow, DocumentLedger, TextLink } from "@/components/ui";
 import { routes } from "@/config/routes";
-import { getWorld, worldIds } from "@/config/worlds";
-import { isLocale } from "@/i18n/config";
-import { isPublishable, products } from "@/data/catalog";
+import { isLocale, localeTags } from "@/i18n/config";
+import { formatStrength, publishedProducts } from "@/data/catalog";
+import { formatPrice, getPrices } from "@/data/commerce";
 import { getDictionary } from "@/i18n/getDictionary";
 import { alternates } from "@/lib/alternates";
 import { localizePath } from "@/i18n/routing";
@@ -22,7 +22,14 @@ export async function generateMetadata({
   const { locale } = await params;
   if (!isLocale(locale)) return {};
   const dict = await getDictionary(locale);
-  return { title: dict.research.title, alternates: alternates(locale, routes.research) };
+  const description = dict.meta.descriptions.research;
+  return {
+    title: dict.research.title,
+    description,
+    openGraph: { title: dict.research.title, description },
+    twitter: { title: dict.research.title, description },
+    alternates: alternates(locale, routes.research),
+  };
 }
 
 /**
@@ -32,7 +39,8 @@ export async function generateMetadata({
  * -------------------------------------------------------------
  * The obvious move — an article grid with three placeholder cards — would be a
  * page pretending to have an archive. So the hub is built around what actually
- * exists: the compound register, and the classes of record the documentation
+ * exists: the compound register — every published compound, its category, its
+ * presentations and its price — and the classes of record the documentation
  * system carries. Both are real structure. Neither asserts that any particular
  * document exists, describes a finding, or names a source.
  *
@@ -49,8 +57,29 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
 
   const dict = await getDictionary(locale);
   const hub = dict.research.hub;
-  const placeholder = dict.status.placeholder;
   const path = (to: string) => localizePath(to, locale);
+
+  /*
+   * THE REGISTER IS THE CATALOGUE, NOT THE THREE WORLDS.
+   *
+   * It used to iterate `worldIds`, so a "compound register" on a research site
+   * listed three compounds while the catalogue held eighty-three — and filled
+   * its three columns with "Código PLACEHOLDER", "Pendiente de verificación"
+   * and "Por definir", none of which a reader can use. Reading the registry
+   * makes it an actual register, and every column now carries a fact the
+   * catalogue already knows.
+   */
+  const register = [...publishedProducts].sort((a, b) => a.name.localeCompare(b.name));
+  const prices = await getPrices(register.flatMap((p) => p.variants.map((v) => v.id)));
+  const from = new Map(
+    register.map((product) => {
+      const cheapest = product.variants
+        .map((v) => prices.get(v.id))
+        .filter((m): m is NonNullable<typeof m> => Boolean(m))
+        .sort((a, b) => a.amount - b.amount)[0];
+      return [product.slug, cheapest ? formatPrice(cheapest, localeTags[locale]) : null];
+    }),
+  );
 
   return (
     <>
@@ -77,34 +106,36 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
             id="register-title"
             action={<TextLink href={path(routes.products)}>{hub.register.action}</TextLink>}
           />
+          <Mono size="2xs" className="block text-(--ink-muted)">
+            {hub.register.countLabel} — {String(register.length).padStart(2, "0")}
+          </Mono>
           <ul>
             <CompoundIndexHead columns={[...hub.register.columns]} />
-            {worldIds.map((id, index) => {
-              const world = getWorld(id);
-              return (
-                <CompoundRow
-                  key={id}
-                  index={String(index + 1).padStart(2, "0")}
-                  world={id}
-                  worldLabel={dict.home.products.worldLabels[id]}
-                  name={world.productName}
-                  /* Deep-link where a product page carries the documentation;
-                     otherwise the catalogue, so no row points at a 404. */
-                  href={
-                    products.some((p) => p.world === world.id && isPublishable(p))
-                      ? path(routes.product(world.slug))
-                      : path(routes.products)
-                  }
-                  /* Neutral vocabulary throughout. A code that does not exist
-                     is a placeholder, not a fabricated identifier. */
-                  fields={[
-                    { key: hub.register.columns[0], value: placeholder },
-                    { key: hub.register.columns[1], value: dict.status.pending },
-                    { key: hub.register.columns[2], value: dict.status.tbd },
-                  ]}
-                />
-              );
-            })}
+            {register.map((product, index) => (
+              <CompoundRow
+                key={product.id}
+                index={String(index + 1).padStart(2, "0")}
+                world={product.world}
+                worldLabel={
+                  product.world
+                    ? dict.home.products.worldLabels[product.world]
+                    : dict.products.catalog.categoryLabels[product.category]
+                }
+                name={product.name}
+                href={path(routes.product(product.slug))}
+                fields={[
+                  {
+                    key: hub.register.columns[0],
+                    value: dict.products.catalog.categoryLabels[product.category],
+                  },
+                  {
+                    key: hub.register.columns[1],
+                    value: product.variants.map((v) => formatStrength(v.strength)).join(" · "),
+                  },
+                  { key: hub.register.columns[2], value: from.get(product.slug) ?? "—" },
+                ]}
+              />
+            ))}
           </ul>
         </Container>
       </Section>

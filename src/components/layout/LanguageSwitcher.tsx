@@ -38,6 +38,15 @@ export function LanguageSwitcher({ currentLocale, label }: LanguageSwitcherProps
             hrefLang={locale}
             aria-current={isActive ? "true" : undefined}
             className={cn(
+              /*
+               * WCAG 2.2 SC 2.5.8 — measured at 24x25, which technically clears
+               * the 24px floor and is still a poor tap target for a two-letter
+               * control on a phone. The header's own nav links already stand at
+               * 2.75rem for exactly this reason; the switcher had been left out
+               * of that decision. Height comes from the box, not from the type,
+               * so nothing moves.
+               */
+              "inline-flex min-h-11 min-w-11 items-center justify-center",
               "rounded-(--radius-sm) px-(--space-3xs) py-(--space-3xs)",
               "font-mono text-2xs tracking-(--tracking-label) uppercase",
               "transition-colors duration-(--motion-duration-fast) ease-(--ease-standard)",

@@ -11,6 +11,15 @@
  *
  * HARD RULE: no product claims, prices, specs or availability here. This
  * describes the *environment*, not the product.
+ *
+ * That rule was being broken by this file itself. It carried `productName` and
+ * `slug` — product identity, duplicated from `src/data/catalog`, and read by
+ * the homepage and the research hub. Two sources of truth for what a product is
+ * called and where it lives is exactly the drift the registry exists to
+ * prevent, so both fields are gone and every caller reads the registry.
+ *
+ * `dataAttribute` went with them: it was always identical to `id`, so it was a
+ * second name for the same value that could only ever disagree by mistake.
  */
 
 export const worldIds = ["reta", "glow", "ghk-cu"] as const;
@@ -34,16 +43,6 @@ export interface ProductWorld {
   /** Brand name — a proper noun, not translated copy. */
   label: string;
   /**
-   * Catalogue product name, as it appears on cards and in the compound index.
-   * A proper noun, so it lives in configuration rather than the dictionary and
-   * is identical in every locale (CONVENTIONS §7).
-   */
-  productName: string;
-  /** URL segment under /productos. Locale-independent, like the product name. */
-  slug: string;
-  /** `data-world` attribute value. Matches the CSS selector in worlds.css. */
-  dataAttribute: WorldId;
-  /**
    * Path to the GLB under /public/models.
    * MVP: all three share the same vial master with different labels.
    *
@@ -61,9 +60,6 @@ export const worlds: Record<WorldId, ProductWorld> = {
   reta: {
     id: "reta",
     label: "RETA",
-    productName: "Retatrutide Research",
-    slug: "reta",
-    dataAttribute: "reta",
     modelPath: "/models/NEOGEN_RETA.glb",
     // TODO(assets): a rendered still of this model. Until it exists the
     // fallback draws a diagrammatic silhouette rather than fake product imagery.
@@ -78,9 +74,6 @@ export const worlds: Record<WorldId, ProductWorld> = {
   glow: {
     id: "glow",
     label: "GLOW",
-    productName: "GLOW Peptide Series",
-    slug: "glow",
-    dataAttribute: "glow",
     modelPath: null, // MVP reuses the RETA vial with a GLOW label.
     posterPath: null,
     environment: {
@@ -93,9 +86,6 @@ export const worlds: Record<WorldId, ProductWorld> = {
   "ghk-cu": {
     id: "ghk-cu",
     label: "GHK-Cu",
-    productName: "Copper Peptide GHK-Cu",
-    slug: "ghk-cu",
-    dataAttribute: "ghk-cu",
     modelPath: null, // MVP reuses the RETA vial with a GHK-Cu label.
     posterPath: null,
     environment: {
@@ -109,8 +99,4 @@ export const worlds: Record<WorldId, ProductWorld> = {
 
 export function getWorld(id: WorldId): ProductWorld {
   return worlds[id];
-}
-
-export function isWorldId(value: string | undefined): value is WorldId {
-  return worldIds.includes(value as WorldId);
 }

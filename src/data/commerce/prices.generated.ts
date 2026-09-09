@@ -227,19 +227,19 @@ export const generatedPrices: Record<string, Money | null> = {
     amount: 15000,
     currency: "MXN",
   },
-  "cjc-1295-whitout-dac-5mg": {
+  "cjc-1295-without-dac-5mg": {
     amount: 7900,
     currency: "MXN",
   },
-  "cjc-1295-whitout-dac-10mg": {
+  "cjc-1295-without-dac-10mg": {
     amount: 13900,
     currency: "MXN",
   },
-  "cjc-1295-without-dac-5-5mg": {
+  "cjc-1295-without-dac-ipamorelin-5-5mg": {
     amount: 10900,
     currency: "MXN",
   },
-  "cjc-1295-without-dac-10-10mg": {
+  "cjc-1295-without-dac-ipamorelin-10-10mg": {
     amount: 17900,
     currency: "MXN",
   },
@@ -277,6 +277,10 @@ export const generatedPrices: Record<string, Money | null> = {
   },
   "ghrp-2-acetate-10mg": {
     amount: 6500,
+    currency: "MXN",
+  },
+  "ghrp-6-acetate-5mg": {
+    amount: 4500,
     currency: "MXN",
   },
   "ghrp-6-acetate-10mg": {
@@ -479,14 +483,6 @@ export const generatedPrices: Record<string, Money | null> = {
   },
   "lemon-bottle-10mg": {
     amount: 7000,
-    currency: "MXN",
-  },
-  "adamax-10mg": {
-    amount: 28900,
-    currency: "MXN",
-  },
-  "adamax-5mg": {
-    amount: 15400,
     currency: "MXN",
   },
   "l-carnitine-200mg-10ml": {

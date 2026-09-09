@@ -11,6 +11,26 @@ const en: Dictionary = {
     siteName: "NEOGEN",
     tagline: "Living Laboratory",
     description: "Research compounds with technical documentation. The NEOGEN catalog for Mexico.",
+    /**
+     * Per-page description templates.
+     *
+     * Every page used to inherit `meta.description`, so 88 English URLs shipped
+     * the same one-line summary — including all 83 product pages, which is the
+     * text a search result shows and the strongest duplicate-content signal the
+     * site was sending. `{name}`, `{classification}`, `{presentations}` and
+     * `{count}` are filled from the registry, so every value is a fact the
+     * catalogue already holds and none of them is a product claim.
+     */
+    descriptions: {
+      product:
+        "{name} — {classification}. Presentations: {presentations}. NEOGEN Mexico catalogue.",
+      catalog:
+        "{count} research compounds across four categories: metabolic, peptides, blends and solvents. NEOGEN Mexico catalogue.",
+      research:
+        "The NEOGEN compound register and the classes of technical documentation that accompany each one.",
+      cart: "Your NEOGEN Mexico bag.",
+      checkout: "NEOGEN Mexico payment process.",
+    },
   },
 
   a11y: {
@@ -151,14 +171,22 @@ const en: Dictionary = {
       title: "NEOGEN Research",
       action: "Go to research",
       lede: "Compound profiles, analysis documentation and research literature. Every product in the catalogue connected to its evidence.",
-      /** Register column heads and document-record labels. */
-      columns: ["Code", "Documentation", "Articles"],
+      /**
+       * Register column heads and document-record labels.
+       *
+       * These were "Code / Documentation / Articles". The first showed the
+       * category under a label promising an identifier, and the third showed
+       * the number of presentations under the word "Articles" — asserting that
+       * seven articles exist about RETA when none do. Each column now names
+       * what it shows.
+       */
+      columns: ["Category", "Presentations", "Documentation"],
       recordLabel: "Record",
       stateLabel: "State",
       fields: {
-        code: "Code",
+        category: "Category",
+        presentations: "Presentations",
         documentation: "Documentation",
-        articles: "Articles",
       },
     },
 
@@ -203,7 +231,6 @@ const en: Dictionary = {
       label: "Products",
       title: "Flagship compounds",
       action: "Full catalogue",
-      meta: "SKU — PLACEHOLDER // PRICE — PLACEHOLDER",
       cta: "View product",
       mediaLabel: "Image pending",
       worldLabels: {
@@ -215,7 +242,12 @@ const en: Dictionary = {
   },
 
   pdp: {
-    inspectionLabel: "Product media — RETA",
+    /*
+     * Names the FRAME, not the product. It used to read "Product media —
+     * RETA" and was passed to every product page, so eighty compounds carried
+     * another product's name under their own image.
+     */
+    inspectionLabel: "Product media",
     /** Notes that the media responds to the cursor. Desktop pointers only. */
     viewerHint: "Cursor-responsive view",
     commerce: {
@@ -240,7 +272,14 @@ const en: Dictionary = {
       qualifier: "Technical sheet",
       title: "Product specifications",
       compound: "Compound",
-      category: "Category",
+      /*
+       * "Classification", not "Category". The value is the catalogue bucket a
+       * compound is filed under — one of four — and labelling it "Category"
+       * inside a technical specification table read as a claim about what the
+       * substance IS. Several compounds filed under "Peptides" are not
+       * peptides.
+       */
+      classification: "Catalogue classification",
       presentation: "Presentations",
       composition: "Composition",
     },
@@ -331,7 +370,11 @@ const en: Dictionary = {
         qualifier: "Register",
         title: "Compound register",
         action: "Full catalog",
-        columns: ["Code", "Documentation", "Literature"],
+        /* Columns carrying real register data. They were "Code / Documentation
+           / Literature", and two of the three could only ever show a
+           placeholder. */
+        columns: ["Category", "Presentations", "From"],
+        countLabel: "Published compounds",
       },
       documents: {
         index: "03",
@@ -359,7 +402,8 @@ const en: Dictionary = {
     title: "Bag",
     countLabel: "Items",
     empty: "Your bag is empty.",
-    emptyNote: "Purchasing is not enabled yet: prices and formats are still pending verification.",
+    emptyNote:
+      "Purchasing is not enabled yet. The catalogue can be browsed in full; ordering opens once regulatory review and payment-processor selection are complete.",
     browse: "View catalog",
     summary: {
       title: "Order summary",
@@ -367,7 +411,7 @@ const en: Dictionary = {
       shipping: "Shipping",
       taxes: "Taxes",
       total: "Total",
-      note: "Amounts will be calculated once product data is verified.",
+      note: "Shipping and tax amounts will be calculated once ordering is enabled.",
     },
     checkout: "Continue to payment",
     checkoutPending: "Payment not enabled — pending regulatory and processor review",
@@ -390,7 +434,7 @@ const en: Dictionary = {
       shipping: {
         index: "02",
         title: "Shipping",
-        note: "The service area is to be defined.",
+        note: "Shipping coverage will be confirmed when ordering is enabled.",
         name: "Full name",
         address: "Address",
         city: "City",
@@ -416,26 +460,25 @@ const en: Dictionary = {
   },
 
   status: {
+    /**
+     * Neutral verification vocabulary.
+     *
+     * `pending` is the only honest state for a document that has not been
+     * produced; `placeholder` marks a field whose value is not yet a business
+     * fact. Neither may ever be paired with a positive assertion.
+     */
     pending: "Pending verification",
-    notAvailable: "Not available",
-    tbd: "To be determined",
     /** SYSTEM STATUS V1 technical convention: LABEL — PLACEHOLDER. */
     placeholder: "PLACEHOLDER",
-    /** The field already carries the label; the value is just the token. */
-    lot: "XXXX",
-    placeholderNotice:
-      "Placeholder. This value has not been verified and must not be treated as final information.",
   },
 
   footer: {
     tagline: "Research compounds. Built around evidence.",
     about: "Research compound laboratory. Documentation-first methodology.",
-    serviceArea: "Service area",
     columns: {
       products: "Products",
       research: "Research",
       help: "Help",
-      legal: "Legal",
     },
     links: {
       allCompounds: "All compounds",

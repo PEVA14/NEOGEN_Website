@@ -68,10 +68,12 @@
 }
 
 @media (min-width: 64rem) {
-  /* The reference footer is five columns; the identity column takes more room
-     because it carries a sentence rather than links. */
+  /* Identity column plus one per link group. It takes more room because it
+     carries a sentence rather than links. The count follows the groups that
+     actually exist — a fixed `repeat(4)` left a dead column behind when the
+     legal group was removed. */
   .columns {
-    grid-template-columns: 1.6fr repeat(4, minmax(0, 1fr));
+    grid-template-columns: 1.6fr repeat(3, minmax(0, 1fr));
     gap: var(--space-2xl);
   }
 }

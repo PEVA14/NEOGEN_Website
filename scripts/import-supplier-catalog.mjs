@@ -30,7 +30,10 @@ const FX_MXN_PER_USD = 20;
 
 const raw = readFileSync(SOURCE, "utf8");
 const body = raw.slice(raw.indexOf("```") + 3, raw.lastIndexOf("```"));
-const lines = body.split("\n").map((l) => l.replace(/\s+$/, "")).filter(Boolean);
+const lines = body
+  .split("\n")
+  .map((l) => l.replace(/\s+$/, ""))
+  .filter(Boolean);
 
 const money = /\$\s*([\d,]+(?:\.\d+)?)/g;
 const isCodeRow = /^\s*([A-Za-z0-9][A-Za-z0-9.\- ]{0,11}?)\s*\|/;
@@ -65,7 +68,8 @@ for (const line of lines) {
   // `#####` are the extractor's page markers, not content. Without this they
   // matched the orphan-name rule and became a product called "PAGE 1".
   if (/^\s*#/.test(line)) continue;
-  if (/^Cat\.No|^Shipping|^Except|^Additional|^express|^Orders over|^Excludes|^liquids/i.test(line)) continue;
+  if (/^Cat\.No|^Shipping|^Except|^Additional|^express|^Orders over|^Excludes|^liquids/i.test(line))
+    continue;
 
   const prices = [...line.matchAll(money)].map((m) => Number(m[1].replace(/,/g, "")));
   const codeM = line.match(isCodeRow);
@@ -74,10 +78,15 @@ for (const line of lines) {
     const fields = line.split("|").map((f) => f.trim());
     const code = fields[0];
     // The specification is whichever field parses as one.
-    let specIdx = -1, spec = null;
+    let specIdx = -1,
+      spec = null;
     for (let i = 1; i < fields.length; i++) {
       const p = parseSpec(fields[i].replace(money, "").trim());
-      if (p) { spec = p; specIdx = i; break; }
+      if (p) {
+        spec = p;
+        specIdx = i;
+        break;
+      }
     }
     /*
      * A cell between the code and the spec is either a NAME or a COMPOSITION.
@@ -103,11 +112,29 @@ for (const line of lines) {
      * continues across a page break. It belongs to the product above it.
      */
     const spec = parseSpec(line.split("|")[0].replace(money, "").trim());
-    rows.push({ code: null, name: null, composition: null, spec, rawSpec: line.split("|")[0].trim(), prices, line });
+    rows.push({
+      code: null,
+      name: null,
+      composition: null,
+      spec,
+      rawSpec: line.split("|")[0].trim(),
+      prices,
+      line,
+    });
   } else if (!/\$/.test(line) && /[A-Za-z]{3,}/.test(line)) {
     orphanNames.push({ at: rows.length, text: line.trim() });
   }
 }
+
+/*
+ * Group by the code's alphabetic core.
+ *
+ * The strength number sits in every possible position: suffix (`RT5`, `CU100`),
+ * prefix (`5AD`, `10AM`) and middle (`G10K`, `G5K`). Stripping digits wherever
+ * they appear is the only rule that groups all three. Collisions across the
+ * document are harmless because grouping also requires the rows to be adjacent.
+ */
+const prefixOf = (c) => (c === null ? null : c.replace(/\d+/g, "").trim());
 
 /*
  * Attach standalone lines.
@@ -144,19 +171,42 @@ for (const { at, text } of orphanNames) {
     before.composition = [before.composition, text].filter(Boolean).join(" ");
     continue;
   }
+  /*
+   * A MERGED NAME CELL NAMES BOTH ITS NEIGHBOURS.
+   *
+   * The source prints one name against the middle of its group, so the row
+   * ABOVE the line belongs to it just as much as the row below:
+   *
+   *     G25  | 5mg*10vials     <- GHRP-2
+   *     GHRP-2 Acetate
+   *     G210 | 10mg*10vials    <- GHRP-2
+   *     G65  | 5mg*10vials     <- GHRP-6
+   *     GHRP-6 Acetate
+   *     G610 | 10mg*10vials    <- GHRP-6
+   *
+   * Naming only the row below left G25 and G65 unnamed, and grouping then
+   * swept both into GHRP-2 — which came out with a DUPLICATE 5mg variant
+   * while GHRP-6 lost its 5mg entirely.
+   *
+   * The backward reach is deliberately narrow: only when both neighbours are
+   * unnamed rows of the SAME code group, which is what "printed inside the
+   * group" means. A name line sitting between two different products never
+   * qualifies, so it cannot re-label the product above it.
+   */
   const target = after && !after.name ? after : before && !before.name ? before : null;
   if (target) target.name = target.name ? `${target.name} ${text}` : text;
-}
 
-/*
- * Group by the code's alphabetic core.
- *
- * The strength number sits in every possible position: suffix (`RT5`, `CU100`),
- * prefix (`5AD`, `10AM`) and middle (`G10K`, `G5K`). Stripping digits wherever
- * they appear is the only rule that groups all three. Collisions across the
- * document are harmless because grouping also requires the rows to be adjacent.
- */
-const prefixOf = (c) => (c === null ? null : c.replace(/\d+/g, "").trim());
+  if (
+    target === after &&
+    before &&
+    !before.name &&
+    before.code &&
+    after.code &&
+    prefixOf(before.code) === prefixOf(after.code)
+  ) {
+    before.name = text;
+  }
+}
 
 /*
  * NO cross-group name propagation. Two different products can share a code
@@ -170,7 +220,10 @@ const prefixOf = (c) => (c === null ? null : c.replace(/\d+/g, "").trim());
 const products = [];
 for (const r of rows) {
   const last = products[products.length - 1];
-  if (r.code === null && last) { last.variants.push(r); continue; }
+  if (r.code === null && last) {
+    last.variants.push(r);
+    continue;
+  }
   const prefix = prefixOf(r.code);
   const sameProduct =
     last && last.prefix === prefix && (!r.name || !last.name || r.name === last.name);
@@ -207,9 +260,11 @@ console.log(`unnamed products:    ${draft.filter((p) => !p.name).length}`);
 console.log(`unparsed specs:      ${variants.filter((v) => !v.strength).length}`);
 console.log(`incomplete tiers:    ${variants.filter((v) => v.tierCount < 4).length}`);
 console.log(`\nunparsed specifications (need manual resolution):`);
-for (const v of variants.filter((v) => !v.strength)) console.log(`  ${v.supplierCode.padEnd(10)} ${v.rawSpec}`);
+for (const v of variants.filter((v) => !v.strength))
+  console.log(`  ${v.supplierCode.padEnd(10)} ${v.rawSpec}`);
 console.log(`\nunnamed groups (need a product name):`);
-for (const p of draft.filter((p) => !p.name)) console.log(`  ${p.prefix.padEnd(10)} ${p.variants.map((v) => v.supplierCode).join(", ")}`);
+for (const p of draft.filter((p) => !p.name))
+  console.log(`  ${p.prefix.padEnd(10)} ${p.variants.map((v) => v.supplierCode).join(", ")}`);
 
 /* ==========================================================================
  * EMIT — turn the reviewed draft into typed catalog + commerce data.
@@ -225,6 +280,36 @@ const RESOLVED_NAMES = {
   "2S10": "SS-31",
   "Lipo-C": "Lipo-C without B12",
   LC1201: "Lipo-C with B12",
+  /*
+   * The source misspells this one: "CJC-1295 Whitout DAC". Left alone it
+   * shipped as a product name AND as the URL /productos/cjc-1295-whitout-dac.
+   * Correcting an English spelling error is not a change to product data.
+   */
+  CND5: "CJC-1295 without DAC",
+  /*
+   * The source then uses that SAME name for a different SKU family whose own
+   * composition line reads "5mg + Ipamorelin 5mg" — a blend, not the plain
+   * peptide. Two products under one name is the supplier's ambiguity, not a
+   * fact about either. The partner compound is joined from the source's own
+   * adjacent cell so the two are distinguishable in a catalogue listing.
+   * OWNER MAY OVERRIDE.
+   */
+  CP10: "CJC-1295 without DAC + Ipamorelin",
+};
+
+/**
+ * Presentation-only corrections to supplier names: a missing space, a word
+ * the source shouted or left lowercase mid-phrase. No product fact changes —
+ * these are the same class of edit as the "Whitout" spelling fix, and every
+ * slug they produce is identical to the one before.
+ */
+const NAME_TYPOGRAPHY = {
+  "B12(Methylcobalamin) 1mg": "B12 (Methylcobalamin) 1mg",
+  "Healthy Hair skin nails Blend": "Healthy Hair Skin Nails Blend",
+  "Sterile water": "Sterile Water",
+  "Bac.water": "Bac. Water",
+  "AA.water": "AA. Water",
+  "Lemon bottle": "Lemon Bottle",
 };
 /** `FST 344` is printed `lmg*10vials` — lowercase L. Confirmed as 1mg. */
 const RESOLVED_SPECS = {
@@ -245,6 +330,27 @@ const RESOLVED_COMPOSITION = {
     "Methionine 15mg + Choline Chloride 50mg + L-Carnitine 50mg + Dexpanthenol 5mg + B12 (Methylcobalamin) 1mg",
 };
 
+/**
+ * The only two products whose composition is printed INSIDE their own name
+ * cell, as a parenthetical the extractor could not misattribute. Everything
+ * else that looked like a composition was a neighbouring row's ingredient
+ * line, an alternative product name, or a bare parenthetical.
+ */
+const TRUSTED_COMPOSITION = new Set(["BBG70", "KL80"]);
+
+/**
+ * Products the source cannot describe well enough to sell.
+ *
+ * Not a soft "needs review" — these are excluded from the emitted catalog
+ * entirely, so the registry keeps its guarantee that every record in it is a
+ * coherent product. Publishability stays derived; nothing gets a hand-set
+ * "hidden" flag.
+ */
+const WITHHELD = {
+  Adamax:
+    "Two different formulations under one name — the source prints `(without adamantane) 984da` at $98 and `(with adamantane) 1032da` at $289, with a $154 5mg row between them that could belong to either. Merging them produced one product with a duplicate 10mg variant priced at the wrong end of a 3x spread.",
+};
+
 /** The three flagships keep the identity the site already publishes. */
 const FLAGSHIPS = {
   RT: { id: "reta", slug: "reta", name: "Retatrutide Research", world: "reta" },
@@ -255,69 +361,164 @@ const FLAGSHIPS = {
 const METABOLIC = /semaglutide|tirzepatide|retatrutide|cagrilintide|survodutide|mazdutide/i;
 const SOLVENT = /water/i;
 
-function categorise(name, composition, variants) {
+/*
+ * A product is a blend when its DOSE says so — a multi-component strength —
+ * or when its name does. Presence of a composition string used to count as
+ * evidence, which meant every product that picked up a stray ingredient line
+ * was filed as a blend: TB500, HGH, SLU-PP-332 and Cartalax are all single
+ * compounds that landed there.
+ */
+function categorise(name, variants) {
   if (SOLVENT.test(name)) return "solvents";
   if (METABOLIC.test(name)) return "metabolic";
-  if (composition || variants.some((v) => v.strength?.kind === "blend") || /\bblend\b|glow|klow|lipo-c/i.test(name))
+  if (
+    variants.some((v) => v.strength?.kind === "blend") ||
+    /\bblend\b|glow|klow|lipo-c/i.test(name)
+  )
     return "blends";
   return "peptides";
 }
 
 const slugify = (s) =>
-  s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 
 const seen = new Set();
 const catalog = [];
 const commerce = [];
+const withheldCompositions = [];
+const collisions = [];
+const duplicateVariants = [];
 
 for (const p of products) {
   const flag = FLAGSHIPS[p.prefix];
-  const firstCode = p.variants.map((v) => v.code).find(Boolean)?.trim();
-  const name = flag?.name ?? RESOLVED_NAMES[firstCode] ?? p.name ?? null;
-  if (!name) { console.warn(`SKIPPED — still unnamed: ${p.prefix}`); continue; }
+  const firstCode = p.variants
+    .map((v) => v.code)
+    .find(Boolean)
+    ?.trim();
+  const sourceName = flag?.name ?? RESOLVED_NAMES[firstCode] ?? p.name ?? null;
+  if (!sourceName) {
+    console.warn(`SKIPPED — still unnamed: ${p.prefix}`);
+    continue;
+  }
+  const name = NAME_TYPOGRAPHY[sourceName.trim()] ?? sourceName;
 
-  let slug = flag?.slug ?? slugify(name);
+  // Keyed by NAME, not code prefix: the rows this has to catch are exactly the
+  // ones whose codes the source mangled, so their prefixes are unreliable.
+  if (WITHHELD[name.trim()]) continue;
+
+  const base = flag?.slug ?? slugify(name);
+  let slug = base;
   let n = 2;
-  while (seen.has(slug)) slug = `${flag?.slug ?? slugify(name)}-${n++}`;
+  while (seen.has(slug)) slug = `${base}-${n++}`;
+  if (slug !== base) collisions.push({ name, base, slug });
   seen.add(slug);
 
+  /*
+   * COMPOSITION IS ALLOW-LISTED, NOT SCAVENGED.
+   *
+   * It used to be "the first composition-ish line found near this product",
+   * and in a document with merged cells and ingredient lists printed between
+   * rows that produced eight wrong strings out of thirteen — SLU-PP-332
+   * carried Lipo-C's ingredients, Cartalax carried a neighbouring GABA row,
+   * Adamax carried the parenthetical "without adamantane", and TB500 and HGH
+   * carried an alternative NAME in the composition field. Three more were the
+   * bleeding ingredient lists the exceptions file explicitly says not to
+   * publish.
+   *
+   * So a composition now ships only when the source states it inside the
+   * product's own cell (GLOW, KLOW) or the owner has confirmed it (Lipo-C).
+   * Everything else is null — absent, which is true, rather than plausible
+   * and wrong.
+   */
+  const scavenged = p.variants.map((v) => v.composition).find(Boolean) ?? null;
   const composition =
-    RESOLVED_COMPOSITION[firstCode] ??
-    (p.variants.map((v) => v.composition).find(Boolean) ?? null);
+    RESOLVED_COMPOSITION[firstCode] ?? (TRUSTED_COMPOSITION.has(firstCode) ? scavenged : null);
+  if (scavenged && composition === null) {
+    withheldCompositions.push({ name: p.name ?? firstCode, code: firstCode, text: scavenged });
+  }
 
-  const variants = p.variants.map((v) => {
-    const fixed = RESOLVED_SPECS[v.code?.trim()];
-    const strength = fixed?.strength ?? v.spec?.strength ?? null;
-    const vials = fixed?.vials ?? v.spec?.vials ?? null;
-    const label =
-      strength?.kind === "solid" ? `${strength.mg}mg`
-      : strength?.kind === "iu" ? `${strength.iu}iu`
-      : strength?.kind === "solution" ? `${strength.mg}mg-${strength.ml}ml`
-      : strength?.kind === "volume" ? `${strength.ml}ml`
-      : strength?.kind === "blend" ? strength.componentsMg.join("-") + "mg"
-      : "unspecified";
-    return {
-      id: `${slug}-${label}`,
-      strength,
-      vials,
-      priceMxn: v.prices?.length ? retail(v.prices[0]) : null,
-    };
-  }).filter((v) => v.strength);
+  const variants = p.variants
+    .map((v) => {
+      const fixed = RESOLVED_SPECS[v.code?.trim()];
+      const strength = fixed?.strength ?? v.spec?.strength ?? null;
+      const vials = fixed?.vials ?? v.spec?.vials ?? null;
+      const label =
+        strength?.kind === "solid"
+          ? `${strength.mg}mg`
+          : strength?.kind === "iu"
+            ? `${strength.iu}iu`
+            : strength?.kind === "solution"
+              ? `${strength.mg}mg-${strength.ml}ml`
+              : strength?.kind === "volume"
+                ? `${strength.ml}ml`
+                : strength?.kind === "blend"
+                  ? strength.componentsMg.join("-") + "mg"
+                  : "unspecified";
+      return {
+        id: `${slug}-${label}`,
+        strength,
+        vials,
+        priceMxn: v.prices?.length ? retail(v.prices[0]) : null,
+      };
+    })
+    .filter((v) => v.strength);
 
-  if (!variants.length) { console.warn(`SKIPPED — no parsable variant: ${name}`); continue; }
+  if (!variants.length) {
+    console.warn(`SKIPPED — no parsable variant: ${name}`);
+    continue;
+  }
+
+  /*
+   * Two variants that reduce to the same id are the SAME dose listed twice —
+   * always a symptom of rows grouped under the wrong product. Silently they
+   * produced a repeated row in the presentation list, a duplicate React key,
+   * and a price map where the last write won. Collapsing them here keeps the
+   * data coherent; recording them makes the underlying grouping error visible
+   * instead of absorbed.
+   */
+  const byId = new Map();
+  for (const v of variants) {
+    if (byId.has(v.id)) {
+      duplicateVariants.push({
+        name,
+        id: v.id,
+        kept: byId.get(v.id).priceMxn,
+        dropped: v.priceMxn,
+      });
+      continue;
+    }
+    byId.set(v.id, v);
+  }
+  const unique = [...byId.values()];
 
   catalog.push({
     id: flag?.id ?? slug,
     slug,
     name,
-    category: categorise(name, composition, variants),
-    composition: composition ? composition.replace(/^\(|\)$/g, "").trim() : null,
+    category: categorise(name, variants),
+    /*
+     * Strip the wrapping parenthesis and give the "+" separators room. The
+     * source prints "GHK-CU 50mg+TB-500 10mg+BPC-157 10mg", which sets as one
+     * unbroken string and cannot wrap on a narrow column. Spacing a separator
+     * changes no value.
+     */
+    composition: composition
+      ? composition
+          .replace(/^\(|\)$/g, "")
+          .replace(/\s*\+\s*/g, " + ")
+          .replace(/\s+/g, " ")
+          .trim()
+      : null,
     world: flag?.world ?? null,
-    variants: variants.map(({ id, strength, vials }) => ({ id, strength, vials })),
+    variants: unique.map(({ id, strength, vials }) => ({ id, strength, vials })),
   });
 
-  for (const v of variants) {
+  for (const v of unique) {
     commerce.push({
       id: v.id,
       // A variant with no stated presentation cannot be priced or sold.
@@ -347,12 +548,27 @@ writeFileSync(
     "Retail prices in MXN, computed once at authoring time. The supplier cost they\n * derive from is not in this repository and never reaches the application.",
   ) +
     `import type { Money } from "./types";\n\nexport const generatedPrices: Record<string, Money | null> = ${JSON.stringify(
-      Object.fromEntries(commerce.map((c) => [c.id, c.price === null ? null : { amount: c.price, currency: "MXN" }])),
+      Object.fromEntries(
+        commerce.map((c) => [c.id, c.price === null ? null : { amount: c.price, currency: "MXN" }]),
+      ),
       null,
       2,
     )};\n`,
 );
 
-console.log(`\nemitted ${catalog.length} products / ${catalog.flatMap((p) => p.variants).length} variants`);
-console.log("categories:", JSON.stringify(catalog.reduce((a, p) => ((a[p.category] = (a[p.category] ?? 0) + 1), a), {})));
+console.log(
+  `\nemitted ${catalog.length} products / ${catalog.flatMap((p) => p.variants).length} variants`,
+);
+for (const [what, why] of Object.entries(WITHHELD)) console.log(`WITHHELD  ${what}: ${why}`);
+for (const c of collisions)
+  console.log(`SLUG COLLISION  ${c.name}: wanted /${c.base}, emitted /${c.slug}`);
+for (const d of duplicateVariants)
+  console.log(`DUPLICATE VARIANT  ${d.name} ${d.id} — kept ${d.kept}, dropped ${d.dropped}`);
+console.log(`\ncompositions withheld as unreliable: ${withheldCompositions.length}`);
+for (const w of withheldCompositions)
+  console.log(`  ${String(w.name).padEnd(30)} ${w.text.slice(0, 90)}`);
+console.log(
+  "categories:",
+  JSON.stringify(catalog.reduce((a, p) => ((a[p.category] = (a[p.category] ?? 0) + 1), a), {})),
+);
 console.log("unpriced variants:", commerce.filter((c) => c.price === null).length);

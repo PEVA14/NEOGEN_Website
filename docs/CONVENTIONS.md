@@ -121,19 +121,24 @@ dictionaries.
   props and contain no copy. `LanguageSwitcher` takes its label as a prop.
 - Never put UI copy in `config/worlds.ts`, `config/site.ts` or type modules.
 - Product names (RETA, GLOW, GHK-Cu) are proper nouns, not translated copy.
-- Use `Intl` via `src/lib/format.ts` for currency and dates — never hand-rolled.
+- Use `Intl` for currency and dates — never hand-rolled. Money goes through
+  `formatPrice()` in `src/data/commerce`, which takes a **full BCP-47 tag**
+  (`localeTags[locale]`), not a bare language: `Intl` renders MXN as
+  `6500 MXN` for `"es"` and `$6,500` for `"es-MX"`.
 
 ## 8. Unverified data and the claims boundary
 
-Every real-world business or scientific fact is modelled as `Verifiable<T>`:
+`Verifiable<T>` was a proposal, never code. What the project actually does is
+simpler and has held up better: **a fact we do not have is absent, not
+rendered as a pending value.**
 
-```ts
-type Verifiable<T> =
-  { status: "verified"; value: T } | { status: "pending" } | { status: "unavailable" };
-```
-
-- When a value is not `verified`, render `<StatusNote>` — a deliberately
-  **neutral** state carrying no colour of approval, warning or error.
+- A field with no verified value is **not rendered at all**. Purity, storage,
+  molecular mass and lot have no row on the product page — an empty labelled
+  row makes a finished page look unfinished, and a labelled `PLACEHOLDER`
+  puts an internal marker in front of a customer.
+- The one exception is a **document** that has not been produced. A
+  certificate of analysis has a real, honest pending state, and the record
+  ledger states it. `scripts/check-output.mjs` allows the phrase only there.
 - **Never** substitute an invented value for a missing one.
 - Never fabricate scientific claims, certifications, COAs, lab results, lot
   numbers, provenance, shipping promises, prices, specs or payment capabilities.
@@ -144,8 +149,42 @@ type Verifiable<T> =
 - Do not activate a live payment provider until product/regulatory and
   processor requirements are reviewed.
 
-Final placeholder _copy_ is not decided yet — `StatusNote` always takes its
-label from the dictionary so wording can change without touching components.
+Status vocabulary lives in `dict.status` so wording can change without
+touching components. It is deliberately small — `pending` and `placeholder` —
+and neither may ever be paired with a positive assertion.
+
+### The data layer
+
+Product identity and commerce state are **separate modules with separate
+lifecycles**, and nothing may collapse them:
+
+- `src/data/catalog` — what a product IS. Changes rarely, lives in git, is
+  reviewed. Publishability is **derived** (`isPublishable`: at least one
+  variant with a stated presentation), never a hand-set flag, so the sitemap,
+  `generateStaticParams`, the catalogue and the register cannot disagree.
+- `src/data/commerce` — what it COSTS and whether it is in stock. Changes
+  without a deploy. Every read goes through the async accessors so the source
+  can become a database without any page changing.
+- `src/config/worlds.ts` carries **no product identity**. A world is a 3D
+  environment that three products happen to have; it is not where products
+  live. Read names, slugs and categories from the registry.
+- `scripts/import-supplier-catalog.mjs` is a one-way drafting tool, never a
+  build step. It reads a gitignored private document and emits
+  `generated.ts` — supplier codes and supplier cost never reach the output.
+
+### The checks
+
+Two scripts guard the invariants that have actually broken before. Both run
+in `npm run check`:
+
+- `npm run check:catalog` — imports the real registry and asserts slug and
+  variant-id uniqueness, price validity and ordering, derived publishability,
+  and that the catalogue, the sitemap and the prerendered routes agree.
+- `npm run check:output` — reads the build and asserts that no supplier term
+  or catalogue code appears in anything the browser can fetch, that no
+  prototype language is visible to a reader, that no non-public env var is
+  referenced in a client bundle, and that canonicals do not point at
+  localhost.
 
 ## 9. Dependencies
 

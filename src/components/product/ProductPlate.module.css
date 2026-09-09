@@ -81,10 +81,15 @@
   border-block-start: 1px solid var(--border-subtle);
 }
 
-.captionLabel {
+.captionLabel,
+.captionMeta {
   color: var(--ink-muted);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
+}
+
+.captionMeta {
+  text-align: end;
 }
 
 .commerce {

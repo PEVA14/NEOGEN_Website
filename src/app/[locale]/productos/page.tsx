@@ -4,11 +4,12 @@ import { CatalogBrowser, type CatalogProduct } from "@/components/catalog";
 import { SectionHeader } from "@/components/layout";
 import { Container, Section } from "@/components/primitives";
 import { routes } from "@/config/routes";
-import { formatStrength, isPublishable, products } from "@/data/catalog";
+import { formatStrength, isPublishable, products, publishedProducts } from "@/data/catalog";
 import { formatPrice, getPrices } from "@/data/commerce";
 import { isLocale, localeTags } from "@/i18n/config";
 import { getDictionary } from "@/i18n/getDictionary";
 import { alternates } from "@/lib/alternates";
+import { fillTemplate } from "@/lib/meta";
 import { localizePath } from "@/i18n/routing";
 
 import type { Metadata } from "next";
@@ -21,7 +22,16 @@ export async function generateMetadata({
   const { locale } = await params;
   if (!isLocale(locale)) return {};
   const dict = await getDictionary(locale);
-  return { title: dict.products.catalog.title, alternates: alternates(locale, routes.products) };
+  const description = fillTemplate(dict.meta.descriptions.catalog, {
+    count: String(publishedProducts.length),
+  });
+  return {
+    title: dict.products.catalog.title,
+    description,
+    openGraph: { title: dict.products.catalog.title, description },
+    twitter: { title: dict.products.catalog.title, description },
+    alternates: alternates(locale, routes.products),
+  };
 }
 
 /**
