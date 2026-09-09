@@ -1,41 +1,44 @@
 import { notFound } from "next/navigation";
 
-import { Container, Section } from "@/components/primitives";
-import { Heading, Mono, Prose } from "@/components/typography";
-import { isLocale } from "@/i18n/config";
-import { getDictionary } from "@/i18n/getDictionary";
+/**
+ * NO SLUG IS VALID, and the framework — not this component — is what says so.
+ *
+ * Calling `notFound()` from a dynamically rendered segment renders the 404 page
+ * but answers **HTTP 200**: a soft 404, which search engines index as a real
+ * page. An empty param list plus `dynamicParams = false` makes every slug
+ * genuinely unmatched instead, so the framework's own handling returns a true
+ * 404 status.
+ *
+ * When articles exist, `generateStaticParams` returns them and this stops being
+ * a closed door without any other change.
+ */
+export const dynamicParams = false;
+
+export async function generateStaticParams() {
+  return [];
+}
 
 /**
- * ARTICLE TEMPLATE — structural skeleton.
+ * ARTICLE ROUTE — reserved, and deliberately unreachable.
  *
- * Establishes the editorial reading measure (`Prose`, capped at
- * --container-prose) so long-form typography is first-class from the start.
+ * NO ARTICLES EXIST. This route previously rendered a shell that echoed the
+ * requested slug as a heading, which meant every URL under /investigacion/
+ * resolved to a page that looked like an article and contained none. A shell
+ * that answers 200 to any slug is a fake integration that appears
+ * production-ready — the exact thing the project rules forbid.
  *
- * TODO(research-phase): choose the authoring format (MDX vs structured blocks)
- * before any content is written. `Article["body"]` is typed `never[]` until then.
+ * So every slug is a 404 until there is something to serve. The route stays
+ * registered because two decisions made here are worth keeping:
+ *
+ *   1. Long-form reading uses `Prose` inside `Container width="prose"`, capped
+ *      at `--container-prose`. Editorial measure is first-class from the start.
+ *   2. TODO(research-phase): choose the authoring format — MDX versus
+ *      structured blocks — BEFORE any content is written. `Article["body"]` is
+ *      typed `never[]` until that decision is made, so nothing can be authored
+ *      against a format we have not chosen.
  */
-export default async function ArticlePage({
-  params,
-}: {
-  params: Promise<{ locale: string; slug: string }>;
-}) {
-  const { locale, slug } = await params;
-  if (!isLocale(locale)) notFound();
-  const dict = await getDictionary(locale);
-
-  return (
-    <Section mode="quiet" aria-labelledby="article-title">
-      <Container width="prose">
-        <Heading level={1} id="article-title" size="3xl">
-          {dict.research.articleTitle}
-        </Heading>
-        <Mono size="xs" tone="muted" as="p" className="mt-(--space-2xs)">
-          {slug}
-        </Mono>
-        <Prose className="mt-(--space-lg)">
-          <p>{dict.research.empty}</p>
-        </Prose>
-      </Container>
-    </Section>
-  );
+export default async function ArticlePage() {
+  // Unreachable while `generateStaticParams` is empty. Kept explicit so the
+  // route cannot start serving a blank page if that ever changes by accident.
+  notFound();
 }

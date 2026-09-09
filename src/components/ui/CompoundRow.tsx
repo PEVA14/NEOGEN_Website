@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { Heading, Mono } from "@/components/typography";
 import { WorldDot } from "@/components/ui/WorldDot";
 import type { WorldId } from "@/config/worlds";
@@ -11,10 +13,19 @@ export interface CompoundRowField {
 
 interface CompoundRowProps {
   index: string;
-  world: WorldId;
+  /** Null for most of the catalogue — only three products have a world. */
+  world: WorldId | null;
   worldLabel: string;
   name: string;
   fields: CompoundRowField[];
+  /**
+   * Where the compound's own page is, when it has one.
+   *
+   * Optional because the register is also used to PRESENT compounds that have
+   * no page yet. Where a page does exist the row has to reach it, or the
+   * register becomes a view of the catalogue you cannot navigate from.
+   */
+  href?: string;
 }
 
 /**
@@ -52,19 +63,34 @@ export function CompoundIndexHead({ columns }: { columns: string[] }) {
   );
 }
 
-export function CompoundRow({ index, world, worldLabel, name, fields }: CompoundRowProps) {
+export function CompoundRow({ index, world, worldLabel, name, fields, href }: CompoundRowProps) {
   return (
     <li className={styles.row}>
       <div className={styles.identity}>
         <Mono size="2xs" className={styles.index}>
           {index}
         </Mono>
+        {/* The NAME is the link, not the whole row: a row carries a definition
+            list of technical values, and making all of it one target would put
+            those values inside a link that does not describe them. */}
         <Heading level={3} size="lg" className={styles.name}>
-          {name}
+          {href ? (
+            <Link href={href} className={styles.link}>
+              {name}
+            </Link>
+          ) : (
+            name
+          )}
         </Heading>
-        <WorldDot world={world} className={styles.dot}>
-          {worldLabel}
-        </WorldDot>
+        {world ? (
+          <WorldDot world={world} className={styles.dot}>
+            {worldLabel}
+          </WorldDot>
+        ) : (
+          <Mono size="2xs" className={styles.dot}>
+            {worldLabel}
+          </Mono>
+        )}
       </div>
 
       <dl className={styles.fields}>

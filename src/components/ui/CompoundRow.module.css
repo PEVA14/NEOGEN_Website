@@ -106,3 +106,26 @@
     gap: var(--space-lg);
   }
 }
+
+/*
+ * The compound's link. Underlined on interaction only — in a register the
+ * names already read as entries, and a permanent underline on every row turns
+ * the column into a list of links rather than a list of compounds.
+ */
+.link {
+  color: inherit;
+  text-decoration: none;
+  text-underline-offset: 0.2em;
+  transition: text-decoration-color var(--motion-duration-fast) var(--ease-standard);
+}
+
+.link:hover,
+.link:focus-visible {
+  text-decoration: underline;
+  text-decoration-color: var(--ink-primary);
+}
+
+.link:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}

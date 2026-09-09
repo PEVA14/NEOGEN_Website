@@ -51,14 +51,35 @@ export async function generateMetadata({
       template: `%s — ${dict.meta.siteName}`,
     },
     description: dict.meta.description,
-    alternates: {
-      canonical: `/${locale}`,
-      // hreflang for both locales, plus x-default pointing at Spanish.
-      languages: {
-        ...Object.fromEntries(locales.map((l) => [localeTags[l], `/${l}`])),
-        "x-default": `/${siteConfig.defaultLocale}`,
-      },
+    /*
+     * Social metadata. Without it, every shared NEOGEN link renders as a bare
+     * URL — no title, no description, no image.
+     *
+     * The image is generated per locale from the brand marks alone (see
+     * opengraph-image). It carries no product claim, because there is no
+     * verified product content to put in a share card.
+     */
+    openGraph: {
+      type: "website",
+      siteName: dict.meta.siteName,
+      title: `${dict.meta.siteName} — ${dict.meta.tagline}`,
+      description: dict.meta.description,
+      locale: localeTags[locale],
+      url: `/${locale}`,
     },
+    twitter: {
+      card: "summary_large_image",
+      title: `${dict.meta.siteName} — ${dict.meta.tagline}`,
+      description: dict.meta.description,
+    },
+    /*
+     * NO `alternates` HERE, deliberately.
+     *
+     * Layout metadata is merged into every page beneath it, so a canonical
+     * declared at this level made the catalogue, the bag, the research hub and
+     * every product page announce themselves as duplicates of the locale home.
+     * Each page declares its own from its own route — see lib/alternates.
+     */
   };
 }
 
@@ -80,7 +101,18 @@ export default async function LocaleLayout({
       lang={localeTags[typedLocale]}
       className={`${instrumentSans.variable} ${ibmPlexMono.variable}`}
     >
-      <body className="flex min-h-dvh flex-col">
+      {/*
+       * `suppressHydrationWarning` is scoped to THIS element's own attributes,
+       * one level deep — it does not silence anything inside the app.
+       *
+       * It is here for browser extensions. Grammarly and its peers write
+       * attributes onto <body> (`data-gr-ext-installed`,
+       * `data-new-gr-c-s-check-loaded`) before React hydrates, and React
+       * reports the difference as a hydration mismatch on every page load.
+       * The markup below is fully static, so any mismatch on this element can
+       * only have come from outside the app.
+       */}
+      <body suppressHydrationWarning className="flex min-h-dvh flex-col">
         <SkipLink label={dict.a11y.skipToContent} />
         <SiteHeader locale={typedLocale} dict={dict} />
         {/* `tabIndex={-1}` makes the skip-link target programmatically focusable. */}

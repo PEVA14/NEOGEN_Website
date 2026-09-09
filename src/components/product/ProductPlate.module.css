@@ -1,0 +1,101 @@
+/*
+ * The generic product opening. Quiet Mode — no world, no environment, no
+ * canvas. Structure comes from the same devices the rest of the system uses:
+ * a measured media plate, registration marks, a caption rail and a column rule.
+ */
+
+.plate {
+  display: grid;
+  gap: var(--space-2xl);
+  align-items: start;
+}
+
+@media (min-width: 64rem) {
+  .plate {
+    grid-template-columns: minmax(0, 1.06fr) minmax(0, 1fr);
+    gap: var(--space-4xl);
+  }
+
+  /* The same hairline the flagship page uses between media and commerce. */
+  .commerce {
+    padding-inline-start: var(--space-2xl);
+    border-inline-start: 1px solid var(--border-subtle);
+  }
+}
+
+.media {
+  position: relative;
+  inline-size: min(100%, 34rem);
+  justify-self: center;
+}
+
+/*
+ * A FRAME, NOT A SURFACE — 4:5, matching the product card's media area and the
+ * flagship plate, so a compound keeps its shape from catalogue to page.
+ */
+.frame {
+  position: relative;
+  inline-size: 100%;
+  aspect-ratio: 4 / 5;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border-subtle);
+  background-color: var(--surface-raised);
+}
+
+/* Registration marks at opposing corners, as on the flagship plate. */
+.frame::before,
+.frame::after {
+  content: "";
+  position: absolute;
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  border: 1px solid var(--border-default);
+}
+
+.frame::before {
+  inset-block-start: -1px;
+  inset-inline-start: -1px;
+  border-block-end: 0;
+  border-inline-end: 0;
+}
+
+.frame::after {
+  inset-block-end: -1px;
+  inset-inline-end: -1px;
+  border-block-start: 0;
+  border-inline-start: 0;
+}
+
+.silhouette {
+  block-size: 62%;
+  inline-size: auto;
+  color: var(--ink-muted);
+  opacity: 0.55;
+}
+
+.caption {
+  display: flex;
+  justify-content: space-between;
+  padding-block-start: var(--space-xs);
+  border-block-start: 1px solid var(--border-subtle);
+}
+
+.captionLabel {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.commerce {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+}
+
+@media (max-width: 63.999rem) {
+  .commerce {
+    justify-items: stretch;
+    inline-size: 100%;
+  }
+}

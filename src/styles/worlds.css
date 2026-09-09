@@ -40,7 +40,12 @@
 
   --ink-primary: var(--world-light);
   --ink-secondary: color-mix(in oklab, var(--world-light) 78%, var(--world-void));
-  --ink-muted: color-mix(in oklab, var(--world-light) 52%, var(--world-void));
+  /*
+   * 60%, not 52%. At 52% the muted ink failed AA in every world — 3.9:1 in
+   * GLOW, 4.26 in GHK-Cu — and it carries the eyebrows and captions that label
+   * each Experience beat. 60% clears 4.6 in all three, worst case GLOW.
+   */
+  --ink-muted: color-mix(in oklab, var(--world-light) 60%, var(--world-void));
   --ink-inverse: var(--world-void);
 
   --border-subtle: color-mix(in oklab, var(--world-light) 14%, transparent);

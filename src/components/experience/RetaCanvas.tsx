@@ -16,7 +16,7 @@ import {
   sampleTrack,
   type StageVariant,
 } from "./choreography";
-import { VialModel } from "./VialModel";
+import { VialModel, type PointerState, type StageAnchor } from "./VialModel";
 import { createWorldEnvironment } from "./worldEnvironment";
 import type { WorldPalette } from "./worldPalette";
 
@@ -193,6 +193,19 @@ interface RetaCanvasProps {
   tier: StageTier;
   /** Which choreography to play: the quiet hero arc, or the deep sequence. */
   variant: StageVariant;
+  /** Box the object resolves into, relative to this canvas. Product page only. */
+  anchor?: RefObject<StageAnchor | null>;
+  /** Cursor over the stage. Product page only; absent on touch. */
+  pointer?: RefObject<PointerState>;
+  /**
+   * Break out of the layer's own layout and cover it.
+   *
+   * The product page lays its canvas layer out on the SAME grid as the visible
+   * composition, so the static fallback lands inside the media well. The live
+   * canvas must not be constrained by that grid — the object is positioned in
+   * world space and needs the whole frame to move through.
+   */
+  fill?: boolean;
 }
 
 /**
@@ -212,9 +225,14 @@ export default function RetaCanvas({
   reducedMotion,
   tier,
   variant,
+  anchor,
+  pointer,
+  fill = false,
 }: RetaCanvasProps) {
   return (
     <Canvas
+      // R3F spreads `style` after its own defaults, so this wins.
+      style={fill ? { position: "absolute", inset: 0, width: "100%", height: "100%" } : undefined}
       // Transparent: the backdrop resolves to the section's own `--world-void`,
       // so the canvas and the page dissolve into each other with no edge and no
       // rectangular panel.
@@ -246,7 +264,12 @@ export default function RetaCanvas({
 
       {/* Behind the vial, and therefore inside the transmission buffer: this is
           what the glass actually refracts. */}
-      <Backdrop palette={palette} tier={tier} scope={variant === "hero" ? "local" : "full"} />
+      <Backdrop
+        palette={palette}
+        tier={tier} // Only the homepage sequence owns its whole frame. The hero and the
+        // PDP specimen both sit over DOM the canvas must not paint out.
+        scope={variant === "sequence" ? "full" : "local"}
+      />
 
       {/* NEUTRAL, not the world's light tone. Ambient is uniform: colouring it
           tints every surface at once, which is one of the ways the glass came
@@ -272,6 +295,8 @@ export default function RetaCanvas({
         // white. Damping the environment there keeps it reading as glass.
         envIntensity={ENV_INTENSITY[environment.materialFocus] * (variant === "hero" ? 0.7 : 1)}
         variant={variant}
+        anchor={anchor}
+        pointer={pointer}
       />
     </Canvas>
   );

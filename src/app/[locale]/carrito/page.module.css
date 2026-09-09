@@ -1,0 +1,96 @@
+/*
+ * The bag. Asymmetric, like the product page: the state on the left at reading
+ * measure, the order summary held in a narrower column at the right.
+ */
+
+.layout {
+  display: grid;
+  gap: var(--space-2xl);
+  align-items: start;
+}
+
+@media (min-width: 64rem) {
+  .layout {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: var(--space-4xl);
+  }
+}
+
+.state {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-md);
+  max-inline-size: var(--container-prose);
+}
+
+/* --- The readout ---------------------------------------------------------- */
+
+/*
+ * An instrument reading, not a sentence. The figure is set at display scale so
+ * "00" is a stated measurement — the same register as the numbered spine —
+ * rather than a number buried in an error message.
+ */
+.count {
+  display: grid;
+  gap: var(--space-2xs);
+  margin: 0 0 var(--space-sm);
+}
+
+.countValue {
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-5xl);
+  line-height: 0.85;
+  letter-spacing: var(--tracking-display);
+  color: var(--ink-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.countLabel {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.empty {
+  margin: 0;
+}
+
+.note {
+  margin: 0;
+  text-wrap: pretty;
+}
+
+/* --- Summary column ------------------------------------------------------- */
+
+.aside {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+/*
+ * UNFILLED, NOT DIMMED — the same treatment ADD TO BAG carries, so the two
+ * inert commerce actions on this site read as one consistent "not yet" rather
+ * than as two different kinds of failure.
+ */
+.checkout {
+  inline-size: 100%;
+  min-block-size: 3.5rem;
+  margin-block-start: var(--space-2xs);
+  border: 1px solid var(--border-default);
+  background-color: transparent;
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  cursor: not-allowed;
+}
+
+.pending {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  text-wrap: pretty;
+}

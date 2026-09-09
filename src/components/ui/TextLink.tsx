@@ -40,7 +40,9 @@ export function TextLink({
     <Link
       href={href}
       className={cn(
-        "neogen-mono inline-flex items-center gap-(--space-2xs) text-2xs",
+        // min-h-6 = 24px, the WCAG 2.2 minimum target size. The label is 11px
+        // mono, so without it these actions measure 17px tall.
+        "neogen-mono inline-flex min-h-6 items-center gap-(--space-2xs) text-2xs",
         "uppercase underline decoration-(--border-default) underline-offset-4",
         "transition-colors duration-(--motion-duration-fast) ease-(--ease-standard)",
         "hover:decoration-(--ink-primary)",

@@ -5,6 +5,12 @@ import styles from "./DocumentLedger.module.css";
 export interface DocumentRecord {
   title: string;
   body: string;
+  /**
+   * The actual document, when one exists. Absent → the neutral unavailable
+   * state, which is every record today. Supplied by `content/documents`, joined
+   * to this localized copy at the render site.
+   */
+  file?: { href: string; format: string; size: string } | null;
 }
 
 interface DocumentLedgerProps {
@@ -52,12 +58,30 @@ export function DocumentLedger({
 
             <h3 className={styles.title}>{record.title}</h3>
 
-            <div className={styles.state}>
-              <span className={styles.stateDot} aria-hidden="true" />
-              <Mono size="2xs" className={styles.stateLabel}>
-                {stateLabel} — {stateValue}
-              </Mono>
-            </div>
+            {/*
+             * A record either links to a document or states that it has none.
+             * Never both, and never a link that resolves to nothing: the file
+             * comes from `content/documents`, where every entry is currently
+             * null, so this renders the unavailable state throughout.
+             *
+             * When a file IS present the link names its format and weight,
+             * because a control that starts a download should say what it is
+             * about to hand you.
+             */}
+            {record.file ? (
+              <a className={styles.download} href={record.file.href} download>
+                <Mono size="2xs">
+                  {record.file.format} · {record.file.size}
+                </Mono>
+              </a>
+            ) : (
+              <div className={styles.state}>
+                <span className={styles.stateDot} aria-hidden="true" />
+                <Mono size="2xs" className={styles.stateLabel}>
+                  {stateLabel} — {stateValue}
+                </Mono>
+              </div>
+            )}
           </div>
 
           <p className={styles.body}>{record.body}</p>

@@ -1,0 +1,282 @@
+/*
+ * The purchase interface.
+ *
+ * Zero radius, one neutral action colour, composed as a specimen interface
+ * rather than a boxed ecommerce sidebar: no card, no fill, structure from rules
+ * and alignment.
+ *
+ * FULLY TOKEN-DRIVEN, because it renders in BOTH modes. On the product page it
+ * sits inside the product's own dark environment; elsewhere it would sit on
+ * paper. Nothing here names a literal colour — the surrounding scope decides
+ * what "the action colour" resolves to, and the only requirement the panel
+ * imposes is that it stays neutral rather than becoming the world's accent.
+ */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  max-inline-size: 34rem;
+}
+
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2xs);
+}
+
+.index {
+  color: var(--ink-primary);
+  letter-spacing: var(--tracking-label);
+}
+
+.section,
+.qualifier {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.identity {
+  margin-block-start: var(--space-xs);
+}
+
+/*
+ * The product page's masthead, at the largest scale that still lets the whole
+ * opening — plate, identity, price and action — land inside a 900px laptop
+ * viewport. A step up from here pushes ADD TO BAG ten pixels below the fold,
+ * and a primary action half-visible at the very edge reads as a mistake rather
+ * than as an invitation to scroll. The scale that was given up is bought back
+ * by the column rule and the identity mark, which do the same work
+ * structurally.
+ */
+.name {
+  margin: var(--space-2xs) 0 0;
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-4xl);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-display);
+  color: var(--ink-primary);
+  text-wrap: balance;
+}
+
+.sku {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.descriptor {
+  margin: var(--space-2xs) 0 0;
+  color: var(--ink-secondary);
+  line-height: var(--leading-relaxed);
+  text-wrap: pretty;
+}
+
+.rule {
+  block-size: 1px;
+  inline-size: 100%;
+  background-color: var(--border-subtle);
+  margin-block: var(--space-sm);
+}
+
+/* --- Variants ------------------------------------------------------------- */
+
+.variants {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+.variantLegend {
+  padding: 0;
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.variantOptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+}
+
+/* Zero radius, 1px border, charcoal when selected — the reference control. */
+.variant {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 7rem;
+  min-block-size: 2.75rem;
+  padding-inline: var(--space-sm);
+  border: 1px solid var(--border-default);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color var(--motion-duration-fast) var(--ease-standard),
+    color var(--motion-duration-fast) var(--ease-standard);
+}
+
+.variant input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  cursor: pointer;
+}
+
+.variant:has(input:checked) {
+  background-color: var(--surface-inverse);
+  color: var(--ink-inverse);
+  border-color: var(--surface-inverse);
+}
+
+.variant:has(input:focus-visible) {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}
+
+/* --- Purchase row --------------------------------------------------------- */
+
+.purchase {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-block-start: var(--space-md);
+}
+
+.quantity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+.fieldLabel {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+/*
+ * Presentational only — it carries no state because there is no cart to hold a
+ * quantity for. It shows the architecture without pretending to work.
+ */
+.stepper {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--border-default);
+  color: var(--ink-muted);
+}
+
+.step,
+.count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 2.75rem;
+  min-block-size: 2.75rem;
+  font-size: var(--text-sm);
+}
+
+.count {
+  border-inline: 1px solid var(--border-default);
+  color: var(--ink-primary);
+}
+
+.priceValue {
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-3xl);
+  line-height: 1;
+  letter-spacing: var(--tracking-tight);
+  color: var(--ink-primary);
+  text-transform: uppercase;
+}
+
+/* --- Action --------------------------------------------------------------- */
+
+.addToBag {
+  inline-size: 100%;
+  min-block-size: 3.5rem;
+  margin-block-start: var(--space-md);
+  /* Transparent rather than absent, so the disabled state can show a border
+     without the control changing size. */
+  border: 1px solid transparent;
+  background-color: var(--surface-inverse);
+  color: var(--ink-inverse);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity var(--motion-duration-base) var(--ease-standard);
+}
+
+.addToBag:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+/*
+ * Visibly inert, on purpose. There is no cart and no price; a control that
+ * looked live and did nothing would be a fake integration.
+ */
+.addToBag:disabled {
+  /*
+   * UNFILLED, NOT DIMMED.
+   *
+   * A greyed-out fill has to be mixed against the surface, and the panel now
+   * renders on two different surfaces — the mix that reads as "inert" on paper
+   * reads as "broken" on the dark environment, and its label lands on whichever
+   * side of the contrast line the mix happens to fall. An outlined control is
+   * unambiguous in both, and uses a token pair that is already designed for
+   * every surface it can appear on.
+   */
+  background-color: transparent;
+  border-color: var(--border-default);
+  color: var(--ink-muted);
+  cursor: not-allowed;
+}
+
+.pending {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin-block-start: var(--space-md);
+  padding-block-start: var(--space-md);
+  border-block-start: 1px solid var(--border-subtle);
+}
+
+@media (max-width: 47.999rem) {
+  .name {
+    font-size: var(--text-3xl);
+  }
+
+  .purchase {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .variant {
+    min-inline-size: 6rem;
+    flex: 1 1 auto;
+  }
+}

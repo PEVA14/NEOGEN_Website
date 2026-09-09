@@ -155,11 +155,42 @@ const HERO_COMPACT: PoseTrack = {
   rimIntensity: [9, 11],
 };
 
+/*
+ * PRESENTER — the PDP.
+ *
+ * Not a sequence. The product page opens on a composition that is already
+ * resolved, so there is nothing to choreograph: one held attitude, and the
+ * object's position and size come entirely from the MEASURED media well via the
+ * anchor. That is why every offset here is zero and the scale is 1 — they are
+ * the values the anchor overrides, kept only so the pose is well-defined for a
+ * frame rendered before the first measurement lands.
+ *
+ * Movement on this page is continuous slow rotation plus an optional pointer
+ * response, both applied in `VialModel`. A museum display, not a sequence:
+ * the vial turns because objects on a turntable turn, not because the page is
+ * telling a story.
+ */
+const PRESENTER: PoseTrack = {
+  offsetX: [0],
+  offsetY: [0],
+  offsetZ: [0],
+  scale: [1],
+  // The base attitude. Rotation about Y is accumulated on top of this.
+  rotationY: [0],
+  // The diagonal is preserved — the vial is never stood up straight.
+  rotationZ: [-0.26],
+  rotationX: [-0.045],
+  // Steady. The rim no longer "recedes as Quiet Mode arrives", because the
+  // opening composition stays inside the RETA world now.
+  rimIntensity: [7],
+};
+
 /** Which choreography a stage plays. */
-export type StageVariant = "hero" | "sequence";
+export type StageVariant = "hero" | "sequence" | "presenter";
 
 export function poseTrack(tier: StageTier, variant: StageVariant = "sequence"): PoseTrack {
   if (variant === "hero") return tier === "compact" ? HERO_COMPACT : HERO_FULL;
+  if (variant === "presenter") return PRESENTER;
   return tier === "compact" ? COMPACT : FULL;
 }
 

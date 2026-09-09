@@ -60,11 +60,19 @@ export function EditorialSpread({
 
         <dl className={styles.principles}>
           {principles.map((principle, position) => (
+            /*
+             * A `div` grouping inside a `dl` may contain ONLY `dt` and `dd` —
+             * the index span sat here as a third child and made the list
+             * invalid. It moves inside the `dt`, where it belongs anyway: it
+             * numbers the term rather than being a sibling of it.
+             */
             <div key={principle.title} className={styles.principle}>
-              <Mono size="2xs" className={styles.principleIndex} aria-hidden="true">
-                {String(position + 1).padStart(2, "0")}
-              </Mono>
-              <dt className={styles.principleTitle}>{principle.title}</dt>
+              <dt className={styles.principleTitle}>
+                <Mono size="2xs" className={styles.principleIndex} aria-hidden="true">
+                  {String(position + 1).padStart(2, "0")}
+                </Mono>
+                <span>{principle.title}</span>
+              </dt>
               <dd className={styles.principleBody}>{principle.body}</dd>
             </div>
           ))}

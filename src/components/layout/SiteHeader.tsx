@@ -7,6 +7,7 @@ import { Mono } from "@/components/typography";
 import { primaryNav, routes } from "@/config/routes";
 import type { Locale } from "@/i18n/config";
 import { localizePath } from "@/i18n/routing";
+import { readBag } from "@/lib/bag";
 import type { Dictionary } from "@/i18n/types";
 
 import styles from "./SiteHeader.module.css";
@@ -67,13 +68,16 @@ export function SiteHeader({ locale, dict }: SiteHeaderProps) {
 
             {/*
              * `[ BAG: N ]` — the reference system's bag affordance.
-             * The count is hard 0: no cart state exists yet, and inventing a
-             * number would be fabricating application state. It becomes live
-             * when the cart is built.
+             *
+             * Read from `lib/bag`, not stated here. The count is still zero
+             * because nothing can be added to a bag with no verified prices or
+             * formats — but the header and the bag page now agree because they
+             * ask the same function, rather than because two files happen to
+             * hardcode the same digit.
              */}
             <Link href={localizePath(routes.cart, locale)} className={styles.bag}>
               <Mono size="2xs" className="tracking-(--tracking-label)">
-                [ {dict.nav.bag}: 0 ]
+                [ {dict.nav.bag}: {readBag().count} ]
               </Mono>
             </Link>
           </div>

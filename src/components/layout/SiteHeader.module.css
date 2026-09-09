@@ -97,9 +97,11 @@
 
 /* --- Wordmark ------------------------------------------------------------ */
 
+/* 24px minimum hit area — measured at 20px tall. See the navLink note. */
 .wordmark {
   display: inline-flex;
   align-items: center;
+  min-block-size: 2.75rem;
   gap: var(--space-2xs);
   color: var(--ink-primary);
 }
@@ -114,7 +116,16 @@
 
 /* --- Navigation ---------------------------------------------------------- */
 
+/*
+ * WCAG 2.2 SC 2.5.8 — measured at 17px tall, which is a poor tap target on a
+ * phone regardless of whether the spacing exception would technically excuse
+ * it. The height comes from padding, so the text does not move and the header
+ * keeps its measured rhythm; only the hit area grows.
+ */
 .navLink {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 2.75rem;
   color: var(--ink-secondary);
   font-size: var(--text-sm);
   text-decoration: underline;

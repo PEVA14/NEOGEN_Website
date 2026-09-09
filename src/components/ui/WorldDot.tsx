@@ -21,6 +21,18 @@ interface WorldDotProps {
  * Uses `data-world-tint`, NOT `data-world`: the tint scope loads the palette
  * variables without inverting surface and ink, so the dot cannot repaint the
  * card it sits in (CONVENTIONS §3).
+ *
+ * THE DOT IS COLOURED; THE LABEL IS NOT.
+ * --------------------------------------
+ * Setting the label in the world's accent failed AA badly on paper — GLOW's
+ * amber at 2.87:1 and GHK-Cu's copper at 3.98:1, as 11px text. Only RETA's blue
+ * passed, which is the tell that the colour was never carrying the label's
+ * legibility in the first place.
+ *
+ * So identity moves entirely to the dot, which is decorative and redundant with
+ * the word beside it, and the word is set in ordinary ink. This is also a
+ * cleaner reading of SYSTEM STATUS V1 than the original: product colour marks
+ * identity, it does not set type.
  */
 export function WorldDot({ world, children, className }: WorldDotProps) {
   return (
@@ -28,7 +40,7 @@ export function WorldDot({ world, children, className }: WorldDotProps) {
       data-world-tint={world}
       className={cn(
         "inline-flex items-center gap-(--space-2xs)",
-        "neogen-mono text-2xs tracking-(--tracking-label) text-(--world-accent) uppercase",
+        "neogen-mono text-2xs tracking-(--tracking-label) text-(--ink-secondary) uppercase",
         className,
       )}
     >

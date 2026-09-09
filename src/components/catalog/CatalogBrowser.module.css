@@ -1,0 +1,255 @@
+/*
+ * The catalogue. Quiet Mode throughout — product identity appears only in the
+ * card image areas and in the world dots, never in a control.
+ */
+
+.browser {
+  display: grid;
+  gap: var(--space-lg);
+}
+
+/* --- The control rail ----------------------------------------------------- */
+
+/*
+ * An instrument panel, not a toolbar: a band held between two hairlines, with
+ * no fill, no box and no shadow. Structure comes from the rules and from the
+ * alignment of the labels above their controls.
+ */
+.rail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-lg);
+  padding-block: var(--space-md);
+  border-block: 1px solid var(--border-subtle);
+}
+
+.controlLabel {
+  display: block;
+  padding: 0;
+  margin-block-end: var(--space-2xs);
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.group {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-inline-size: 0;
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+}
+
+/* --- Search --------------------------------------------------------------- */
+
+/*
+ * Underlined, not boxed. A bordered input in this system would be the only
+ * rounded-corner-shaped object on the page even at zero radius — a rule under
+ * the text reads as a field on a form, which is what it is.
+ */
+.search {
+  flex: 1 1 16rem;
+  min-inline-size: 0;
+}
+
+.searchInput {
+  inline-size: 100%;
+  min-block-size: 2.75rem;
+  padding: 0 0 var(--space-2xs);
+  border: 0;
+  border-block-end: 1px solid var(--border-default);
+  background: none;
+  color: var(--ink-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  letter-spacing: var(--tracking-label);
+}
+
+.searchInput::placeholder {
+  color: var(--ink-muted);
+  text-transform: uppercase;
+}
+
+/*
+ * Keeps the ring. Swapping the outline for a border-colour change left this as
+ * the only focusable element on the site without the standard 2px indicator —
+ * a 1px hairline going darker is a weak signal and an inconsistent one. The
+ * border still emphasises, the ring still announces.
+ */
+.searchInput:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+  border-block-end-color: var(--ink-primary);
+}
+
+/* Chrome draws its own clear affordance; the system supplies its own. */
+.searchInput::-webkit-search-cancel-button {
+  appearance: none;
+}
+
+/* --- Chips ---------------------------------------------------------------- */
+
+/*
+ * Zero radius, 1px border, charcoal when pressed — the same control the product
+ * page uses for its variant selector, so a reader learns one shape once.
+ *
+ * `aria-pressed` carries BOTH the state and the styling: there is no separate
+ * `data-active`, so the accessible state and the visible state cannot drift.
+ */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 2.75rem;
+  padding-inline: var(--space-sm);
+  border: 1px solid var(--border-default);
+  background: none;
+  color: var(--ink-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background-color var(--motion-duration-fast) var(--ease-standard),
+    color var(--motion-duration-fast) var(--ease-standard),
+    border-color var(--motion-duration-fast) var(--ease-standard);
+}
+
+.chip:hover {
+  border-color: var(--ink-primary);
+}
+
+.chip[aria-pressed="true"] {
+  background-color: var(--surface-inverse);
+  border-color: var(--surface-inverse);
+  color: var(--ink-inverse);
+}
+
+.chip:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}
+
+/* A pressed chip inverts its ground, so the world dot has to invert with it. */
+.chip[aria-pressed="true"] :global([data-world-tint]) {
+  color: var(--ink-inverse);
+}
+
+.trailing {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-lg);
+  margin-inline-start: auto;
+}
+
+/* --- Status line ---------------------------------------------------------- */
+
+.status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.count {
+  color: var(--ink-primary);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.pending {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+/* --- Results -------------------------------------------------------------- */
+
+.grid {
+  display: grid;
+  gap: var(--gutter);
+  align-items: start;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 48rem) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  /*
+   * The descending step, applied only to a full, unfiltered set. Written with
+   * nth-child rather than per-card classes so it survives any result order.
+   */
+  .grid[data-stagger="true"] .cell:nth-child(2) {
+    margin-block-start: var(--space-2xl);
+  }
+
+  .grid[data-stagger="true"] .cell:nth-child(3) {
+    margin-block-start: var(--space-4xl);
+  }
+}
+
+.index {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* --- Empty ---------------------------------------------------------------- */
+
+/*
+ * Reached only by a filter combination that excludes everything — never by an
+ * empty catalogue. It states what happened and offers the way back, because a
+ * dead end with three products behind it is a navigation failure.
+ */
+.empty {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-md);
+  padding-block: var(--space-3xl);
+  border-block-end: 1px solid var(--border-subtle);
+}
+
+.reset {
+  min-block-size: 2.75rem;
+  padding-inline: var(--space-md);
+  border: 1px solid var(--border-default);
+  background: none;
+  color: var(--ink-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color var(--motion-duration-fast) var(--ease-standard);
+}
+
+.reset:hover {
+  border-color: var(--ink-primary);
+}
+
+.reset:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}
+
+@media (max-width: 47.999rem) {
+  .rail {
+    gap: var(--space-md);
+  }
+
+  .trailing {
+    margin-inline-start: 0;
+    inline-size: 100%;
+    gap: var(--space-md);
+  }
+}

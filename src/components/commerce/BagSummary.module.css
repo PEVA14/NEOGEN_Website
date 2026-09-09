@@ -1,0 +1,71 @@
+/*
+ * The order summary. Quiet Mode: a ruled block, no fill, no card — structure
+ * from hairlines and alignment, like every other information surface here.
+ */
+
+.summary {
+  display: grid;
+  gap: var(--space-md);
+  padding-block-start: var(--space-sm);
+  border-block-start: 1px solid var(--ink-primary);
+}
+
+.title {
+  color: var(--ink-primary);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.rows {
+  margin: 0;
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.key {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.value {
+  margin: 0;
+  color: var(--ink-secondary);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  text-align: end;
+}
+
+/* The figure the block exists to deliver — set apart by a rule and by scale. */
+.totalRow {
+  margin-block-start: var(--space-2xs);
+  padding-block-start: var(--space-sm);
+  border-block-start: 1px solid var(--border-subtle);
+}
+
+.totalValue {
+  margin: 0;
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-xl);
+  line-height: 1;
+  letter-spacing: var(--tracking-tight);
+  color: var(--ink-primary);
+  text-transform: uppercase;
+  text-align: end;
+}
+
+.note {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  text-wrap: pretty;
+}

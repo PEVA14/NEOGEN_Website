@@ -39,6 +39,8 @@ export interface ProductWorld {
    * is identical in every locale (CONVENTIONS §7).
    */
   productName: string;
+  /** URL segment under /productos. Locale-independent, like the product name. */
+  slug: string;
   /** `data-world` attribute value. Matches the CSS selector in worlds.css. */
   dataAttribute: WorldId;
   /**
@@ -60,6 +62,7 @@ export const worlds: Record<WorldId, ProductWorld> = {
     id: "reta",
     label: "RETA",
     productName: "Retatrutide Research",
+    slug: "reta",
     dataAttribute: "reta",
     modelPath: "/models/NEOGEN_RETA.glb",
     // TODO(assets): a rendered still of this model. Until it exists the
@@ -76,6 +79,7 @@ export const worlds: Record<WorldId, ProductWorld> = {
     id: "glow",
     label: "GLOW",
     productName: "GLOW Peptide Series",
+    slug: "glow",
     dataAttribute: "glow",
     modelPath: null, // MVP reuses the RETA vial with a GLOW label.
     posterPath: null,
@@ -90,6 +94,7 @@ export const worlds: Record<WorldId, ProductWorld> = {
     id: "ghk-cu",
     label: "GHK-Cu",
     productName: "Copper Peptide GHK-Cu",
+    slug: "ghk-cu",
     dataAttribute: "ghk-cu",
     modelPath: null, // MVP reuses the RETA vial with a GHK-Cu label.
     posterPath: null,

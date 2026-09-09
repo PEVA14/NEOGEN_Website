@@ -110,3 +110,30 @@
   max-inline-size: 34rem;
   text-wrap: pretty;
 }
+
+/*
+ * Shown only when a record actually has a file. Sized to the 24px minimum
+ * target and underlined on interaction, matching every other link in the
+ * system.
+ */
+.download {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 1.5rem;
+  color: var(--ink-primary);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-decoration-color: var(--border-default);
+  text-underline-offset: 4px;
+  transition: text-decoration-color var(--motion-duration-fast) var(--ease-standard);
+}
+
+.download:hover {
+  text-decoration-color: var(--ink-primary);
+}
+
+.download:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}

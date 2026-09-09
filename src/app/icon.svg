@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!--
+    The wordmark reduced to its mark.
+
+    NEOGEN sets as "● NEOGEN", so the dot is the identity, not a decoration
+    beside it — and a dot is the one form that survives 16px intact, which no
+    letterform in a condensed display face does. Charcoal ground and paper mark
+    are the brand's own two inks.
+  -->
+  <rect width="64" height="64" fill="#111111" />
+  <circle cx="32" cy="32" r="11" fill="#faf9f6" />
+</svg>

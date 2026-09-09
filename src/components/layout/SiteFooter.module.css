@@ -12,7 +12,8 @@
   --surface-base: var(--neogen-charcoal);
   --ink-primary: var(--neogen-paper);
   --ink-secondary: color-mix(in oklab, var(--neogen-paper) 78%, var(--neogen-charcoal));
-  --ink-muted: color-mix(in oklab, var(--neogen-paper) 50%, var(--neogen-charcoal));
+  /* 55%, not 50%: at 50% this was 4.41:1 on charcoal, just under AA. */
+  --ink-muted: color-mix(in oklab, var(--neogen-paper) 55%, var(--neogen-charcoal));
   --border-subtle: color-mix(in oklab, var(--neogen-paper) 16%, transparent);
   --focus-ring: var(--neogen-paper);
   --focus-ring-offset: var(--neogen-charcoal);
@@ -104,7 +105,11 @@
   gap: var(--space-2xs);
 }
 
+/* 24px minimum hit area — measured at 17px. See the header's navLink note. */
 .link {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 1.5rem;
   color: var(--ink-secondary);
   font-size: var(--text-sm);
   text-decoration: underline;

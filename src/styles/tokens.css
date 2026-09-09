@@ -33,7 +33,13 @@
 
   --ink-primary: var(--neogen-charcoal);
   --ink-secondary: var(--neogen-graphite);
-  --ink-muted: color-mix(in oklab, var(--neogen-graphite) 62%, var(--neogen-paper));
+  /*
+   * 65%, not 62%. At 62% this resolved to #727170, which is 4.28:1 against warm
+   * stone — under AA for the 11px mono labels it is mostly used for. Measured,
+   * not guessed: 65% is the lowest mix that clears 4.5 on the darkest Quiet
+   * surface, at 4.68.
+   */
+  --ink-muted: color-mix(in oklab, var(--neogen-graphite) 65%, var(--neogen-paper));
   --ink-inverse: var(--neogen-paper);
 
   /* --- Accent -----------------------------------------------------------

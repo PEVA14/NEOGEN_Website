@@ -16,6 +16,15 @@ interface SectionHeaderProps {
   action?: ReactNode;
   /** Optional editorial lede, set below the rule at reading measure. */
   lede?: string;
+  /**
+   * Heading level. `h2` by default, because a numbered section is almost always
+   * one entry in a page's spine rather than the page's own subject.
+   *
+   * Set `h1` on the FIRST header of a page that has no other document title —
+   * a catalogue or a hub is built entirely out of these, so without it the page
+   * ships with no `h1` at all and its outline starts at level 2.
+   */
+  as?: "h1" | "h2";
 }
 
 /**
@@ -32,7 +41,15 @@ interface SectionHeaderProps {
  * decoration; at this scale the spine actually structures the page, which is
  * what the reference set uses it for.
  */
-export function SectionHeader({ index, label, title, id, action, lede }: SectionHeaderProps) {
+export function SectionHeader({
+  index,
+  label,
+  title,
+  id,
+  action,
+  lede,
+  as = "h2",
+}: SectionHeaderProps) {
   return (
     <header className={styles.header}>
       <div className={styles.rule} />
@@ -50,7 +67,7 @@ export function SectionHeader({ index, label, title, id, action, lede }: Section
         {action ? <div className={styles.action}>{action}</div> : null}
       </div>
 
-      <Display id={id} as="h2" size="4xl" className={styles.title}>
+      <Display id={id} as={as} size="4xl" className={styles.title}>
         {title}
       </Display>
 

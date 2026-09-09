@@ -47,7 +47,9 @@ export function SiteFooter({ locale, dict }: SiteFooterProps) {
     },
     {
       heading: dict.footer.columns.help,
-      links: [{ label: dict.nav.cart, href: routes.cart }],
+      // SYSTEM STATUS V1: BAG, not Cart. The header, the page title and this
+      // link have to agree; only the ROUTE stays /carrito.
+      links: [{ label: dict.cart.title, href: routes.cart }],
     },
   ];
 

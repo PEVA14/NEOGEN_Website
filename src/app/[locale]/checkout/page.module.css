@@ -1,0 +1,65 @@
+/*
+ * Checkout. The same asymmetric pairing as the bag — the process on the left at
+ * reading measure, the order held in a narrower column at the right.
+ */
+
+.layout {
+  display: grid;
+  gap: var(--space-2xl);
+  align-items: start;
+}
+
+@media (min-width: 64rem) {
+  .layout {
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+    gap: var(--space-4xl);
+  }
+
+  /* The column rule, as on the product page: one hairline instead of a box. */
+  .aside {
+    padding-inline-start: var(--space-2xl);
+    border-inline-start: 1px solid var(--border-subtle);
+  }
+}
+
+.flow {
+  min-inline-size: 0;
+}
+
+.aside {
+  display: grid;
+  gap: var(--space-sm);
+  align-content: start;
+}
+
+.emptyBag {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-xs);
+  padding-block-end: var(--space-md);
+}
+
+/*
+ * UNFILLED, NOT DIMMED — matching ADD TO BAG and CONTINUE TO PAYMENT, so the
+ * three blocked commerce actions on this site are one recognisable state.
+ */
+.place {
+  inline-size: 100%;
+  min-block-size: 3.5rem;
+  margin-block-start: var(--space-2xs);
+  border: 1px solid var(--border-default);
+  background-color: transparent;
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  cursor: not-allowed;
+}
+
+.pending {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  text-wrap: pretty;
+}

@@ -21,10 +21,15 @@ import {
   TextLink,
 } from "@/components/ui";
 import { routes } from "@/config/routes";
-import { getWorld, worldIds } from "@/config/worlds";
-import { isLocale } from "@/i18n/config";
+import { getWorld, worldIds, type WorldId } from "@/config/worlds";
+import { isLocale, localeTags } from "@/i18n/config";
+import { formatStrength, isPublishable, products } from "@/data/catalog";
+import { formatPrice, getPrices } from "@/data/commerce";
 import { getDictionary } from "@/i18n/getDictionary";
+import { alternates } from "@/lib/alternates";
 import { localizePath } from "@/i18n/routing";
+
+import type { Metadata } from "next";
 
 /**
  * HOME — Phase 3.
@@ -51,6 +56,17 @@ import { localizePath } from "@/i18n/routing";
  * is reproduced and the VALUE is an explicit placeholder — none of it is
  * verified (CLAUDE.md regulatory guardrail, CONVENTIONS §8).
  */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isLocale(locale)) return {};
+  // Title comes from the layout's default; only the canonical is page-specific.
+  return { alternates: alternates(locale, routes.home) };
+}
+
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
@@ -58,11 +74,50 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const home = dict.home;
 
   const path = (to: string) => localizePath(to, locale);
-  const placeholder = dict.status.placeholder;
 
   const heroCopy: HeroCopy = { ...home.hero, ctaHref: path(routes.products) };
 
   const reta = home.reta;
+  /*
+   * "From" price per flagship, batched. `getPrices` resolves locally today and
+   * over a network later; the call shape does not change.
+   */
+  const flagshipVariants = products
+    .filter((p) => p.world)
+    .flatMap((p) => p.variants.map((v) => v.id));
+  const priceMap = await getPrices(flagshipVariants);
+  const relatedPrices = new Map(
+    products
+      .filter((p) => p.world)
+      .map((p) => {
+        const cheapest = p.variants
+          .map((v) => priceMap.get(v.id))
+          .filter((m): m is NonNullable<typeof m> => Boolean(m))
+          .sort((a, b) => a.amount - b.amount)[0];
+        return [p.world as string, cheapest ? formatPrice(cheapest, localeTags[locale]) : null];
+      }),
+  );
+
+  /*
+   * The Experience rails used to carry three unfillable fields each — purity,
+   * molecular action, lot. Those need a verified source we do not have, and a
+   * labelled empty field makes a finished page look unfinished. They now carry
+   * what the catalogue actually knows.
+   */
+  const railFor = (world: WorldId) => {
+    const p = products.find((item) => item.world === world);
+    if (!p) return [];
+    const from = relatedPrices.get(world);
+    return [
+      {
+        key: home.reta.specs.presentation,
+        value: p.variants.map((v) => formatStrength(v.strength)).join(" · "),
+      },
+      { key: home.reta.specs.category, value: dict.products.catalog.categoryLabels[p.category] },
+      ...(from ? [{ key: home.reta.specs.from, value: from }] : []),
+    ];
+  };
+
   const retaCopy: RetaExperienceCopy = {
     beats: reta.beats.map((beat, index) => ({
       eyebrow: beat.eyebrow,
@@ -70,14 +125,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       body: beat.body,
       // The specification block lands on the final beat, so the sequence
       // resolves from product statement into technical reference.
-      annotations:
-        index === reta.beats.length - 1
-          ? [
-              { key: reta.specs.formulation, value: placeholder },
-              { key: reta.specs.molecularAction, value: placeholder },
-              { key: reta.specs.purity, value: placeholder },
-            ]
-          : undefined,
+      annotations: index === reta.beats.length - 1 ? railFor("reta") : undefined,
     })),
     vialAlt: reta.vialAlt,
     loadingLabel: reta.loadingLabel,
@@ -89,11 +137,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     eyebrow: home.glow.eyebrow,
     statement: home.glow.statement,
     body: home.glow.body,
-    annotations: [
-      { key: home.glow.specs.vial, value: placeholder },
-      { key: home.glow.specs.state, value: placeholder },
-      { key: home.glow.specs.lot, value: dict.status.lot },
-    ],
+    annotations: railFor("glow"),
     mediaLabel: home.glow.mediaLabel,
   };
 
@@ -101,11 +145,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     eyebrow: home.ghkcu.eyebrow,
     statement: home.ghkcu.statement,
     body: home.ghkcu.body,
-    annotations: [
-      { key: home.ghkcu.specs.materialClass, value: placeholder },
-      { key: home.ghkcu.specs.tactileMatrix, value: placeholder },
-      { key: home.ghkcu.specs.status, value: placeholder },
-    ],
+    annotations: railFor("ghk-cu"),
     mediaLabel: home.ghkcu.mediaLabel,
   };
 
@@ -181,10 +221,21 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 world={id}
                 worldLabel={home.products.worldLabels[id]}
                 name={getWorld(id).productName}
+                /* Real values where the catalogue now supplies them. Only
+                   documentation remains genuinely unknown. */
                 fields={[
-                  { key: home.research.fields.code, value: placeholder },
+                  {
+                    key: home.research.fields.code,
+                    value:
+                      dict.products.catalog.categoryLabels[
+                        products.find((p) => p.world === id)?.category ?? "peptides"
+                      ],
+                  },
                   { key: home.research.fields.documentation, value: dict.status.pending },
-                  { key: home.research.fields.articles, value: dict.status.tbd },
+                  {
+                    key: home.research.fields.articles,
+                    value: String(products.find((p) => p.world === id)?.variants.length ?? 0),
+                  },
                 ]}
               />
             ))}
@@ -248,10 +299,15 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                   world={id}
                   worldLabel={home.products.worldLabels[id]}
                   name={getWorld(id).productName}
-                  href={path(routes.products)}
-                  meta={home.products.meta}
+                  // Deep-link where a product page exists; otherwise the
+                  // catalogue, so no card points at a 404.
+                  href={
+                    products.some((p) => p.world === id && isPublishable(p))
+                      ? path(routes.product(getWorld(id).slug))
+                      : path(routes.products)
+                  }
+                  price={relatedPrices.get(id) ?? null}
                   ctaLabel={home.products.cta}
-                  mediaLabel={home.products.mediaLabel}
                 />
               </div>
             ))}

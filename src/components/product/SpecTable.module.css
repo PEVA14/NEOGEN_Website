@@ -1,0 +1,55 @@
+/*
+ * Specification table.
+ *
+ * Striped rows, 1px chalk borders, zero radius. The label column is mono and
+ * muted; the value column carries the weight — so a row reads as a record even
+ * when its value is still a placeholder.
+ */
+
+.table {
+  margin: 0;
+  border: 1px solid var(--border-subtle);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3xs);
+  padding: var(--space-md);
+  border-block-end: 1px solid var(--border-subtle);
+}
+
+.row:last-child {
+  border-block-end: 0;
+}
+
+/* The stripe. Alternating ground is what makes a long table scannable. */
+.row:nth-child(odd) {
+  background-color: var(--surface-raised);
+}
+
+@media (min-width: 48rem) {
+  .row {
+    /* Narrow label column, wide value column — the reference proportion. */
+    grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+    gap: var(--space-lg);
+    align-items: baseline;
+  }
+}
+
+.key {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+/*
+ * Set at the weight a real value will take. A placeholder in muted small text
+ * reads as missing content; at full weight it reads as a field awaiting data.
+ */
+.value {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--ink-primary);
+}

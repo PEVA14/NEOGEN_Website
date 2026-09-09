@@ -32,7 +32,8 @@ different labels (see `docs/NEOGEN_MVP_SCOPE.md`):
 - Web code owns camera, lighting, environment, positioning, scroll response,
   responsive behaviour, performance and fallbacks. The GLB supplies geometry
   and materials only.
-- Every world must also have a `posterPath` still image for the loading state
-  and the no-3D / reduced-motion fallback.
+- Every world must also have a poster still for the loading state and the
+  no-3D / reduced-motion fallback. Declare it in `src/content/media.ts` under
+  `poster`, not as a bare path in a component.
 - Blender polish is explicitly **not** an MVP blocker. MVP-quality assets are
   expected and acceptable.

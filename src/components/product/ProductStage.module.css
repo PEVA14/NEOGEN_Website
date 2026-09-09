@@ -1,0 +1,267 @@
+/*
+ * The product page's opening composition.
+ *
+ * Static by design — no scroll track, no arrival sequence. Everything that
+ * makes it feel expensive is structural: the measure, the column rule, the
+ * instrument marks on the media plate, and the seam into Quiet Mode below.
+ *
+ * ONE GRID, DECLARED ONCE. The visible composition and the canvas layer are
+ * separate stacking layers that must agree exactly on where the media frame is,
+ * or the static fallback and the live object occupy different places. So the
+ * geometry lives in custom properties on the stage and both layers read it.
+ */
+
+.stage {
+  /* --- shared geometry --- */
+  --stage-band: max(var(--gutter), calc((100vw - var(--container-max)) / 2));
+  --stage-gap: var(--space-3xl);
+  /* Media takes slightly more than half: it is the subject, not a thumbnail. */
+  --stage-columns: minmax(0, 1.06fr) minmax(0, 1fr);
+  /* 4:5, capped by BOTH axes so the plate keeps its ratio on a short viewport.
+     57.6dvh is 72dvh × 4/5 — the width that makes the height cap exact. */
+  --well-inline: min(100%, 34rem, 57.6dvh);
+  --mark: 1.25rem;
+  /*
+   * Room below the plate for its caption, which is positioned out of flow.
+   * Applied to the plate AND to the fallback so the two stay concentric —
+   * anything that shifts one has to shift the other.
+   */
+  --caption-reserve: 0rem;
+
+  position: relative;
+  display: grid;
+  grid-template-areas: "stage";
+  isolation: isolate;
+
+  /*
+   * THE SEAM, at the bottom.
+   *
+   * `worlds.css` puts an accent rule at the START of an Experience section, but
+   * here the world IS the top of the page — there is no paper above it to cut
+   * away from. The boundary that means something is the one below, where the
+   * environment ends and Quiet Mode begins.
+   */
+  border-block-end: 1px solid var(--world-accent);
+}
+
+.stage > * {
+  grid-area: stage;
+}
+
+/* --- The environment ------------------------------------------------------ */
+
+.field {
+  background-color: var(--world-void);
+  background-image: var(--world-atmosphere);
+}
+
+/* --- Layers --------------------------------------------------------------- */
+
+/*
+ * Both layers share the grid. The canvas layer exists to place the STATIC
+ * fallback in the media frame; the live canvas is given `fill` and covers the
+ * whole layer instead, because the object is positioned in world space.
+ */
+.composition,
+.canvasLayer {
+  display: grid;
+  grid-template-columns: var(--stage-columns);
+  gap: var(--stage-gap);
+  align-items: center;
+  /*
+   * Tight enough that the whole opening — plate, identity, price and action —
+   * lands inside a 900px laptop viewport. At 3xl the purchase control sat two
+   * pixels below the fold, which is the one place it must never be.
+   */
+  padding-block: var(--space-xl);
+  padding-inline: var(--stage-band);
+  min-block-size: 100dvh;
+}
+
+.canvasLayer {
+  position: relative;
+  z-index: var(--z-canvas);
+  /* The stage owns pointer handling; the canvas must not intercept it. */
+  pointer-events: none;
+}
+
+.composition {
+  position: relative;
+  z-index: var(--z-content);
+}
+
+/* The static fallback's own styles are `position: absolute; inset: 0`, so it
+   needs a positioned box of the plate's size to fill. It is placed on the same
+   row and column as the media column, and offset by the label above it. */
+.mediaWell {
+  position: relative;
+  grid-column: 1;
+  justify-self: center;
+  align-self: center;
+  inline-size: var(--well-inline);
+  aspect-ratio: 4 / 5;
+  margin-block-end: var(--caption-reserve);
+}
+
+/* --- The media plate ------------------------------------------------------ */
+
+/*
+ * A FRAME, NOT A SURFACE. The environment is already the media; the plate marks
+ * where the product is, the way a mounted specimen is marked. It carries no
+ * background, so the object behind it reads through.
+ *
+ * 4:5 — the same ratio as the product card's media area, so the catalogue and
+ * the product page describe the product in the same shape.
+ */
+.media {
+  position: relative;
+  grid-column: 1;
+  justify-self: center;
+  align-self: center;
+  inline-size: var(--well-inline);
+  aspect-ratio: 4 / 5;
+  margin-block-end: var(--caption-reserve);
+  border: 1px solid var(--border-subtle);
+  /* The plate is a mark; the object inside it belongs to the canvas below. */
+  pointer-events: none;
+}
+
+/*
+ * Registration marks at opposing corners. Two, not four — a diagonal pair reads
+ * as an instrument's alignment mark, where four read as a decorative border.
+ */
+.media::before,
+.media::after {
+  content: "";
+  position: absolute;
+  inline-size: var(--mark);
+  block-size: var(--mark);
+  border: 1px solid var(--world-accent);
+}
+
+.media::before {
+  inset-block-start: -1px;
+  inset-inline-start: -1px;
+  border-block-end: 0;
+  border-inline-end: 0;
+}
+
+.media::after {
+  inset-block-end: -1px;
+  inset-inline-end: -1px;
+  border-block-start: 0;
+  border-inline-start: 0;
+}
+
+/*
+ * Caption rail beneath the plate — the technical line, on its own rule.
+ *
+ * Out of flow on purpose: the plate's box has to remain exactly the frame, or
+ * the fallback that centres itself in the same column stops lining up with it.
+ */
+.caption {
+  position: absolute;
+  inset-block-start: 100%;
+  inset-inline: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding-block-start: var(--space-xs);
+  border-block-start: 1px solid var(--border-subtle);
+}
+
+.captionLabel,
+.viewerHint {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+/*
+ * Only where there is a cursor to respond to. A pure-CSS gate: no JavaScript
+ * decides this, so it cannot disagree with the pointer handler's own gate,
+ * which tests the same capability.
+ */
+.viewerHint {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .viewerHint {
+    display: block;
+  }
+}
+
+/* --- Commerce ------------------------------------------------------------- */
+
+/*
+ * COMMERCE INSIDE THE WORLD.
+ *
+ * The purchase interface lives on the product's own environment instead of
+ * resolving onto paper, so it inherits the world's ink — which is right, and is
+ * what makes it read as part of the product rather than a panel bolted on.
+ *
+ * THE ACTION COLOUR IS THE ONE THING THAT MUST NOT COME FROM THE WORLD.
+ * Inside `[data-world]`, `--surface-inverse` is the world's LIGHT tone — for
+ * RETA, a pale blue. Left alone, ADD TO BAG would be a blue button, which is
+ * precisely the "product colour becomes UI action colour" failure the system
+ * exists to prevent. So the action is pinned to the neutral pair, simply
+ * inverted for a dark ground: paper, with charcoal type.
+ */
+.commerce {
+  --surface-inverse: var(--neogen-paper);
+  --ink-inverse: var(--neogen-charcoal);
+
+  position: relative;
+  grid-column: 2;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+}
+
+@media (min-width: 64rem) {
+  /* The column rule. One hairline doing the work of a container. */
+  .commerce {
+    padding-inline-start: var(--stage-gap);
+    border-inline-start: 1px solid var(--border-subtle);
+  }
+}
+
+/* --- Compact -------------------------------------------------------------- */
+
+/*
+ * One column, media above commerce.
+ *
+ * The stage stops being viewport-height here: a purchase interface must never
+ * be pushed below the fold by a full-screen image on a phone.
+ */
+@media (max-width: 63.999rem) {
+  .stage {
+    --stage-columns: minmax(0, 1fr);
+    --stage-gap: var(--space-2xl);
+    --well-inline: min(100%, 26rem);
+    --mark: 1rem;
+    /* Stacked, the caption has commerce directly beneath it rather than the
+       column's slack, so the space has to be reserved explicitly. */
+    --caption-reserve: var(--space-xl);
+  }
+
+  .composition,
+  .canvasLayer {
+    min-block-size: 0;
+    padding-block: var(--space-2xl) var(--space-3xl);
+    align-items: start;
+  }
+
+  .media,
+  .mediaWell {
+    align-self: start;
+  }
+
+  .commerce {
+    grid-column: 1;
+    justify-items: stretch;
+    inline-size: 100%;
+  }
+}

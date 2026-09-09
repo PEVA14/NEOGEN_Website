@@ -100,14 +100,22 @@
   border-block-end: 1px solid var(--border-subtle);
 }
 
+/*
+ * The index now lives inside the `dt` (see the component), so the term itself
+ * carries the two-column rhythm the row used to get from three grid children.
+ * The hanging numeral is unchanged visually.
+ */
 .principleIndex {
-  grid-row: span 2;
   color: var(--ink-muted);
   letter-spacing: var(--tracking-label);
   padding-block-start: 0.25em;
 }
 
 .principleTitle {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+  align-items: start;
   font-family: var(--font-sans);
   font-size: var(--text-lg);
   font-weight: 600;
@@ -115,6 +123,7 @@
 }
 
 .principleBody {
+  grid-column: 2;
   margin: 0;
   color: var(--ink-secondary);
   line-height: var(--leading-relaxed);

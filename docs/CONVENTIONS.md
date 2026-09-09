@@ -230,7 +230,45 @@ prop intersection to `never`. The DOM primitives therefore take
 `as?: DOMTag` (`src/types/polymorphic.ts`). This is a tightening: `Container`,
 `Section`, `Stack`, `Text` and `VisuallyHidden` must never render a `<mesh>`.
 
-## 11. Commands
+## 11. 3D is product media, not navigation architecture
+
+**V1 scope decision.** 3D presents the product; it does not carry the interface.
+The cinematic layer — shared-element route transitions, pinned WebGL
+storytelling, worlds physically transforming the UI — is deferred to V2 and
+written up in `docs/V2_LIVING_LABORATORY.md`, including the measurements and
+the traps. Do not rebuild it inside V1.
+
+What a V1 product viewer does:
+
+- holds a stable composition, anchored to a measured DOM box;
+- turns slowly and passively — the `presenter` variant in `choreography.ts`;
+- answers the cursor subtly on fine pointers only, damped, never required;
+- resolves to a held pose under `prefers-reduced-motion`, with
+  `frameloop="demand"`;
+- degrades to a static silhouette with no WebGL, and takes the cheap glass path
+  on the compact tier.
+
+Two rules that outlive the V1/V2 split:
+
+1. **Anchor the object to a measured box, never to a viewport fraction.** Media
+   frames are capped in both axes, so a fixed fraction drifts out of them on
+   wide screens. `VialModel` converts a measured box — expressed as fractions of
+   the **canvas**, so it survives scrolling — into world position and scale.
+   The measurement and the frame must share their geometry through custom
+   properties on a common ancestor, because the canvas layer and the visible
+   composition are separate stacking layers that have to agree.
+2. **Never let an animation share a frame budget with a canvas mount.** Booting
+   the WebGL layer is ~240ms of main-thread work — model parse, three init,
+   PMREM prefilter — and no amount of compositing hides a stopped main thread.
+   Either the canvas mounts outside the animation window, or there is no
+   animation. This is why the product page's opening is static.
+
+Commerce inside a world keeps its own neutral action colour: `[data-world]` maps
+`--surface-inverse` to the world's light tone, so a purchase panel must pin that
+pair back to paper/charcoal or it renders a product-coloured button — the exact
+failure §3 exists to prevent.
+
+## 12. Commands
 
 ```bash
 npm run dev          # development server

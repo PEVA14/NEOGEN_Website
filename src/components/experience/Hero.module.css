@@ -94,7 +94,10 @@
   /* Larger than the frame on purpose: the mark is cropped by both edges, so
      the viewport reads as a detail of a bigger poster. */
   font-size: clamp(6rem, 31vw, 26rem);
-  color: color-mix(in oklab, var(--neogen-paper) 10%, transparent);
+  /* 13%, not 10%. At 10% the mark measured 1.28:1 against the hero ground and
+     read as a smudge rather than as a deliberately ghosted poster. Still far
+     below the object, which is what has to lead. */
+  color: color-mix(in oklab, var(--neogen-paper) 13%, transparent);
   white-space: nowrap;
   margin-inline-start: -0.06em;
 }
@@ -172,8 +175,24 @@
   padding-block-end: var(--space-2xl);
 }
 
+/*
+ * FINAL HERO PASS — the deferred item that could only be judged with the whole
+ * site built.
+ *
+ * The lede was set at 19px: the same size as a product card's name, carrying
+ * the one sentence the site opens with, against a 26rem graphic wordmark and a
+ * lit object. Legibility was never the issue — it measures 11.4:1 — the issue
+ * was that the message was losing to the object on its own page.
+ *
+ * Raised to the display-adjacent step and set at reading measure so it holds
+ * two or three lines rather than running the width of the composition. Nothing
+ * else about the hero changes: the object still leads, the copy now answers it.
+ */
 .lede {
+  max-inline-size: 32ch;
   color: var(--ink-secondary);
+  font-size: var(--text-2xl);
+  line-height: var(--leading-snug);
   font-style: italic;
   text-wrap: pretty;
 }
