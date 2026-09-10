@@ -1,0 +1,313 @@
+/*
+ * THE RECEIPT.
+ *
+ * Opens with a REFERENCE PLATE — the order number at display scale on warm
+ * stone — because that number is the only thing a customer needs to write
+ * down, and every other confirmation layout buries it under a tick and a
+ * congratulation. Then the payment state, then what happens next, then the
+ * order itself in two columns.
+ *
+ * No success iconography anywhere. The state is stated in words chosen by
+ * `order.state`, and today that state is "no payment was taken".
+ */
+.receipt {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+/* --- reference plate ----------------------------------------------------- */
+
+.plate {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+}
+
+.plateRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+}
+
+.plateKey {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.reference {
+  color: var(--ink-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xl);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--tracking-tight);
+  line-height: 1;
+  margin: 0;
+  /* One gesture selects the whole reference — it gets copied and read aloud. */
+  user-select: all;
+}
+
+.plateMeta {
+  border-block-start: 1px solid var(--border-subtle);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs) var(--space-lg);
+  padding-block-start: var(--space-2xs);
+}
+
+/* --- payment state ------------------------------------------------------- */
+
+.state {
+  border-inline-start: 2px solid var(--border-strong);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  padding-inline-start: var(--space-md);
+}
+
+.stateHead {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  justify-content: space-between;
+}
+
+.stateLabel,
+.badge {
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.stateLabel {
+  color: var(--ink-muted);
+}
+
+.badge {
+  color: var(--ink-primary);
+}
+
+.stateTitle {
+  color: var(--ink-primary);
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-stretch: var(--font-stretch-display);
+  letter-spacing: var(--tracking-display);
+  line-height: var(--leading-snug);
+  margin: 0;
+  text-wrap: balance;
+}
+
+.stateBody {
+  max-inline-size: 60ch;
+}
+
+/* Only two states take an accent, and both are ones a customer must act on. */
+.state[data-state="paid"] {
+  border-inline-start-color: var(--status-verified);
+}
+.state[data-state="paid"] .badge {
+  color: var(--status-verified-ink);
+}
+.state[data-state="payment_failed"] {
+  border-inline-start-color: var(--status-error);
+}
+.state[data-state="payment_failed"] .badge {
+  color: var(--status-error-ink);
+}
+
+/* --- next steps ---------------------------------------------------------- */
+
+.next {
+  border-block-start: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  padding-block-start: var(--space-md);
+}
+
+.sectionTitle {
+  color: var(--ink-primary);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.destination {
+  color: var(--ink-secondary);
+  overflow-wrap: anywhere;
+}
+
+/* --- order --------------------------------------------------------------- */
+
+.columns {
+  display: grid;
+  gap: var(--space-xl);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 64rem) {
+  /* 7/5 — the asymmetry the rest of the site uses, rather than an even split. */
+  .columns {
+    grid-template-columns: 7fr 5fr;
+  }
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  min-inline-size: 0;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  list-style: none;
+  margin: 0;
+  margin-block-start: var(--space-2xs);
+  padding: 0;
+}
+
+.line {
+  align-items: baseline;
+  border-block-end: 1px solid var(--border-subtle);
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: space-between;
+  padding-block-end: var(--space-xs);
+}
+
+.lineMain {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-inline-size: 0;
+}
+
+.lineName {
+  color: var(--ink-primary);
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-stretch: var(--font-stretch-display);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-snug);
+}
+
+.lineMeta {
+  color: var(--ink-muted);
+  overflow-wrap: anywhere;
+}
+
+.lineTotal {
+  color: var(--ink-primary);
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.totals {
+  align-self: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  margin: 0;
+  margin-block-start: var(--space-sm);
+  min-inline-size: min(100%, 18rem);
+}
+
+.totalRow {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: space-between;
+}
+
+.totalKey {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.totalValue {
+  color: var(--ink-secondary);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.grand {
+  align-items: baseline;
+  border-block-start: 1px solid var(--border-default);
+  padding-block-start: var(--space-2xs);
+}
+
+.grandValue {
+  color: var(--ink-primary);
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-stretch: var(--font-stretch-display);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--tracking-display);
+  line-height: 1;
+  margin: 0;
+}
+
+.address {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.acks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* --- actions ------------------------------------------------------------- */
+
+.actions {
+  border-block-start: 1px solid var(--border-subtle);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  padding-block-start: var(--space-lg);
+}
+
+.primary {
+  background: var(--surface-inverse);
+  color: var(--ink-inverse);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  line-height: 2.75rem;
+  padding-inline: var(--space-lg);
+  text-transform: uppercase;
+}
+
+.primary:hover {
+  background: var(--neogen-graphite);
+}
+
+.secondary {
+  color: var(--ink-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  line-height: 2.75rem;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-transform: uppercase;
+  text-underline-offset: 0.25em;
+}
+
+.secondary:hover {
+  color: var(--ink-primary);
+}

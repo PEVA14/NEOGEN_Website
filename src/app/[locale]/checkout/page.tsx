@@ -1,20 +1,34 @@
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 
-import { BagSummary, CheckoutFlow } from "@/components/commerce";
-import { SectionHeader } from "@/components/layout";
+import { FlowNotice } from "@/components/checkout";
 import { Container, Section } from "@/components/primitives";
-import { Body, Mono } from "@/components/typography";
-import { TextLink } from "@/components/ui";
 import { routes } from "@/config/routes";
+import { firstIncomplete } from "@/domain/checkout";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/getDictionary";
 import { localizePath } from "@/i18n/routing";
 import { alternates } from "@/lib/alternates";
-import { readBag } from "@/lib/bag";
+import { bagEnabled } from "@/payments";
+import { currentDraft } from "@/server/checkout/session";
 
-import styles from "./page.module.css";
+import { notFound } from "next/navigation";
 
 import type { Metadata } from "next";
+
+/**
+ * NEVER CACHED, NEVER PRERENDERED.
+ *
+ * Every screen in this flow is specific to one browser's checkout session, and
+ * several render a customer's own name, phone and address. A cached copy
+ * served to a second visitor would be a data leak rather than a stale page.
+ *
+ * Declared explicitly rather than relying on `cookies()` having been read.
+ * That inference is real but fragile: the flag-off branch of this route
+ * returns before it touches a cookie, which was enough for the build to
+ * prerender the entire checkout as static HTML — exactly the failure this
+ * export prevents.
+ */
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -28,106 +42,81 @@ export async function generateMetadata({
     title: dict.checkout.title,
     description: dict.meta.descriptions.checkout,
     alternates: alternates(locale, routes.checkout),
-    // Nothing here should be indexed: it is a transactional surface, and an
-    // inert one. Kept explicit rather than left to a robots file.
-    robots: { index: false, follow: true },
+    /* A transactional surface. Kept explicit rather than left to a robots
+       file, and `follow: false` too — there is nothing here to crawl onward
+       from that is not already reachable from the catalogue. */
+    robots: { index: false, follow: false },
   };
 }
 
 /**
- * CHECKOUT — the process, rendered inert.
+ * /checkout — a dispatcher, not a page.
  *
- * NO PAYMENT PROCESSING, NO PROCESSOR SDK, NO BACKEND, NO TAX OR SHIPPING
- * LOGIC. The payment provider is pending product/regulatory and processor
- * review, and nothing here may imply otherwise.
+ * WHY THE FLOW IS SIX ROUTES AND THIS IS A SWITCHBOARD. Each step is a real
+ * URL, so browser back and forward behave, a step can be reloaded, and every
+ * validation a customer meets runs on the server in the same code that
+ * decides whether the order may be created. A single page holding step state
+ * in the client would have needed a second, weaker copy of every rule — and
+ * would have stopped working the moment a bundle failed to load, on the one
+ * surface where that matters most.
  *
- * WHAT THAT LEAVES, AND WHY IT IS WORTH BUILDING.
- * -----------------------------------------------
- * The information architecture of a purchase is real and is not blocked by any
- * of the above: four numbered steps, the order summary, and one honest
- * statement of what is missing. Built now, it is what the processor mounts into
- * later rather than a page that gets thrown away.
+ * So this route answers one question — which step is next — and sends them
+ * there. `firstIncomplete` derives it from the draft, so a customer who
+ * closed the tab after entering their address returns to delivery rather
+ * than to the beginning.
  *
- * THREE THINGS ARE DELIBERATE.
- *
- *   1. There is NO `<form>`, no action and no submit handler. A checkout that
- *      appeared to submit and silently did nothing would be a fake integration
- *      that appears production-ready.
- *   2. There are NO payment fields — see CheckoutFlow. Card data belongs to the
- *      processor's hosted component and must never pass through this site's
- *      markup.
- *   3. The page is `noindex`. It is a transactional surface with nothing to
- *      transact.
- *
- * The bag is empty and cannot be otherwise, so the page says so and offers the
- * catalogue — but it leads with the REAL blocker, which is not the empty bag.
- * Even a full bag could not be paid for.
+ * The two cases it does NOT redirect are the two that would be a lie: with
+ * commerce switched off, or with nothing to buy, there is no step to send
+ * anyone to, and a bounce to the catalogue would leave them wondering what
+ * they did wrong.
  */
 export default async function CheckoutPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 
   const dict = await getDictionary(locale);
-  const checkout = dict.checkout;
-  const bag = readBag();
   const path = (to: string) => localizePath(to, locale);
 
+  const copy = !bagEnabled() ? dict.checkout.unavailable : null;
+  if (copy) return <Notice copy={copy} path={path} />;
+
+  const draft = await currentDraft();
+  if (!draft || draft.snapshot.lines.length === 0) {
+    return <Notice copy={dict.checkout.expired} path={path} />;
+  }
+
+  if (draft.orderId) redirect(path(routes.orderConfirmation(draft.orderId)));
+
+  redirect(path(routes.checkoutStep(firstIncomplete(draft))));
+}
+
+function Notice({
+  copy,
+  path,
+}: {
+  copy: {
+    index: string;
+    label: string;
+    title: string;
+    body: string;
+    catalogue: string;
+    bag: string;
+  };
+  path: (to: string) => string;
+}) {
   return (
-    <Section mode="quiet" aria-labelledby="checkout-title">
+    <Section mode="quiet">
       <Container width="full">
-        <SectionHeader
-          index={checkout.index}
-          label={`${checkout.label} // ${checkout.qualifier}`}
-          title={checkout.title}
-          id="checkout-title"
-          lede={checkout.lede}
-          as="h1"
+        <FlowNotice
+          index={copy.index}
+          label={copy.label}
+          title={copy.title}
+          body={copy.body}
+          actions={[
+            { href: path(routes.products), label: copy.catalogue, primary: true },
+            { href: path(routes.cart), label: copy.bag },
+          ]}
         />
-
-        <div className={styles.layout}>
-          <div className={styles.flow}>
-            <CheckoutFlow copy={checkout.steps} />
-          </div>
-
-          {/*
-           * A plain div, not an <aside>: a complementary landmark nested inside
-           * <main> is reported as a landmark violation, and this is not
-           * complementary content anyway — the order is the point of the page.
-           * The summary inside carries its own labelled <section>.
-           */}
-          <div className={styles.aside}>
-            {/* The bag's own state, stated here rather than assumed: arriving
-                at checkout with nothing is a fact worth showing next to the
-                total, not a redirect that hides where you are. */}
-            {bag.count === 0 ? (
-              <div className={styles.emptyBag}>
-                <Body tone="muted" size="sm">
-                  {checkout.emptyBag}
-                </Body>
-                <TextLink href={path(routes.products)}>{checkout.browse}</TextLink>
-              </div>
-            ) : null}
-
-            {/* Only when there is an order to summarise. Four PLACEHOLDER
-                amounts under an empty bag described nothing. */}
-            {bag.count > 0 ? (
-              <BagSummary copy={dict.cart.summary} placeholder={dict.status.placeholder} />
-            ) : null}
-
-            {/* Inert, and outlined rather than dimmed — the same treatment ADD
-                TO BAG and CONTINUE TO PAYMENT carry, so every blocked commerce
-                action on the site reads as one consistent "not yet". */}
-            <button type="button" className={styles.place} disabled>
-              {checkout.place}
-            </button>
-            <Mono size="2xs" className={styles.pending}>
-              {checkout.pending}
-            </Mono>
-            <Mono size="2xs" className={styles.pending}>
-              {checkout.guestNote}
-            </Mono>
-          </div>
-        </div>
       </Container>
     </Section>
   );

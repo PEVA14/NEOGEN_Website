@@ -8,7 +8,7 @@ import { isLocale, localeTags } from "@/i18n/config";
 import { getDictionary } from "@/i18n/getDictionary";
 import { localizePath } from "@/i18n/routing";
 import { alternates } from "@/lib/alternates";
-import { paymentAvailable } from "@/payments";
+import { bagEnabled } from "@/payments";
 
 import type { Metadata } from "next";
 
@@ -53,6 +53,7 @@ export default async function CartPage({ params }: { params: Promise<{ locale: s
   const cart = dict.cart;
   const bagUi = dict.bagUi;
   const tag = localeTags[locale];
+  const commerce = bagEnabled();
 
   return (
     <Section mode="quiet" aria-labelledby="bag-title">
@@ -69,7 +70,14 @@ export default async function CartPage({ params }: { params: Promise<{ locale: s
           copy={{
             countLabel: cart.countLabel,
             empty: cart.empty,
-            emptyNote: cart.emptyNote,
+            /*
+             * WHY THIS IS CONDITIONAL. The note explaining that purchasing is
+             * not yet enabled is true with the flag off — and flatly false
+             * with it on, where it sat next to a working Add to Bag button.
+             * An empty bag on an enabled shop needs an invitation, not a
+             * regulatory disclaimer.
+             */
+            emptyNote: commerce ? cart.emptyNoteEnabled : cart.emptyNote,
             browse: cart.browse,
             presentation: bagUi.presentation,
             quantity: bagUi.quantity,
@@ -86,15 +94,24 @@ export default async function CartPage({ params }: { params: Promise<{ locale: s
             freeShippingRemaining: bagUi.freeShippingRemaining,
             freeShippingReached: bagUi.freeShippingReached,
             checkout: cart.checkout,
+            checkoutBusy: cart.checkoutBusy,
             checkoutPending: cart.checkoutPending,
             totalsNote: bagUi.totalsNote,
           }}
           productBase={localizePath(routes.products, locale)}
           catalogHref={localizePath(routes.products, locale)}
-          checkoutEnabled={paymentAvailable()}
+          /*
+           * `bagEnabled()`, not `paymentAvailable()`. The two gates answer
+           * different questions: entering checkout needs prices and a
+           * business decision, while PAYING additionally needs a configured
+           * adapter. That separation is what lets the whole flow be walked
+           * and reviewed while payment remains impossible.
+           */
+          checkoutEnabled={commerce}
           /* A locale TAG, not a formatter — functions cannot cross the
              server/client boundary. */
           localeTag={tag}
+          locale={locale}
         />
       </Container>
     </Section>

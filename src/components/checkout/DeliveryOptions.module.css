@@ -1,0 +1,141 @@
+/*
+ * DELIVERY OPTIONS.
+ *
+ * Each method is a framed row — 1px chalk, zero radius — with the price set
+ * hard right against the name on one baseline, the way every other price in
+ * this system is set. Selecting one moves the frame to charcoal rather than
+ * tinting a fill, which keeps the choice legible without colour and matches
+ * the presentation chips on a product page.
+ */
+.set {
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin: 0;
+  padding: 0;
+}
+
+.legend {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  margin-block-end: var(--space-2xs);
+  padding: 0;
+  text-transform: uppercase;
+}
+
+.option {
+  align-items: flex-start;
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  display: flex;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  transition:
+    border-color var(--motion-duration-fast) var(--ease-standard),
+    background-color var(--motion-duration-fast) var(--ease-standard);
+}
+
+.option:hover {
+  border-color: var(--border-default);
+}
+
+.option:has(.radio:checked) {
+  background: var(--surface-raised);
+  border-color: var(--ink-primary);
+}
+
+/* The outline goes on the row, not the 18px control, so a keyboard user sees
+   the whole option highlighted. */
+.option:has(.radio:focus-visible) {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}
+
+.radio {
+  appearance: none;
+  background: var(--surface-base);
+  border: 1px solid var(--border-strong);
+  /* The one place `--radius-pill` is correct: a radio is genuinely circular,
+     and a square one reads as a checkbox. */
+  border-radius: var(--radius-pill);
+  block-size: 1.125rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  inline-size: 1.125rem;
+  margin-block-start: 0.15rem;
+  position: relative;
+}
+
+.radio:checked {
+  border-color: var(--ink-primary);
+}
+
+.radio:checked::after {
+  background: var(--ink-primary);
+  border-radius: var(--radius-pill);
+  content: "";
+  inset: 3px;
+  position: absolute;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+  /* Row height comes from here: the label is the target and it must clear
+     44px, which this comfortably does with three lines of content. */
+  min-block-size: 2.75rem;
+  min-inline-size: 0;
+}
+
+.titleRow {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  justify-content: space-between;
+}
+
+.title {
+  color: var(--ink-primary);
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-stretch: var(--font-stretch-display);
+  letter-spacing: var(--tracking-tight);
+}
+
+.price {
+  color: var(--ink-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.meta {
+  color: var(--ink-muted);
+}
+
+.detail {
+  max-inline-size: 52ch;
+}
+
+/*
+ * The unquotable state. A left rule rather than a red frame: the method is
+ * not invalid — it is the correct method, whose price is not yet known — and
+ * treating it as an error would misdescribe it.
+ */
+.option[data-unquotable="true"] {
+  border-inline-start-width: 2px;
+  border-inline-start-color: var(--border-strong);
+}
+
+.pendingNote {
+  color: var(--ink-secondary);
+  line-height: var(--leading-normal);
+  margin-block-start: var(--space-3xs);
+  max-inline-size: 52ch;
+}
+
+.handling {
+  color: var(--ink-muted);
+  line-height: var(--leading-normal);
+}

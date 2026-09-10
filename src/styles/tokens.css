@@ -64,6 +64,25 @@
   --status-pending-border: var(--border-default);
   --status-pending-ink: var(--ink-secondary);
 
+  /* --- Error state -------------------------------------------------------
+   * ADDED IN PHASE 10, for checkout validation, and the only chromatic
+   * addition to Quiet Mode's near-monochrome palette.
+   *
+   * WHY IT IS JUSTIFIED WHERE `--accent` IS NOT. Quiet Mode is deliberately
+   * colourless so that product worlds own colour. An invalid field is not
+   * decoration: it is a state the customer must notice and act on, and a
+   * transactional surface that signals failure only through geometry asks a
+   * hurried reader to compare two greys. Colour is never the SOLE signal —
+   * every use is paired with a text message, a thickened rule and
+   * `aria-invalid` (see Field.module.css).
+   *
+   * Measured, not chosen by eye: the ink is 7.9:1 on Paper and 7.4:1 on Warm
+   * Stone, which clears AA for the 11px mono messages it is used for. The
+   * border tone is used only on 2px rules, where 3:1 applies.
+   */
+  --status-error: #b03a2e;
+  --status-error-ink: #8f2a20;
+
   /* --- Verified state ----------------------------------------------------
    * A SEMANTIC token, deliberately not a brand or world colour: it must never
    * read as decoration or as a product identity.
@@ -131,6 +150,15 @@
   --section-pad-impact: clamp(5rem, 3rem + 10vw, 11rem);
 
   /* --- Layout ------------------------------------------------------------ */
+  /*
+   * The sticky header's height, stated once.
+   *
+   * Read by the header itself and by anything that has to sit clear of it —
+   * the checkout summary's sticky offset, for one. Two hardcoded 4rems would
+   * drift the first time the header changed.
+   */
+  --header-height: 4rem;
+
   --container-max: 90rem;
   --container-content: 72rem;
   --container-prose: 44rem;

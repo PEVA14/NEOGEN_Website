@@ -1,27 +1,45 @@
+import { applyPaymentEvent, mutate } from "@/domain/order";
 import { activeProvider, paymentAvailable } from "@/payments";
+import { orderRepository } from "@/server/persistence";
 
 /**
- * PAYMENT WEBHOOK — one endpoint, provider-independent.
+ * PAYMENT WEBHOOK — one endpoint, provider-independent, idempotent.
  *
- * Every processor calls one URL, and the ACTIVE ADAPTER decides what the
- * payload means. That is the whole reason the adapter interface exists: adding
- * Mercado Pago or Clip adds no route, no branch here, and no provider status
- * string anywhere outside `src/payments/adapters`.
+ * Every processor calls one URL and the ACTIVE ADAPTER decides what the
+ * payload means. Adding Mercado Pago or Clip adds no route, no branch here,
+ * and no provider status string anywhere outside `src/payments/adapters`.
  *
- * TODAY IT ACCEPTS NOTHING. `none` is the only registered adapter, it is never
- * configured, and `paymentAvailable()` is false — so this returns 503 and
- * parses no bodies. It exists now so the shape is settled and reviewed before
- * a processor is chosen, not to handle traffic.
+ * TODAY IT ACCEPTS NOTHING. `none` is the only registered adapter, it never
+ * configures, and `paymentAvailable()` is false — so this returns 503 and
+ * parses no bodies. The pipeline below is nevertheless complete, because
+ * every property it enforces is one that cannot be added safely later:
  *
- * WHY 200 FOR AN UNRECOGNISED EVENT. Processors retry non-2xx responses, often
- * aggressively, and they send event types nobody subscribed to. Acknowledging
- * an event we do not act on is correct; returning an error would earn an
- * escalating retry storm for a message that was never ours to handle.
+ *   SIGNATURE VERIFICATION belongs to the adapter — it is the only party that
+ *   knows the provider's scheme and holds its secret. `parseWebhook` receives
+ *   the raw headers and returns null for anything unsigned. This handler must
+ *   never trust a payload it has not been handed back, which is why the raw
+ *   body is not read for anything except being passed on.
  *
- * SIGNATURE VERIFICATION BELONGS TO THE ADAPTER. It is the only party that
- * knows the provider's scheme and holds its secret, so `parseWebhook` receives
- * the raw headers and is responsible for rejecting anything unsigned. This
- * handler must never trust a payload it has not been handed back.
+ *   DEDUPLICATION is keyed on the provider's own event id, checked globally
+ *   before the order is even loaded, so a redelivery is cheap to reject and a
+ *   MISROUTED redelivery is rejected too.
+ *
+ *   ORDERING is not handled by comparing timestamps — provider clocks are not
+ *   ours to trust. A late event is simply an illegal transition against
+ *   current state, and the transition table refuses it. That is why `paid`
+ *   cannot regress: there is no code path that special-cases it.
+ *
+ *   NOTHING HERE CAN SET `paid` BY ITSELF. The state comes from the adapter's
+ *   translation of a signed payload, and `applyPaymentEvent` is the only
+ *   writer. No client request reaches this logic — see the actions module,
+ *   where nothing accepts a state at all.
+ *
+ * WHY 200 FOR AN EVENT WE DID NOT ACT ON. Processors retry non-2xx responses,
+ * often for days, and they send event types nobody subscribed to.
+ * Acknowledging an event we deliberately ignored is correct; returning an
+ * error would earn an escalating retry storm for a message that was never
+ * ours to handle. The response body says what happened, for the provider's
+ * own dashboard and for ours later.
  */
 export async function POST(request: Request): Promise<Response> {
   if (!paymentAvailable()) {
@@ -31,10 +49,7 @@ export async function POST(request: Request): Promise<Response> {
      * the provider — and therefore be retried and noticed — instead of
      * silently swallowing payments as "no such endpoint".
      */
-    return Response.json(
-      { error: "payments_unavailable" },
-      { status: 503, headers: { "Cache-Control": "no-store" } },
-    );
+    return json({ error: "payments_unavailable" }, 503);
   }
 
   const provider = activeProvider();
@@ -43,29 +58,67 @@ export async function POST(request: Request): Promise<Response> {
   try {
     payload = await request.json();
   } catch {
-    return Response.json({ error: "invalid_payload" }, { status: 400 });
+    return json({ error: "invalid_payload" }, 400);
   }
 
   const event = await provider.parseWebhook(payload, request.headers);
 
   /* Unrecognised, or failed the adapter's signature check. Acknowledged. */
-  if (!event) return Response.json({ received: true }, { status: 200 });
+  if (!event) return json({ received: true, outcome: "ignored" }, 200);
+
+  const repository = orderRepository();
 
   /*
-   * TODO(phase-10): persist the transition.
-   *
-   * `transition()` in `domain/order` already refuses illegal moves — a
-   * redelivered authorisation cannot un-pay a paid order — but there is no
-   * order store to load from or write to yet. That arrives with checkout,
-   * along with idempotency keyed on the provider's event id.
+   * DEDUPE FIRST, before loading anything. A provider retrying a delivery it
+   * already got a 200 for is the common case, not the exception.
    */
-  return Response.json({ received: true, state: event.state }, { status: 200 });
+  if (await repository.hasProviderEvent(event.eventId)) {
+    return json({ received: true, outcome: "duplicate" }, 200);
+  }
+
+  const order = await repository.findByProviderRef(event.providerRef);
+  if (!order) {
+    /*
+     * A payment we have no order for. Acknowledged, NOT retried: if the
+     * reference is unknown, sending it again will not make it known, and a
+     * 4xx here would have a provider hammering an endpoint over a payment
+     * that was never ours.
+     */
+    return json({ received: true, outcome: "unknown_payment" }, 200);
+  }
+
+  let outcome = "unchanged";
+  const result = await mutate(repository, order.id, (current) => {
+    const applied = applyPaymentEvent(current, {
+      providerEventId: event.eventId,
+      provider: provider.id,
+      providerRef: event.providerRef,
+      state: event.state,
+      receivedAt: new Date().toISOString(),
+    });
+    outcome = applied.outcome;
+    /* `duplicate` returns the order untouched — no write, so `mutate` short-
+       circuits rather than bumping a version for nothing. */
+    return applied.outcome === "duplicate" ? null : applied.order;
+  });
+
+  if (!result.ok) {
+    /*
+     * Persistence failed — a version conflict that outlived its retries, or a
+     * vanished order. This IS worth a retry, so it is the one case that
+     * answers non-2xx.
+     */
+    return json({ error: "not_persisted", reason: result.reason }, 503);
+  }
+
+  return json({ received: true, outcome, state: result.order.state }, 200);
 }
 
 /** Providers probe with GET during setup; answer without implying readiness. */
 export async function GET(): Promise<Response> {
-  return Response.json(
-    { ok: true, payments: paymentAvailable() ? "enabled" : "disabled" },
-    { headers: { "Cache-Control": "no-store" } },
-  );
+  return json({ ok: true, payments: paymentAvailable() ? "enabled" : "disabled" }, 200);
+}
+
+function json(body: unknown, status: number): Response {
+  return Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 }

@@ -476,6 +476,9 @@ const es = {
      */
     emptyNote:
       "La compra aún no está habilitada. El catálogo puede consultarse por completo; los pedidos se activarán al concluir la revisión regulatoria y la selección de procesador de pagos.",
+    /* Used when purchasing IS enabled — see the bag page for why the
+       regulatory note must not render then. */
+    emptyNoteEnabled: "Añade compuestos desde el catálogo para verlos aquí.",
     browse: "Ver catálogo",
     summary: {
       title: "Resumen del pedido",
@@ -486,55 +489,420 @@ const es = {
       note: "Los importes de envío e impuestos se calcularán al habilitarse los pedidos.",
     },
     checkout: "Continuar al pago",
+    /* Shown while the server reprices the bag and opens the checkout draft. */
+    checkoutBusy: "Preparando el pedido…",
     /* Taken from the project's own regulatory position, not invented. */
     checkoutPending: "Pago no habilitado — pendiente de revisión regulatoria y de procesador",
   },
 
+  /**
+   * POLICY DOCUMENTS.
+   *
+   * Titles and chrome only — the BODIES are not here and are not anywhere.
+   * Legal text is written by counsel and lives in `content/policies.ts` with
+   * an approval status; nothing in this file may become a legal statement.
+   * Every policy route 404s until one is approved.
+   */
+  policies: {
+    index: "01",
+    label: "Documentos",
+    qualifier: "Políticas",
+    approvedLabel: "Vigente desde",
+    description: "{title} — NEOGEN.",
+    titles: {
+      terms: "Términos y condiciones",
+      privacy: "Aviso de privacidad",
+      shipping: "Envíos",
+      returns: "Devoluciones y reembolsos",
+      quality: "Calidad y documentación",
+      "research-use": "Uso en investigación",
+      "medical-disclaimer": "Aviso médico",
+    },
+  },
   checkout: {
     index: "01",
-    label: "Pago",
+    label: "Compra",
     qualifier: "Proceso",
-    title: "Pago",
-    lede: "El proceso de compra se activará cuando se complete la revisión regulatoria y se seleccione un procesador de pagos.",
-    guestNote: "La compra como invitado estará disponible.",
+    title: "Compra",
+    /*
+     * States the architecture, because it is the reassurance that matters
+     * here: the amounts are the server's, recomputed from the catálogo, and
+     * nothing in the browser decides what anyone pays.
+     */
+    lede: "Seis pasos. Cada importe se calcula en el servidor a partir del catálogo, no en tu navegador.",
+
+    progress: {
+      label: "Progreso de la compra",
+      /* Announced, never drawn — "03" alone no dice cuánto falta. */
+      stepOf: "paso {n} de {total}",
+      completed: "completado",
+      current: "paso actual",
+      steps: {
+        contact: "Contacto",
+        shipping: "Envío",
+        delivery: "Entrega",
+        payment: "Pago",
+        review: "Revisión",
+        confirmation: "Confirmación",
+      },
+    },
+
     steps: {
       contact: {
         index: "01",
         title: "Contacto",
-        note: "Para el comprobante y el seguimiento del pedido.",
+        note: "Lo mínimo para enviarte el comprobante y para que la entrega pueda localizarte.",
+        /* No account, and it is worth saying so: an unexpected sign-up wall is
+           the most common reason a checkout is abandoned. */
+        guestNote: "No necesitas crear una cuenta.",
         email: "Correo electrónico",
+        emailHint: "Aquí llega el comprobante del pedido.",
+        /* ONE name field. Mexican names commonly carry two surnames, and a
+           fixed first/last pair gets them wrong. */
+        name: "Nombre completo",
+        nameHint: "Como aparece en tu identificación.",
+        phone: "Teléfono",
+        phoneHint: "10 dígitos. La entrega puede necesitar llamarte.",
+        submit: "Continuar a envío",
       },
+
       shipping: {
         index: "02",
         title: "Envío",
-        note: "La cobertura de envío se confirmará al habilitarse los pedidos.",
-        name: "Nombre completo",
-        address: "Dirección",
-        city: "Ciudad",
+        note: "Dirección de entrega dentro de México.",
+        recipient: "Quién recibe",
+        recipientHint: "Puede ser distinta de la persona que compra.",
+        street: "Calle",
+        numeroExterior: "Núm. exterior",
+        numeroInterior: "Núm. interior",
+        numeroInteriorHint: "Opcional.",
+        colonia: "Colonia",
+        postalCode: "Código postal",
+        postalCodeHint: "Cinco dígitos.",
+        city: "Ciudad o municipio",
         state: "Estado",
-        postal: "Código postal",
+        statePlaceholder: "Selecciona un estado",
+        /*
+         * No SEPOMEX lookup. Autocompleting colonia and municipio from the CP
+         * is the right thing to do later; there is no verified source wired
+         * up, so the fields are typed rather than guessed.
+         */
+        postalNote:
+          "No completamos la colonia automáticamente: preferimos que la escribas tú antes de tener una fuente verificada.",
         country: "País",
+        countryLocked: "México — es el único destino disponible.",
+        notes: "Indicaciones para la entrega",
+        notesHint: "Opcional. Referencias, horarios, portón.",
+        submit: "Continuar a entrega",
+        back: "Volver a contacto",
       },
-      payment: {
+
+      delivery: {
         index: "03",
+        title: "Entrega",
+        note: "El servicio se determina por la dirección que registraste.",
+        options: {
+          legend: "Servicio de entrega",
+          methods: {
+            "local-priority": {
+              title: "Entrega prioritaria",
+              detail: "Guadalajara y Durango. Al día siguiente, no el mismo día.",
+            },
+            "national-standard": {
+              title: "Envío nacional",
+              detail: "Resto del país.",
+            },
+          },
+          estimate: "Estimado",
+          /* Spanish agrees in number, and every priority delivery is one day. */
+          estimateDays: { one: "{n} día hábil", many: "{n} días hábiles" },
+          cost: "Costo",
+          free: "Gratis",
+          /* Not "$0" and not a made-up figure: genuinely unknown. */
+          ratePending: "Por confirmar",
+          ratePendingNote:
+            "Aún no hay tarifa de envío definida para pedidos por debajo de $10,000 MXN, así que el pedido no puede totalizarse. Al alcanzar ese importe el envío es gratuito.",
+          handlingPending:
+            "El manejo especial (cadena de frío) está pendiente de determinación y no se aplica todavía.",
+          none: "No hay servicio disponible para esta dirección.",
+        },
+        submit: "Continuar a pago",
+        back: "Volver a envío",
+      },
+
+      payment: {
+        index: "04",
         title: "Pago",
         /*
-         * States the ENGINEERING position, not just the scope one: card data is
-         * captured by the processor's own hosted component and never passes
-         * through a form we author. Nothing on this page collects it.
+         * States the ENGINEERING position, not just the scope one: card data
+         * is captured by the processor's own hosted component and never
+         * passes through a form we author.
          */
-        note: "Los datos de pago se capturan en un componente alojado por el procesador y nunca pasan por este sitio. No hay procesador seleccionado.",
+        note: "Los datos de tarjeta se capturan en un componente alojado por el procesador y nunca pasan por este sitio.",
+        slot: {
+          stateLabel: "Estado del pago",
+          badges: {
+            no_provider: "Sin procesador",
+            embedded: "En esta página",
+            redirect: "Redirección",
+            instructions: "Transferencia",
+            processing: "Procesando",
+            failed: "Rechazado",
+            approved: "Aprobado",
+          },
+          states: {
+            no_provider: {
+              title: "El pago no puede completarse todavía",
+              body: "NEOGEN no tiene un procesador de pagos activo. Puedes revisar y registrar el pedido: no se realizará ningún cargo y el pedido no queda pagado.",
+              contactLabel: "Canal disponible",
+            },
+            embedded: {
+              title: "Datos de pago",
+              body: "El procesador carga sus propios campos en esta página. NEOGEN no recibe ni almacena el número de tarjeta.",
+              mountLabel: "Área reservada al procesador",
+            },
+            redirect: {
+              title: "Continúa con el procesador",
+              body: "Te llevaremos al sitio del procesador para completar el pago y volverás aquí al terminar.",
+              action: "Ir al procesador",
+            },
+            instructions: {
+              title: "Transferencia",
+              body: "Realiza la transferencia con la referencia siguiente. El pedido queda en espera hasta que el procesador confirme la recepción.",
+              referenceLabel: "Referencia",
+              amountLabel: "Importe",
+              expiresLabel: "Vigencia",
+            },
+            processing: {
+              title: "Pago en proceso",
+              body: "El procesador está resolviendo la operación. No es necesario hacer nada más.",
+            },
+            failed: {
+              title: "El pago no se completó",
+              body: "No se realizó ningún cargo. Puedes intentar de nuevo.",
+              action: "Intentar de nuevo",
+              reasons: {
+                unavailable: "No hay procesador de pagos configurado.",
+                invalid_state: "El pedido no está en un estado que admita pago.",
+                declined: "El procesador rechazó la operación.",
+                provider_error: "Falla temporal del procesador. Puedes reintentar.",
+              },
+            },
+            approved: {
+              title: "Pago aprobado",
+              body: "El procesador confirmó el pago.",
+            },
+          },
+        },
+        submit: "Continuar a revisión",
+        back: "Volver a entrega",
       },
-      confirmation: {
-        index: "04",
-        title: "Confirmación",
-        note: "Resumen del pedido y comprobante, disponibles cuando el pago esté habilitado.",
+
+      review: {
+        index: "05",
+        title: "Revisión",
+        note: "Confirma que esto es exactamente lo que estás pidiendo.",
+        submit: "Registrar pedido",
+        back: "Volver a pago",
+        acknowledgements: {
+          title: "Declaraciones",
+          requiredNote: "Las declaraciones marcadas son obligatorias.",
+        },
+        blocked: {
+          title: "Falta un paso",
+          empty: "No hay artículos en el pedido.",
+          contact_incomplete: "Los datos de contacto están incompletos.",
+          shipping_incomplete: "La dirección de envío está incompleta.",
+          delivery_missing: "Falta elegir el servicio de entrega.",
+          delivery_unquotable:
+            "El pedido no puede totalizarse: no hay tarifa de envío definida para este importe.",
+          acknowledgements_missing: "Faltan declaraciones obligatorias.",
+          already_placed: "Este pedido ya fue registrado.",
+          action: "Ir al paso",
+        },
       },
     },
-    place: "Realizar pedido",
-    pending: "Pago no habilitado — pendiente de revisión regulatoria y de procesador",
-    emptyBag: "No hay artículos en tu bag.",
-    browse: "Ver catálogo",
+
+    /* --- the summary panel, on every step ----------------------------- */
+    summary: {
+      title: "Resumen del pedido",
+      itemsLabel: "Artículos",
+      linesLabel: "Artículos del pedido",
+      quantity: "×",
+      subtotal: "Subtotal",
+      shipping: "Envío",
+      shippingFree: "Gratis",
+      shippingPending: "Por confirmar",
+      total: "Total",
+      totalPending: "Por confirmar",
+      estimate: "Días hábiles",
+      freeShippingRemaining: "{amount} más para envío gratis",
+      freeShippingReached: "Envío gratis alcanzado",
+      note: "Los precios incluirán IVA cuando queden confirmados. No se añade impuesto por separado.",
+      editBag: "Modificar la bag",
+    },
+
+    /* --- what the server changed -------------------------------------- */
+    adjustments: {
+      title: "Cambios en tu pedido",
+      note: "Estos cambios ya están reflejados en los importes de arriba.",
+      removedUnknown: "Se retiró un artículo que ya no está en el catálogo ({id}).",
+      removedUnpriced: "{name} se retiró: no tiene precio confirmado.",
+      removedUnavailable: "{name} se retiró: no está disponible.",
+      repriced: "{name} cambió de precio: {was} → {now}.",
+      quantityClamped: "{name}: la cantidad se ajustó de {from} a {to}.",
+      acknowledge: "Entendido",
+    },
+
+    errors: {
+      title: "Revisa estos campos",
+      required: "Falta este dato",
+      email_invalid: "Revisa el formato del correo",
+      phone_invalid: "Escribe 10 dígitos, o 12 con la clave 52",
+      postal_invalid: "El código postal tiene cinco dígitos",
+      state_unknown: "Selecciona un estado de la lista",
+      too_long: "Demasiado largo",
+      country_unsupported: "Solo enviamos dentro de México",
+    },
+
+    /* --- whole-page states -------------------------------------------- */
+    unavailable: {
+      index: "—",
+      label: "Compra // No habilitada",
+      title: "La compra aún no está habilitada",
+      body: "El catálogo puede consultarse por completo. Los pedidos se activarán al concluir la revisión regulatoria y la selección de procesador de pagos.",
+      catalogue: "Ver catálogo",
+      bag: "Ver la bag",
+    },
+    expired: {
+      index: "—",
+      label: "Compra // Sin pedido",
+      title: "No hay un pedido en curso",
+      body: "Tu bag está vacía o la sesión de compra terminó. Puedes volver al catálogo y comenzar de nuevo.",
+      catalogue: "Ver catálogo",
+      bag: "Ver la bag",
+    },
+
+    confirmation: {
+      index: "06",
+      label: "Confirmación",
+      qualifier: "Pedido",
+      title: "Pedido registrado",
+      referenceLabel: "Referencia",
+      placedLabel: "Registrado",
+      stateLabel: "Estado del pago",
+      statusLabel: "Estado del pedido",
+      states: {
+        /*
+         * `created` is the ONLY reachable state, because no processor exists.
+         * It says plainly that nothing was charged — a confirmation page that
+         * implied otherwise would be the worst possible place to be vague.
+         */
+        created: {
+          badge: "Sin cargo",
+          title: "Registramos tu pedido. No se realizó ningún cargo.",
+          body: "NEOGEN no tiene un procesador de pagos activo, así que el pedido no está pagado. Conserva la referencia: es la forma de identificarlo cuando el pago se habilite.",
+        },
+        pending_payment: {
+          badge: "En espera",
+          title: "Falta completar el pago",
+          body: "El pedido queda reservado hasta que el procesador confirme la operación.",
+        },
+        payment_processing: {
+          badge: "Procesando",
+          title: "El pago está en proceso",
+          body: "El procesador está resolviendo la operación. No es necesario hacer nada más.",
+        },
+        paid: {
+          badge: "Pagado",
+          title: "Pago confirmado",
+          body: "El procesador confirmó el pago de este pedido.",
+        },
+        payment_failed: {
+          badge: "Rechazado",
+          title: "El pago no se completó",
+          body: "No se realizó ningún cargo. El pedido sigue registrado con esta referencia.",
+        },
+        cancelled: {
+          badge: "Cancelado",
+          title: "Pedido cancelado",
+          body: "Este pedido fue cancelado y no se realizará ningún cargo.",
+        },
+        refunded: {
+          badge: "Reembolsado",
+          title: "Pedido reembolsado",
+          body: "El importe de este pedido fue devuelto.",
+        },
+      },
+      statuses: {
+        placed: "Registrado",
+        in_review: "En revisión",
+        preparing: "En preparación",
+        shipped: "Enviado",
+        delivered: "Entregado",
+        closed: "Cerrado",
+      },
+      nextSteps: {
+        title: "Qué sigue",
+        body: "El pago se habilitará al concluir la revisión regulatoria y la selección de procesador. Hasta entonces, el único canal directo es el teléfono de NEOGEN.",
+        contactLabel: "Comprobante registrado a",
+      },
+      items: { title: "Artículos", quantity: "×" },
+      contact: { title: "Contacto", email: "Correo", phone: "Teléfono" },
+      shipping: { title: "Envío", estimate: "Estimado" },
+      totals: { subtotal: "Subtotal", shipping: "Envío", free: "Gratis", total: "Total" },
+      estimateDays: { one: "{n} día hábil", many: "{n} días hábiles" },
+      acknowledgedLabel: "Declaraciones aceptadas",
+      actions: { catalogue: "Seguir explorando", research: "NEOGEN Research" },
+      notFound: {
+        index: "—",
+        label: "Confirmación // No encontrada",
+        title: "No encontramos ese pedido",
+        body: "La referencia no corresponde a un pedido de este navegador. Si la tienes por escrito, consérvala y comunícate por teléfono.",
+        catalogue: "Ver catálogo",
+        bag: "Ver la bag",
+      },
+    },
+
+    review: {
+      items: {
+        title: "Artículos",
+        product: "Compuesto",
+        presentation: "Presentación",
+        quantity: "Cant.",
+        unit: "Unitario",
+        total: "Importe",
+      },
+      contact: { title: "Contacto", email: "Correo", name: "Nombre", phone: "Teléfono" },
+      shipping: {
+        title: "Envío",
+        recipient: "Recibe",
+        address: "Dirección",
+        notes: "Indicaciones",
+      },
+      delivery: {
+        title: "Entrega",
+        method: "Servicio",
+        estimate: "Estimado",
+        cost: "Costo",
+        free: "Gratis",
+        pending: "Por confirmar",
+      },
+      methodNames: {
+        "local-priority": "Entrega prioritaria",
+        "national-standard": "Envío nacional",
+      },
+      totals: {
+        subtotal: "Subtotal",
+        shipping: "Envío",
+        total: "Total",
+        pending: "Por confirmar",
+        note: "Los precios incluirán IVA cuando queden confirmados. No se añade impuesto por separado.",
+      },
+      edit: "Editar",
+      estimateDays: { one: "{n} día hábil", many: "{n} días hábiles" },
+      snapshotLabel: "Precios consultados",
+    },
   },
 
   /**

@@ -1,65 +1,98 @@
 /*
- * Checkout. The same asymmetric pairing as the bag — the process on the left at
- * reading measure, the order held in a narrower column at the right.
+ * CHECKOUT LAYOUT — 7 / 4, with a column of air.
+ *
+ * The asymmetry is the whole composition. A 50/50 split reads as two panels
+ * of equal weight; 7 against 4 reads as a document with a margin note, which
+ * is the correct relationship between "the step you are completing" and "what
+ * you are buying".
+ *
+ * Below 64rem the two stack in DOM order — step first, summary after — so the
+ * visual sequence and the focus sequence are identical at every width.
  */
-
 .layout {
   display: grid;
-  gap: var(--space-2xl);
-  align-items: start;
+  gap: var(--space-xl);
+  grid-template-columns: minmax(0, 1fr);
 }
 
 @media (min-width: 64rem) {
   .layout {
-    grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
-    gap: var(--space-4xl);
-  }
-
-  /* The column rule, as on the product page: one hairline instead of a box. */
-  .aside {
-    padding-inline-start: var(--space-2xl);
-    border-inline-start: 1px solid var(--border-subtle);
+    align-items: start;
+    /* 7 / 4 of an implied 12, the missing column being the gap. */
+    gap: var(--space-2xl);
+    grid-template-columns: minmax(0, 7fr) minmax(0, 4fr);
   }
 }
 
 .flow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
   min-inline-size: 0;
 }
 
 .aside {
-  display: grid;
-  gap: var(--space-sm);
-  align-content: start;
+  min-inline-size: 0;
 }
 
-.emptyBag {
-  display: grid;
-  justify-items: start;
-  gap: var(--space-xs);
-  padding-block-end: var(--space-md);
+/* --- a step ------------------------------------------------------------- */
+
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.stepHead {
+  align-items: baseline;
+  border-block-end: 1px solid var(--border-default);
+  display: flex;
+  gap: var(--space-sm);
+  padding-block-end: var(--space-2xs);
+}
+
+.stepIndex {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+}
+
+.stepTitle {
+  color: var(--ink-primary);
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-stretch: var(--font-stretch-display);
+  letter-spacing: var(--tracking-display);
+  line-height: var(--leading-snug);
+  margin: 0;
+}
+
+.stepNote {
+  max-inline-size: 56ch;
 }
 
 /*
- * UNFILLED, NOT DIMMED — matching ADD TO BAG and CONTINUE TO PAYMENT, so the
- * three blocked commerce actions on this site are one recognisable state.
+ * THE FIELD GRID — 12 columns, so a step can compose real address geometry:
+ * a street across eight with the exterior number in two beside it. Every
+ * field collapses to full width below 40rem (see Field.module.css).
  */
-.place {
-  inline-size: 100%;
-  min-block-size: 3.5rem;
-  margin-block-start: var(--space-2xs);
-  border: 1px solid var(--border-default);
-  background-color: transparent;
-  color: var(--ink-muted);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  letter-spacing: var(--tracking-wide);
-  text-transform: uppercase;
-  cursor: not-allowed;
+.fields {
+  border: 0;
+  display: grid;
+  gap: var(--space-md) var(--space-sm);
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
 }
 
-.pending {
+.locked {
   color: var(--ink-muted);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  text-wrap: pretty;
+  grid-column: span 12;
+  line-height: var(--leading-normal);
+}
+
+.postalNote {
+  color: var(--ink-muted);
+  grid-column: span 12;
+  line-height: var(--leading-normal);
+  max-inline-size: 60ch;
 }

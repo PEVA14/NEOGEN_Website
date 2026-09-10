@@ -334,13 +334,84 @@ Commerce inside a world keeps its own neutral action colour: `[data-world]` maps
 pair back to paper/charcoal or it renders a product-coloured button — the exact
 failure §3 exists to prevent.
 
-## 12. Commands
+## 12. Checkout and orders (Phase 10)
+
+**The browser proposes; the server decides.** The bag is `localStorage` — this
+browser's opinion, editable from a console. Entering checkout hands the server
+a list of `{variantId, quantity, claimedUnitPrice}` and nothing else. Every
+name, presentation, unit price and total on every screen after the bag is
+looked up from the registry by `domain/checkout/pricing.ts`. `claimedUnitPrice`
+is advisory only: its sole effect is to raise a `repriced` disclosure. **No
+number that arrives from a client is ever multiplied, added or stored as
+money.** A tampered bag produced the right price and a visible notice, which is
+the behaviour to preserve.
+
+**One route per step, forms over client state.** `/checkout/{contacto,envio,
+entrega,pago,revision}` are server components rendering plain `<form
+action={serverAction}>`. The whole flow works with no client JavaScript: back
+and forward behave, a step can be reloaded, and the validation a customer meets
+is the same code that decides whether an order may be created. There is exactly
+one client island in the flow — `ClearBagOnOrder` — and it exists only because
+the bag lives in the browser.
+
+**Completeness is derived, never stored.** `stepComplete` re-validates the
+draft's stored values; `canEnter` refuses a step whose predecessors are
+incomplete, **on the server at render time**. Hiding a link is not access
+control. There is no stored error list either — errors are re-derived every
+render, so a fixed field cannot keep showing a stale message.
+
+**A total is refused rather than guessed.** Free shipping above MX$10,000 is
+confirmed, so `provisionalShipping` answers from the subtotal alone. Below it
+there is no rate model: `quote` returns null, `placementBlock` returns
+`delivery_unquotable`, and the delivery step explains it. Never print a
+plausible shipping figure.
+
+**Payment: two gates, three shapes, seven states.** `bagEnabled()` is the flag;
+`paymentAvailable()` additionally needs a configured adapter. `none` never
+configures, so payment cannot be switched on by an environment variable — only
+by registering an adapter, which is a reviewed code change. `PaymentSlot`
+renders all seven states so a failure screen is not designed during a failure.
+**No processor SDK may appear in the output** — `check:output` asserts it.
+
+**Provider events are idempotent by construction.** An adapter reduces a signed
+callback to `{eventId, providerRef, state}` before anything touches the order.
+`eventId` is the dedupe key, checked globally. Ordering is not handled by
+comparing timestamps — a late event is simply an illegal transition, and the
+`TRANSITIONS` table refuses it. That is why `paid` cannot regress: no code path
+special-cases it.
+
+**Persistence is a boundary, not an implementation.** `OrderRepository` and
+`DraftStore` are what the domain knows. The adapters are in-memory and are a
+**development answer only** — see the production blocker on
+`domain/order/adapters/memory.ts`. Writes carry a version, because a webhook
+and a customer action genuinely collide.
+
+**Nothing unapproved renders.** `content/policies.ts` gates on `approved` **and**
+present text **and** an approval date; the policy route declares
+`dynamicParams = false` so an unlisted slug is a hard 404 at the routing layer.
+Without it the route rendered on demand, hit `notFound()`, and Next cached that
+as a **200 OK** — a soft 404 on a legal URL. An acknowledgement is publishable
+only when its own copy **and** its linked policy are approved, so a consent to
+an unreadable document is structurally impossible. Today: zero policies, zero
+declarations, and that is the correct output.
+
+**Checkout is `force-dynamic`.** Declared explicitly, not inferred from
+`cookies()` having been read — the flag-off branch returns before touching a
+cookie, which was enough for the build to prerender the whole checkout as
+static HTML.
+
+## 13. Commands
 
 ```bash
 npm run dev          # development server
 npm run lint         # ESLint
 npm run typecheck    # tsc --noEmit
 npm run build        # production build
-npm run check        # all three, in order
+npm run check        # every gate, in order
+npm run check:catalog   # registry integrity
+npm run check:commerce  # bag arithmetic + payment state machine
+npm run check:checkout  # server-side pricing, gates, idempotency, policies
+npm run check:media     # media declarations vs real files
+npm run check:output    # what the build actually emitted
 npm run format       # Prettier
 ```

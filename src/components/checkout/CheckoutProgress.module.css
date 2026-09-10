@@ -1,0 +1,119 @@
+/*
+ * THE PROGRESSION BAND.
+ *
+ * A single 1px rule with the steps sitting ON it, each marked by its index —
+ * closer to a measuring scale than to the pill-and-chevron wizard header. That
+ * is the Quiet Mode reading of "clear numbered progression": structure carried
+ * by rules and mono numerals, no fills, no radius, no chevrons.
+ *
+ * It SCROLLS horizontally rather than wrapping or truncating. Six steps at
+ * 375px cannot all be legible at once, and the two alternatives are worse:
+ * wrapping turns a linear process into a paragraph, and hiding steps removes
+ * the only thing that tells a customer how much is left.
+ */
+.progress {
+  border-block-end: 1px solid var(--border-subtle);
+  margin-block-end: var(--space-xl);
+  /* Own scroll container, so the page body never scrolls sideways. */
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.progress::-webkit-scrollbar {
+  display: none;
+}
+
+.list {
+  display: flex;
+  gap: var(--space-lg);
+  list-style: none;
+  margin: 0;
+  min-inline-size: max-content;
+  padding: 0;
+}
+
+.step {
+  position: relative;
+}
+
+.link,
+.static {
+  align-items: baseline;
+  display: flex;
+  gap: var(--space-2xs);
+  /* 44px target for the linked steps; applied to both so the band's height
+     does not change as steps complete. */
+  min-block-size: 2.75rem;
+  padding-block: var(--space-2xs);
+  white-space: nowrap;
+}
+
+.link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.index {
+  letter-spacing: var(--tracking-label);
+}
+
+.name {
+  font-family: var(--font-sans);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+/* --- states -------------------------------------------------------------
+ * Every state differs in WEIGHT and RULE as well as in tone, so the band is
+ * readable in greyscale and to anyone who cannot distinguish the tones.
+ */
+
+.step[data-state="pending"] .index,
+.step[data-state="pending"] .name {
+  color: var(--ink-muted);
+}
+
+.step[data-state="complete"] .index,
+.step[data-state="complete"] .name {
+  color: var(--ink-secondary);
+}
+
+/* The completed marker: a filled square under the index. Reads as "done" the
+   way a ticked box does, without importing an icon set. */
+.step[data-state="complete"]::after {
+  background: var(--ink-secondary);
+  block-size: 3px;
+  content: "";
+  inline-size: 0.5rem;
+  inset-block-end: -1px;
+  inset-inline-start: 0;
+  position: absolute;
+}
+
+.step[data-state="current"] .index,
+.step[data-state="current"] .name {
+  color: var(--ink-primary);
+  font-weight: 500;
+}
+
+/* The current marker: a full-width rule, so position is unmistakable. */
+.step[data-state="current"]::after {
+  background: var(--ink-primary);
+  block-size: 3px;
+  content: "";
+  inline-size: 100%;
+  inset-block-end: -1px;
+  inset-inline-start: 0;
+  position: absolute;
+}
+
+.link:hover .name,
+.link:hover .index {
+  color: var(--ink-primary);
+}
+
+.link:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}

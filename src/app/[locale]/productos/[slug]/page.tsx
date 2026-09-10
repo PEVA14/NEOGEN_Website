@@ -336,7 +336,7 @@ export default async function ProductPage({
           <DocumentLedger
             records={pdp.documentation.records.map((record, index) => ({
               ...record,
-              file: product.world ? documentFile(product.world, documentKinds[index]) : null,
+              file: documentFile(documentKinds[index], { slug: product.slug }),
             }))}
             identifierLabel={dict.home.research.recordLabel}
             stateLabel={dict.home.research.stateLabel}

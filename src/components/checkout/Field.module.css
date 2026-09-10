@@ -1,0 +1,233 @@
+/*
+ * CHECKOUT FIELDS — underlined, not boxed.
+ *
+ * The same field shape the catalogue search uses, so the system has ONE input
+ * idiom rather than a special "form" look. A boxed, rounded, shadowed field is
+ * the generic-SaaS default the Design Bible rules out, and a checkout full of
+ * them is exactly the "form wizard attached to a laboratory site" this phase
+ * was told to avoid.
+ *
+ * The grid is 12 columns so a step can compose real address geometry — a
+ * street that wants two thirds beside a house number that wants a sixth —
+ * rather than forcing every field to half or full width.
+ */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+  grid-column: span 12;
+  min-inline-size: 0;
+}
+
+.field[data-span="half"] {
+  grid-column: span 6;
+}
+.field[data-span="third"] {
+  grid-column: span 4;
+}
+.field[data-span="quarter"] {
+  grid-column: span 3;
+}
+
+@media (max-width: 40rem) {
+  /* Below 640px every field is full width. A three-across row of address
+     fragments is unusable on a phone, and CSS is the right place to say so. */
+  .field[data-span="half"],
+  .field[data-span="third"],
+  .field[data-span="quarter"] {
+    grid-column: span 12;
+  }
+}
+
+.label {
+  display: block;
+  cursor: pointer;
+}
+
+.labelText {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.input,
+.select,
+.textarea {
+  appearance: none;
+  border: 0;
+  border-block-end: 1px solid var(--border-default);
+  background: transparent;
+  border-radius: var(--radius-none);
+  color: var(--ink-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  inline-size: 100%;
+  /* 2.75rem is the project's tap-target floor (WCAG 2.2 SC 2.5.8 asks 24px;
+     this system uses 44px throughout). Applied to the control itself rather
+     than to a wrapper, so the whole target is the thing you can hit. */
+  min-block-size: 2.75rem;
+  padding-block: var(--space-2xs);
+  padding-inline: 0;
+  transition: border-color var(--motion-duration-fast) var(--ease-standard);
+}
+
+.textarea {
+  line-height: var(--leading-normal);
+  min-block-size: 5rem;
+  padding-block: var(--space-2xs);
+  resize: vertical;
+}
+
+.input:hover,
+.select:hover,
+.textarea:hover {
+  border-block-end-color: var(--border-strong);
+}
+
+.input:focus-visible,
+.select:focus-visible,
+.textarea:focus-visible {
+  border-block-end-color: var(--ink-primary);
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}
+
+/*
+ * INVALID. Three simultaneous signals: the rule thickens (geometry), it takes
+ * the error ink (colour), and a text message appears (language). Any one of
+ * the three is sufficient on its own, which is the requirement.
+ */
+.field[data-invalid="true"] .input,
+.field[data-invalid="true"] .select,
+.field[data-invalid="true"] .textarea {
+  border-block-end-color: var(--status-error);
+  border-block-end-width: 2px;
+}
+
+.field[data-invalid="true"] .labelText {
+  color: var(--status-error-ink);
+}
+
+.hint {
+  color: var(--ink-muted);
+}
+
+.error {
+  color: var(--status-error-ink);
+}
+
+/* --- select ------------------------------------------------------------- */
+
+.selectWrap {
+  position: relative;
+}
+
+.select {
+  padding-inline-end: var(--space-md);
+}
+
+/* A drawn mark rather than the platform arrow, so the control matches the
+   catalogue's category select instead of introducing a second look. */
+.selectMark {
+  border-block-start: 1px solid var(--ink-secondary);
+  border-inline-end: 1px solid var(--ink-secondary);
+  block-size: 0.4rem;
+  inline-size: 0.4rem;
+  inset-block-start: 50%;
+  inset-inline-end: 0.15rem;
+  pointer-events: none;
+  position: absolute;
+  transform: translateY(-65%) rotate(135deg);
+}
+
+/* --- error summary ------------------------------------------------------ */
+
+.summary {
+  border-inline-start: 2px solid var(--status-error);
+  margin-block-end: var(--space-lg);
+  padding-inline-start: var(--space-sm);
+}
+
+.summaryTitle {
+  color: var(--status-error-ink);
+  display: block;
+  letter-spacing: var(--tracking-label);
+  margin-block-end: var(--space-2xs);
+  text-transform: uppercase;
+}
+
+.summaryList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.summaryLink {
+  color: var(--ink-secondary);
+  display: inline-block;
+  font-size: var(--text-sm);
+  /* 44px, because it is a real navigation target inside a list of them. */
+  line-height: 2.75rem;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+.summaryLink:hover {
+  color: var(--ink-primary);
+}
+
+/* --- actions ------------------------------------------------------------ */
+
+.actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  margin-block-start: var(--space-xl);
+}
+
+.submit {
+  background: var(--surface-inverse);
+  border: 1px solid var(--surface-inverse);
+  border-radius: var(--radius-none);
+  color: var(--ink-inverse);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  min-block-size: 2.75rem;
+  padding-block: var(--space-2xs);
+  padding-inline: var(--space-lg);
+  text-transform: uppercase;
+  transition: background-color var(--motion-duration-fast) var(--ease-standard);
+}
+
+.submit:hover:not(:disabled) {
+  background: var(--neogen-graphite);
+}
+
+.submit:disabled {
+  /* Outlined rather than dimmed — the treatment every blocked commerce action
+     on this site carries, so "not yet" reads as one consistent state. */
+  background: transparent;
+  border-color: var(--border-default);
+  color: var(--ink-muted);
+  cursor: not-allowed;
+}
+
+.back {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  line-height: 2.75rem;
+  text-transform: uppercase;
+}
+
+.back:hover {
+  color: var(--ink-primary);
+}

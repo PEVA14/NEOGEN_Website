@@ -1,0 +1,154 @@
+/*
+ * NOTICES — three registers, three treatments, all of them rules rather than
+ * filled banners.
+ *
+ *   ADJUSTMENT — something changed and you should know. Neutral, left-ruled.
+ *   BLOCK      — you cannot continue and here is why. Error ink, left-ruled.
+ *   FLOW       — the whole page is a state. Full editorial composition.
+ *
+ * None of them is a coloured alert box. A filled amber panel would be the
+ * loudest thing on a checkout screen, and the loudest thing on a checkout
+ * screen should be the total.
+ */
+
+/* --- adjustment ---------------------------------------------------------- */
+
+.adjust {
+  border-inline-start: 2px solid var(--border-strong);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  margin-block-end: var(--space-lg);
+  padding-inline-start: var(--space-sm);
+}
+
+.adjustTitle {
+  color: var(--ink-primary);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.adjustList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.adjustNote {
+  color: var(--ink-muted);
+  line-height: var(--leading-normal);
+}
+
+/* --- block --------------------------------------------------------------- */
+
+.block {
+  border-inline-start: 2px solid var(--status-error);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  margin-block-end: var(--space-lg);
+  padding-inline-start: var(--space-sm);
+}
+
+.blockTitle {
+  color: var(--status-error-ink);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.blockBody {
+  max-inline-size: 52ch;
+}
+
+.blockAction {
+  align-self: flex-start;
+  color: var(--ink-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  line-height: 2.75rem;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-transform: uppercase;
+  text-underline-offset: 0.25em;
+}
+
+/* --- flow ---------------------------------------------------------------- */
+
+.flow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  max-inline-size: var(--container-prose);
+}
+
+.flowHead {
+  align-items: baseline;
+  border-block-end: 1px solid var(--border-subtle);
+  display: flex;
+  gap: var(--space-sm);
+  padding-block-end: var(--space-2xs);
+}
+
+.flowIndex,
+.flowLabel {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.flowTitle {
+  color: var(--ink-primary);
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-stretch: var(--font-stretch-display);
+  letter-spacing: var(--tracking-display);
+  line-height: var(--leading-tight);
+  margin: 0;
+  text-wrap: balance;
+}
+
+.flowBody {
+  max-inline-size: 56ch;
+}
+
+.flowActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  margin-block-start: var(--space-sm);
+}
+
+.flowPrimary {
+  background: var(--surface-inverse);
+  color: var(--ink-inverse);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  line-height: 2.75rem;
+  padding-inline: var(--space-lg);
+  text-transform: uppercase;
+}
+
+.flowPrimary:hover {
+  background: var(--neogen-graphite);
+}
+
+.flowSecondary {
+  color: var(--ink-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  line-height: 2.75rem;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-transform: uppercase;
+  text-underline-offset: 0.25em;
+}
+
+.flowSecondary:hover {
+  color: var(--ink-primary);
+}

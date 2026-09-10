@@ -1,12 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { useTransition } from "react";
 
 import { Mono } from "@/components/typography";
 import { VialSilhouette } from "@/components/ui";
 import { ORDER_LIMITS } from "@/data/commerce/limits";
 import { formatPrice } from "@/data/commerce/format";
 import { useBag } from "@/domain/bag";
+import { beginCheckout } from "@/server/checkout/actions";
+
+import type { Locale } from "@/i18n/config";
 
 import styles from "./BagLines.module.css";
 
@@ -31,6 +35,7 @@ export interface BagCopy {
   freeShippingRemaining: string;
   freeShippingReached: string;
   checkout: string;
+  checkoutBusy: string;
   checkoutPending: string;
   totalsNote: string;
 }
@@ -54,16 +59,48 @@ export function BagLines({
   catalogHref,
   checkoutEnabled,
   localeTag,
+  locale,
 }: {
   copy: BagCopy;
   /** URL prefix for a product page — the slug is appended. */
   productBase: string;
   catalogHref: string;
+  /** `bagEnabled()` — the commerce flag. NOT `paymentAvailable()`: entering
+      checkout needs prices and a business decision, not a processor. */
   checkoutEnabled: boolean;
   /** BCP-47 tag for `Intl`. See `AddToBag` for why this is not a function. */
   localeTag: string;
+  /** Locale code, so the server action knows where to redirect. */
+  locale: Locale;
 }) {
   const { bag, totals, hydrated, setQuantity, remove } = useBag();
+  const [handingOff, startHandoff] = useTransition();
+
+  /**
+   * THE BAG → CHECKOUT HANDOFF.
+   *
+   * The one moment client state becomes server state, and the only thing the
+   * browser is allowed to assert: variant ids, quantities, and the unit price
+   * it displayed. The server reprices every line from the registry — the
+   * claimed price is used ONLY to notice that a price has moved and tell the
+   * customer, never to charge — and stores the result under a cookie id.
+   *
+   * So the bag is not sent to checkout. It is a proposal that the server
+   * accepts, corrects or rejects, which is why a hand-edited `localStorage`
+   * cannot change what anyone pays.
+   */
+  const handoff = () => {
+    startHandoff(async () => {
+      await beginCheckout(
+        bag.lines.map((line) => ({
+          variantId: line.variantId,
+          quantity: line.quantity,
+          claimedUnitPrice: line.unitPrice.amount,
+        })),
+        locale,
+      );
+    });
+  };
 
   /*
    * Before hydration the bag is unknown, not empty. Announcing "your bag is
@@ -240,8 +277,14 @@ export function BagLines({
           </div>
         </dl>
 
-        <button type="button" className={styles.checkout} disabled={!checkoutEnabled}>
-          {copy.checkout}
+        <button
+          type="button"
+          className={styles.checkout}
+          onClick={handoff}
+          disabled={!checkoutEnabled || handingOff}
+          aria-busy={handingOff || undefined}
+        >
+          {handingOff ? copy.checkoutBusy : copy.checkout}
         </button>
 
         {!checkoutEnabled ? (

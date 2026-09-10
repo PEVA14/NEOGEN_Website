@@ -1,3 +1,20 @@
+import type { CheckoutStepId } from "@/domain/checkout/types";
+
+/**
+ * URL segment per checkout step — Spanish, matching every other route segment.
+ *
+ * Declared here rather than in the domain so that paths live in one file: the
+ * domain owns the ORDER of the steps, this owns what they are called in a URL.
+ */
+export const checkoutSegments: Record<CheckoutStepId, string> = {
+  contact: "contacto",
+  shipping: "envio",
+  delivery: "entrega",
+  payment: "pago",
+  review: "revision",
+  confirmation: "confirmacion",
+};
+
 /**
  * Single source of truth for route paths.
  *
@@ -26,6 +43,28 @@ export const routes = {
   article: (slug: string) => `/investigacion/${slug}`,
   cart: "/carrito",
   checkout: "/checkout",
+  /**
+   * One route per checkout step.
+   *
+   * A ROUTE, not client-side step state, and that is the load-bearing choice
+   * of Phase 10. Each step is a server component rendering a plain form whose
+   * action validates on the server, so the whole checkout works with no
+   * client JavaScript at all: browser back and forward behave, a step can be
+   * linked and reloaded, and the validation a customer meets is the same code
+   * that decides whether an order may be created. A single page holding step
+   * state in the client would have needed a second, weaker copy of every rule.
+   */
+  checkoutStep: (step: CheckoutStepId) => `/checkout/${checkoutSegments[step]}`,
+  /** The confirmation for one order. Not indexable, not guessable-by-sequence. */
+  orderConfirmation: (orderId: string) => `/checkout/confirmacion/${orderId}`,
+  /**
+   * A policy document.
+   *
+   * The route exists; the documents do not. `publicPolicyBySlug` returns
+   * nothing for an unapproved policy, so every one of these 404s today — see
+   * `content/policies.ts` for why an empty policy page is worse than none.
+   */
+  policy: (slug: string) => `/politicas/${slug}`,
   /**
    * PREPARED, NOT BUILT. The reference navigation is
    * `NEOGEN | Products | NEOGEN Research | About NEOGEN | [ BAG: N ]`.

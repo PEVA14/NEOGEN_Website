@@ -8,4 +8,28 @@ export {
   type ProductMedia,
   type StillMedia,
 } from "./media";
-export { documentFile, documentKinds, type DocumentFile, type DocumentKind } from "./documents";
+export {
+  allDocumentKinds,
+  documentFile,
+  documentKinds,
+  documentsFor,
+  hasDocuments,
+  isInternalKind,
+  publicDocumentsFor,
+  type DocumentFile,
+  type DocumentKind,
+  type DocumentScope,
+  type DocumentTarget,
+  type ProductDocument,
+} from "./documents";
+export {
+  isApproved as isPolicyApproved,
+  policies,
+  policyById,
+  policyStatus,
+  publicPolicies,
+  publicPolicyBySlug,
+  type Policy,
+  type PolicyId,
+  type PolicyStatus,
+} from "./policies";

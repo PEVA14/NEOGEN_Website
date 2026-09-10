@@ -1,0 +1,96 @@
+/*
+ * DECLARATIONS.
+ *
+ * Renders nothing today — see the component. The styling exists so that the
+ * first approved declaration lands in a designed control rather than a
+ * default browser checkbox next to unstyled text.
+ *
+ * The box is a 1px square with no radius, matching the system, and the whole
+ * row is a 44px label so the text is part of the target.
+ */
+.set {
+  border: 0;
+  border-block-start: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  margin: 0;
+  padding: 0;
+  padding-block-start: var(--space-md);
+}
+
+.legend {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  margin-block-end: var(--space-2xs);
+  padding: 0;
+  text-transform: uppercase;
+}
+
+.item {
+  display: flex;
+}
+
+.label {
+  align-items: flex-start;
+  cursor: pointer;
+  display: flex;
+  gap: var(--space-2xs);
+  min-block-size: 2.75rem;
+  padding-block: var(--space-3xs);
+}
+
+.checkbox {
+  appearance: none;
+  background: var(--surface-base);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-none);
+  block-size: 1.125rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  inline-size: 1.125rem;
+  /* Aligned to the first line's cap height rather than its box. */
+  margin-block-start: 0.2rem;
+  position: relative;
+}
+
+.checkbox:checked {
+  background: var(--surface-inverse);
+  border-color: var(--surface-inverse);
+}
+
+/* A drawn tick: two borders rotated. No icon dependency for one glyph. */
+.checkbox:checked::after {
+  border-block-end: 2px solid var(--ink-inverse);
+  border-inline-start: 2px solid var(--ink-inverse);
+  block-size: 0.3rem;
+  content: "";
+  inline-size: 0.55rem;
+  inset-block-start: 0.25rem;
+  inset-inline-start: 0.22rem;
+  position: absolute;
+  transform: rotate(-45deg);
+}
+
+.checkbox:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}
+
+.text {
+  color: var(--ink-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  max-inline-size: 60ch;
+}
+
+.policy {
+  color: var(--ink-primary);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+.note {
+  color: var(--ink-muted);
+}

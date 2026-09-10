@@ -182,7 +182,65 @@ for (const file of walk(path.join(OUT, "static"), /\.js$/)) {
   }
 }
 
-/* ------------------------------------------------------------- 5. canonicals
+/* ------------------------------------------- 5. checkout & policy surfaces
+ *
+ * Two assertions about pages that must NOT be public, both checked against
+ * what the build emitted rather than against the source.
+ *
+ * POLICIES. Seven policy slots are declared and none is approved, so
+ * `generateStaticParams` yields nothing and no policy HTML may exist. A file
+ * here would mean a legal document had been published without clearing owner
+ * and counsel review — the exact failure `content/policies.ts` is shaped to
+ * prevent.
+ *
+ * CHECKOUT. The flow is `force-dynamic`, so no HTML should be emitted for it
+ * either. If a future change reintroduces prerendering, the page must at
+ * least carry `noindex` — a cached checkout step is a customer's address
+ * served to whoever asks next.
+ */
+for (const file of htmlFiles) {
+  if (/[\\/]politicas[\\/]/.test(file)) {
+    fail(
+      "a policy page was published",
+      `${file} — no policy is approved, so none may render publicly`,
+    );
+  }
+  if (/[\\/]checkout[\\/]/.test(file)) {
+    const html = readFileSync(file, "utf8");
+    if (!/<meta name="robots" content="[^"]*noindex/.test(html)) {
+      fail("a checkout page was prerendered without noindex", file);
+    }
+  }
+}
+
+/* --------------------------------------------- 6. no payment SDK is loaded
+ *
+ * NEOGEN has no configured payment processor, so no processor's JavaScript
+ * may be in the output. This is not a hypothetical: adding an SDK "ready for
+ * later" is the ordinary way a site starts making third-party requests on a
+ * page that has no payment to take, and on a checkout that would be sending
+ * customers' presence to a provider they never chose.
+ */
+const PAYMENT_SDKS = [
+  "js.stripe.com",
+  "sdk.mercadopago.com",
+  "mercadopago.min.js",
+  "js.clip.mx",
+  "conekta.js",
+  "openpay",
+  "paypal.com/sdk",
+  "checkout.js",
+];
+for (const file of [...clientAssets, ...htmlFiles]) {
+  const text = readFileSync(file, "utf8");
+  for (const sdk of PAYMENT_SDKS) {
+    if (text.includes(sdk)) {
+      fail("a payment SDK reference is in the output", `"${sdk}" in ${file}`);
+    }
+  }
+}
+
+/* ------------------------------------------------------------- 7. canonicals
  *
  * A build that shipped with the fallback origin would publish canonical URLs
  * pointing at a developer's machine.

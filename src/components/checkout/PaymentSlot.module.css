@@ -1,0 +1,188 @@
+/*
+ * THE PAYMENT PLATE.
+ *
+ * Framed like a filed record — the same vocabulary the documentation ledger
+ * uses — rather than styled like a form. That is the honest reading of what
+ * this step is today: a statement of the payment's state, not a place to type.
+ *
+ * The frame is 1px chalk on warm stone with a hairline head carrying a mono
+ * state badge. States differ by the LEFT RULE's weight and tone, so the
+ * difference between "approved" and "failed" survives greyscale.
+ */
+.slot {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-inline-start: 2px solid var(--border-strong);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  padding: var(--space-md);
+}
+
+.head {
+  align-items: baseline;
+  border-block-end: 1px solid var(--border-subtle);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+  justify-content: space-between;
+  margin-block-end: var(--space-2xs);
+  padding-block-end: var(--space-2xs);
+}
+
+.stateLabel,
+.badge {
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.stateLabel {
+  color: var(--ink-muted);
+}
+
+.badge {
+  color: var(--ink-primary);
+}
+
+.title {
+  color: var(--ink-primary);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-stretch: var(--font-stretch-display);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-snug);
+  margin: 0;
+}
+
+.body {
+  max-inline-size: 46ch;
+}
+
+/* --- state accents -------------------------------------------------------
+ * Only two states get a chromatic accent, and both are outcomes the customer
+ * must act on. Waiting states stay neutral: colouring them would spend
+ * attention on something that resolves by itself.
+ */
+.slot[data-state="approved"] {
+  border-inline-start-color: var(--status-verified);
+}
+
+.slot[data-state="approved"] .badge {
+  color: var(--status-verified-ink);
+}
+
+.slot[data-state="failed"] {
+  border-inline-start-color: var(--status-error);
+}
+
+.slot[data-state="failed"] .badge,
+.slot[data-state="failed"] .reason {
+  color: var(--status-error-ink);
+}
+
+/* --- no provider --------------------------------------------------------- */
+
+.contact {
+  align-items: baseline;
+  border-block-start: 1px solid var(--border-subtle);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+  margin: 0;
+  margin-block-start: var(--space-2xs);
+  padding-block-start: var(--space-sm);
+}
+
+.contactLabel {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.contactLink {
+  color: var(--ink-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  /* 44px — it is a tel: link and the primary action of this state. */
+  line-height: 2.75rem;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.25em;
+}
+
+/* --- embedded mount ------------------------------------------------------ */
+
+.mount {
+  align-items: center;
+  /* A dashed rule, the one place this system uses one: it reads as a reserved
+     area rather than a component, which is exactly what it is. */
+  border: 1px dashed var(--border-default);
+  display: flex;
+  justify-content: center;
+  min-block-size: 8rem;
+  margin-block-start: var(--space-2xs);
+}
+
+.mountLabel {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+/* --- redirect ------------------------------------------------------------ */
+
+.action {
+  align-self: flex-start;
+  background: var(--surface-inverse);
+  color: var(--ink-inverse);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  line-height: 2.75rem;
+  margin-block-start: var(--space-2xs);
+  padding-inline: var(--space-lg);
+  text-transform: uppercase;
+}
+
+.action:hover {
+  background: var(--neogen-graphite);
+}
+
+/* --- instructions ------------------------------------------------------- */
+
+.reference {
+  border-block-start: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  margin: 0;
+  margin-block-start: var(--space-2xs);
+  padding-block-start: var(--space-sm);
+}
+
+.referenceRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  justify-content: space-between;
+}
+
+.referenceKey {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.referenceValue {
+  color: var(--ink-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+  /* Selectable in one gesture — this is a value that gets copied. */
+  user-select: all;
+}
+
+.reason {
+  margin-block-start: var(--space-2xs);
+}

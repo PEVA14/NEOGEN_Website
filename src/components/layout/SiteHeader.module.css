@@ -53,7 +53,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-md);
-  min-block-size: 4rem;
+  min-block-size: var(--header-height);
 }
 
 .nav {

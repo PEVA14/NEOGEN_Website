@@ -1,4 +1,11 @@
 import type { Money } from "@/data/commerce";
+import type {
+  AcceptedAcknowledgement,
+  Contact,
+  DeliverySelection,
+  MxAddress,
+} from "@/domain/checkout/types";
+import type { PaymentErrorCode } from "@/payments/types";
 
 /**
  * PAYMENT STATE — provider-independent, by design.
@@ -56,6 +63,20 @@ export function isSettled(state: PaymentState): boolean {
 }
 
 /**
+ * FULFILMENT STATUS — a SEPARATE axis from payment, deliberately.
+ *
+ * A paid order still has to be picked, packed and shipped, and an unpaid one
+ * can be cancelled. Folding both into one enum is the classic ecommerce
+ * modelling mistake: it produces states like "paid_shipped" and then
+ * "paid_shipped_refunded", and every new combination multiplies the machine.
+ *
+ * Nothing advances this today — there is no operations tooling — so every
+ * order sits at `placed`. It exists now because retrofitting a second axis
+ * onto persisted orders later means migrating them.
+ */
+export type OrderStatus = "placed" | "in_review" | "preparing" | "shipped" | "delivered" | "closed";
+
+/**
  * ONE LINE OF AN ORDER — a snapshot, not a reference.
  *
  * Product name, presentation and unit price are COPIED at order time. An order
@@ -81,30 +102,83 @@ export interface OrderTotals {
   total: Money;
 }
 
-/** Where it ships. Shape only — no field here is collected yet. */
-export interface ShippingAddress {
-  name: string;
-  line1: string;
-  city: string;
-  state: string;
-  postalCode: string;
-  country: string;
+/**
+ * ONE ATTEMPT TO OPEN A PAYMENT.
+ *
+ * Recorded whether it succeeded or not, and the failures are the valuable
+ * half: "the provider refused to create an intent four times" is the
+ * difference between a customer who changed their mind and an integration
+ * that is broken. No card data, no provider payload — a code and a reference.
+ */
+export interface PaymentAttempt {
+  /** Sequence within the order, from 1. */
+  seq: number;
+  provider: string;
+  at: string;
+  outcome: "intent_created" | "intent_refused";
+  /** The provider's id for the intent, when one was created. */
+  providerRef: string | null;
+  /** Stable code from `PaymentErrorCode`, never a provider message. */
+  errorCode: PaymentErrorCode | null;
+}
+
+/**
+ * THE AUDIT TRAIL.
+ *
+ * Append-only. Every state change and every rejected state change lands here,
+ * including the ones that changed nothing — a duplicate webhook that was
+ * correctly ignored is exactly the event you want a record of when a customer
+ * says they were charged twice.
+ */
+export type OrderEventKind =
+  | "created"
+  | "payment_intent"
+  | "payment_event_applied"
+  | "payment_event_duplicate"
+  | "payment_event_rejected"
+  | "status_changed";
+
+export interface OrderEvent {
+  seq: number;
+  at: string;
+  kind: OrderEventKind;
+  /** The provider's event id, where the event came from a provider. */
+  providerEventId: string | null;
+  from: PaymentState | null;
+  to: PaymentState | null;
+  /** Short machine-readable reason, e.g. "illegal_transition". Never prose. */
+  note: string | null;
 }
 
 export interface Order {
   /** NEOGEN's own reference, shown to the customer. */
   id: string;
   createdAt: string;
+  updatedAt: string;
+  /**
+   * Optimistic-concurrency counter, incremented on every persisted change.
+   *
+   * A webhook and an admin action can touch one order at the same moment. The
+   * repository refuses a write whose `version` is stale, so the loser retries
+   * against fresh state instead of overwriting a payment transition with an
+   * older copy of the order.
+   */
+  version: number;
   state: PaymentState;
+  status: OrderStatus;
   lines: readonly OrderLine[];
   totals: OrderTotals;
-  email: string | null;
-  shipping: ShippingAddress | null;
+  /** Frozen at order time. Never re-read from the draft or the registry. */
+  contact: Contact;
+  shipping: MxAddress;
+  delivery: DeliverySelection;
   /**
    * The fulfilment route, resolved at order time from the address.
    * `priority` is Guadalajara / Durango; `national` is everywhere else.
    */
-  route: "priority" | "national" | null;
+  route: "priority" | "national";
+  /** Exactly which declarations, at which versions, were accepted. */
+  acknowledged: readonly AcceptedAcknowledgement[];
   /**
    * The provider's own id for this payment, once one exists.
    *
@@ -114,4 +188,6 @@ export interface Order {
   providerRef: string | null;
   /** Which adapter owns `providerRef`. Null before a payment is attempted. */
   provider: string | null;
+  attempts: readonly PaymentAttempt[];
+  events: readonly OrderEvent[];
 }

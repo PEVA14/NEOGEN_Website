@@ -1,6 +1,7 @@
 import { routes } from "@/config/routes";
 import { siteConfig } from "@/config/site";
 import { publishedProducts } from "@/data/catalog";
+import { publicPolicies } from "@/content/policies";
 import { publicAreas } from "@/data/discovery";
 import { localeTags } from "@/i18n/config";
 import { localizePath } from "@/i18n/routing";
@@ -15,7 +16,8 @@ import type { MetadataRoute } from "next";
  * pages come from `publishedProducts`, the same list `generateStaticParams`
  * uses, so the sitemap cannot list a URL the site does not serve.
  *
- * Checkout is excluded, matching its `noindex` and the robots rule. No
+ * Checkout and its six steps are excluded, matching their `noindex` — as is
+ * the order confirmation, which carries a customer's address. No
  * `lastModified`: nothing here has a real modification date, and inventing one
  * would be telling crawlers something we do not know.
  */
@@ -33,6 +35,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
      */
     ...publicAreas().map((area) => routes.area(area.slug)),
     ...publishedProducts.map((product) => routes.product(product.slug)),
+    /*
+     * Only APPROVED policies, which is none today — so nothing is added here
+     * yet. Listed from the same accessor the route serves from, so the
+     * sitemap cannot advertise a policy URL that 404s.
+     */
+    ...publicPolicies().map((policy) => routes.policy(policy.slug)),
   ];
 
   return paths.flatMap((path) =>

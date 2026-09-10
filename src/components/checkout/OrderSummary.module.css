@@ -1,0 +1,228 @@
+/*
+ * THE SUMMARY PANEL.
+ *
+ * Warm stone against the paper form, separated by a 1px rule rather than a
+ * shadow or a radius: it is a different KIND of information — a statement of
+ * account beside a set of questions — and the material change says that better
+ * than a floating card would.
+ *
+ * Money is set in mono throughout and the grand total at display scale, so
+ * the one number a customer is checking is the largest thing in the panel.
+ */
+.panel {
+  align-self: start;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+}
+
+@media (min-width: 64rem) {
+  /* Sticky on desktop only. A sticky panel on a phone would eat the viewport
+     the form needs. The offset clears the site header. */
+  .panel {
+    position: sticky;
+    inset-block-start: calc(var(--header-height) + var(--space-md));
+  }
+}
+
+.head {
+  align-items: baseline;
+  border-block-end: 1px solid var(--border-subtle);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+  justify-content: space-between;
+  padding-block-end: var(--space-2xs);
+}
+
+.title {
+  color: var(--ink-primary);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.count {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+/* --- lines --------------------------------------------------------------- */
+
+.linesWrap {
+  /* Capped and scrollable — see the component comment for why this is not a
+     disclosure. Its own scroll container, so the page never scrolls sideways
+     or grows unboundedly. */
+  max-block-size: 16rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.linesWrap:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.line {
+  align-items: baseline;
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: space-between;
+}
+
+.lineMain {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-inline-size: 0;
+}
+
+.lineName {
+  color: var(--ink-primary);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-stretch: var(--font-stretch-display);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-snug);
+}
+
+.lineMeta {
+  color: var(--ink-muted);
+}
+
+.lineTotal {
+  color: var(--ink-primary);
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- free shipping ------------------------------------------------------- */
+
+.freeShip {
+  border-block-start: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+  padding-block-start: var(--space-sm);
+}
+
+.meter {
+  background: var(--neogen-chalk);
+  block-size: 2px;
+  inline-size: 100%;
+  overflow: hidden;
+}
+
+.meterFill {
+  background: var(--ink-secondary);
+  display: block;
+  block-size: 100%;
+  transition: inline-size var(--motion-duration-base) var(--ease-standard);
+}
+
+.freeShip[data-reached="true"] .meterFill {
+  background: var(--status-verified);
+}
+
+.freeShip[data-reached="true"] .freeShipNote {
+  color: var(--status-verified-ink);
+}
+
+.freeShipNote {
+  color: var(--ink-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .meterFill {
+    transition: none;
+  }
+}
+
+/* --- totals -------------------------------------------------------------- */
+
+.totals {
+  border-block-start: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  margin: 0;
+  padding-block-start: var(--space-sm);
+}
+
+.row {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: space-between;
+}
+
+.key {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.value {
+  color: var(--ink-secondary);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.pending {
+  color: var(--ink-muted);
+  text-align: end;
+}
+
+.grand {
+  align-items: baseline;
+  border-block-start: 1px solid var(--border-default);
+  margin-block-start: var(--space-2xs);
+  padding-block-start: var(--space-sm);
+}
+
+.grandValue {
+  color: var(--ink-primary);
+  font-family: var(--font-display);
+  /* The largest thing in the panel, on purpose. */
+  font-size: var(--text-2xl);
+  font-stretch: var(--font-stretch-display);
+  letter-spacing: var(--tracking-display);
+  line-height: 1;
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- footer -------------------------------------------------------------- */
+
+.editBag {
+  color: var(--ink-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  /* 44px: it is a real link out of the flow. */
+  line-height: 2.75rem;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-transform: uppercase;
+  text-underline-offset: 0.25em;
+}
+
+.editBag:hover {
+  color: var(--ink-primary);
+}
+
+.note {
+  color: var(--ink-muted);
+  line-height: var(--leading-normal);
+}

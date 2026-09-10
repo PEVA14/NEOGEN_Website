@@ -19,12 +19,10 @@ import {
   totals,
 } from "../src/domain/bag/index.ts";
 import {
-  bagToLines,
   canTransition,
-  createOrder,
   isSettled,
   newOrderId,
-  quoteTotals,
+  quote,
   transition,
   TRANSITIONS,
 } from "../src/domain/order/index.ts";
@@ -155,77 +153,105 @@ for (const s of STATES) if (!reachable.has(s)) fail("state unreachable from crea
 
 /* ---- orders ------------------------------------------------------------ */
 
-if (quoteTotals(below) !== null) {
-  fail("an order must not be quotable below the free-shipping threshold", "got a quote");
-}
-if (createOrder(below) !== null) fail("no order below the threshold", "got an order");
-if (createOrder(EMPTY_BAG) !== null) fail("no order from an empty bag", "got an order");
+/*
+ * ORDER CREATION MOVED TO `check:checkout`.
+ *
+ * An order is now built from a CHECKOUT DRAFT — a priced snapshot plus a
+ * validated contact, address and delivery selection — so testing it here
+ * would mean constructing a draft, which is that script's subject. What stays
+ * is what belongs to commerce alone: the bag arithmetic above, the state
+ * machine, and order identifiers.
+ */
 
-const order = createOrder(above, {
-  email: "a@b.mx",
+/*
+ * `quote` refuses to total an order it cannot total. Repeated here because it
+ * is the boundary between the bag and the order, and because a regression that
+ * made it return a number would be a shop charging a made-up shipping cost.
+ */
+if (
+  quote([], { methodId: "local-priority", route: "priority", estimateDays: 1, price: mxn(0) }) !==
+  null
+) {
+  fail("an empty order must not be quotable", "got a quote");
+}
+const oneLine = [
+  {
+    variantId: "x-5mg",
+    slug: "x",
+    name: "X",
+    presentation: "5 mg",
+    unitPrice: mxn(1000),
+    quantity: 2,
+    lineTotal: mxn(2000),
+  },
+];
+if (quote(oneLine, null) !== null) fail("no delivery selection means no total", "got a quote");
+if (
+  quote(oneLine, {
+    methodId: "national-standard",
+    route: "national",
+    estimateDays: 7,
+    price: null,
+  }) !== null
+) {
+  fail("an unpriced delivery method must not produce a total", "got a quote");
+}
+eq(
+  quote(oneLine, { methodId: "local-priority", route: "priority", estimateDays: 1, price: mxn(0) })
+    .total.amount,
+  2000,
+  "a quotable order totals its lines plus shipping",
+);
+
+/* A minimal order literal, so the state machine can be driven without a draft. */
+const fixture = {
+  id: "NG-TEST-001",
+  createdAt: "2026-09-10T00:00:00.000Z",
+  updatedAt: "2026-09-10T00:00:00.000Z",
+  version: 1,
+  state: "created",
+  status: "placed",
+  lines: [],
+  totals: { subtotal: mxn(0), shipping: mxn(0), total: mxn(0) },
+  contact: { email: "a@b.mx", name: "N", phone: "523320655447" },
   shipping: {
-    name: "N",
-    line1: "L",
-    city: "Guadalajara",
-    state: "Jalisco",
+    recipient: "N",
+    street: "L",
+    numeroExterior: "1",
+    numeroInterior: null,
+    colonia: "C",
     postalCode: "44100",
+    city: "Guadalajara",
+    state: "JAL",
     country: "MX",
+    notes: null,
   },
-});
-if (!order) {
-  fail("an order at the threshold must be creatable", "got null");
-} else {
-  eq(order.state, "created", "new order state");
-  eq(order.route, "priority", "Guadalajara resolves to the priority route");
-  eq(order.totals.shipping.amount, 0, "order shipping is free at the threshold");
-  eq(order.totals.total.amount, order.totals.subtotal.amount, "order total");
-  eq(order.providerRef, null, "a new order has no provider reference");
-  eq(order.provider, null, "a new order has no provider");
+  delivery: { methodId: "local-priority", route: "priority", estimateDays: 1, price: mxn(0) },
+  route: "priority",
+  acknowledged: [],
+  providerRef: null,
+  provider: null,
+  attempts: [],
+  events: [],
+};
 
-  /* Line snapshots, not references — an order must not reprice itself. */
-  const lines = bagToLines(above);
-  eq(lines[0].lineTotal.amount, lines[0].unitPrice.amount * lines[0].quantity, "line total");
-  eq(order.lines[0].name, above.lines[0].name, "the order snapshots the name");
-
-  /*
-   * An order cannot jump straight to paid: it has to have been attempted.
-   * That is deliberate — a "mark as paid" shortcut is how money goes missing.
-   */
-  if (transition(order, "paid") !== null) fail("created must not jump to paid", "accepted");
-  const pending = transition(order, "pending_payment");
-  if (!pending) fail("created -> pending_payment is legal", "refused");
-  if (pending && transition(pending, "paid") === null) {
-    fail("pending_payment -> paid is legal", "refused");
-  }
-  const paid = { ...order, state: "paid" };
-  if (transition(paid, "payment_processing") !== null) {
-    fail("a redelivered event must not un-pay a paid order", "accepted");
-  }
+/*
+ * An order cannot jump straight to paid: it has to have been attempted.
+ * That is deliberate — a "mark as paid" shortcut is how money goes missing.
+ */
+if (transition(fixture, "paid") !== null) fail("created must not jump to paid", "accepted");
+const pending = transition(fixture, "pending_payment");
+if (!pending) fail("created -> pending_payment is legal", "refused");
+if (pending && transition(pending, "paid") === null) {
+  fail("pending_payment -> paid is legal", "refused");
 }
-
-/* Accent- and case-insensitive city matching: a customer types "durango". */
-const natOrder = createOrder(above, {
-  shipping: {
-    name: "N",
-    line1: "L",
-    city: "durango",
-    state: "Durango",
-    postalCode: "34000",
-    country: "MX",
-  },
-});
-eq(natOrder?.route, "priority", "lower-case Durango still resolves to priority");
-const other = createOrder(above, {
-  shipping: {
-    name: "N",
-    line1: "L",
-    city: "Mérida",
-    state: "Yucatán",
-    postalCode: "97000",
-    country: "MX",
-  },
-});
-eq(other?.route, "national", "elsewhere resolves to the national route");
+if (transition({ ...fixture, state: "paid" }, "payment_processing") !== null) {
+  fail("a redelivered event must not un-pay a paid order", "accepted");
+}
+/* Every transition is recorded, so an order's history is never a guess. */
+if (pending && pending.events.length !== fixture.events.length + 1) {
+  fail("a transition must append an audit event", `${pending.events.length}`);
+}
 
 /* Order ids are unique and sortable by creation. */
 const ids = new Set();
