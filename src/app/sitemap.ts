@@ -1,6 +1,7 @@
 import { routes } from "@/config/routes";
 import { siteConfig } from "@/config/site";
 import { publishedProducts } from "@/data/catalog";
+import { publicAreas } from "@/data/discovery";
 import { localeTags } from "@/i18n/config";
 import { localizePath } from "@/i18n/routing";
 
@@ -24,6 +25,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     routes.products,
     routes.research,
     routes.cart,
+    /*
+     * Only areas with something to show. `publicAreas()` counts products whose
+     * assignment is confirmed or sourced, so a draft-only area is absent here
+     * for the same reason its route 404s — the sitemap cannot advertise a URL
+     * the site does not serve.
+     */
+    ...publicAreas().map((area) => routes.area(area.slug)),
     ...publishedProducts.map((product) => routes.product(product.slug)),
   ];
 

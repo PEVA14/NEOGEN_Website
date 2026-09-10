@@ -14,8 +14,15 @@ export interface CatalogProduct {
   /** Identity key — drives the media lookup as well as the link. */
   slug: string;
   name: string;
+  /** Alternative designation, where the catalogue states one. */
+  subtitle: string | null;
   category: string;
   categoryLabel: string;
+  /**
+   * Discovery areas this product may publicly be shown under. Empty while its
+   * assignments are still drafts, which is every product today.
+   */
+  areas: readonly string[];
   /** Only the three flagships carry a world. */
   world: WorldId | null;
   worldLabel?: string;
@@ -33,6 +40,11 @@ export interface CatalogCopy {
   filterLabel: string;
   filterAll: string;
   categoryLabels: Record<string, string>;
+  /** Discovery-area filter. Absent from the UI while no area has products. */
+  areaLabel: string;
+  areaLabels: Record<string, string>;
+  /** Ordered area ids that currently have approved products. */
+  areaOrder: readonly string[];
   sortLabel: string;
   sortIndex: string;
   sortName: string;
@@ -55,11 +67,11 @@ type Sort = "index" | "name";
  *
  * WHAT IT FILTERS ON, AND WHY THAT IS THE WHOLE LIST.
  * ---------------------------------------------------
- * Search and the compound filter operate on data that genuinely exists — names
- * and product worlds. There is no verified taxonomy for format, concentration
- * or category, so those facets are NOT rendered as empty dropdowns that would
- * imply a catalogue structure we have not established. They are named once, as
- * pending, exactly as the product page treats its variant selector.
+ * Search, the category filter and the discovery-area filter all operate on data
+ * that genuinely exists. The area row is the newest and the most conditional:
+ * it is in the DOM only when at least one area has an APPROVED product, so
+ * while the whole proposed mapping is still a draft the catalogue looks exactly
+ * as it did.
  *
  * A filter control that cannot filter is worse than an absent one: it invites a
  * click, does nothing, and teaches the reader the interface is decorative.
@@ -84,6 +96,7 @@ export function CatalogBrowser({
 }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string>("all");
+  const [area, setArea] = useState<string>("all");
   const [view, setView] = useState<View>("grid");
   const [sort, setSort] = useState<Sort>("index");
 
@@ -93,6 +106,7 @@ export function CatalogBrowser({
     return products
       .filter((product) => {
         if (category !== "all" && product.category !== category) return false;
+        if (area !== "all" && !product.areas.includes(area)) return false;
         if (!needle) return true;
         // Matches what a reader can actually see on a card: the name, the
         // category and the doses.
@@ -103,15 +117,16 @@ export function CatalogBrowser({
       .sort((a, b) =>
         sort === "name" ? a.name.localeCompare(b.name) : a.index.localeCompare(b.index),
       );
-  }, [products, query, category, sort]);
+  }, [products, query, category, area, sort]);
 
-  const filtered = query.trim() !== "" || category !== "all";
+  const filtered = query.trim() !== "" || category !== "all" || area !== "all";
 
   const categories = useMemo(() => [...new Set(products.map((p) => p.category))], [products]);
 
   const reset = () => {
     setQuery("");
     setCategory("all");
+    setArea("all");
   };
 
   return (
@@ -164,6 +179,41 @@ export function CatalogBrowser({
             ))}
           </div>
         </fieldset>
+
+        {/*
+         * DISCOVERY AREA — rendered only when at least one area has approved
+         * products. A filter that cannot filter is worse than an absent one,
+         * and every assignment is a draft today, so this row is currently not
+         * in the DOM at all rather than present and empty.
+         */}
+        {copy.areaOrder.length > 0 ? (
+          <fieldset className={styles.group}>
+            <legend className={styles.controlLabel}>
+              <Mono size="2xs">{copy.areaLabel}</Mono>
+            </legend>
+            <div className={styles.options}>
+              <button
+                type="button"
+                className={styles.chip}
+                aria-pressed={area === "all"}
+                onClick={() => setArea("all")}
+              >
+                {copy.filterAll}
+              </button>
+              {copy.areaOrder.map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={styles.chip}
+                  aria-pressed={area === id}
+                  onClick={() => setArea(id)}
+                >
+                  {copy.areaLabels[id] ?? id}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+        ) : null}
 
         <div className={styles.trailing}>
           <fieldset className={styles.group}>
@@ -253,6 +303,7 @@ export function CatalogBrowser({
                 worldLabel={product.worldLabel}
                 eyebrow={product.categoryLabel}
                 name={product.name}
+                subtitle={product.subtitle}
                 href={product.href}
                 price={product.price}
                 ctaLabel={product.ctaLabel}

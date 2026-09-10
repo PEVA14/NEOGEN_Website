@@ -515,6 +515,92 @@ const es = {
     browse: "Ver catálogo",
   },
 
+  /**
+   * COMMERCE VOCABULARY.
+   *
+   * The three stock states, and nothing warmer. "En existencia" is a claim
+   * about our own supply, so it may only ever be rendered from a value an
+   * owner has actually set — never as a default.
+   */
+  commerce: {
+    availability: {
+      "in-stock": "En existencia",
+      "made-to-order": "Sobre pedido",
+      unavailable: "No disponible por ahora",
+    },
+  },
+
+  /**
+   * DISCOVERY — customer-facing merchandising copy.
+   *
+   * DRAFT COPY, PENDING OWNER REVIEW. Area names and descriptions are
+   * merchandising language, and the descriptions below name a FIELD OF STUDY
+   * rather than anything a product does. None of them may be rewritten into a
+   * statement about an outcome.
+   *
+   * Nothing here renders until an area has at least one non-draft assignment,
+   * so approving an area's products is also what puts its wording live.
+   */
+  discovery: {
+    label: "Áreas de investigación",
+    /** Eyebrow above the product name on a PDP. */
+    productLabel: "Área de investigación",
+    all: "Todo el catálogo",
+    countLabel: "Compuestos",
+    areas: {
+      metabolic: {
+        title: "Investigación metabólica",
+        body: "Compuestos estudiados en el contexto de la regulación metabólica.",
+      },
+      recovery: {
+        title: "Recuperación y reparación",
+        body: "Compuestos estudiados en el contexto de la reparación tisular.",
+      },
+      longevity: {
+        title: "Longevidad y función celular",
+        body: "Compuestos estudiados en el contexto del envejecimiento celular.",
+      },
+      growth: {
+        title: "Desarrollo y rendimiento",
+        body: "Compuestos estudiados en el contexto de las vías de crecimiento.",
+      },
+      skin: {
+        title: "Piel y estética",
+        body: "Compuestos estudiados en el contexto de la matriz dérmica y el pigmento.",
+      },
+      neuro: {
+        title: "Neurología y sueño",
+        body: "Compuestos estudiados en el contexto de la función cognitiva y el sueño.",
+      },
+      hormonal: {
+        title: "Hormonal y reproductiva",
+        body: "Compuestos estudiados en el contexto de la regulación hormonal.",
+      },
+      materials: {
+        title: "Materiales de investigación",
+        body: "Disolventes y consumibles para preparación y manejo en laboratorio.",
+      },
+    },
+  },
+
+  /**
+   * PRODUCT TYPE — the factual axis.
+   *
+   * `compound` is the default and says only "a substance". Every other label
+   * is a statement about what something is, and only renders where an owner
+   * has confirmed it.
+   */
+  productTypes: {
+    compound: "Compuesto",
+    peptide: "Péptido",
+    protein: "Proteína",
+    "small-molecule": "Molécula pequeña",
+    "vitamin-cofactor": "Vitamina / cofactor",
+    "amino-acid-derivative": "Derivado de aminoácido",
+    blend: "Mezcla",
+    solvent: "Disolvente",
+  },
+
   status: {
     /**
      * Neutral verification vocabulary.
@@ -530,6 +616,9 @@ const es = {
   footer: {
     tagline: "Compuestos de investigación. Construidos sobre evidencia.",
     about: "Laboratorio de compuestos de investigación. Metodología orientada a la documentación.",
+    contact: "Contacto",
+    serviceArea: "Zona de servicio",
+    national: "Nacional",
     columns: {
       products: "Productos",
       research: "Investigación",

@@ -1,6 +1,7 @@
 import { Mono } from "@/components/typography";
 import { TextLink, WorldDot } from "@/components/ui";
 import type { WorldId } from "@/config/worlds";
+import type { Availability } from "@/data/commerce";
 
 import styles from "./CommercePanel.module.css";
 
@@ -9,6 +10,11 @@ export interface CommerceCopy {
   section: string;
   qualifier: string;
   name: string;
+  /**
+   * An alternative designation for the compound — never a description. Absent
+   * for all but one product; see `Product.subtitle`.
+   */
+  subtitle: string | null;
   /**
    * Product description. Null until there is verified compound information to
    * write from — see COPYWRITING AFTER VERIFICATION. The line is then absent
@@ -30,6 +36,20 @@ export interface CommerceCopy {
   documentation: string;
   documentationHref: string;
   placeholder: string;
+}
+
+/**
+ * One presentation, with whatever is known about being able to get it.
+ *
+ * `availability` is null for every variant today: there is no inventory
+ * system, and an absent state renders no line rather than claiming stock we
+ * have not checked. `unavailable` greys the option out rather than removing
+ * it — a format that exists but cannot be had right now is information, and
+ * deleting it from the selector makes the catalogue look smaller than it is.
+ */
+export interface CommerceVariant {
+  label: string;
+  availability: Availability | null;
 }
 
 /**
@@ -63,15 +83,24 @@ export function CommercePanel({
   world,
   worldLabel,
   variants = [],
+  availabilityLabels,
 }: {
   copy: CommerceCopy;
   world: WorldId | null;
   /** Short world character label — "PRECISIÓN". Identity, never an action. */
   worldLabel: string;
-  /** Verified concentration formats. Empty until real variant data exists. */
-  variants?: readonly string[];
+  /** The presentations this product is sold in. */
+  variants?: readonly CommerceVariant[];
+  /** Localized names for the three stock states. */
+  availabilityLabels: Record<Availability, string>;
 }) {
   const hasVariants = variants.length > 0;
+  /*
+   * The state shown next to the price belongs to the SELECTED variant, and
+   * without client state that is the first one — the same one the radio group
+   * defaults to. It stays in sync because both read index 0.
+   */
+  const selected = variants[0]?.availability ?? null;
 
   return (
     <div className={styles.panel}>
@@ -105,6 +134,13 @@ export function CommercePanel({
 
       {/* No SKU line. It is an internal identifier and customers do not shop
           by it; displaying `SKU — PLACEHOLDER` only advertised an empty field. */}
+      {/* An alternative name for the compound, above its composition. */}
+      {copy.subtitle ? (
+        <Mono size="2xs" className={styles.subtitle}>
+          {copy.subtitle}
+        </Mono>
+      ) : null}
+
       {copy.descriptor ? <p className={styles.descriptor}>{copy.descriptor}</p> : null}
 
       <div className={styles.rule} />
@@ -118,9 +154,20 @@ export function CommercePanel({
         {hasVariants ? (
           <div className={styles.variantOptions}>
             {variants.map((variant, index) => (
-              <label key={variant} className={styles.variant}>
-                <input type="radio" name="variant" value={variant} defaultChecked={index === 0} />
-                <span>{variant}</span>
+              <label
+                key={variant.label}
+                className={styles.variant}
+                /* Greys the option out where the stock state says so. The
+                   option stays selectable: it names a real presentation. */
+                data-availability={variant.availability ?? undefined}
+              >
+                <input
+                  type="radio"
+                  name="variant"
+                  value={variant.label}
+                  defaultChecked={index === 0}
+                />
+                <span>{variant.label}</span>
               </label>
             ))}
           </div>
@@ -154,6 +201,13 @@ export function CommercePanel({
           )}
         </div>
       </div>
+
+      {/* Rendered only where a state is actually known. */}
+      {selected ? (
+        <Mono size="2xs" className={styles.availability} data-availability={selected}>
+          {availabilityLabels[selected]}
+        </Mono>
+      ) : null}
 
       <button type="button" className={styles.addToBag} disabled>
         {copy.addToBag}

@@ -117,6 +117,16 @@
   text-decoration: none;
   text-underline-offset: 0.2em;
   transition: text-decoration-color var(--motion-duration-fast) var(--ease-standard);
+
+  /*
+   * WCAG 2.2 SC 2.5.8 — measured at 21px tall on a phone, because the row's
+   * heading sets its own line-height and the link only wraps the text. The
+   * height comes from the inline box so the register's rhythm does not move;
+   * only the hit area grows. Same decision as the header's navLink.
+   */
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 2.75rem;
 }
 
 .link:hover,

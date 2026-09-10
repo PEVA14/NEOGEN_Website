@@ -150,7 +150,8 @@ for (const [slug, entry] of Object.entries(MEDIA)) {
    * them is standing in for an asset that was never made.
    */
   for (const [src, roles] of seen) {
-    if (roles.length > 1) fail("same file declared in two roles", `${slug} → ${src} (${roles.join(", ")})`);
+    if (roles.length > 1)
+      fail("same file declared in two roles", `${slug} → ${src} (${roles.join(", ")})`);
   }
 
   if (entry.model !== undefined && entry.model !== null) {

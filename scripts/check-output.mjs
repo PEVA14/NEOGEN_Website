@@ -84,8 +84,20 @@ for (const file of clientAssets) {
  * first, so an internal marker in a comment or a class name is not a failure
  * while the same word in body text is.
  */
-const PROTOTYPE =
-  /(PLACEHOLDER|\bTODO\b|\bTBD\b|COMING SOON|under construction|en construcci[oó]n|[Pp]or definir|pendientes? de verificaci[oó]n|pending verification|FIXME|lorem ipsum)/i;
+/*
+ * Two classes of marker, matched differently.
+ *
+ * CODE MARKERS are conventionally upper-case and must stay case-SENSITIVE.
+ * Matching /todo/i against Spanish prose is a false positive waiting to
+ * happen, and it happened: "Todo el catálogo" — the catalogue's own "everything"
+ * link — tripped a TODO on eight discovery-area pages.
+ *
+ * PROSE PHRASES are written by people and may be capitalised any way, so they
+ * stay case-insensitive.
+ */
+const CODE_MARKERS = /\b(PLACEHOLDER|TODO|FIXME|TBD|XXX)\b/g;
+const PROSE_MARKERS =
+  /(COMING SOON|under construction|en construcci[oó]n|[Pp]or definir|pendientes? de verificaci[oó]n|pending verification|lorem ipsum)/gi;
 
 /*
  * "Pending verification" against a DOCUMENT is the honest state of a
@@ -111,10 +123,15 @@ const visibleText = (html) =>
 
 for (const file of htmlFiles) {
   const text = visibleText(readFileSync(file, "utf8"));
-  for (const match of text.matchAll(new RegExp(PROTOTYPE, "gi"))) {
-    const around = text.slice(Math.max(0, match.index - 60), match.index + match[0].length + 60);
-    if (ALLOWED_PENDING.test(around)) continue;
-    fail("prototype language visible to a reader", `"${match[0]}" in ${file} — …${around.trim()}…`);
+  for (const pattern of [CODE_MARKERS, PROSE_MARKERS]) {
+    for (const match of text.matchAll(pattern)) {
+      const around = text.slice(Math.max(0, match.index - 60), match.index + match[0].length + 60);
+      if (ALLOWED_PENDING.test(around)) continue;
+      fail(
+        "prototype language visible to a reader",
+        `"${match[0]}" in ${file} — …${around.trim()}…`,
+      );
+    }
   }
 }
 

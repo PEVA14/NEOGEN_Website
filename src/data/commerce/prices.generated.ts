@@ -147,24 +147,12 @@ export const generatedPrices: Record<string, Money | null> = {
     amount: 9500,
     currency: "MXN",
   },
-  "hgh-high-quality-10iu": {
-    amount: 5900,
-    currency: "MXN",
-  },
-  "hgh-high-quality-24iu": {
-    amount: 10900,
-    currency: "MXN",
-  },
-  "hgh-high-quality-36iu": {
-    amount: 15900,
+  "hcg-5000iu": {
+    amount: 7500,
     currency: "MXN",
   },
   "hcg-10000iu": {
     amount: 13500,
-    currency: "MXN",
-  },
-  "hcg-5000iu": {
-    amount: 7500,
     currency: "MXN",
   },
   "hmg-75iu": {
@@ -331,10 +319,6 @@ export const generatedPrices: Record<string, Money | null> = {
     amount: 11900,
     currency: "MXN",
   },
-  "botulinum-toxin-100iu": {
-    amount: 15900,
-    currency: "MXN",
-  },
   "mots-c-10mg": {
     amount: 5900,
     currency: "MXN",
@@ -471,9 +455,15 @@ export const generatedPrices: Record<string, Money | null> = {
     amount: 9900,
     currency: "MXN",
   },
-  "lipo-c-without-b12-15-50-50-5mg": null,
-  "lipo-c-with-b12-15-50-50-5-1mg": null,
-  "b12-methylcobalamin-1mg-10mg": {
+  "lipo-c-without-b12-15-50-50-5mg": {
+    amount: 7000,
+    currency: "MXN",
+  },
+  "lipo-c-with-b12-15-50-50-5-1mg": {
+    amount: 9000,
+    currency: "MXN",
+  },
+  "b12-methylcobalamin-10mg": {
     amount: 4000,
     currency: "MXN",
   },
@@ -595,6 +585,18 @@ export const generatedPrices: Record<string, Money | null> = {
   },
   "aa-water-10ml": {
     amount: 2000,
+    currency: "MXN",
+  },
+  "adamax-without-adamantane-10mg": {
+    amount: 9800,
+    currency: "MXN",
+  },
+  "adamax-with-adamantane-5mg": {
+    amount: 15400,
+    currency: "MXN",
+  },
+  "adamax-with-adamantane-10mg": {
+    amount: 28900,
     currency: "MXN",
   },
 };

@@ -1,3 +1,4 @@
+import { AVAILABILITY } from "./availability";
 import { generatedPrices } from "./prices.generated";
 
 import type { Availability, Money, VariantCommerce } from "./types";
@@ -19,21 +20,38 @@ export type { Availability, Money, VariantCommerce } from "./types";
  */
 
 /**
- * Stock is unknown for every variant: there is no inventory system to ask.
- * Kept as a single named constant so the day one exists, this is the one line
- * that changes — rather than a `null` sprinkled through the codebase.
+ * ORDER LIMITS.
+ *
+ * Owner-set: no minimum beyond one pack, and a ceiling of 99 — a provisional
+ * cap rather than a stock statement, since there is no stock figure to cap
+ * against. Stated here so the quantity control, the bag and any future
+ * server-side validation read one number instead of three.
  */
-const AVAILABILITY_UNKNOWN: Availability | null = null;
+export const ORDER_LIMITS = { min: 1, max: 99 } as const;
 
 export async function getVariantCommerce(variantId: string): Promise<VariantCommerce> {
   return {
     price: generatedPrices[variantId] ?? null,
-    availability: AVAILABILITY_UNKNOWN,
+    availability: AVAILABILITY[variantId] ?? null,
   };
 }
 
 export async function getPrices(variantIds: readonly string[]): Promise<Map<string, Money | null>> {
   return new Map(variantIds.map((id) => [id, generatedPrices[id] ?? null]));
+}
+
+/**
+ * Stock state per variant, batched alongside `getPrices`.
+ *
+ * A separate call rather than a widened `getPrices` return: price and
+ * availability change on completely different cadences — one is authored once,
+ * the other whenever the supplier situation moves — and callers that only need
+ * a "from" price should not be made to think about stock.
+ */
+export async function getAvailability(
+  variantIds: readonly string[],
+): Promise<Map<string, Availability | null>> {
+  return new Map(variantIds.map((id) => [id, AVAILABILITY[id] ?? null]));
 }
 
 /**

@@ -280,3 +280,43 @@
     flex: 1 1 auto;
   }
 }
+
+/* --- Subtitle ------------------------------------------------------------- */
+
+/*
+ * An alternative designation, set in the technical register directly under the
+ * product name. Mono and muted so it reads as a cross-reference rather than as
+ * a second title competing with the first.
+ */
+.subtitle {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+/* --- Availability --------------------------------------------------------- */
+
+/*
+ * Stock state. Neutral by default and NEVER a positive green: the design
+ * system's verified token is forbidden from dressing unverified data, and
+ * availability here is one person's read of a supplier situation.
+ *
+ * `unavailable` is the only state that changes anything visually, and it dims
+ * rather than alarms — a format we cannot get right now is a fact, not an
+ * error.
+ */
+.availability {
+  color: var(--ink-secondary);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.availability[data-availability="unavailable"] {
+  color: var(--ink-muted);
+}
+
+/* The same dimming on the format chip itself, so the selector and the line
+   under the price agree without the reader having to compare them. */
+.variant[data-availability="unavailable"] {
+  opacity: 0.55;
+}

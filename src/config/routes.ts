@@ -14,6 +14,14 @@ export const routes = {
   home: "/",
   products: "/productos",
   product: (slug: string) => `/productos/${slug}`,
+  /**
+   * A discovery area's listing.
+   *
+   * Under /productos rather than at the root, because an area is a VIEW of the
+   * catalogue and not a separate section — which also keeps the breadcrumb
+   * honest and leaves one place that owns product URLs.
+   */
+  area: (slug: string) => `/productos/area/${slug}`,
   research: "/investigacion",
   article: (slug: string) => `/investigacion/${slug}`,
   cart: "/carrito",

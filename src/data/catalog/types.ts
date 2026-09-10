@@ -68,6 +68,17 @@ export interface Product {
    */
   composition: string | null;
   /**
+   * An alternative designation for the same compound — "Thymosin B4 Acetate"
+   * for TB-500.
+   *
+   * Deliberately NOT a description and NOT a classification. It holds only a
+   * name the source itself printed or the owner confirmed, because the reason
+   * this field exists is that twelve products sit under "Péptidos" without
+   * being peptides, and the honest fix is to say what a compound is also
+   * called — not to invent a class for it. Null for all but one product today.
+   */
+  subtitle: string | null;
+  /**
    * The Experience world, for the three flagships only.
    *
    * Null for the other ~90. A world is a full 3D environment and an art

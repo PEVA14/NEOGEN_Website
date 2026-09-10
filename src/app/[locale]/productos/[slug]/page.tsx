@@ -15,7 +15,8 @@ import {
   products,
   publishedProducts,
 } from "@/data/catalog";
-import { formatPrice, getPrices } from "@/data/commerce";
+import { formatPrice, getAvailability, getPrices } from "@/data/commerce";
+import { publicAreasFor, relatedByArea } from "@/data/discovery";
 import { isLocale, localeTags } from "@/i18n/config";
 import { getDictionary } from "@/i18n/getDictionary";
 import { localizePath } from "@/i18n/routing";
@@ -121,21 +122,39 @@ export default async function ProductPage({
      worlds and no model, and open in their environment with the static plate. */
   const world = product.world ? getWorld(product.world) : null;
   const media = productMedia(product.slug);
+  /* Approved areas only. Empty today — every assignment is still a draft. */
+  const areas = publicAreasFor(product.slug);
 
-  const commerce = await getPrices(product.variants.map((v) => v.id));
+  const variantIds = product.variants.map((v) => v.id);
+  const commerce = await getPrices(variantIds);
+  const availability = await getAvailability(variantIds);
   const cheapest = product.variants
     .map((v) => commerce.get(v.id))
     .filter((m): m is NonNullable<typeof m> => Boolean(m))
     .sort((a, b) => a.amount - b.amount)[0];
 
   /*
-   * Related: other products in the same category, so a reader who arrives on a
-   * peptide is offered peptides — not whichever three products happen to be
-   * flagships.
+   * RELATED — discovery-area overlap first, supplier category as the fallback.
+   *
+   * Area overlap is the better recommendation because it is the axis a
+   * customer is actually shopping along: someone on a metabolic compound wants
+   * other metabolic compounds, not whatever else the supplier filed under
+   * "peptides". `relatedByArea` ranks by how many areas two products share, so
+   * a double overlap outranks a single one.
+   *
+   * It returns nothing while assignments are drafts, so the category behaviour
+   * that shipped before is still what renders today — and the switch happens
+   * per product, as each one's areas are approved, with no flag to flip.
    */
-  const related = products
-    .filter((p) => p.category === product.category && p.slug !== product.slug && isPublishable(p))
-    .slice(0, 3);
+  const byArea = relatedByArea(product.slug, 3).filter(isPublishable);
+  const related =
+    byArea.length > 0
+      ? byArea
+      : products
+          .filter(
+            (p) => p.category === product.category && p.slug !== product.slug && isPublishable(p),
+          )
+          .slice(0, 3);
   const relatedPriceMap = await getPrices(related.flatMap((p) => p.variants.map((v) => v.id)));
   const relatedPrice = (slugId: string) => {
     const p = related.find((r) => r.slug === slugId);
@@ -149,14 +168,28 @@ export default async function ProductPage({
   const commercePanel = (
     <CommercePanel
       world={product.world}
+      /*
+       * THE EYEBROW, IN PRIORITY ORDER.
+       *
+       *   1. the world's character label, for the three flagships;
+       *   2. the product's discovery area, once one is APPROVED — this is the
+       *      commercial framing the customer is looking for;
+       *   3. the supplier category, which is what shipped before and remains
+       *      the honest fallback while every assignment is a draft.
+       *
+       * A draft assignment never reaches step 2: `publicAreasFor` filters
+       * them out, so today every non-flagship still shows its category.
+       */
       worldLabel={
         product.world
           ? dict.home.products.worldLabels[product.world]
-          : dict.products.catalog.categoryLabels[product.category]
+          : (areas[0] && dict.discovery.areas[areas[0].id].title) ||
+            dict.products.catalog.categoryLabels[product.category]
       }
       copy={{
         ...pdp.commerce,
         name: product.name,
+        subtitle: product.subtitle,
         /* Composition where the source states one; otherwise nothing. The old
            copy described the glass vial, which is packaging, not product. */
         descriptor: product.composition,
@@ -164,8 +197,12 @@ export default async function ProductPage({
         documentationHref: `#${pdp.documentation.index}`,
         placeholder,
       }}
-      /* Real presentations now — the doses this product is actually sold in. */
-      variants={product.variants.map((v) => formatStrength(v.strength))}
+      /* Real presentations, each carrying whatever stock state is known. */
+      variants={product.variants.map((v) => ({
+        label: formatStrength(v.strength),
+        availability: availability.get(v.id) ?? null,
+      }))}
+      availabilityLabels={dict.commerce.availability}
     />
   );
 
@@ -322,6 +359,7 @@ export default async function ProductPage({
                     worldLabel={item.world ? dict.home.products.worldLabels[item.world] : undefined}
                     eyebrow={dict.products.catalog.categoryLabels[item.category]}
                     name={item.name}
+                    subtitle={item.subtitle}
                     href={path(routes.product(item.slug))}
                     price={relatedPrice(item.slug)}
                     ctaLabel={dict.home.products.cta}

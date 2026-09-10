@@ -3,6 +3,13 @@ import { generatedProducts } from "./generated";
 import type { CategoryId, Product, Strength } from "./types";
 
 export type { CategoryId, Product, ProductVariant, Strength } from "./types";
+export {
+  CONFIRMED_TYPE,
+  derivedType,
+  productType,
+  productTypes,
+  type ProductType,
+} from "./productType";
 
 /**
  * THE CATALOG REGISTRY — the source of truth for what NEOGEN sells.
@@ -14,6 +21,14 @@ export type { CategoryId, Product, ProductVariant, Strength } from "./types";
  */
 export const products: readonly Product[] = generatedProducts;
 
+/**
+ * The supplier-oriented buckets the catalogue was imported with.
+ *
+ * PRESERVED, not replaced. `ProductType` (factual) and `DiscoveryArea`
+ * (merchandising) are the two axes going forward, but this one still drives
+ * the catalogue filter and the register, and removing it in the same change
+ * that adds the other two would leave the migration unverifiable.
+ */
 export const categories: readonly CategoryId[] = ["metabolic", "peptides", "blends", "solvents"];
 
 export function getProduct(slug: string): Product | undefined {

@@ -16,6 +16,7 @@ export const generatedProducts: Product[] = [
     name: "Semaglutide",
     category: "metabolic",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -58,6 +59,7 @@ export const generatedProducts: Product[] = [
     name: "Tirzepatide",
     category: "metabolic",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -124,6 +126,7 @@ export const generatedProducts: Product[] = [
     name: "Retatrutide Research",
     category: "metabolic",
     composition: null,
+    subtitle: null,
     world: "reta",
     variants: [
       {
@@ -190,6 +193,7 @@ export const generatedProducts: Product[] = [
     name: "Cagrilintide",
     category: "metabolic",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -224,6 +228,7 @@ export const generatedProducts: Product[] = [
     name: "Survodutide",
     category: "metabolic",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -242,6 +247,7 @@ export const generatedProducts: Product[] = [
     name: "Mazdutide",
     category: "metabolic",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -268,6 +274,7 @@ export const generatedProducts: Product[] = [
     name: "BPC157",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -294,6 +301,7 @@ export const generatedProducts: Product[] = [
     name: "TB500",
     category: "peptides",
     composition: null,
+    subtitle: "Thymosin B4 Acetate",
     world: null,
     variants: [
       {
@@ -320,6 +328,7 @@ export const generatedProducts: Product[] = [
     name: "BPC 5mg + TB 5mg",
     category: "blends",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -338,6 +347,7 @@ export const generatedProducts: Product[] = [
     name: "BPC 10mg + TB 10mg",
     category: "blends",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -356,6 +366,7 @@ export const generatedProducts: Product[] = [
     name: "Melanotan 1",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -374,6 +385,7 @@ export const generatedProducts: Product[] = [
     name: "Melanotan 2",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -392,6 +404,7 @@ export const generatedProducts: Product[] = [
     name: "MGF",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -410,6 +423,7 @@ export const generatedProducts: Product[] = [
     name: "PEG MGF",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -423,60 +437,27 @@ export const generatedProducts: Product[] = [
     ],
   },
   {
-    id: "hgh-high-quality",
-    slug: "hgh-high-quality",
-    name: "HGH High Quality",
-    category: "peptides",
-    composition: null,
-    world: null,
-    variants: [
-      {
-        id: "hgh-high-quality-10iu",
-        strength: {
-          kind: "iu",
-          iu: 10,
-        },
-        vials: 10,
-      },
-      {
-        id: "hgh-high-quality-24iu",
-        strength: {
-          kind: "iu",
-          iu: 24,
-        },
-        vials: 10,
-      },
-      {
-        id: "hgh-high-quality-36iu",
-        strength: {
-          kind: "iu",
-          iu: 36,
-        },
-        vials: 10,
-      },
-    ],
-  },
-  {
     id: "hcg",
     slug: "hcg",
     name: "HCG",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
-      {
-        id: "hcg-10000iu",
-        strength: {
-          kind: "iu",
-          iu: 10000,
-        },
-        vials: 10,
-      },
       {
         id: "hcg-5000iu",
         strength: {
           kind: "iu",
           iu: 5000,
+        },
+        vials: 10,
+      },
+      {
+        id: "hcg-10000iu",
+        strength: {
+          kind: "iu",
+          iu: 10000,
         },
         vials: 10,
       },
@@ -488,6 +469,7 @@ export const generatedProducts: Product[] = [
     name: "HMG",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -506,6 +488,7 @@ export const generatedProducts: Product[] = [
     name: "HGH Fragment 176-191",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -532,6 +515,7 @@ export const generatedProducts: Product[] = [
     name: "Follistatin 344",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -550,6 +534,7 @@ export const generatedProducts: Product[] = [
     name: "GLOW Peptide Series",
     category: "blends",
     composition: "GHK-CU 50mg + TB-500 10mg + BPC-157 10mg",
+    subtitle: null,
     world: "glow",
     variants: [
       {
@@ -568,6 +553,7 @@ export const generatedProducts: Product[] = [
     name: "KLOW",
     category: "blends",
     composition: "BPC157 10 + GHK-CU 50 + TB500 10 + KPV 10",
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -586,6 +572,7 @@ export const generatedProducts: Product[] = [
     name: "Tesamorelin",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -620,6 +607,7 @@ export const generatedProducts: Product[] = [
     name: "Ipamorelin",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -646,6 +634,7 @@ export const generatedProducts: Product[] = [
     name: "Sermorelin",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -672,6 +661,7 @@ export const generatedProducts: Product[] = [
     name: "Thymalin",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -690,6 +680,7 @@ export const generatedProducts: Product[] = [
     name: "CJC-1295 with DAC",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -708,6 +699,7 @@ export const generatedProducts: Product[] = [
     name: "CJC-1295 without DAC",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -734,6 +726,7 @@ export const generatedProducts: Product[] = [
     name: "CJC-1295 without DAC + Ipamorelin",
     category: "blends",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -760,6 +753,7 @@ export const generatedProducts: Product[] = [
     name: "Dermorphin",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -778,6 +772,7 @@ export const generatedProducts: Product[] = [
     name: "Vesugen",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -804,6 +799,7 @@ export const generatedProducts: Product[] = [
     name: "AOD9604",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -830,6 +826,7 @@ export const generatedProducts: Product[] = [
     name: "Epithalon",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -856,6 +853,7 @@ export const generatedProducts: Product[] = [
     name: "GHRP-2 Acetate",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -882,6 +880,7 @@ export const generatedProducts: Product[] = [
     name: "GHRP-6 Acetate",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -908,6 +907,7 @@ export const generatedProducts: Product[] = [
     name: "Hexarelin Acetate",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -926,6 +926,7 @@ export const generatedProducts: Product[] = [
     name: "Copper Peptide GHK-Cu",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: "ghk-cu",
     variants: [
       {
@@ -952,6 +953,7 @@ export const generatedProducts: Product[] = [
     name: "AHK-CU",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -978,6 +980,7 @@ export const generatedProducts: Product[] = [
     name: "IGF-1LR3",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1004,6 +1007,7 @@ export const generatedProducts: Product[] = [
     name: "KissPeptin-10",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1030,6 +1034,7 @@ export const generatedProducts: Product[] = [
     name: "NAD+",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1051,29 +1056,12 @@ export const generatedProducts: Product[] = [
     ],
   },
   {
-    id: "botulinum-toxin",
-    slug: "botulinum-toxin",
-    name: "Botulinum toxin",
-    category: "peptides",
-    composition: null,
-    world: null,
-    variants: [
-      {
-        id: "botulinum-toxin-100iu",
-        strength: {
-          kind: "iu",
-          iu: 100,
-        },
-        vials: 10,
-      },
-    ],
-  },
-  {
     id: "mots-c",
     slug: "mots-c",
     name: "MOTS-c",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1108,6 +1096,7 @@ export const generatedProducts: Product[] = [
     name: "Thymosin Alpha-1",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1134,6 +1123,7 @@ export const generatedProducts: Product[] = [
     name: "PT141",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1152,6 +1142,7 @@ export const generatedProducts: Product[] = [
     name: "5-amino-1mq",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1186,6 +1177,7 @@ export const generatedProducts: Product[] = [
     name: "PE-22-28",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1204,6 +1196,7 @@ export const generatedProducts: Product[] = [
     name: "Humanin",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1222,6 +1215,7 @@ export const generatedProducts: Product[] = [
     name: "Cerebrolysin",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1240,6 +1234,7 @@ export const generatedProducts: Product[] = [
     name: "Cardiogen",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1258,6 +1253,7 @@ export const generatedProducts: Product[] = [
     name: "Cortagen",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1276,6 +1272,7 @@ export const generatedProducts: Product[] = [
     name: "Crystagen",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1294,6 +1291,7 @@ export const generatedProducts: Product[] = [
     name: "GDF-8",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1312,6 +1310,7 @@ export const generatedProducts: Product[] = [
     name: "Melatonin",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1330,6 +1329,7 @@ export const generatedProducts: Product[] = [
     name: "Gonadorelin Acetate",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1356,6 +1356,7 @@ export const generatedProducts: Product[] = [
     name: "P21 (P021)",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1374,6 +1375,7 @@ export const generatedProducts: Product[] = [
     name: "Snap-8",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1392,6 +1394,7 @@ export const generatedProducts: Product[] = [
     name: "Adipotide/FTTP",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1418,6 +1421,7 @@ export const generatedProducts: Product[] = [
     name: "ACE-031",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1436,6 +1440,7 @@ export const generatedProducts: Product[] = [
     name: "Selank",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1462,6 +1467,7 @@ export const generatedProducts: Product[] = [
     name: "Semax",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1488,6 +1494,7 @@ export const generatedProducts: Product[] = [
     name: "Selank+Semax",
     category: "blends",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1506,6 +1513,7 @@ export const generatedProducts: Product[] = [
     name: "Oxytocin Acetate",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1532,6 +1540,7 @@ export const generatedProducts: Product[] = [
     name: "SS-31",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1558,6 +1567,7 @@ export const generatedProducts: Product[] = [
     name: "SLU-PP-332",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1576,6 +1586,7 @@ export const generatedProducts: Product[] = [
     name: "Lipo-C without B12",
     category: "blends",
     composition: "Methionine 15mg + Choline Chloride 50mg + L-Carnitine 50mg + Dexpanthenol 5mg",
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1584,7 +1595,7 @@ export const generatedProducts: Product[] = [
           kind: "blend",
           componentsMg: [15, 50, 50, 5],
         },
-        vials: null,
+        vials: 10,
       },
     ],
   },
@@ -1595,6 +1606,7 @@ export const generatedProducts: Product[] = [
     category: "blends",
     composition:
       "Methionine 15mg + Choline Chloride 50mg + L-Carnitine 50mg + Dexpanthenol 5mg + B12 (Methylcobalamin) 1mg",
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1603,20 +1615,21 @@ export const generatedProducts: Product[] = [
           kind: "blend",
           componentsMg: [15, 50, 50, 5, 1],
         },
-        vials: null,
+        vials: 10,
       },
     ],
   },
   {
-    id: "b12-methylcobalamin-1mg",
-    slug: "b12-methylcobalamin-1mg",
-    name: "B12 (Methylcobalamin) 1mg",
+    id: "b12-methylcobalamin",
+    slug: "b12-methylcobalamin",
+    name: "B12 (Methylcobalamin)",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
-        id: "b12-methylcobalamin-1mg-10mg",
+        id: "b12-methylcobalamin-10mg",
         strength: {
           kind: "solid",
           mg: 10,
@@ -1631,6 +1644,7 @@ export const generatedProducts: Product[] = [
     name: "Pinealon",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1649,6 +1663,7 @@ export const generatedProducts: Product[] = [
     name: "Lemon Bottle",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1667,6 +1682,7 @@ export const generatedProducts: Product[] = [
     name: "L-carnitine",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1731,6 +1747,7 @@ export const generatedProducts: Product[] = [
     name: "KPV",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1749,6 +1766,7 @@ export const generatedProducts: Product[] = [
     name: "VIP",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1775,6 +1793,7 @@ export const generatedProducts: Product[] = [
     name: "ARA-290",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1793,6 +1812,7 @@ export const generatedProducts: Product[] = [
     name: "FOX04-Dir",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1811,6 +1831,7 @@ export const generatedProducts: Product[] = [
     name: "Glutathione",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1845,6 +1866,7 @@ export const generatedProducts: Product[] = [
     name: "LL-37",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1863,6 +1885,7 @@ export const generatedProducts: Product[] = [
     name: "DSIP",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1889,6 +1912,7 @@ export const generatedProducts: Product[] = [
     name: "Dihexa",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1907,6 +1931,7 @@ export const generatedProducts: Product[] = [
     name: "Cartalax",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1925,6 +1950,7 @@ export const generatedProducts: Product[] = [
     name: "Relaxation PM",
     category: "peptides",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1943,6 +1969,7 @@ export const generatedProducts: Product[] = [
     name: "SUPER Human Blend",
     category: "blends",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1961,6 +1988,7 @@ export const generatedProducts: Product[] = [
     name: "Healthy Hair Skin Nails Blend",
     category: "blends",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -1979,6 +2007,7 @@ export const generatedProducts: Product[] = [
     name: "Sterile Water",
     category: "solvents",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -2005,6 +2034,7 @@ export const generatedProducts: Product[] = [
     name: "Bac. Water",
     category: "solvents",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -2031,6 +2061,7 @@ export const generatedProducts: Product[] = [
     name: "AA. Water",
     category: "solvents",
     composition: null,
+    subtitle: null,
     world: null,
     variants: [
       {
@@ -2046,6 +2077,52 @@ export const generatedProducts: Product[] = [
         strength: {
           kind: "volume",
           ml: 10,
+        },
+        vials: 10,
+      },
+    ],
+  },
+  {
+    id: "adamax-without-adamantane",
+    slug: "adamax-without-adamantane",
+    name: "Adamax (without adamantane)",
+    category: "peptides",
+    composition: null,
+    subtitle: null,
+    world: null,
+    variants: [
+      {
+        id: "adamax-without-adamantane-10mg",
+        strength: {
+          kind: "solid",
+          mg: 10,
+        },
+        vials: 10,
+      },
+    ],
+  },
+  {
+    id: "adamax-with-adamantane",
+    slug: "adamax-with-adamantane",
+    name: "Adamax (with adamantane)",
+    category: "peptides",
+    composition: null,
+    subtitle: null,
+    world: null,
+    variants: [
+      {
+        id: "adamax-with-adamantane-5mg",
+        strength: {
+          kind: "solid",
+          mg: 5,
+        },
+        vials: 10,
+      },
+      {
+        id: "adamax-with-adamantane-10mg",
+        strength: {
+          kind: "solid",
+          mg: 10,
         },
         vials: 10,
       },

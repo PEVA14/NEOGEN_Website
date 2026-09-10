@@ -29,6 +29,13 @@ interface ProductCardProps {
   /** Short world character label — "PRECISION". Only where a world exists. */
   worldLabel?: string;
   name: string;
+  /**
+   * An alternative designation for the compound, under the name. Absent for
+   * all but one product today — the field exists because twelve products are
+   * filed under "Péptidos" without being peptides, and a cross-reference is
+   * the honest way to say so in a listing.
+   */
+  subtitle?: string | null;
   href: string;
   /** Category or compound line, above the name. */
   eyebrow?: string;
@@ -71,6 +78,7 @@ export function ProductCard({
   world,
   worldLabel,
   name,
+  subtitle,
   href,
   eyebrow,
   price,
@@ -164,6 +172,12 @@ export function ProductCard({
         <Heading level={headingLevel} size="lg">
           {name}
         </Heading>
+
+        {subtitle ? (
+          <Mono size="2xs" className="tracking-(--tracking-label) text-(--ink-muted) uppercase">
+            {subtitle}
+          </Mono>
+        ) : null}
 
         {/* Absent, not "PRICE — PLACEHOLDER", where no price is set. */}
         {price ? (

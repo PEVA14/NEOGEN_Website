@@ -459,6 +459,92 @@ const en: Dictionary = {
     browse: "View catalog",
   },
 
+  /**
+   * COMMERCE VOCABULARY.
+   *
+   * The three stock states, and nothing warmer. "In stock" is a claim about
+   * our own supply, so it may only ever be rendered from a value an owner has
+   * actually set — never as a default.
+   */
+  commerce: {
+    availability: {
+      "in-stock": "In stock",
+      "made-to-order": "Made to order",
+      unavailable: "Currently unavailable",
+    },
+  },
+
+  /**
+   * DISCOVERY — customer-facing merchandising copy.
+   *
+   * DRAFT COPY, PENDING OWNER REVIEW. Area names and descriptions are
+   * merchandising language, and the descriptions below name a FIELD OF STUDY
+   * rather than anything a product does. None of them may be rewritten into a
+   * statement about an outcome.
+   *
+   * Nothing here renders until an area has at least one non-draft assignment,
+   * so approving an area's products is also what puts its wording live.
+   */
+  discovery: {
+    label: "Research areas",
+    /** Eyebrow above the product name on a PDP. */
+    productLabel: "Research area",
+    all: "Full catalogue",
+    countLabel: "Compounds",
+    areas: {
+      metabolic: {
+        title: "Metabolic Research",
+        body: "Compounds studied in the context of metabolic regulation.",
+      },
+      recovery: {
+        title: "Recovery & Repair",
+        body: "Compounds studied in the context of tissue repair.",
+      },
+      longevity: {
+        title: "Longevity & Cellular",
+        body: "Compounds studied in the context of cellular ageing.",
+      },
+      growth: {
+        title: "Growth & Performance",
+        body: "Compounds studied in the context of growth pathways.",
+      },
+      skin: {
+        title: "Skin & Aesthetics",
+        body: "Compounds studied in the context of the dermal matrix and pigment.",
+      },
+      neuro: {
+        title: "Neuro & Sleep",
+        body: "Compounds studied in the context of cognitive function and sleep.",
+      },
+      hormonal: {
+        title: "Hormonal & Reproductive",
+        body: "Compounds studied in the context of hormonal regulation.",
+      },
+      materials: {
+        title: "Research Materials",
+        body: "Solvents and consumables for laboratory preparation and handling.",
+      },
+    },
+  },
+
+  /**
+   * PRODUCT TYPE — the factual axis.
+   *
+   * `compound` is the default and says only "a substance". Every other label
+   * is a statement about what something is, and only renders where an owner
+   * has confirmed it.
+   */
+  productTypes: {
+    compound: "Compound",
+    peptide: "Peptide",
+    protein: "Protein",
+    "small-molecule": "Small molecule",
+    "vitamin-cofactor": "Vitamin / cofactor",
+    "amino-acid-derivative": "Amino acid derivative",
+    blend: "Blend",
+    solvent: "Solvent",
+  },
+
   status: {
     /**
      * Neutral verification vocabulary.
@@ -475,6 +561,9 @@ const en: Dictionary = {
   footer: {
     tagline: "Research compounds. Built around evidence.",
     about: "Research compound laboratory. Documentation-first methodology.",
+    contact: "Contact",
+    serviceArea: "Service area",
+    national: "Nationwide",
     columns: {
       products: "Products",
       research: "Research",

@@ -25,6 +25,7 @@ import { worldIds, type WorldId } from "@/config/worlds";
 import { isLocale, localeTags } from "@/i18n/config";
 import { formatStrength, isPublishable, products } from "@/data/catalog";
 import { formatPrice, getPrices } from "@/data/commerce";
+import { publicAreas } from "@/data/discovery";
 import { getDictionary } from "@/i18n/getDictionary";
 import { alternates } from "@/lib/alternates";
 import { localizePath } from "@/i18n/routing";
@@ -74,6 +75,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const home = dict.home;
 
   const path = (to: string) => localizePath(to, locale);
+
+  /* Discovery areas with approved products. Empty until assignments are
+     confirmed, which is what section 04 falls back for. */
+  const areas = publicAreas();
 
   const heroCopy: HeroCopy = { ...home.hero, ctaHref: path(routes.products) };
 
@@ -179,8 +184,19 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       {/* Impact — the object. */}
       <RetaExperience copy={retaCopy} />
 
-      {/* 04 — Quiet. A catalogue index, not a feature grid: oversized category
-          names, hanging indices, rules, and the whole row as the target. */}
+      {/*
+       * 04 — Quiet. A catalogue index, not a feature grid: oversized category
+       * names, hanging indices, rules, and the whole row as the target.
+       *
+       * DATA-DRIVEN FROM THE DISCOVERY AREAS, with a fallback.
+       *
+       * Once areas have approved products this section becomes real product
+       * discovery: each row is an area, each link goes to that area's listing
+       * rather than to the undifferentiated catalogue. While every assignment
+       * is still a draft — which is the state today — it keeps the three
+       * editorial cards it has always shown. Homepage V1 does not change
+       * shape; its content gets better as the taxonomy is confirmed.
+       */}
       <Section mode="quiet" aria-labelledby="catalog-title">
         <Container width="full">
           <SectionHeader
@@ -191,13 +207,23 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             action={<TextLink href={path(routes.products)}>{home.catalog.action}</TextLink>}
           />
           <CatalogIndex
-            entries={home.catalog.categories.map((category) => ({
-              index: category.index,
-              title: category.title,
-              body: category.body,
-              href: path(routes.products),
-              linkLabel: category.link,
-            }))}
+            entries={
+              areas.length > 0
+                ? areas.map((area) => ({
+                    index: String(area.order).padStart(2, "0"),
+                    title: dict.discovery.areas[area.id].title,
+                    body: dict.discovery.areas[area.id].body,
+                    href: path(routes.area(area.slug)),
+                    linkLabel: home.catalog.categories[0].link,
+                  }))
+                : home.catalog.categories.map((category) => ({
+                    index: category.index,
+                    title: category.title,
+                    body: category.body,
+                    href: path(routes.products),
+                    linkLabel: category.link,
+                  }))
+            }
           />
         </Container>
       </Section>
@@ -315,6 +341,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                   world={product.world}
                   worldLabel={product.world ? home.products.worldLabels[product.world] : undefined}
                   name={product.name}
+                  subtitle={product.subtitle}
                   href={path(routes.product(product.slug))}
                   price={fromPrice(product)}
                   ctaLabel={home.products.cta}

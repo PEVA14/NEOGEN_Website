@@ -35,6 +35,9 @@ interface SiteFooterProps {
  * footer heading with no links under it reads as a broken build, not as
  * candour. A field nobody can act on is removed; when the values are
  * confirmed, the field returns with them.
+ *
+ * SERVICE AREA HAS NOW RETURNED, because it was confirmed: national. The Legal
+ * column has not, because Terms, Privacy and returns still do not exist.
  */
 export function SiteFooter({ locale, dict }: SiteFooterProps) {
   const columns = [
@@ -80,6 +83,23 @@ export function SiteFooter({ locale, dict }: SiteFooterProps) {
             <Body size="sm" className={styles.about}>
               {dict.footer.about}
             </Body>
+
+            {/*
+             * Now that fulfilment is confirmed, these are facts rather than
+             * pending fields. Service area is stated because "do you ship to
+             * me" is the first question a browsing customer has; rates and
+             * estimates are NOT here, because a rate model has not been chosen
+             * and an estimate is a promise that belongs next to an order.
+             */}
+            <Mono size="2xs" className={styles.pending}>
+              {dict.footer.serviceArea}: {dict.footer.national}
+            </Mono>
+            <Mono size="2xs" className={styles.pending}>
+              {dict.footer.contact}:{" "}
+              <a href={`tel:${siteConfig.contact.phone}`} className={styles.link}>
+                {siteConfig.contact.phoneDisplay}
+              </a>
+            </Mono>
           </div>
 
           {columns.map((column) => (

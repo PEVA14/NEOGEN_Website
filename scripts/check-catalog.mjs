@@ -14,13 +14,26 @@
  */
 import {
   categories,
+  CONFIRMED_TYPE,
+  derivedType,
   formatStrength,
   getProduct,
   isPublishable,
+  productType,
+  productTypes,
   products,
   publishedProducts,
 } from "../src/data/catalog/index.ts";
-import { getPrices } from "../src/data/commerce/index.ts";
+import {
+  AREAS,
+  ASSIGNMENTS,
+  assignmentsFor,
+  isPublic,
+  publicAreas,
+  publicAreasFor,
+} from "../src/data/discovery/index.ts";
+import { AVAILABILITY } from "../src/data/commerce/availability.ts";
+import { getAvailability, getPrices, ORDER_LIMITS } from "../src/data/commerce/index.ts";
 import { routes } from "../src/config/routes.ts";
 import { locales } from "../src/i18n/config.ts";
 import { localizePath } from "../src/i18n/routing.ts";
@@ -46,6 +59,12 @@ for (const p of products) {
   if (p.name.trim() !== p.name) fail("name has surrounding whitespace", JSON.stringify(p.name));
   if (!categories.includes(p.category)) fail("unknown category", `${p.slug} -> ${p.category}`);
   if (p.composition !== null && p.composition.trim() === "") fail("empty composition", p.slug);
+  /* A subtitle is an alternative NAME. An empty string means someone meant to
+     write one and did not, which renders as a stray blank line. */
+  if (p.subtitle !== null && p.subtitle.trim() === "") fail("empty subtitle", p.slug);
+  if (p.subtitle && p.subtitle.trim() === p.name.trim()) {
+    fail("subtitle repeats the product name", p.slug);
+  }
   if (getProduct(p.slug) !== p) fail("getProduct does not resolve its own slug", p.slug);
 }
 
@@ -103,6 +122,27 @@ for (const p of products) {
       fail("price out of band", `${v.id} = ${money.amount}`);
   }
 
+  /*
+   * Presentations are displayed in the order they are stored, so where they
+   * share a unit they must ascend. The source listed HCG's 10,000 IU above its
+   * 5,000 IU, which read backwards on the page.
+   */
+  const kinds = new Set(p.variants.map((v) => v.strength.kind));
+  if (kinds.size === 1) {
+    const size = (st) =>
+      st.kind === "solid" || st.kind === "solution"
+        ? st.mg
+        : st.kind === "iu"
+          ? st.iu
+          : st.kind === "volume"
+            ? st.ml
+            : st.componentsMg.reduce((a, b) => a + b, 0);
+    const sizes = p.variants.map((v) => size(v.strength));
+    if (sizes.some((n, i) => i > 0 && n < sizes[i - 1])) {
+      fail("presentations are not in ascending order", `${p.slug} -> ${sizes.join(", ")}`);
+    }
+  }
+
   /* Within one product, a larger dose must not cost less than a smaller one. */
   const solid = p.variants
     .filter((v) => v.strength.kind === "solid" && prices.get(v.id))
@@ -118,6 +158,34 @@ for (const p of products) {
   }
 }
 
+/* ---- availability ------------------------------------------------------
+ *
+ * Hand-maintained, so the two things a hand gets wrong are checked: a key
+ * that matches no variant (the entry silently does nothing) and a state
+ * outside the three the UI can render.
+ */
+
+const STATES = ["in-stock", "made-to-order", "unavailable"];
+const allVariantIds = new Set(products.flatMap((p) => p.variants.map((v) => v.id)));
+
+for (const [id, state] of Object.entries(AVAILABILITY)) {
+  if (!allVariantIds.has(id)) fail("availability set for an unknown variant", id);
+  if (!STATES.includes(state)) fail("unknown availability state", `${id} -> "${state}"`);
+}
+
+const stock = await getAvailability([...allVariantIds]);
+for (const [id, state] of stock) {
+  if (state !== null && !STATES.includes(state))
+    fail("unknown availability state", `${id} -> ${state}`);
+}
+
+if (!Number.isInteger(ORDER_LIMITS.min) || ORDER_LIMITS.min < 1) {
+  fail("order minimum must be at least 1", String(ORDER_LIMITS.min));
+}
+if (!Number.isInteger(ORDER_LIMITS.max) || ORDER_LIMITS.max < ORDER_LIMITS.min) {
+  fail("order maximum must not be below the minimum", `${ORDER_LIMITS.min}..${ORDER_LIMITS.max}`);
+}
+
 /* ---- presentation ------------------------------------------------------ */
 
 for (const p of products) {
@@ -126,6 +194,114 @@ for (const p of products) {
     if (!label || /undefined|NaN|null/.test(label))
       fail("strength does not format", `${v.id} -> "${label}"`);
   }
+}
+
+/* ---- product type (factual axis) ---------------------------------------
+ *
+ * The default must stay non-asserting, and a confirmation must not contradict
+ * something the data already proves.
+ */
+
+for (const [slug, type] of Object.entries(CONFIRMED_TYPE)) {
+  const product = getProduct(slug);
+  if (!product) {
+    fail("product type confirmed for an unknown product", slug);
+    continue;
+  }
+  if (!productTypes.includes(type)) fail("unknown product type", `${slug} -> "${type}"`);
+  const derived = derivedType(product);
+  if (derived && derived !== type) {
+    fail(
+      "confirmed product type contradicts the data",
+      `${slug} -> confirmed "${type}", but its variants derive "${derived}"`,
+    );
+  }
+}
+
+for (const p of products) {
+  const type = productType(p);
+  if (!productTypes.includes(type))
+    fail("product resolves to an unknown type", `${p.slug} -> ${type}`);
+  /* A blend or a solvent is derivable, so it should never fall to the default. */
+  const derived = derivedType(p);
+  if (derived && type !== derived && !CONFIRMED_TYPE[p.slug]) {
+    fail("derived type was not applied", `${p.slug} -> ${type} (expected ${derived})`);
+  }
+}
+
+/* ---- discovery (merchandising axis) -------------------------------------
+ *
+ * The rules that keep an attractive taxonomy from becoming a claim.
+ */
+
+const areaIdSet = new Set(AREAS.map((a) => a.id));
+const areaSlugs = new Map();
+
+for (const area of AREAS) {
+  if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(area.slug)) fail("area slug is not URL-safe", area.slug);
+  if (areaSlugs.has(area.slug))
+    fail("duplicate area slug", `${area.slug} on ${areaSlugs.get(area.slug)} and ${area.id}`);
+  areaSlugs.set(area.slug, area.id);
+  if (!Number.isInteger(area.order) || area.order < 1)
+    fail("area order must be a positive integer", area.id);
+}
+const orders = AREAS.map((a) => a.order);
+if (new Set(orders).size !== orders.length)
+  fail("area display order has duplicates", orders.join(", "));
+
+for (const [slug, assignments] of Object.entries(ASSIGNMENTS)) {
+  if (!getProduct(slug)) {
+    fail("discovery assignment for an unknown product", slug);
+    continue;
+  }
+  const seenAreas = new Set();
+  for (const a of assignments) {
+    if (!areaIdSet.has(a.area)) fail("assignment to an unknown area", `${slug} -> ${a.area}`);
+    if (seenAreas.has(a.area))
+      fail("product assigned to the same area twice", `${slug} -> ${a.area}`);
+    seenAreas.add(a.area);
+
+    /*
+     * EVERY ASSIGNMENT CARRIES PROVENANCE. This is the rule the whole axis
+     * rests on: a public assignment must name who stands behind it, and a
+     * source-backed one must actually cite something.
+     */
+    const prov = a.provenance;
+    if (!prov || typeof prov.kind !== "string") {
+      fail("assignment has no provenance", `${slug} -> ${a.area}`);
+      continue;
+    }
+    if (!["proposed", "owner-confirmed", "source"].includes(prov.kind)) {
+      fail("unknown provenance kind", `${slug} -> ${a.area} -> "${prov.kind}"`);
+    }
+    if (prov.kind === "owner-confirmed" && !/^\d{4}-\d{2}-\d{2}$/.test(prov.confirmedOn ?? "")) {
+      fail("owner-confirmed assignment needs an ISO date", `${slug} -> ${a.area}`);
+    }
+    if (prov.kind === "source" && !(prov.referenceIds?.length > 0)) {
+      fail("source-backed assignment cites nothing", `${slug} -> ${a.area}`);
+    }
+  }
+}
+
+/*
+ * A draft assignment must never be publicly visible. Asserted against the
+ * accessor the pages actually call, not against the data — so this catches a
+ * future change that widens `publicAreasFor` as well as a bad entry.
+ */
+for (const p of products) {
+  const drafts = assignmentsFor(p.slug).filter((a) => !isPublic(a));
+  const shown = new Set(publicAreasFor(p.slug).map((a) => a.id));
+  for (const draft of drafts) {
+    if (shown.has(draft.area)) {
+      fail("DRAFT assignment is publicly visible", `${p.slug} -> ${draft.area}`);
+    }
+  }
+}
+
+/* An area only appears in nav/sitemap when it has products to show. */
+for (const area of publicAreas()) {
+  const count = products.filter((p) => publicAreasFor(p.slug).some((a) => a.id === area.id)).length;
+  if (count === 0) fail("public area has no products", area.id);
 }
 
 /* ---- routes ------------------------------------------------------------ */
@@ -148,6 +324,18 @@ for (const p of products.filter((p) => !isPublishable(p))) {
   for (const locale of locales) {
     const path = localizePath(routes.product(p.slug), locale);
     if (sitemapUrls.has(path)) fail("sitemap advertises an unpublishable product", path);
+  }
+}
+
+/* Areas: in the sitemap exactly when they have public products. */
+const shownAreas = new Set(publicAreas().map((a) => a.id));
+for (const area of AREAS) {
+  for (const locale of locales) {
+    const path = localizePath(routes.area(area.slug), locale);
+    const listed = sitemapUrls.has(path);
+    if (shownAreas.has(area.id) && !listed) fail("public area missing from sitemap", path);
+    if (!shownAreas.has(area.id) && listed)
+      fail("sitemap advertises an empty discovery area", path);
   }
 }
 

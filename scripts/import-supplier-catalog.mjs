@@ -304,7 +304,13 @@ const RESOLVED_NAMES = {
  * slug they produce is identical to the one before.
  */
 const NAME_TYPOGRAPHY = {
-  "B12(Methylcobalamin) 1mg": "B12 (Methylcobalamin) 1mg",
+  /*
+   * The source prints "B12(Methylcobalamin) 1mg" against a spec cell reading
+   * `10mg * 10vials`, so the name and the presentation contradicted each other
+   * on the page. OWNER CONFIRMED 10 mg, so the dose comes off the name and is
+   * stated once, by the presentation.
+   */
+  "B12(Methylcobalamin) 1mg": "B12 (Methylcobalamin)",
   "Healthy Hair skin nails Blend": "Healthy Hair Skin Nails Blend",
   "Sterile water": "Sterile Water",
   "Bac.water": "Bac. Water",
@@ -314,16 +320,13 @@ const NAME_TYPOGRAPHY = {
 /** `FST 344` is printed `lmg*10vials` — lowercase L. Confirmed as 1mg. */
 const RESOLVED_SPECS = {
   "FST 344": { strength: { kind: "solid", mg: 1 }, vials: 10 },
-  // Components are stated; the pack size is not. `vials: null` keeps them
-  // unsellable until it is confirmed.
-  "Lipo-C": { strength: { kind: "blend", componentsMg: [15, 50, 50, 5] }, vials: null },
-  LC1201: { strength: { kind: "blend", componentsMg: [15, 50, 50, 5, 1] }, vials: null },
+  // The source states components but no presentation. OWNER CONFIRMED 10
+  // vials, matching every other pack in the catalogue, so both are sellable.
+  "Lipo-C": { strength: { kind: "blend", componentsMg: [15, 50, 50, 5] }, vials: 10 },
+  LC1201: { strength: { kind: "blend", componentsMg: [15, 50, 50, 5, 1] }, vials: 10 },
 };
-/**
- * The two Lipo-C rows state a composition but NO presentation. Composition is
- * recorded; `vials` stays null, so the commerce layer will refuse to price them
- * until the pack size is confirmed.
- */
+/** Owner-confirmed composition for the two rows whose spec cell held an
+ *  ingredient line instead of a presentation. */
 const RESOLVED_COMPOSITION = {
   "Lipo-C": "Methionine 15mg + Choline Chloride 50mg + L-Carnitine 50mg + Dexpanthenol 5mg",
   LC1201:
@@ -347,8 +350,77 @@ const TRUSTED_COMPOSITION = new Set(["BBG70", "KL80"]);
  * "hidden" flag.
  */
 const WITHHELD = {
-  Adamax:
-    "Two different formulations under one name — the source prints `(without adamantane) 984da` at $98 and `(with adamantane) 1032da` at $289, with a $154 5mg row between them that could belong to either. Merging them produced one product with a duplicate 10mg variant priced at the wrong end of a 3x spread.",
+  /*
+   * OWNER DECISION — held pending product classification review. Both are
+   * hormone/biologic products whose sale, shipping and payment processing in
+   * Mexico is materially more restricted than the rest of the catalogue.
+   * Withheld here rather than hidden in the UI, so they leave the sitemap,
+   * `generateStaticParams` and the catalogue together.
+   */
+  "Botulinum toxin": "OWNER HOLD — pending product classification review.",
+  "HGH High Quality": "OWNER HOLD — pending product classification review.",
+
+  /*
+   * The Adamax block is unparseable: the source splits its code cells across
+   * lines, prints two formulations under one name, and leaves three prices
+   * between them. It is dropped here and re-stated in OWNER_RESOLVED below,
+   * from the owner's own reading, rather than guessed at by the parser.
+   */
+  Adamax: "Superseded by OWNER_RESOLVED — the source block cannot be parsed.",
+};
+
+/**
+ * PRODUCTS THE SOURCE CANNOT EXPRESS, STATED BY THE OWNER.
+ *
+ * Every value here was supplied directly and is not inferred from the
+ * document. This exists because a parser fix would be dishonest: the Adamax
+ * rows are genuinely ambiguous on the page, and the only thing that resolves
+ * them is someone who knows the products.
+ *
+ * `usd` is the supplier's base price, used for the same retail formula as
+ * every other row so pricing stays consistent. It is discarded after that.
+ */
+const OWNER_RESOLVED = [
+  {
+    id: "adamax-without-adamantane",
+    slug: "adamax-without-adamantane",
+    name: "Adamax (without adamantane)",
+    category: "peptides",
+    composition: null,
+    subtitle: null,
+    world: null,
+    variants: [{ strength: { kind: "solid", mg: 10 }, vials: 10, usd: 98 }],
+  },
+  {
+    id: "adamax-with-adamantane",
+    slug: "adamax-with-adamantane",
+    name: "Adamax (with adamantane)",
+    category: "peptides",
+    composition: null,
+    subtitle: null,
+    world: null,
+    variants: [
+      { strength: { kind: "solid", mg: 5 }, vials: 10, usd: 154 },
+      { strength: { kind: "solid", mg: 10 }, vials: 10, usd: 289 },
+    ],
+  },
+];
+
+/**
+ * SUBTITLE — an alternative designation the source states for a product.
+ *
+ * Not a description and not a classification: this field only ever holds a
+ * name the supplier itself printed. TB-500's row carries "Thymosin B4 Acetate"
+ * in its composition cell, which is an alternative NAME rather than a
+ * composition — recording it as a subtitle puts it where it belongs.
+ *
+ * The catalogue's other candidates — the twelve products filed under Péptidos
+ * that are not peptides — are deliberately EMPTY here. Writing "vitamin" or
+ * "small molecule" against a compound would be a classification claim, and
+ * the source states none. Owner input fills them; see the report.
+ */
+const RESOLVED_SUBTITLE = {
+  BT5: "Thymosin B4 Acetate",
 };
 
 /** The three flagships keep the identity the site already publishes. */
@@ -386,6 +458,32 @@ const slugify = (s) =>
     .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
+
+/**
+ * Magnitude of a strength, for display ORDER only.
+ *
+ * The source prints rows in whatever order the page had them, which put HCG's
+ * 10,000 IU above its 5,000 IU — the only product in the catalogue reading
+ * backwards. Sorting is applied only when every variant shares a unit, since
+ * across units there is no meaningful order: 100 IU is not more or less than
+ * 10 ml.
+ */
+const magnitude = (st) =>
+  st.kind === "solid"
+    ? st.mg
+    : st.kind === "iu"
+      ? st.iu
+      : st.kind === "volume"
+        ? st.ml
+        : st.kind === "solution"
+          ? st.mg
+          : st.componentsMg.reduce((a, b) => a + b, 0);
+
+function ordered(variants) {
+  const kinds = new Set(variants.map((v) => v.strength.kind));
+  if (kinds.size !== 1) return variants;
+  return [...variants].sort((a, b) => magnitude(a.strength) - magnitude(b.strength));
+}
 
 const seen = new Set();
 const catalog = [];
@@ -494,7 +592,7 @@ for (const p of products) {
     }
     byId.set(v.id, v);
   }
-  const unique = [...byId.values()];
+  const unique = ordered([...byId.values()]);
 
   catalog.push({
     id: flag?.id ?? slug,
@@ -514,6 +612,9 @@ for (const p of products) {
           .replace(/\s+/g, " ")
           .trim()
       : null,
+    /* An alternative designation the source itself printed, never a class
+       we assigned. Null for all but one product today. */
+    subtitle: RESOLVED_SUBTITLE[firstCode] ?? null,
     world: flag?.world ?? null,
     variants: unique.map(({ id, strength, vials }) => ({ id, strength, vials })),
   });
@@ -525,6 +626,43 @@ for (const p of products) {
       price: v.vials === null ? null : v.priceMxn,
     });
   }
+}
+
+/*
+ * The owner-stated products, appended after the parsed ones. They go through
+ * the same retail formula and the same commerce push, so nothing about them is
+ * priced or shaped differently — only their identity came from a person rather
+ * than from the page.
+ */
+for (const p of OWNER_RESOLVED) {
+  if (seen.has(p.slug)) {
+    console.warn(`SKIPPED — owner-resolved slug already taken: ${p.slug}`);
+    continue;
+  }
+  seen.add(p.slug);
+
+  const variants = ordered(
+    p.variants.map((v) => ({
+      id: `${p.slug}-${v.strength.mg}mg`,
+      strength: v.strength,
+      vials: v.vials,
+      priceMxn: retail(v.usd),
+    })),
+  );
+
+  catalog.push({
+    id: p.id,
+    slug: p.slug,
+    name: p.name,
+    category: p.category,
+    composition: p.composition,
+    subtitle: p.subtitle,
+    world: p.world,
+    variants: variants.map(({ id, strength, vials }) => ({ id, strength, vials })),
+  });
+
+  for (const v of variants)
+    commerce.push({ id: v.id, price: v.vials === null ? null : v.priceMxn });
 }
 
 const header = (what) => `/**

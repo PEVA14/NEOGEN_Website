@@ -6,6 +6,7 @@ import { Container, Section } from "@/components/primitives";
 import { routes } from "@/config/routes";
 import { formatStrength, isPublishable, products, publishedProducts } from "@/data/catalog";
 import { formatPrice, getPrices } from "@/data/commerce";
+import { publicAreas, publicAreasFor } from "@/data/discovery";
 import { isLocale, localeTags } from "@/i18n/config";
 import { getDictionary } from "@/i18n/getDictionary";
 import { alternates } from "@/lib/alternates";
@@ -56,6 +57,9 @@ export default async function ProductsPage({ params }: { params: Promise<{ local
 
   const dict = await getDictionary(locale);
   const catalog = dict.products.catalog;
+  /* Areas with approved products. Empty today, which keeps the filter row out
+     of the DOM entirely rather than rendering it with nothing to offer. */
+  const areas = publicAreas();
   const path = (to: string) => localizePath(to, locale);
 
   /*
@@ -82,8 +86,12 @@ export default async function ProductsPage({ params }: { params: Promise<{ local
       index: String(position + 1).padStart(2, "0"),
       slug: product.slug,
       name: product.name,
+      subtitle: product.subtitle,
       category: product.category,
       categoryLabel: catalog.categoryLabels[product.category] ?? product.category,
+      /* Only areas approved for public display; drafts are filtered in
+         `publicAreasFor`, so this is empty for every product today. */
+      areas: publicAreasFor(product.slug).map((area) => area.id),
       world: product.world,
       worldLabel: product.world ? dict.home.products.worldLabels[product.world] : undefined,
       href: path(routes.product(product.slug)),
@@ -113,6 +121,11 @@ export default async function ProductsPage({ params }: { params: Promise<{ local
             filterLabel: catalog.filterLabel,
             filterAll: catalog.filterAll,
             categoryLabels: catalog.categoryLabels,
+            areaLabel: dict.discovery.label,
+            areaLabels: Object.fromEntries(
+              areas.map((area) => [area.id, dict.discovery.areas[area.id].title]),
+            ),
+            areaOrder: areas.map((area) => area.id),
             sortLabel: catalog.sortLabel,
             sortIndex: catalog.sortIndex,
             sortName: catalog.sortName,
