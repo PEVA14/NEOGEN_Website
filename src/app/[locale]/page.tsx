@@ -14,6 +14,7 @@ import { Container, Grid, Section } from "@/components/primitives";
 import {
   CatalogIndex,
   CompoundIndexHead,
+  DiscoveryGrid,
   CompoundRow,
   DocumentLedger,
   EditorialSpread,
@@ -23,9 +24,9 @@ import {
 import { routes } from "@/config/routes";
 import { worldIds, type WorldId } from "@/config/worlds";
 import { isLocale, localeTags } from "@/i18n/config";
-import { formatStrength, isPublishable, products } from "@/data/catalog";
+import { formatStrength, isPublishable, presentationRange, products } from "@/data/catalog";
 import { formatPrice, getPrices } from "@/data/commerce";
-import { publicAreas } from "@/data/discovery";
+import { productsInArea, publicAreas, publicAreasFor } from "@/data/discovery";
 import { getDictionary } from "@/i18n/getDictionary";
 import { alternates } from "@/lib/alternates";
 import { localizePath } from "@/i18n/routing";
@@ -76,9 +77,42 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   const path = (to: string) => localizePath(to, locale);
 
-  /* Discovery areas with approved products. Empty until assignments are
-     confirmed, which is what section 04 falls back for. */
+  /*
+   * DISCOVERY ENTRIES — the homepage's product-discovery section.
+   *
+   * Everything on a panel is read off the registry: how many compounds are in
+   * the area, which recognisable ones to name, and the cheapest way in. The
+   * examples are the three CHEAPEST publishable products in the area, which
+   * is both a defensible rule and the commercially useful one — a customer
+   * scanning categories is looking for an entry point, not a flagship.
+   */
   const areas = publicAreas();
+  const areaProducts = areas.map((area) => ({ area, items: productsInArea(area.id) }));
+  const areaPriceMap = await getPrices(
+    areaProducts.flatMap(({ items }) => items.flatMap((p) => p.variants.map((v) => v.id))),
+  );
+  const cheapestIn = (product: (typeof products)[number]) =>
+    product.variants
+      .map((v) => areaPriceMap.get(v.id))
+      .filter((m): m is NonNullable<typeof m> => Boolean(m))
+      .sort((a, b) => a.amount - b.amount)[0] ?? null;
+
+  const discoveryEntries = areaProducts.map(({ area, items }) => {
+    const ranked = items
+      .map((product) => ({ product, price: cheapestIn(product) }))
+      .filter((row) => row.price)
+      .sort((a, b) => a.price!.amount - b.price!.amount);
+    return {
+      id: area.id,
+      index: String(area.order).padStart(2, "0"),
+      title: dict.discovery.areas[area.id].title,
+      body: dict.discovery.areas[area.id].body,
+      href: path(routes.area(area.slug)),
+      count: items.length,
+      examples: ranked.slice(0, 3).map((row) => row.product.name),
+      from: ranked[0]?.price ? formatPrice(ranked[0].price, localeTags[locale]) : null,
+    };
+  });
 
   const heroCopy: HeroCopy = { ...home.hero, ctaHref: path(routes.products) };
 
@@ -206,25 +240,34 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             id="catalog-title"
             action={<TextLink href={path(routes.products)}>{home.catalog.action}</TextLink>}
           />
-          <CatalogIndex
-            entries={
-              areas.length > 0
-                ? areas.map((area) => ({
-                    index: String(area.order).padStart(2, "0"),
-                    title: dict.discovery.areas[area.id].title,
-                    body: dict.discovery.areas[area.id].body,
-                    href: path(routes.area(area.slug)),
-                    linkLabel: home.catalog.categories[0].link,
-                  }))
-                : home.catalog.categories.map((category) => ({
-                    index: category.index,
-                    title: category.title,
-                    body: category.body,
-                    href: path(routes.products),
-                    linkLabel: category.link,
-                  }))
-            }
-          />
+          {/*
+           * Eight area panels, or the three editorial cards as a fallback.
+           *
+           * The fallback is not dead code: `publicAreas()` counts only areas
+           * with approved products, so an area emptied by a future review
+           * takes itself out of this section, and a review that emptied all of
+           * them would leave the page standing.
+           */}
+          {discoveryEntries.length > 0 ? (
+            <DiscoveryGrid
+              entries={discoveryEntries}
+              copy={{
+                countLabel: dict.discovery.countLabel,
+                from: dict.products.catalog.from,
+                enter: home.catalog.categories[0].link,
+              }}
+            />
+          ) : (
+            <CatalogIndex
+              entries={home.catalog.categories.map((category) => ({
+                index: category.index,
+                title: category.title,
+                body: category.body,
+                href: path(routes.products),
+                linkLabel: category.link,
+              }))}
+            />
+          )}
         </Container>
       </Section>
 
@@ -340,10 +383,15 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                   slug={product.slug}
                   world={product.world}
                   worldLabel={product.world ? home.products.worldLabels[product.world] : undefined}
+                  areaId={publicAreasFor(product.slug)[0]?.id ?? null}
                   name={product.name}
                   subtitle={product.subtitle}
                   href={path(routes.product(product.slug))}
                   price={fromPrice(product)}
+                  priceFrom={dict.products.catalog.from}
+                  presentationRange={presentationRange(product)}
+                  presentations={product.variants.length}
+                  index={String(position + 1).padStart(2, "0")}
                   ctaLabel={home.products.cta}
                 />
               </div>

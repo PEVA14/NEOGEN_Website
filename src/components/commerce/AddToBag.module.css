@@ -1,0 +1,249 @@
+/*
+ * The commerce block. Zero radius, 1px structure, charcoal as the only action
+ * colour — the Design Bible's commerce rules, with the hierarchy rebalanced so
+ * PRICE and ADD TO BAG carry the weight instead of a row of equal mono labels.
+ */
+
+.block {
+  display: grid;
+  gap: var(--space-md);
+  inline-size: 100%;
+}
+
+.legend {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+/* --- Presentation selector ------------------------------------------------ */
+
+.variants {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: grid;
+  gap: var(--space-2xs);
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+}
+
+/*
+ * A chip, not a select. With up to seven presentations the whole ladder should
+ * be visible at once — seeing that RETA runs 5 mg to 60 mg is itself a reason
+ * to buy, and a closed dropdown hides the range.
+ */
+.variant {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 2.75rem;
+  padding-inline: var(--space-sm);
+  border: 1px solid var(--border-default);
+  color: var(--ink-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  cursor: pointer;
+  transition:
+    border-color var(--motion-duration-fast) var(--ease-standard),
+    color var(--motion-duration-fast) var(--ease-standard),
+    background-color var(--motion-duration-fast) var(--ease-standard);
+}
+
+.variant input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+  margin: 0;
+}
+
+.variant:hover {
+  border-color: var(--ink-secondary);
+  color: var(--ink-primary);
+}
+
+.variant:has(input:checked) {
+  background-color: var(--surface-inverse);
+  border-color: var(--surface-inverse);
+  color: var(--ink-inverse);
+}
+
+.variant:has(input:focus-visible) {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}
+
+/* A presentation we cannot currently supply stays visible and selectable —
+   the format is real information — but reads as dimmed. */
+.variant[data-availability="unavailable"] {
+  opacity: 0.5;
+}
+
+.single {
+  display: grid;
+  gap: var(--space-3xs);
+}
+
+.singleValue {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--ink-primary);
+}
+
+/* --- Quantity + price ---------------------------------------------------- */
+
+.purchase {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding-block-start: var(--space-xs);
+  border-block-start: 1px solid var(--border-subtle);
+}
+
+.quantity {
+  display: grid;
+  gap: var(--space-3xs);
+}
+
+.stepper {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--border-default);
+}
+
+.step {
+  inline-size: 2.75rem;
+  min-block-size: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+  color: var(--ink-secondary);
+  font-size: var(--text-base);
+  cursor: pointer;
+  transition:
+    background-color var(--motion-duration-fast) var(--ease-standard),
+    color var(--motion-duration-fast) var(--ease-standard);
+}
+
+.step:hover:not(:disabled) {
+  background-color: var(--surface-raised);
+  color: var(--ink-primary);
+}
+
+.step:disabled {
+  color: var(--ink-muted);
+  cursor: default;
+}
+
+.count {
+  min-inline-size: 3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-inline: 1px solid var(--border-default);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-primary);
+}
+
+.price {
+  display: grid;
+  gap: var(--space-3xs);
+  justify-items: end;
+  text-align: end;
+}
+
+/*
+ * THE FIGURE THE PAGE EXISTS TO DELIVER.
+ *
+ * Display face, condensed, at a scale nothing else in the panel competes with.
+ * The previous version set it at body size beside four other mono rows, which
+ * is how a shop looks when it is embarrassed about its prices.
+ */
+.priceValue {
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-3xl);
+  line-height: 0.9;
+  letter-spacing: var(--tracking-display);
+  color: var(--ink-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.priceValue[data-pending="true"] {
+  color: var(--ink-muted);
+}
+
+.availability {
+  color: var(--ink-secondary);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.availability[data-availability="unavailable"] {
+  color: var(--ink-muted);
+}
+
+/* --- The action ---------------------------------------------------------- */
+
+.add {
+  inline-size: 100%;
+  min-block-size: 3.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--surface-inverse);
+  color: var(--ink-inverse);
+  border: 1px solid var(--surface-inverse);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition:
+    opacity var(--motion-duration-base) var(--ease-standard),
+    background-color var(--motion-duration-base) var(--ease-standard);
+}
+
+.add:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+/*
+ * Disabled reads as OUTLINED, not dimmed. A greyed-out button looks like a
+ * rendering fault; an outlined one looks like a state — and it is the same
+ * treatment every other blocked commerce control on the site uses.
+ */
+.add:disabled {
+  background-color: transparent;
+  color: var(--ink-muted);
+  border-color: var(--border-default);
+  cursor: default;
+}
+
+/* Confirmation in place. Two seconds, then back. */
+.add[data-added="true"] {
+  background-color: var(--status-verified);
+  border-color: var(--status-verified);
+  color: var(--neogen-paper);
+}
+
+.note {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  text-wrap: pretty;
+}

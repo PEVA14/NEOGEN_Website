@@ -10,8 +10,9 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "npm run lint && npm run typecheck && npm run check:catalog && npm run check:media && npm run build && npm run check:output",
+    "check": "npm run lint && npm run typecheck && npm run check:catalog && npm run check:media && npm run check:commerce && npm run build && npm run check:output",
     "check:catalog": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-catalog.mjs",
+    "check:commerce": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-commerce.mjs",
     "check:media": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-media.mjs",
     "check:output": "node scripts/check-output.mjs"
   },

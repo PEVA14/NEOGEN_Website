@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 
 import { Body, Mono } from "@/components/typography";
 import { CompoundIndexHead, CompoundRow, ProductCard } from "@/components/ui";
@@ -29,8 +29,16 @@ export interface CatalogProduct {
   href: string;
   /** Formatted retail price, or null where none is set. */
   price: string | null;
-  /** Dose summary — "5 mg · 10 mg · 15 mg". */
+  /** Cheapest amount in MXN, for sorting. Null where unpriced. */
+  priceAmount: number | null;
+  /** Dose summary for search and the register — "5 mg · 10 mg · 15 mg". */
   strengths: string;
+  /** Collapsed ladder for the card — "5 mg – 60 mg". */
+  range: string;
+  /** Presentation count, for the specimen plate's datum lines. */
+  presentations: number;
+  /** Primary discovery area id, for the plate's tone. */
+  areaId: string | null;
   ctaLabel: string;
 }
 
@@ -45,9 +53,15 @@ export interface CatalogCopy {
   areaLabels: Record<string, string>;
   /** Ordered area ids that currently have approved products. */
   areaOrder: readonly string[];
+  from: string;
   sortLabel: string;
   sortIndex: string;
   sortName: string;
+  sortPriceAsc: string;
+  sortPriceDesc: string;
+  typeLabel: string;
+  filtersLabel: string;
+  filtersApplied: string;
   viewLabel: string;
   viewGrid: string;
   viewIndex: string;
@@ -59,8 +73,33 @@ export interface CatalogCopy {
   placeholder: string;
 }
 
+/**
+ * A media query as an external store.
+ *
+ * `matchMedia` is exactly that — something outside React that changes — so
+ * this needs no effect and no `setState` during mount. The server snapshot is
+ * `false`, which is the correct starting assumption: it renders the mobile
+ * composition, and a narrow viewport therefore never reflows.
+ */
+function useMediaQuery(query: string): boolean {
+  const subscribe = useCallback(
+    (onChange: () => void) => {
+      const list = window.matchMedia(query);
+      list.addEventListener("change", onChange);
+      return () => list.removeEventListener("change", onChange);
+    },
+    [query],
+  );
+
+  return useSyncExternalStore(
+    subscribe,
+    () => window.matchMedia(query).matches,
+    () => false,
+  );
+}
+
 type View = "grid" | "index";
-type Sort = "index" | "name";
+type Sort = "index" | "name" | "price-asc" | "price-desc";
 
 /**
  * THE CATALOGUE.
@@ -114,12 +153,38 @@ export function CatalogBrowser({
           .toLocaleLowerCase()
           .includes(needle);
       })
-      .sort((a, b) =>
-        sort === "name" ? a.name.localeCompare(b.name) : a.index.localeCompare(b.index),
-      );
+      .sort((a, b) => {
+        switch (sort) {
+          case "name":
+            return a.name.localeCompare(b.name);
+          /*
+           * Unpriced products sort LAST in both directions rather than being
+           * treated as zero — two of them exist, and burying them at the top
+           * of a cheapest-first list would be the wrong answer to both
+           * questions.
+           */
+          case "price-asc":
+            return (a.priceAmount ?? Infinity) - (b.priceAmount ?? Infinity);
+          case "price-desc":
+            return (b.priceAmount ?? -Infinity) - (a.priceAmount ?? -Infinity);
+          default:
+            return a.index.localeCompare(b.index);
+        }
+      });
   }, [products, query, category, area, sort]);
 
   const filtered = query.trim() !== "" || category !== "all" || area !== "all";
+  const activeCount = [query.trim() !== "", category !== "all", area !== "all"].filter(
+    Boolean,
+  ).length;
+
+  /*
+   * Whether there is room for the rail. Read once on mount and on resize —
+   * `useSyncExternalStore` over `matchMedia` rather than an effect, so the
+   * server renders the disclosure CLOSED and a phone never flashes the whole
+   * rail open before collapsing it.
+   */
+  const wide = useMediaQuery("(min-width: 48rem)");
 
   const categories = useMemo(() => [...new Set(products.map((p) => p.category))], [products]);
 
@@ -136,135 +201,152 @@ export function CatalogBrowser({
        * not a floating toolbar. Nothing here is boxed; structure comes from
        * rules and alignment, as everywhere else in the system.
        */}
-      <div className={styles.rail}>
-        <div className={styles.search}>
-          <Mono size="2xs" className={styles.controlLabel} id="catalog-search-label">
-            {copy.searchLabel}
-          </Mono>
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder={copy.searchPlaceholder}
-            aria-labelledby="catalog-search-label"
-            className={styles.searchInput}
-          />
-        </div>
+      {/*
+       * The control rail, behind a disclosure on phones. `open` is set from
+       * the same media query the CSS uses so the two cannot disagree; above
+       * 48rem the summary is hidden and the rail is simply always present.
+       */}
+      <details className={styles.sheet} open={wide}>
+        <summary>
+          <span>{copy.filtersLabel}</span>
+          {activeCount > 0 ? (
+            <span>
+              {activeCount} {copy.filtersApplied}
+            </span>
+          ) : null}
+        </summary>
 
-        <fieldset className={styles.group}>
-          <legend className={styles.controlLabel}>
-            <Mono size="2xs">{copy.filterLabel}</Mono>
-          </legend>
-          <div className={styles.options}>
-            <button
-              type="button"
-              className={styles.chip}
-              aria-pressed={category === "all"}
-              onClick={() => setCategory("all")}
-            >
-              {copy.filterAll}
-            </button>
-            {/* Categories, not products. With 86 products a per-product chip
-                row would be the catalogue twice over. */}
-            {categories.map((id) => (
-              <button
-                key={id}
-                type="button"
-                className={styles.chip}
-                aria-pressed={category === id}
-                onClick={() => setCategory(id)}
-              >
-                {copy.categoryLabels[id] ?? id}
-              </button>
-            ))}
+        <div className={styles.rail}>
+          <div className={styles.search}>
+            <Mono size="2xs" className={styles.controlLabel} id="catalog-search-label">
+              {copy.searchLabel}
+            </Mono>
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={copy.searchPlaceholder}
+              aria-labelledby="catalog-search-label"
+              className={styles.searchInput}
+            />
           </div>
-        </fieldset>
 
-        {/*
-         * DISCOVERY AREA — rendered only when at least one area has approved
-         * products. A filter that cannot filter is worse than an absent one,
-         * and every assignment is a draft today, so this row is currently not
-         * in the DOM at all rather than present and empty.
-         */}
-        {copy.areaOrder.length > 0 ? (
-          <fieldset className={styles.group}>
-            <legend className={styles.controlLabel}>
-              <Mono size="2xs">{copy.areaLabel}</Mono>
-            </legend>
-            <div className={styles.options}>
-              <button
-                type="button"
-                className={styles.chip}
-                aria-pressed={area === "all"}
-                onClick={() => setArea("all")}
-              >
-                {copy.filterAll}
-              </button>
-              {copy.areaOrder.map((id) => (
+          {/*
+           * FACTUAL TYPE — a select, not a chip row.
+           *
+           * Five category chips plus nine area chips plus sort plus view came to
+           * nineteen controls above the products, which is a rail that competes
+           * with the catalogue instead of serving it. The supplier category is
+           * the SECONDARY axis now — discovery area is what a customer shops
+           * along — so it collapses into one control and gives the row back.
+           */}
+          <div className={styles.select}>
+            <Mono size="2xs" className={styles.controlLabel} id="catalog-type-label">
+              {copy.typeLabel}
+            </Mono>
+            <select
+              value={category}
+              onChange={(event) => setCategory(event.target.value)}
+              aria-labelledby="catalog-type-label"
+              className={styles.selectInput}
+            >
+              <option value="all">{copy.filterAll}</option>
+              {categories.map((id) => (
+                <option key={id} value={id}>
+                  {copy.categoryLabels[id] ?? id}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/*
+           * DISCOVERY AREA — rendered only when at least one area has approved
+           * products. A filter that cannot filter is worse than an absent one,
+           * and every assignment is a draft today, so this row is currently not
+           * in the DOM at all rather than present and empty.
+           */}
+          {copy.areaOrder.length > 0 ? (
+            <fieldset className={styles.group}>
+              <legend className={styles.controlLabel}>
+                <Mono size="2xs">{copy.areaLabel}</Mono>
+              </legend>
+              <div className={styles.options}>
                 <button
-                  key={id}
                   type="button"
                   className={styles.chip}
-                  aria-pressed={area === id}
-                  onClick={() => setArea(id)}
+                  aria-pressed={area === "all"}
+                  onClick={() => setArea("all")}
                 >
-                  {copy.areaLabels[id] ?? id}
+                  {copy.filterAll}
                 </button>
-              ))}
-            </div>
-          </fieldset>
-        ) : null}
+                {copy.areaOrder.map((id) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className={styles.chip}
+                    aria-pressed={area === id}
+                    onClick={() => setArea(id)}
+                  >
+                    {copy.areaLabels[id] ?? id}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          ) : null}
 
-        <div className={styles.trailing}>
-          <fieldset className={styles.group}>
-            <legend className={styles.controlLabel}>
-              <Mono size="2xs">{copy.sortLabel}</Mono>
-            </legend>
-            <div className={styles.options}>
-              {(
-                [
-                  ["index", copy.sortIndex],
-                  ["name", copy.sortName],
-                ] as const
-              ).map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  className={styles.chip}
-                  aria-pressed={sort === value}
-                  onClick={() => setSort(value)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </fieldset>
+          <div className={styles.trailing}>
+            <fieldset className={styles.group}>
+              <legend className={styles.controlLabel}>
+                <Mono size="2xs">{copy.sortLabel}</Mono>
+              </legend>
+              <div className={styles.options}>
+                {(
+                  [
+                    ["index", copy.sortIndex],
+                    ["name", copy.sortName],
+                    ["price-asc", copy.sortPriceAsc],
+                    ["price-desc", copy.sortPriceDesc],
+                  ] as const
+                ).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className={styles.chip}
+                    aria-pressed={sort === value}
+                    onClick={() => setSort(value)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
 
-          <fieldset className={styles.group}>
-            <legend className={styles.controlLabel}>
-              <Mono size="2xs">{copy.viewLabel}</Mono>
-            </legend>
-            <div className={styles.options}>
-              {(
-                [
-                  ["grid", copy.viewGrid],
-                  ["index", copy.viewIndex],
-                ] as const
-              ).map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  className={styles.chip}
-                  aria-pressed={view === value}
-                  onClick={() => setView(value)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </fieldset>
+            <fieldset className={styles.group}>
+              <legend className={styles.controlLabel}>
+                <Mono size="2xs">{copy.viewLabel}</Mono>
+              </legend>
+              <div className={styles.options}>
+                {(
+                  [
+                    ["grid", copy.viewGrid],
+                    ["index", copy.viewIndex],
+                  ] as const
+                ).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className={styles.chip}
+                    aria-pressed={view === value}
+                    onClick={() => setView(value)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          </div>
         </div>
-      </div>
+      </details>
 
       <div className={styles.status}>
         {/* Announced, so a filter change is perceivable without sight. */}
@@ -301,11 +383,16 @@ export function CatalogBrowser({
                 slug={product.slug}
                 world={product.world}
                 worldLabel={product.worldLabel}
+                areaId={product.areaId as never}
                 eyebrow={product.categoryLabel}
                 name={product.name}
                 subtitle={product.subtitle}
                 href={product.href}
                 price={product.price}
+                priceFrom={copy.from}
+                presentationRange={product.range}
+                presentations={product.presentations}
+                index={product.index}
                 ctaLabel={product.ctaLabel}
                 /* The catalogue's h1 is the page title and these are the
                    content directly under it — h3 would skip a level. */

@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { Suspense, useCallback, useRef, useState, type ReactNode } from "react";
 
 import type { WorldEnvironment } from "@/config/worlds";
-import type { ProductImage } from "@/content";
+import type { ProductImage } from "@/content/media";
 import { useSectionProgress } from "@/hooks/useSectionProgress";
 
 import { CanvasErrorBoundary } from "./CanvasErrorBoundary";

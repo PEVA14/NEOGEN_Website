@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { SectionHeader } from "@/components/layout";
 import { Container, Grid, Section } from "@/components/primitives";
+import { AddToBag } from "@/components/commerce";
 import { CommercePanel, ProductPlate, ProductStage, SpecTable } from "@/components/product";
 import { Body } from "@/components/typography";
 import { DocumentLedger, ProductCard, TextLink } from "@/components/ui";
@@ -11,16 +12,18 @@ import { documentFile, documentKinds, productMedia } from "@/content";
 import {
   formatStrength,
   getProduct,
+  presentationRange,
   isPublishable,
   products,
   publishedProducts,
 } from "@/data/catalog";
 import { formatPrice, getAvailability, getPrices } from "@/data/commerce";
-import { publicAreasFor, relatedByArea } from "@/data/discovery";
+import { productsInArea, publicAreasFor, relatedByArea } from "@/data/discovery";
 import { isLocale, localeTags } from "@/i18n/config";
 import { getDictionary } from "@/i18n/getDictionary";
 import { localizePath } from "@/i18n/routing";
 import { alternates } from "@/lib/alternates";
+import { bagEnabled } from "@/payments";
 import { fillTemplate, presentationSummary, socialMetadata } from "@/lib/meta";
 
 import type { Metadata } from "next";
@@ -122,17 +125,12 @@ export default async function ProductPage({
      worlds and no model, and open in their environment with the static plate. */
   const world = product.world ? getWorld(product.world) : null;
   const media = productMedia(product.slug);
-  /* Approved areas only. Empty today — every assignment is still a draft. */
+  /* Approved areas — 83 of 85 products have at least one. */
   const areas = publicAreasFor(product.slug);
 
   const variantIds = product.variants.map((v) => v.id);
   const commerce = await getPrices(variantIds);
   const availability = await getAvailability(variantIds);
-  const cheapest = product.variants
-    .map((v) => commerce.get(v.id))
-    .filter((m): m is NonNullable<typeof m> => Boolean(m))
-    .sort((a, b) => a.amount - b.amount)[0];
-
   /*
    * RELATED — discovery-area overlap first, supplier category as the fallback.
    *
@@ -155,15 +153,26 @@ export default async function ProductPage({
             (p) => p.category === product.category && p.slug !== product.slug && isPublishable(p),
           )
           .slice(0, 3);
-  const relatedPriceMap = await getPrices(related.flatMap((p) => p.variants.map((v) => v.id)));
-  const relatedPrice = (slugId: string) => {
-    const p = related.find((r) => r.slug === slugId);
+  /*
+   * COMPLEMENTARY MATERIALS. The solvents, on every page except their own —
+   * offering bacteriostatic water alongside bacteriostatic water is noise.
+   */
+  const materials =
+    product.category === "solvents" ? [] : productsInArea("materials").filter(isPublishable);
+
+  const relatedPriceMap = await getPrices(
+    [...related, ...materials].flatMap((p) => p.variants.map((v) => v.id)),
+  );
+  const priceFor = (pool: readonly (typeof products)[number][]) => (slugId: string) => {
+    const p = pool.find((r) => r.slug === slugId);
     const m = p?.variants
       .map((v) => relatedPriceMap.get(v.id))
       .filter((x): x is NonNullable<typeof x> => Boolean(x))
       .sort((a, b) => a.amount - b.amount)[0];
     return m ? formatPrice(m, localeTags[locale]) : null;
   };
+  const relatedPrice = priceFor(related);
+  const materialPrice = priceFor(materials);
 
   const commercePanel = (
     <CommercePanel
@@ -172,13 +181,10 @@ export default async function ProductPage({
        * THE EYEBROW, IN PRIORITY ORDER.
        *
        *   1. the world's character label, for the three flagships;
-       *   2. the product's discovery area, once one is APPROVED — this is the
-       *      commercial framing the customer is looking for;
-       *   3. the supplier category, which is what shipped before and remains
-       *      the honest fallback while every assignment is a draft.
-       *
-       * A draft assignment never reaches step 2: `publicAreasFor` filters
-       * them out, so today every non-flagship still shows its category.
+       *   2. the product's discovery area — the commercial framing a customer
+       *      is actually shopping along;
+       *   3. the supplier category, as the fallback for the two products with
+       *      no approved area.
        */
       worldLabel={
         product.world
@@ -193,17 +199,38 @@ export default async function ProductPage({
         /* Composition where the source states one; otherwise nothing. The old
            copy described the glass vial, which is packaging, not product. */
         descriptor: product.composition,
-        price: cheapest ? formatPrice(cheapest, localeTags[locale]) : null,
         documentationHref: `#${pdp.documentation.index}`,
         placeholder,
       }}
-      /* Real presentations, each carrying whatever stock state is known. */
-      variants={product.variants.map((v) => ({
-        label: formatStrength(v.strength),
-        availability: availability.get(v.id) ?? null,
-      }))}
-      availabilityLabels={dict.commerce.availability}
-    />
+    >
+      <AddToBag
+        slug={product.slug}
+        name={product.name}
+        variants={product.variants.map((v) => ({
+          variantId: v.id,
+          presentation: formatStrength(v.strength),
+          price: commerce.get(v.id) ?? null,
+          availability: availability.get(v.id) ?? null,
+        }))}
+        copy={{
+          variantLabel: pdp.commerce.variantLabel,
+          quantityLabel: pdp.commerce.quantityLabel,
+          priceLabel: pdp.commerce.priceLabel,
+          add: dict.commerceUi.add,
+          added: dict.commerceUi.added,
+          soldOut: dict.commerceUi.soldOut,
+          unavailable: dict.commerceUi.unavailable,
+          decrease: dict.commerceUi.decrease,
+          increase: dict.commerceUi.increase,
+          availability: dict.commerce.availability,
+        }}
+        /* The BAG gate, not the payment gate: adding to a bag needs prices
+           and a business decision, not a processor. Decided on the server so
+           it is never re-derived in the browser. */
+        enabled={bagEnabled()}
+        localeTag={localeTags[locale]}
+      />
+    </CommercePanel>
   );
 
   return (
@@ -333,7 +360,53 @@ export default async function ProductPage({
         </Container>
       </Section>
 
-      {/* 05 — RELATED, from the same category. */}
+      {/*
+       * 05 — COMPLEMENTARY MATERIALS.
+       *
+       * The solvents are the catalogue's only low-ticket items and its most
+       * natural adjacency, and they were reachable only by scrolling 85 cards
+       * or knowing to filter. Shown on every compound page and on none of the
+       * solvent pages themselves.
+       *
+       * Verb-free by design: this lists products, it does not suggest a
+       * procedure. See the dictionary note.
+       */}
+      {materials.length > 0 ? (
+        <Section mode="quiet" aria-labelledby="materials-title" className="bg-(--surface-raised)">
+          <Container width="full">
+            <SectionHeader
+              index={pdp.materials.index}
+              label={`${pdp.materials.label} // ${pdp.materials.qualifier}`}
+              title={pdp.materials.title}
+              id="materials-title"
+              action={
+                <TextLink href={path(routes.area("materiales"))}>{pdp.materials.action}</TextLink>
+              }
+            />
+            <Grid className="items-start">
+              {materials.map((item) => (
+                <div key={item.id} className="col-span-12 md:col-span-6 lg:col-span-4">
+                  <ProductCard
+                    slug={item.slug}
+                    world={null}
+                    areaId="materials"
+                    eyebrow={dict.discovery.areas.materials.title}
+                    name={item.name}
+                    href={path(routes.product(item.slug))}
+                    price={materialPrice(item.slug)}
+                    priceFrom={dict.products.catalog.from}
+                    presentationRange={presentationRange(item)}
+                    presentations={item.variants.length}
+                    ctaLabel={dict.home.products.cta}
+                  />
+                </div>
+              ))}
+            </Grid>
+          </Container>
+        </Section>
+      ) : null}
+
+      {/* 06 — RELATED, by discovery area. */}
       {related.length > 0 ? (
         <Section mode="quiet" aria-labelledby="related-title">
           <Container width="full">
@@ -357,11 +430,19 @@ export default async function ProductPage({
                     slug={item.slug}
                     world={item.world}
                     worldLabel={item.world ? dict.home.products.worldLabels[item.world] : undefined}
-                    eyebrow={dict.products.catalog.categoryLabels[item.category]}
+                    areaId={publicAreasFor(item.slug)[0]?.id ?? null}
+                    eyebrow={
+                      publicAreasFor(item.slug)[0]
+                        ? dict.discovery.areas[publicAreasFor(item.slug)[0].id].title
+                        : dict.products.catalog.categoryLabels[item.category]
+                    }
                     name={item.name}
                     subtitle={item.subtitle}
                     href={path(routes.product(item.slug))}
                     price={relatedPrice(item.slug)}
+                    priceFrom={dict.products.catalog.from}
+                    presentationRange={presentationRange(item)}
+                    presentations={item.variants.length}
                     ctaLabel={dict.home.products.cta}
                   />
                 </div>

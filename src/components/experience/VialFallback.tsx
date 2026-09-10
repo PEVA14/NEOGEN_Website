@@ -2,7 +2,7 @@ import Image from "next/image";
 
 import { Mono } from "@/components/typography";
 import { VialSilhouette } from "@/components/ui/VialSilhouette";
-import type { ProductImage } from "@/content";
+import type { ProductImage } from "@/content/media";
 
 import styles from "./RetaExperience.module.css";
 

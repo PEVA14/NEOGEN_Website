@@ -1,7 +1,8 @@
 import { Mono } from "@/components/typography";
 import { TextLink, WorldDot } from "@/components/ui";
 import type { WorldId } from "@/config/worlds";
-import type { Availability } from "@/data/commerce";
+
+import type { ReactNode } from "react";
 
 import styles from "./CommercePanel.module.css";
 
@@ -21,35 +22,9 @@ export interface CommerceCopy {
    * rather than describing the packaging.
    */
   descriptor: string | null;
-  variantLabel: string;
-  /** Rendered when no verified variants exist. */
-  variantPending: string;
-  quantityLabel: string;
-  priceLabel: string;
-  /** Formatted retail price, or null where none is set. */
-  price: string | null;
-  /** Shown in place of a price when none is set. */
-  pricePending: string;
-  addToBag: string;
-  /** Explains why the purchase control is inert. Never fabricates a reason. */
-  commercePending: string;
   documentation: string;
   documentationHref: string;
   placeholder: string;
-}
-
-/**
- * One presentation, with whatever is known about being able to get it.
- *
- * `availability` is null for every variant today: there is no inventory
- * system, and an absent state renders no line rather than claiming stock we
- * have not checked. `unavailable` greys the option out rather than removing
- * it — a format that exists but cannot be had right now is information, and
- * deleting it from the selector makes the catalogue look smaller than it is.
- */
-export interface CommerceVariant {
-  label: string;
-  availability: Availability | null;
 }
 
 /**
@@ -82,26 +57,15 @@ export function CommercePanel({
   copy,
   world,
   worldLabel,
-  variants = [],
-  availabilityLabels,
+  children,
 }: {
   copy: CommerceCopy;
   world: WorldId | null;
   /** Short world character label — "PRECISIÓN". Identity, never an action. */
   worldLabel: string;
-  /** The presentations this product is sold in. */
-  variants?: readonly CommerceVariant[];
-  /** Localized names for the three stock states. */
-  availabilityLabels: Record<Availability, string>;
+  /** The commerce block — `AddToBag`. */
+  children: ReactNode;
 }) {
-  const hasVariants = variants.length > 0;
-  /*
-   * The state shown next to the price belongs to the SELECTED variant, and
-   * without client state that is the first one — the same one the radio group
-   * defaults to. It stays in sync because both read index 0.
-   */
-  const selected = variants[0]?.availability ?? null;
-
   return (
     <div className={styles.panel}>
       <div className={styles.breadcrumb}>
@@ -145,77 +109,19 @@ export function CommercePanel({
 
       <div className={styles.rule} />
 
-      {/* Variant selector — real architecture, pending state. */}
-      <fieldset className={styles.variants} disabled={!hasVariants}>
-        <legend className={styles.variantLegend}>
-          <Mono size="2xs">{copy.variantLabel}</Mono>
-        </legend>
-
-        {hasVariants ? (
-          <div className={styles.variantOptions}>
-            {variants.map((variant, index) => (
-              <label
-                key={variant.label}
-                className={styles.variant}
-                /* Greys the option out where the stock state says so. The
-                   option stays selectable: it names a real presentation. */
-                data-availability={variant.availability ?? undefined}
-              >
-                <input
-                  type="radio"
-                  name="variant"
-                  value={variant.label}
-                  defaultChecked={index === 0}
-                />
-                <span>{variant.label}</span>
-              </label>
-            ))}
-          </div>
-        ) : (
-          <Mono size="2xs" className={styles.pending}>
-            {copy.variantPending}
-          </Mono>
-        )}
-      </fieldset>
-
-      <div className={styles.purchase}>
-        <div className={styles.quantity}>
-          <Mono size="2xs" className={styles.fieldLabel}>
-            {copy.quantityLabel}
-          </Mono>
-          <div className={styles.stepper} aria-hidden="true">
-            <span className={styles.step}>−</span>
-            <span className={styles.count}>1</span>
-            <span className={styles.step}>+</span>
-          </div>
-        </div>
-
-        <div className={styles.price}>
-          {/* A real price, or nothing. Never "PRICE — PLACEHOLDER". */}
-          {copy.price ? (
-            <span className={styles.priceValue}>{copy.price}</span>
-          ) : (
-            <Mono size="2xs" className={styles.pending}>
-              {copy.pricePending}
-            </Mono>
-          )}
-        </div>
-      </div>
-
-      {/* Rendered only where a state is actually known. */}
-      {selected ? (
-        <Mono size="2xs" className={styles.availability} data-availability={selected}>
-          {availabilityLabels[selected]}
-        </Mono>
-      ) : null}
-
-      <button type="button" className={styles.addToBag} disabled>
-        {copy.addToBag}
-      </button>
-
-      <Mono size="2xs" className={styles.pending}>
-        {copy.commercePending}
-      </Mono>
+      {/*
+       * THE COMMERCE BLOCK, INJECTED.
+       *
+       * Presentation, quantity, price and ADD TO BAG live in `AddToBag`, which
+       * is a client island: the selected presentation drives both the price and
+       * the stock state, and a server component cannot express "the price of
+       * whichever one you picked".
+       *
+       * Keeping it as `children` is what lets this panel stay a server
+       * component. The identity above — breadcrumb, world dot, name, subtitle,
+       * composition — and the documentation link below never needed the client.
+       */}
+      <div className={styles.commerceSlot}>{children}</div>
 
       <div className={styles.foot}>
         <TextLink href={copy.documentationHref}>{copy.documentation}</TextLink>

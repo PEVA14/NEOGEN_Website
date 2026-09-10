@@ -320,3 +320,12 @@
 .variant[data-availability="unavailable"] {
   opacity: 0.55;
 }
+
+/* --- Commerce slot -------------------------------------------------------
+ *
+ * Where `AddToBag` mounts. Full width and nothing else: the island owns its
+ * own internal rhythm, and a wrapper that imposed padding here would fight it.
+ */
+.commerceSlot {
+  inline-size: 100%;
+}

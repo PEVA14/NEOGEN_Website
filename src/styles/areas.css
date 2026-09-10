@@ -1,0 +1,87 @@
+/*
+ * DISCOVERY AREA TONES.
+ *
+ * Eight areas, each with a MATERIAL rather than a hue. The Design Bible gives
+ * saturated colour to the three product worlds and nowhere else — so areas get
+ * washes and hairlines mixed out of the existing neutrals, with at most a trace
+ * of temperature. Eight saturated category colours would turn a laboratory
+ * into a rainbow and would compete with the worlds that are supposed to own it.
+ *
+ * `--area-wash` is the plate ground, `--area-line` the structural hairline,
+ * `--area-ink` the silhouette. All three are `color-mix` over the paper and
+ * graphite already in `tokens.css`, so a re-theme of the neutrals carries.
+ *
+ * Applied via `[data-area]`, section-scoped exactly like `[data-world]`.
+ */
+
+[data-area] {
+  --area-wash: var(--neogen-warm-stone);
+  --area-line: var(--border-subtle);
+  --area-ink: var(--ink-muted);
+}
+
+/* Metabolic — cool, clinical, the most technical of the eight. */
+[data-area="metabolic"] {
+  --area-wash: color-mix(in oklab, var(--neogen-paper) 92%, #4a6fa5);
+  --area-line: color-mix(in oklab, var(--border-default) 70%, #4a6fa5);
+  --area-ink: color-mix(in oklab, var(--ink-muted) 78%, #2f4d78);
+}
+
+/* Recovery — tissue, warmth without sweetness. */
+[data-area="recovery"] {
+  --area-wash: color-mix(in oklab, var(--neogen-paper) 92%, #b07a5a);
+  --area-line: color-mix(in oklab, var(--border-default) 70%, #b07a5a);
+  --area-ink: color-mix(in oklab, var(--ink-muted) 78%, #7a4d33);
+}
+
+/* Longevity — deep, mineral, the quietest. */
+[data-area="longevity"] {
+  --area-wash: color-mix(in oklab, var(--neogen-paper) 93%, #4f6b5c);
+  --area-line: color-mix(in oklab, var(--border-default) 70%, #4f6b5c);
+  --area-ink: color-mix(in oklab, var(--ink-muted) 78%, #33473c);
+}
+
+/* Growth — graphite, structural. */
+[data-area="growth"] {
+  --area-wash: color-mix(in oklab, var(--neogen-paper) 91%, var(--neogen-graphite));
+  --area-line: color-mix(in oklab, var(--border-default) 75%, var(--neogen-graphite));
+  --area-ink: color-mix(in oklab, var(--ink-muted) 80%, var(--neogen-charcoal));
+}
+
+/* Skin — the amber the GLOW world owns, held well back. */
+[data-area="skin"] {
+  --area-wash: color-mix(in oklab, var(--neogen-paper) 90%, #c79a4e);
+  --area-line: color-mix(in oklab, var(--border-default) 68%, #c79a4e);
+  --area-ink: color-mix(in oklab, var(--ink-muted) 76%, #8a6524);
+}
+
+/* Neuro — indigo, low saturation. */
+[data-area="neuro"] {
+  --area-wash: color-mix(in oklab, var(--neogen-paper) 92%, #5b5a8f);
+  --area-line: color-mix(in oklab, var(--border-default) 70%, #5b5a8f);
+  --area-ink: color-mix(in oklab, var(--ink-muted) 78%, #3c3b66);
+}
+
+/* Hormonal — oxide, restrained. */
+[data-area="hormonal"] {
+  --area-wash: color-mix(in oklab, var(--neogen-paper) 92%, #a5605a);
+  --area-line: color-mix(in oklab, var(--border-default) 70%, #a5605a);
+  --area-ink: color-mix(in oklab, var(--ink-muted) 78%, #713a35);
+}
+
+/* Materials — the most neutral of all: these are consumables, not compounds. */
+[data-area="materials"] {
+  --area-wash: color-mix(in oklab, var(--neogen-paper) 95%, var(--neogen-graphite));
+  --area-line: var(--border-default);
+  --area-ink: var(--ink-muted);
+}
+
+/*
+ * A product world always wins over its area. RETA, GLOW and GHK-Cu have
+ * authored environments; an area tone is the treatment for the other 82.
+ */
+[data-world] {
+  --area-wash: color-mix(in oklab, var(--world-void) 88%, var(--world-light));
+  --area-line: color-mix(in oklab, var(--border-default) 60%, var(--world-accent));
+  --area-ink: var(--world-light);
+}

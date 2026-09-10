@@ -1,13 +1,12 @@
 import Link from "next/link";
 
+import { BagIndicator } from "@/components/layout/BagIndicator";
 import { HeaderSurfaceSync } from "@/components/layout/HeaderSurfaceSync";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { Container } from "@/components/primitives";
-import { Mono } from "@/components/typography";
 import { primaryNav, routes } from "@/config/routes";
 import type { Locale } from "@/i18n/config";
 import { localizePath } from "@/i18n/routing";
-import { readBag } from "@/lib/bag";
 import type { Dictionary } from "@/i18n/types";
 
 import styles from "./SiteHeader.module.css";
@@ -67,19 +66,18 @@ export function SiteHeader({ locale, dict }: SiteHeaderProps) {
             <LanguageSwitcher currentLocale={locale} label={dict.a11y.languageSwitcher} />
 
             {/*
-             * `[ BAG: N ]` — the reference system's bag affordance.
+             * `[ BAG: N ]` — the reference system's bag affordance, now live.
              *
-             * Read from `lib/bag`, not stated here. The count is still zero
-             * because nothing can be added to a bag with no verified prices or
-             * formats — but the header and the bag page now agree because they
-             * ask the same function, rather than because two files happen to
-             * hardcode the same digit.
+             * A one-element client island (`BagIndicator`) reads the bag store
+             * directly, so the count moves the moment something is added. The
+             * rest of the header stays a server component.
              */}
-            <Link href={localizePath(routes.cart, locale)} className={styles.bag}>
-              <Mono size="2xs" className="tracking-(--tracking-label)">
-                [ {dict.nav.bag}: {readBag().count} ]
-              </Mono>
-            </Link>
+            <BagIndicator
+              href={localizePath(routes.cart, locale)}
+              label={dict.nav.bag}
+              ariaLabel={dict.nav.bag}
+              className={styles.bag}
+            />
           </div>
         </div>
       </Container>

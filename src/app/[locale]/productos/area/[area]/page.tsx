@@ -5,6 +5,7 @@ import { Container, Grid, Section } from "@/components/primitives";
 import { Mono } from "@/components/typography";
 import { ProductCard, TextLink } from "@/components/ui";
 import { routes } from "@/config/routes";
+import { presentationRange } from "@/data/catalog";
 import { formatPrice, getPrices } from "@/data/commerce";
 import { areaBySlug, productsInArea, publicAreas } from "@/data/discovery";
 import { isLocale, localeTags } from "@/i18n/config";
@@ -113,7 +114,7 @@ export default async function AreaPage({
         </Mono>
 
         <Grid className="items-start">
-          {items.map((product) => (
+          {items.map((product, position) => (
             <div key={product.id} className="col-span-12 md:col-span-6 lg:col-span-4">
               <ProductCard
                 slug={product.slug}
@@ -121,11 +122,19 @@ export default async function AreaPage({
                 worldLabel={
                   product.world ? dict.home.products.worldLabels[product.world] : undefined
                 }
+                /* Every product here is in this area by definition, so the
+                   plate takes this area's tone and the eyebrow says something
+                   the heading does not: the factual catalogue bucket. */
+                areaId={area.id}
                 eyebrow={dict.products.catalog.categoryLabels[product.category]}
                 name={product.name}
                 subtitle={product.subtitle}
                 href={path(routes.product(product.slug))}
                 price={from(product.slug)}
+                priceFrom={dict.products.catalog.from}
+                presentationRange={presentationRange(product)}
+                presentations={product.variants.length}
+                index={String(position + 1).padStart(2, "0")}
                 ctaLabel={dict.home.products.cta}
                 headingLevel={2}
               />

@@ -305,6 +305,21 @@ const en: Dictionary = {
       empty: "No literature published for this compound yet.",
       action: "Go to NEOGEN Research",
     },
+    /**
+     * CROSS-SELL — laboratory consumables, listed as adjacent products.
+     *
+     * Deliberately verb-free. Naming a solvent next to a compound is a
+     * merchandising adjacency, not an instruction: nothing here says what to
+     * do with either, and no reconstitution or administration language may
+     * ever be added to this section.
+     */
+    materials: {
+      index: "06",
+      label: "Materials",
+      qualifier: "Laboratory consumables",
+      title: "Research materials",
+      action: "View materials",
+    },
     related: {
       index: "05",
       label: "Products",
@@ -340,6 +355,13 @@ const en: Dictionary = {
       viewGrid: "Grid",
       viewIndex: "Register",
       countLabel: "Showing",
+      sortPriceAsc: "Price ↑",
+      sortPriceDesc: "Price ↓",
+      typeLabel: "Type",
+      filtersLabel: "Filters",
+      filtersApplied: "active",
+      /** Qualifier before a "from" price on a card. */
+      from: "From",
       empty: "No compound matches the applied filters.",
       clear: "Clear filters",
       columns: ["Category", "Presentations", "Price"],
@@ -457,6 +479,39 @@ const en: Dictionary = {
     pending: "Payment not enabled — pending regulatory and processor review",
     emptyBag: "There are no items in your bag.",
     browse: "View catalog",
+  },
+
+  /**
+   * BAG — the live bag surface.
+   *
+   * Free-shipping copy states the MX$10,000 threshold, which is an
+   * owner-confirmed fact. Shipping COST is never stated below the threshold:
+   * no rate model has been chosen.
+   */
+  bagUi: {
+    presentation: "Presentation",
+    quantity: "Quantity",
+    unitPrice: "Unit price",
+    lineTotal: "Amount",
+    remove: "Remove",
+    decrease: "Decrease quantity",
+    increase: "Increase quantity",
+    shippingFree: "Free shipping",
+    shippingPending: "Calculated at checkout",
+    freeShippingRemaining: "{amount} more for free shipping",
+    freeShippingReached: "Free shipping unlocked",
+    totalsNote: "Amounts in MXN. VAT included in the displayed price.",
+  },
+
+  /** Commerce controls on a product page. */
+  commerceUi: {
+    add: "Add to bag",
+    added: "Added",
+    soldOut: "Currently unavailable",
+    unavailable:
+      "Purchasing opens once regulatory review and payment-processor selection are complete.",
+    decrease: "Decrease quantity",
+    increase: "Increase quantity",
   },
 
   /**

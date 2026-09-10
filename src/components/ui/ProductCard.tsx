@@ -4,195 +4,183 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRef } from "react";
 
-import { Body, Heading, Mono } from "@/components/typography";
-import { VialSilhouette } from "@/components/ui/VialSilhouette";
+import { Mono } from "@/components/typography";
+import { SpecimenPlate } from "@/components/ui/SpecimenPlate";
 import { WorldDot } from "@/components/ui/WorldDot";
-import type { WorldId } from "@/config/worlds";
-import { CARD_SIZES, productMedia, stillMedia } from "@/content";
+import { CARD_SIZES, productMedia, stillMedia } from "@/content/media";
 
-interface ProductCardProps {
-  /**
-   * The product's slug — its identity everywhere else in the system, and the
-   * key its media is resolved by. The card used to look media up by WORLD,
-   * which meant the 83 products without one could never show a photograph at
-   * all, however many were shot.
-   */
+import styles from "./ProductCard.module.css";
+
+import type { WorldId } from "@/config/worlds";
+import type { DiscoveryAreaId } from "@/data/discovery";
+
+export interface ProductCardProps {
+  /** Identity key: the link, the media lookup and the plate all read it. */
   slug: string;
-  /**
-   * The product's Experience world, when it has one.
-   *
-   * Null for most of the catalogue: three products have a world, 83 do not.
-   * A worldless card takes the neutral surface rather than borrowing someone
-   * else's identity.
-   */
+  /** The Experience world, for the three flagships. Null for the other 82. */
   world: WorldId | null;
-  /** Short world character label — "PRECISION". Only where a world exists. */
+  /** Short world character label — "PRECISIÓN". Only where a world exists. */
   worldLabel?: string;
+  /** Primary discovery area — drives the plate's tone. */
+  areaId?: DiscoveryAreaId | null;
+  /** Area or category name, above the product name. */
+  eyebrow?: string;
   name: string;
-  /**
-   * An alternative designation for the compound, under the name. Absent for
-   * all but one product today — the field exists because twelve products are
-   * filed under "Péptidos" without being peptides, and a cross-reference is
-   * the honest way to say so in a listing.
-   */
+  /** Alternative designation, under the name. */
   subtitle?: string | null;
   href: string;
-  /** Category or compound line, above the name. */
-  eyebrow?: string;
-  /** Formatted retail price. Null where none is set — the line is then absent. */
+  /** Formatted "from" price. Null where none is set — the line is then absent. */
   price?: string | null;
+  /** Localized "from" qualifier, e.g. "Desde". Only shown with a price. */
+  priceFrom?: string;
+  /** Dose ladder summary — "5 mg – 60 mg". */
+  presentationRange?: string | null;
+  /** How many presentations, for the plate's datum lines. */
+  presentations?: number;
+  /** Catalogue index, shown as the plate's corner mark. */
+  index?: string;
   ctaLabel: string;
-  /**
-   * Where the card's name sits in the page outline.
-   *
-   * `3` suits the homepage, where cards hang under a section's own `h2`. The
-   * catalogue has no such section — its `h1` is the page title and the cards
-   * are the content directly beneath it — so a `3` there skips a level and
-   * breaks the outline. Set `2` in that case.
-   */
   headingLevel?: 2 | 3;
 }
 
 /**
- * The single shared product card.
+ * THE PRODUCT CARD — one shared architecture, no bespoke card per flagship.
  *
- * SYSTEM STATUS V1: "One shared product-card architecture. No bespoke card
- * systems per flagship." So the world never restyles the card — it appears
- * only in the image area and in the identifier dot.
+ * WHAT CHANGED, AND WHY IT MATTERS COMMERCIALLY.
+ * ---------------------------------------------
+ * The previous card was a database row with a picture of nothing on top: an
+ * identical grey silhouette, a name, and a price in muted body text. Repeated
+ * 85 times it made a real catalogue look like one product photographed
+ * repeatedly, and nothing on it gave a reason to open one card over another.
  *
- * THE CTA IS CHARCOAL, NOT THE WORLD COLOUR. The homepage mock shows coloured
- * ADD TO BAG buttons, but the rules sheet and the catalog screen both say
- * commerce stays neutral, and the rules sheet wins. Colour here would make
- * three different CTA colours on one row of cards — the exact "every CTA is
- * blue" failure the system exists to prevent.
+ * Three changes, all fed by data the registry already holds:
  *
- * The button is a LINK to the product page, not an add-to-bag control: no cart
- * state exists yet, and a button that silently does nothing is worse than one
- * that goes somewhere real.
+ *   1. THE MEDIA IS A SPECIMEN PLATE toned by the product's discovery area,
+ *      with one datum line per presentation. Two products now look different
+ *      exactly when they ARE different.
+ *   2. THE PRESENTATION RANGE is on the card. "5 mg – 60 mg" is a reason to
+ *      click; a bare name is not.
+ *   3. PRICE IS PROMINENT — mono, at the card's largest non-heading size,
+ *      against the name rather than buried beneath it.
  *
- * Pointing at a card starts loading the product page's 3D viewer, so the click
- * lands on a warm cache rather than a cold one. See `experience/preloadVial.ts`.
+ * The world still never restyles the card: it appears in the plate and in the
+ * identifier dot, exactly as SYSTEM STATUS V1 requires. The CTA stays charcoal
+ * for every product, because three coloured buttons in one row is the failure
+ * the system exists to prevent.
  */
 export function ProductCard({
   slug,
   world,
   worldLabel,
+  areaId = null,
+  eyebrow,
   name,
   subtitle,
   href,
-  eyebrow,
   price,
+  priceFrom,
+  presentationRange,
+  presentations = 1,
+  index,
   ctaLabel,
   headingLevel = 3,
 }: ProductCardProps) {
   const warmed = useRef(false);
   const still = stillMedia(slug);
+  const Heading = `h${headingLevel}` as "h2" | "h3";
 
   /*
-   * WARM THE DESTINATION ON INTENT.
+   * WARM THE DESTINATION ON INTENT. A pointer settling on a card, or the CTA
+   * taking focus, is a strong enough signal to start paying for the product
+   * page: the 3D chunk and the GLB are both expensive, and doing that work at
+   * CLICK time made the opening share a frame budget with a GLB parse.
    *
-   * A pointer settling on a card, or the CTA taking focus, is a strong enough
-   * signal to start paying for the product page: the 3D chunk and the GLB are
-   * both expensive, and doing that work at CLICK time meant the opening
-   * animation shared a frame budget with a GLB parse and a shader compile.
-   *
-   * Skipped on metered connections, and only for worlds that actually have a
-   * page to open — there is no point fetching a model for a card that links
-   * back to the listing.
+   * Skipped on metered connections, and only for the one product that has a
+   * model — there is no point fetching a viewer for a page that has none.
    */
   const warm = () => {
     if (warmed.current) return;
-
     const connection = (navigator as Navigator & { connection?: { saveData?: boolean } })
       .connection;
     if (connection?.saveData) return;
 
-    // Only products with a model have a viewer worth warming — one, today.
     const model = productMedia(slug).model;
     if (!model) return;
 
     warmed.current = true;
     void import("@/components/experience/RetaCanvas");
-    void import("@/components/experience/preloadVial").then((module) => module.preloadVial(model));
+    void import("@/components/experience/preloadVial").then((m) => m.preloadVial(model));
   };
 
   return (
-    <article
-      onPointerEnter={warm}
-      className="flex flex-col border border-(--border-subtle) bg-(--surface-raised) p-(--space-sm)"
-    >
+    <article className={styles.card} onPointerEnter={warm}>
       {/*
-       * Image area — the one place product identity is allowed to take over.
-       *
-       * Resolved by SLUG through `stillMedia`, the same call the product page
-       * makes — so a photograph cannot appear in the catalogue and be missing
-       * on the page it links to.
-       *
-       * The box is a fixed 4:5 whether or not an image exists, so a product
-       * that gains one does not reflow the grid around it.
+       * The whole card is the target, with the CTA as the visible affordance.
+       * One link rather than several: a card with a linked image, a linked
+       * name and a linked button is three tab stops to reach one destination.
        */}
-      <div
-        data-world={world ?? undefined}
-        data-atmosphere={world ? "true" : undefined}
-        className="relative flex aspect-4/5 items-center justify-center overflow-hidden"
-      >
-        {still.kind === "image" ? (
-          <Image
-            src={still.image.src}
-            alt={still.image.alt}
-            width={still.image.width}
-            height={still.image.height}
-            className="size-full object-cover"
-            sizes={CARD_SIZES}
-            /* Cards are below the fold on every surface that uses them, and a
-               catalogue page holds 83 of them. Never `priority`. */
-            loading="lazy"
-          />
-        ) : (
-          /* No caption. The silhouette is already visibly diagrammatic; a label
-             announcing that the image is pending only advertises what is
-             missing on a page that is otherwise finished. */
-          <VialSilhouette
-            className={
-              world ? "h-[62%] w-auto text-(--world-light)" : "h-[62%] w-auto text-(--ink-muted)"
-            }
-          />
-        )}
-      </div>
+      <Link href={href} className={styles.link} onFocus={warm}>
+        <span className={styles.media}>
+          {still.kind === "image" ? (
+            <Image
+              src={still.image.src}
+              alt={still.image.alt}
+              width={still.image.width}
+              height={still.image.height}
+              className={styles.photo}
+              sizes={CARD_SIZES}
+              loading="lazy"
+            />
+          ) : (
+            <SpecimenPlate
+              areaId={areaId}
+              world={world}
+              presentations={presentations}
+              index={index}
+              annotation={presentationRange ?? undefined}
+            />
+          )}
+        </span>
 
-      <div className="flex flex-1 flex-col gap-(--space-2xs) pt-(--space-md)">
-        {world && worldLabel ? (
-          <WorldDot world={world}>{worldLabel}</WorldDot>
-        ) : eyebrow ? (
-          <Mono size="2xs" className="tracking-(--tracking-label) text-(--ink-muted) uppercase">
-            {eyebrow}
-          </Mono>
-        ) : null}
+        <span className={styles.body}>
+          {world && worldLabel ? (
+            <WorldDot world={world}>{worldLabel}</WorldDot>
+          ) : eyebrow ? (
+            <Mono size="2xs" className={styles.eyebrow}>
+              {eyebrow}
+            </Mono>
+          ) : null}
 
-        <Heading level={headingLevel} size="lg">
-          {name}
-        </Heading>
+          <Heading className={styles.name}>{name}</Heading>
 
-        {subtitle ? (
-          <Mono size="2xs" className="tracking-(--tracking-label) text-(--ink-muted) uppercase">
-            {subtitle}
-          </Mono>
-        ) : null}
+          {subtitle ? (
+            <Mono size="2xs" className={styles.subtitle}>
+              {subtitle}
+            </Mono>
+          ) : null}
 
-        {/* Absent, not "PRICE — PLACEHOLDER", where no price is set. */}
-        {price ? (
-          <Body size="sm" tone="muted" className="neogen-mono">
-            {price}
-          </Body>
-        ) : null}
-      </div>
+          <span className={styles.spacer} />
 
-      <Link
-        href={href}
-        onFocus={warm}
-        className="mt-(--space-md) inline-flex h-12 items-center justify-center bg-(--surface-inverse) text-sm font-medium text-(--ink-inverse) transition-opacity duration-(--motion-duration-base) ease-(--ease-standard) hover:opacity-90"
-      >
-        {ctaLabel}
+          {/* The commercial line: range on the left, price on the right, on
+              one baseline above the action. */}
+          <span className={styles.commerce}>
+            {presentationRange ? (
+              <Mono size="2xs" className={styles.range}>
+                {presentationRange}
+              </Mono>
+            ) : (
+              <span />
+            )}
+            {price ? (
+              <span className={styles.price}>
+                {priceFrom ? <span className={styles.priceFrom}>{priceFrom} </span> : null}
+                {price}
+              </span>
+            ) : null}
+          </span>
+        </span>
+
+        <span className={styles.cta}>{ctaLabel}</span>
       </Link>
     </article>
   );

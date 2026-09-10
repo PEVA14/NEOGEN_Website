@@ -1,0 +1,126 @@
+/*
+ * A specimen plate: 4:5, zero radius, 1px structure. The same frame the
+ * product page and the catalogue card both use, so a compound keeps its shape
+ * from listing to page.
+ */
+
+.plate {
+  position: relative;
+  inline-size: 100%;
+  aspect-ratio: 4 / 5;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--area-line, var(--border-subtle));
+  background-color: var(--surface-raised);
+  isolation: isolate;
+}
+
+/*
+ * The ground. A vertical wash rather than a flat fill — a flat panel reads as
+ * an empty box, a graded one reads as a lit environment. Held very low in
+ * contrast: this is a laboratory, not a gradient.
+ */
+.ground {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--area-wash, var(--surface-raised)) 55%, transparent),
+      var(--area-wash, var(--surface-raised))
+    ),
+    var(--surface-raised);
+}
+
+/* Registration marks at opposing corners — the instrument-plate device the
+   flagship stage and the product plate already use. */
+.plate::before,
+.plate::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  inline-size: 1rem;
+  block-size: 1rem;
+  border: 1px solid var(--area-line, var(--border-default));
+}
+
+.plate::before {
+  inset-block-start: 0.5rem;
+  inset-inline-start: 0.5rem;
+  border-block-end: 0;
+  border-inline-end: 0;
+}
+
+.plate::after {
+  inset-block-end: 0.5rem;
+  inset-inline-end: 0.5rem;
+  border-block-start: 0;
+  border-inline-start: 0;
+}
+
+/* --- Datum lines --------------------------------------------------------- */
+
+.datums {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/*
+ * One hairline per presentation, indented from the left edge so they read as
+ * graduation marks against the vial rather than as a full-width rule.
+ */
+.datum {
+  position: absolute;
+  inset-inline: 12% 62%;
+  block-size: 1px;
+  background-color: var(--area-line, var(--border-default));
+  opacity: 0.9;
+}
+
+.silhouette {
+  position: relative;
+  z-index: 2;
+  block-size: 58%;
+  inline-size: auto;
+  color: var(--area-ink, var(--ink-muted));
+  opacity: 0.7;
+}
+
+.plate[data-size="plate"] .silhouette {
+  block-size: 62%;
+}
+
+/* --- Annotations --------------------------------------------------------- */
+
+.index,
+.annotation {
+  position: absolute;
+  z-index: 3;
+  color: var(--area-ink, var(--ink-muted));
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.index {
+  inset-block-start: 0.6rem;
+  inset-inline-end: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.annotation {
+  inset-block-end: 0.6rem;
+  inset-inline-start: 0.75rem;
+}
+
+/* On a world the ground is dark, so the marks need the world's own light. */
+.plate[data-world] {
+  background-color: var(--world-void);
+}
+
+.plate[data-world] .silhouette {
+  opacity: 0.55;
+}

@@ -1,0 +1,179 @@
+/*
+ * THE PRODUCT CARD.
+ *
+ * Zero radius, 1px border, no shadow — the Design Bible's geometry. Desire
+ * comes from the plate, the type hierarchy and the price, not from elevation.
+ */
+
+.card {
+  display: flex;
+  border: 1px solid var(--border-subtle);
+  background-color: var(--surface-raised);
+  transition: border-color var(--motion-duration-base) var(--ease-standard);
+}
+
+.card:hover {
+  border-color: var(--border-strong);
+}
+
+/* One link covering the card: a card whose image, name and button are three
+   separate links is three tab stops to one destination. */
+.link {
+  display: flex;
+  flex-direction: column;
+  inline-size: 100%;
+  padding: var(--space-sm);
+  color: inherit;
+  text-decoration: none;
+}
+
+.link:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: calc(var(--focus-ring-offset-width) * -1);
+}
+
+.media {
+  display: block;
+  position: relative;
+  overflow: hidden;
+}
+
+.photo {
+  inline-size: 100%;
+  block-size: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  display: block;
+}
+
+/*
+ * A restrained media response. The plate lifts by a hair on hover — enough to
+ * register as interactive, far short of a zoom. Nothing moves under reduced
+ * motion.
+ */
+.media > * {
+  transition: transform var(--motion-duration-slow) var(--ease-standard);
+}
+
+.card:hover .media > * {
+  transform: scale(1.015);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .media > * {
+    transition: none;
+  }
+
+  .card:hover .media > * {
+    transform: none;
+  }
+}
+
+/* --- Body ---------------------------------------------------------------- */
+
+.body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: var(--space-3xs);
+  padding-block-start: var(--space-md);
+}
+
+.eyebrow {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+/*
+ * The product name at editorial scale. Condensed display face, tight leading,
+ * balanced wrapping — the longest name in the catalogue is 33 characters and
+ * has to hold its shape on a 3-up grid.
+ */
+.name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-xl);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  color: var(--ink-primary);
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+.subtitle {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+/* Pushes the commercial line to the bottom, so cards of different name
+   lengths still align their prices across a row. */
+.spacer {
+  flex: 1;
+  min-block-size: var(--space-sm);
+}
+
+.commerce {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding-block-start: var(--space-xs);
+  border-block-start: 1px solid var(--border-subtle);
+}
+
+.range {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * PRICE, IN MONO, AT SIZE. The previous card set it in muted body text
+ * underneath the name, which is where a shop puts a price it is embarrassed
+ * by. It is the second thing a customer looks for after the name.
+ */
+.price {
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+  font-weight: 500;
+  color: var(--ink-primary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.priceFrom {
+  color: var(--ink-muted);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  font-weight: 400;
+}
+
+/* --- Action -------------------------------------------------------------- */
+
+/*
+ * A span, not a button: the whole card is already the link, and a nested
+ * interactive element inside an anchor is invalid and unreachable by keyboard
+ * in a sensible order. It still reads as the affordance.
+ */
+.cta {
+  margin-block-start: var(--space-md);
+  min-block-size: 3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--surface-inverse);
+  color: var(--ink-inverse);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  transition: opacity var(--motion-duration-base) var(--ease-standard);
+}
+
+.card:hover .cta {
+  opacity: 0.88;
+}

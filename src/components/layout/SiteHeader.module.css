@@ -144,7 +144,13 @@
 /* --- Bag ----------------------------------------------------------------- */
 
 .bag {
+  /* Same 2.75rem hit area as navLink — it is the most-tapped control in the
+     header once a bag can be filled. */
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 2.75rem;
   color: var(--ink-primary);
+  font-variant-numeric: tabular-nums;
   transition: opacity var(--motion-duration-fast) var(--ease-standard);
 }
 

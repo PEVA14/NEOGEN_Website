@@ -324,6 +324,21 @@ const es = {
       empty: "Aún no hay literatura publicada para este compuesto.",
       action: "Ir a NEOGEN Research",
     },
+    /**
+     * CROSS-SELL — laboratory consumables, listed as adjacent products.
+     *
+     * Deliberately verb-free. Naming a solvent next to a compound is a
+     * merchandising adjacency, not an instruction: nothing here says what to
+     * do with either, and no reconstitution or administration language may
+     * ever be added to this section.
+     */
+    materials: {
+      index: "06",
+      label: "Materiales",
+      qualifier: "Consumibles de laboratorio",
+      title: "Materiales de investigación",
+      action: "Ver materiales",
+    },
     related: {
       index: "05",
       label: "Productos",
@@ -371,6 +386,13 @@ const es = {
          names what the view actually is: the compound register. */
       viewIndex: "Registro",
       countLabel: "Mostrando",
+      sortPriceAsc: "Precio ↑",
+      sortPriceDesc: "Precio ↓",
+      typeLabel: "Tipo",
+      filtersLabel: "Filtros",
+      filtersApplied: "activos",
+      /** Qualifier before a "from" price on a card. */
+      from: "Desde",
       /** Shown when the filters exclude everything. Never a fabricated state. */
       empty: "Ningún compuesto coincide con los filtros aplicados.",
       clear: "Limpiar filtros",
@@ -513,6 +535,39 @@ const es = {
     pending: "Pago no habilitado — pendiente de revisión regulatoria y de procesador",
     emptyBag: "No hay artículos en tu bag.",
     browse: "Ver catálogo",
+  },
+
+  /**
+   * BAG — the live bag surface.
+   *
+   * Free-shipping copy states the MX$10,000 threshold, which is an
+   * owner-confirmed fact. Shipping COST is never stated below the threshold:
+   * no rate model has been chosen.
+   */
+  bagUi: {
+    presentation: "Presentación",
+    quantity: "Cantidad",
+    unitPrice: "Precio unitario",
+    lineTotal: "Importe",
+    remove: "Quitar",
+    decrease: "Reducir cantidad",
+    increase: "Aumentar cantidad",
+    shippingFree: "Envío gratis",
+    shippingPending: "Se calcula al pagar",
+    freeShippingRemaining: "Faltan {amount} para envío gratis",
+    freeShippingReached: "Envío gratis alcanzado",
+    totalsNote: "Importes en MXN. IVA incluido en el precio mostrado.",
+  },
+
+  /** Commerce controls on a product page. */
+  commerceUi: {
+    add: "Añadir a la bag",
+    added: "Añadido",
+    soldOut: "No disponible por ahora",
+    unavailable:
+      "La compra se activará al concluir la revisión regulatoria y la selección de procesador de pagos.",
+    decrease: "Reducir cantidad",
+    increase: "Aumentar cantidad",
   },
 
   /**

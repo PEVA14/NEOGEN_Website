@@ -8,7 +8,7 @@ import { useVialStage } from "@/components/experience/useVialStage";
 import { VialFallback } from "@/components/experience/VialFallback";
 import type { PointerState, StageAnchor } from "@/components/experience/VialModel";
 import { Mono } from "@/components/typography";
-import type { ProductImage } from "@/content";
+import type { ProductImage } from "@/content/media";
 import type { WorldEnvironment, WorldId } from "@/config/worlds";
 import { useFinePointer } from "@/hooks/useFinePointer";
 

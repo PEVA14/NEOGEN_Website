@@ -4,7 +4,13 @@ import { CatalogBrowser, type CatalogProduct } from "@/components/catalog";
 import { SectionHeader } from "@/components/layout";
 import { Container, Section } from "@/components/primitives";
 import { routes } from "@/config/routes";
-import { formatStrength, isPublishable, products, publishedProducts } from "@/data/catalog";
+import {
+  formatStrength,
+  isPublishable,
+  presentationRange,
+  products,
+  publishedProducts,
+} from "@/data/catalog";
 import { formatPrice, getPrices } from "@/data/commerce";
 import { publicAreas, publicAreasFor } from "@/data/discovery";
 import { isLocale, localeTags } from "@/i18n/config";
@@ -89,9 +95,12 @@ export default async function ProductsPage({ params }: { params: Promise<{ local
       subtitle: product.subtitle,
       category: product.category,
       categoryLabel: catalog.categoryLabels[product.category] ?? product.category,
-      /* Only areas approved for public display; drafts are filtered in
-         `publicAreasFor`, so this is empty for every product today. */
+      /* Approved areas only — drafts are filtered inside `publicAreasFor`. */
       areas: publicAreasFor(product.slug).map((area) => area.id),
+      areaId: publicAreasFor(product.slug)[0]?.id ?? null,
+      range: presentationRange(product),
+      priceAmount: from?.amount ?? null,
+      presentations: product.variants.length,
       world: product.world,
       worldLabel: product.world ? dict.home.products.worldLabels[product.world] : undefined,
       href: path(routes.product(product.slug)),
@@ -121,6 +130,12 @@ export default async function ProductsPage({ params }: { params: Promise<{ local
             filterLabel: catalog.filterLabel,
             filterAll: catalog.filterAll,
             categoryLabels: catalog.categoryLabels,
+            from: catalog.from,
+            typeLabel: catalog.typeLabel,
+            sortPriceAsc: catalog.sortPriceAsc,
+            sortPriceDesc: catalog.sortPriceDesc,
+            filtersLabel: catalog.filtersLabel,
+            filtersApplied: catalog.filtersApplied,
             areaLabel: dict.discovery.label,
             areaLabels: Object.fromEntries(
               areas.map((area) => [area.id, dict.discovery.areas[area.id].title]),

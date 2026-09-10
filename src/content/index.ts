@@ -1,6 +1,6 @@
+export { mediaForWorld } from "./media/forWorld";
 export {
   productMedia,
-  mediaForWorld,
   stillMedia,
   CARD_SIZES,
   PLATE_SIZES,

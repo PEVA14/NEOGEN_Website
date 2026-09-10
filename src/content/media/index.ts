@@ -1,6 +1,3 @@
-import type { WorldId } from "@/config/worlds";
-import { products } from "@/data/catalog";
-
 import { MEDIA } from "./registry";
 
 import type { ProductImage, ProductMedia } from "./types";
@@ -8,8 +5,16 @@ import type { ProductImage, ProductMedia } from "./types";
 export type { ProductImage, ProductMedia } from "./types";
 export { MEDIA } from "./registry";
 
-/** The shape a product with no declared assets resolves to. */
-const NONE: ProductMedia = {
+/**
+ * The shape a product with no declared assets resolves to.
+ *
+ * THIS MODULE MUST NOT IMPORT `@/data/catalog`. Client components resolve
+ * media through it — the product card most of all — and pulling the registry
+ * in shipped all 85 products and 147 variants to the browser. The one
+ * resolver that genuinely needs the catalogue (`mediaForWorld`) lives in
+ * `./forWorld`, which only server code imports.
+ */
+export const NO_MEDIA: ProductMedia = {
   primary: null,
   alternates: [],
   detail: null,
@@ -32,7 +37,7 @@ const NONE: ProductMedia = {
  */
 export function productMedia(slug: string): ProductMedia {
   const declared = MEDIA[slug];
-  return declared ? { ...NONE, ...declared } : NONE;
+  return declared ? { ...NO_MEDIA, ...declared } : NO_MEDIA;
 }
 
 /**
@@ -53,20 +58,6 @@ export type StillMedia =
 export function stillMedia(slug: string): StillMedia {
   const image = productMedia(slug).primary;
   return image ? { kind: "image", image } : { kind: "diagram", reason: "no-photography" };
-}
-
-/**
- * The media of the product a world depicts.
- *
- * The homepage's Experience sections are built around a world rather than
- * around a slug, but the asset they need still belongs to a product. Resolved
- * through the catalogue registry rather than a second world-to-slug table, so
- * there is nothing to keep in sync: a world with no product, or a product that
- * loses its world, resolves to no media instead of to a stale path.
- */
-export function mediaForWorld(world: WorldId): ProductMedia {
-  const product = products.find((item) => item.world === world);
-  return product ? productMedia(product.slug) : NONE;
 }
 
 /**

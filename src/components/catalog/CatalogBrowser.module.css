@@ -253,3 +253,93 @@
     gap: var(--space-md);
   }
 }
+
+/* --- Type select ---------------------------------------------------------
+ *
+ * The factual category, collapsed from five chips into one control. Underlined
+ * rather than boxed, matching the search field, so the rail keeps one field
+ * shape.
+ */
+
+.select {
+  display: grid;
+  gap: var(--space-3xs);
+  min-inline-size: 10rem;
+}
+
+.selectInput {
+  min-block-size: 2.75rem;
+  padding: 0 var(--space-2xs);
+  background-color: transparent;
+  color: var(--ink-primary);
+  border: 0;
+  border-block-end: 1px solid var(--border-default);
+  border-radius: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.selectInput:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}
+
+/* --- Mobile filter disclosure -------------------------------------------
+ *
+ * MOBILE IS RECOMPOSED, NOT SHRUNK. On a phone the control rail stacks into a
+ * tall column that pushes every product below the fold — the catalogue's
+ * content buried under its own chrome. So below 48rem the rail collapses
+ * behind one summary that states how many filters are active, and the products
+ * start immediately.
+ *
+ * A `<details>` element, not a JS drawer: it is keyboard- and
+ * screen-reader-operable for free, it works before hydration, and it needs no
+ * focus trap.
+ */
+
+.sheet > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  min-block-size: 2.75rem;
+  padding-block: var(--space-2xs);
+  border-block-end: 1px solid var(--ink-primary);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-primary);
+  list-style: none;
+}
+
+.sheet > summary::-webkit-details-marker {
+  display: none;
+}
+
+.sheet > summary::after {
+  content: "+";
+  font-size: var(--text-base);
+  line-height: 1;
+}
+
+.sheet[open] > summary::after {
+  content: "−";
+}
+
+.sheet > summary:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}
+
+/* Above the breakpoint there is room for the rail, so the disclosure is not a
+   disclosure: the summary disappears and the controls are simply present. */
+@media (min-width: 48rem) {
+  .sheet > summary {
+    display: none;
+  }
+}

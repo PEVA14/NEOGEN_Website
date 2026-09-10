@@ -54,6 +54,25 @@ export function isPublishable(product: Product): boolean {
 
 export const publishedProducts: readonly Product[] = products.filter(isPublishable);
 
+/**
+ * The dose ladder as one line — "5 mg – 60 mg", or a single value.
+ *
+ * A COMMERCIAL fact, and one of the strongest reasons to open a product: a
+ * name alone says nothing about whether the range covers what a reader needs.
+ * Collapsed to first and last because a card cannot carry seven values, and
+ * only where every variant shares a unit — across units a range is
+ * meaningless, so the values are listed instead.
+ */
+export function presentationRange(product: Product): string {
+  const labels = product.variants.map((v) => formatStrength(v.strength));
+  if (labels.length === 1) return labels[0];
+
+  const kinds = new Set(product.variants.map((v) => v.strength.kind));
+  if (kinds.size > 1) return labels.slice(0, 2).join(" · ") + (labels.length > 2 ? " …" : "");
+
+  return `${labels[0]} – ${labels[labels.length - 1]}`;
+}
+
 /** Human-readable dose, in the unit the source actually stated. */
 export function formatStrength(strength: Strength): string {
   switch (strength.kind) {

@@ -135,7 +135,40 @@ for (const file of htmlFiles) {
   }
 }
 
-/* --------------------------------------------------- 3. environment leakage
+/* ------------------------------------------- 3. server data in the browser
+ *
+ * The catalogue and the price map are SERVER data. They are large, they change
+ * with every import run, and nothing in the browser needs them: a client
+ * island receives the handful of values it renders as props.
+ *
+ * This has regressed twice, both times through an innocuous-looking import —
+ * a media resolver that needed the registry, and `ORDER_LIMITS` sitting in the
+ * same barrel as the prices. Neither showed up in a type error or a lint
+ * warning; both shipped 85 products to every visitor.
+ */
+const SERVER_ONLY_MARKERS = [
+  /* A variant id: only ever produced by the generated catalogue. */
+  "semaglutide-5mg",
+  "generatedProducts",
+  "generatedPrices",
+  /* The discovery assignment map — server-side merchandising data. */
+  "owner-confirmed",
+];
+
+for (const file of walk(path.join(OUT, "static"), /\.js$/)) {
+  const text = readFileSync(file, "utf8");
+  for (const marker of SERVER_ONLY_MARKERS) {
+    if (text.includes(marker)) {
+      fail(
+        "server-only data in a client bundle",
+        `"${marker}" in ${file} — a client component is importing a data barrel; ` +
+          `import the leaf module (e.g. @/data/commerce/limits) instead`,
+      );
+    }
+  }
+}
+
+/* --------------------------------------------------- 4. environment leakage
  *
  * Only `NEXT_PUBLIC_*` is meant to reach the client. Anything else in a client
  * bundle is a server value that escaped.
@@ -149,7 +182,7 @@ for (const file of walk(path.join(OUT, "static"), /\.js$/)) {
   }
 }
 
-/* ------------------------------------------------------------- 4. canonicals
+/* ------------------------------------------------------------- 5. canonicals
  *
  * A build that shipped with the fallback origin would publish canonical URLs
  * pointing at a developer's machine.

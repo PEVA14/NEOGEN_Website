@@ -1,0 +1,155 @@
+/*
+ * Eight area panels on the 12-column grid, in an alternating 7/5 rhythm.
+ * Zero radius, 1px structure, area tone as the ground.
+ */
+
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--gutter);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 48rem) {
+  .grid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+
+  .cell[data-span="wide"] {
+    grid-column: span 7;
+  }
+
+  .cell[data-span="narrow"] {
+    grid-column: span 5;
+  }
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  block-size: 100%;
+  min-block-size: 15rem;
+  padding: var(--space-md);
+  border: 1px solid var(--area-line, var(--border-subtle));
+  background:
+    linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--area-wash, var(--surface-raised)) 40%, transparent),
+      var(--area-wash, var(--surface-raised))
+    ),
+    var(--surface-raised);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color var(--motion-duration-base) var(--ease-standard),
+    transform var(--motion-duration-base) var(--ease-standard);
+}
+
+.panel:hover {
+  border-color: var(--ink-secondary);
+}
+
+.panel:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding-block-end: var(--space-2xs);
+  border-block-end: 1px solid var(--area-line, var(--border-subtle));
+}
+
+.index,
+.count {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * THE COMMERCIAL LABEL, LARGE AND CLEAN.
+ *
+ * Condensed display face at a scale that carries the section. `text-wrap:
+ * balance` matters here: "Longevidad y función celular" is four words and must
+ * not break to a lonely last line.
+ */
+.titleWrap {
+  display: block;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-2xl);
+  line-height: 1;
+  letter-spacing: -0.015em;
+  color: var(--ink-primary);
+  text-wrap: balance;
+  display: block;
+}
+
+@media (min-width: 64rem) {
+  .cell[data-span="wide"] .title {
+    font-size: var(--text-3xl);
+  }
+}
+
+/* The research framing lives here, in supporting type — not stamped across
+   the heading. */
+.body {
+  color: var(--ink-secondary);
+  font-size: var(--text-sm);
+  max-inline-size: 34rem;
+  text-wrap: pretty;
+}
+
+.examples {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  text-wrap: pretty;
+}
+
+.foot {
+  margin-block-start: auto;
+  padding-block-start: var(--space-xs);
+  border-block-start: 1px solid var(--area-line, var(--border-subtle));
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.from {
+  color: var(--ink-primary);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+
+.enter {
+  color: var(--ink-secondary);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  transition: transform var(--motion-duration-fast) var(--ease-standard);
+}
+
+.panel:hover .enter {
+  color: var(--ink-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .enter {
+    transition: none;
+  }
+}

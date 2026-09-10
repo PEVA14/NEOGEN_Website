@@ -2,7 +2,7 @@ import Image from "next/image";
 
 import { Mono } from "@/components/typography";
 import { VialSilhouette } from "@/components/ui";
-import { PLATE_SIZES, stillMedia } from "@/content";
+import { PLATE_SIZES, stillMedia } from "@/content/media";
 
 import styles from "./ProductPlate.module.css";
 
