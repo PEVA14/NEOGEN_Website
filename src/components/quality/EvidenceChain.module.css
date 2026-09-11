@@ -1,0 +1,118 @@
+/*
+ * THE EVIDENCE CHAIN.
+ *
+ * Four cells on one hairline, each opened by a mono index and a marker, with a
+ * connecting rule running through the markers. It reads as a signal path on an
+ * instrument diagram, not as a "how it works" row of icons.
+ *
+ * Hollow markers by default. A reached step fills its marker AND thickens its
+ * rule — two geometric changes, so the state never depends on colour.
+ */
+.chain {
+  display: grid;
+  gap: 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+@media (max-width: 47.999rem) {
+  .chain {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.step {
+  border-block-start: 1px solid var(--border-default);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  min-inline-size: 0;
+  padding-block: var(--space-sm) var(--space-md);
+  padding-inline-end: var(--space-md);
+  position: relative;
+}
+
+@media (max-width: 47.999rem) {
+  .step {
+    border-block-start: 0;
+    border-inline-start: 1px solid var(--border-default);
+    padding-inline: var(--space-md) 0;
+  }
+}
+
+.step[data-reached="true"] {
+  border-block-start-color: var(--ink-primary);
+  border-block-start-width: 2px;
+}
+
+@media (max-width: 47.999rem) {
+  .step[data-reached="true"] {
+    border-block-start: 0;
+    border-inline-start: 2px solid var(--ink-primary);
+  }
+}
+
+.head {
+  align-items: center;
+  display: flex;
+  gap: var(--space-2xs);
+  justify-content: space-between;
+}
+
+.index {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+}
+
+/* Sits ON the rule, like a node on a signal path. */
+.marker {
+  background: var(--surface-base);
+  block-size: 0.625rem;
+  border: 1px solid var(--ink-secondary);
+  inline-size: 0.625rem;
+  inset-block-start: -0.3125rem;
+  inset-inline-start: 0;
+  position: absolute;
+}
+
+@media (max-width: 47.999rem) {
+  .marker {
+    inset-block-start: calc(var(--space-sm) + 0.25rem);
+    inset-inline-start: -0.3125rem;
+  }
+}
+
+.step[data-reached="true"] .marker {
+  background: var(--ink-primary);
+  border-color: var(--ink-primary);
+}
+
+.title {
+  color: var(--ink-primary);
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-stretch: var(--font-stretch-display);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-snug);
+  margin: 0;
+}
+
+.rule {
+  color: var(--ink-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  margin: 0;
+  max-inline-size: 30ch;
+  text-wrap: pretty;
+}
+
+.srOnly {
+  block-size: 1px;
+  clip-path: inset(50%);
+  inline-size: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+}

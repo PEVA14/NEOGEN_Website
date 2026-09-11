@@ -37,6 +37,14 @@ interface ProductStageProps {
   mediaLabel: string;
   /** Notes that the media responds to the cursor. Desktop pointers only. */
   viewerHint: string;
+  /**
+   * The world's environment study, drawn behind the static still — see
+   * `WorldMaterial`. Server-rendered and passed in, so this client component
+   * does not decide what a world looks like.
+   */
+  material?: ReactNode;
+  /** Edge instrumentation that stays visible over a live model. */
+  frameMarks?: ReactNode;
   /** The commerce panel, server-rendered. */
   children: ReactNode;
 }
@@ -76,6 +84,8 @@ export function ProductStage({
   staticLabel,
   mediaLabel,
   viewerHint,
+  material,
+  frameMarks,
   children,
 }: ProductStageProps) {
   const stage = useRef<HTMLDivElement>(null);
@@ -180,6 +190,7 @@ export function ProductStage({
 
   const fallback = (
     <div className={styles.mediaWell}>
+      {material}
       <VialFallback poster={poster} diagramLabel={posterAlt} label={staticLabel} />
     </div>
   );
@@ -201,6 +212,7 @@ export function ProductStage({
             <Suspense
               fallback={
                 <div className={styles.mediaWell}>
+                  {material}
                   <VialFallback
                     poster={poster}
                     diagramLabel={posterAlt}
@@ -240,6 +252,7 @@ export function ProductStage({
          * instrument plate, not a picture frame, and no extra DOM.
          */}
         <div ref={panel} className={styles.media}>
+          {frameMarks}
           <div className={styles.caption}>
             <Mono size="2xs" className={styles.captionLabel}>
               {mediaLabel}

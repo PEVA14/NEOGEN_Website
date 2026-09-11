@@ -64,14 +64,8 @@ import {
   publicPolicies,
   publicPolicyBySlug,
 } from "../src/content/policies.ts";
-import {
-  documentFile,
-  documentsFor,
-  publicDocumentsFor,
-  allDocumentKinds,
-  documentKinds,
-  isInternalKind,
-} from "../src/content/documents.ts";
+import { DOCUMENTS, INTERNAL_ONLY_TYPES } from "../src/content/documents.ts";
+import { resolveEvidence } from "../src/domain/quality/index.ts";
 import { publishedProducts } from "../src/data/catalog/index.ts";
 import { generatedPrices } from "../src/data/commerce/prices.generated.ts";
 import { ORDER_LIMITS } from "../src/data/commerce/limits.ts";
@@ -609,32 +603,23 @@ for (const policy of policies) {
 /* Slugs are unique, or two policies would share a URL. */
 eq(new Set(policies.map((p) => p.slug)).size, policies.length, "policy slugs are unique");
 
-/* ---- documents: re-keyed onto product identity ------------------------- */
+/* ---- documents: keyed on product identity (resolver tested in check:quality) */
 
-eq(documentsFor({ slug: A.product.slug }).length, 0, "no document is declared for any product");
-eq(documentFile("coa", { slug: A.product.slug }), null, "a COA lookup returns null");
-/* THE RE-KEY ITSELF: every product can be asked, not just the three worlds. */
+eq(DOCUMENTS.length, 0, "no document is declared for any product");
+/* THE RE-KEY ITSELF: every product can be resolved, not just the three worlds. */
 for (const product of publishedProducts) {
-  const result = documentsFor({ slug: product.slug });
-  ok(Array.isArray(result), `documents can be looked up for \`${product.slug}\``);
+  const evidence = resolveEvidence(product);
+  ok(
+    evidence.presentations.length === product.variants.length,
+    `evidence lists every presentation of \`${product.slug}\``,
+  );
+  ok(!evidence.hasEvidence, `\`${product.slug}\` resolves no evidence while nothing is declared`);
 }
 ok(
   publishedProducts.filter((p) => p.world === null).length > 50,
   "most products have no world — which is why documents may not be keyed by one",
 );
-/* Supplier paperwork can never reach a public surface. */
-ok(isInternalKind("supplier-documentation"), "supplier documentation is internal-only");
-ok(!isInternalKind("coa"), "a COA is not internal");
-eq(
-  publicDocumentsFor({ slug: A.product.slug }).filter((d) => isInternalKind(d.kind)).length,
-  0,
-  "no internal document can appear in a public lookup",
-);
-/* The presented kinds are a subset of the storable kinds, in dictionary order. */
-for (const kind of documentKinds) {
-  ok(allDocumentKinds.includes(kind), `presented kind \`${kind}\` is a declared kind`);
-}
-eq(documentKinds.length, 3, "three record classes are presented, matching the dictionary");
+ok(INTERNAL_ONLY_TYPES.has("supplier-documentation"), "supplier documentation is internal-only");
 
 /* ---- routes ------------------------------------------------------------ */
 
@@ -672,5 +657,5 @@ if (failures.length) {
 console.log(
   `checkout check passed — 6 steps, ${policies.length} policy slots (0 approved), ` +
     `${acknowledgements.length} declarations (0 publishable), ` +
-    `${allDocumentKinds.length} document kinds (0 declared), payment ${paymentAvailable() ? "ENABLED" : "disabled"}`,
+    `${DOCUMENTS.length} documents declared, payment ${paymentAvailable() ? "ENABLED" : "disabled"}`,
 );

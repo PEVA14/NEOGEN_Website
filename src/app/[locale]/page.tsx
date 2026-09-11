@@ -16,12 +16,13 @@ import {
   CompoundIndexHead,
   DiscoveryGrid,
   CompoundRow,
-  DocumentLedger,
   EditorialSpread,
   ProductCard,
   TextLink,
 } from "@/components/ui";
+import { EvidenceChain } from "@/components/quality";
 import { routes } from "@/config/routes";
+import { resolveEvidence } from "@/domain/quality";
 import { worldIds, type WorldId } from "@/config/worlds";
 import { isLocale, localeTags } from "@/i18n/config";
 import { formatStrength, isPublishable, presentationRange, products } from "@/data/catalog";
@@ -319,7 +320,15 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                     key: home.research.fields.presentations,
                     value: String(product.variants.length),
                   },
-                  { key: home.research.fields.documentation, value: dict.status.pending },
+                  /* From the resolver, like every other trust surface. "—" is the
+                     honest value when no public document exists — not "pending",
+                     which promised a document nobody has scheduled. */
+                  {
+                    key: home.research.fields.documentation,
+                    value: resolveEvidence(product).hasEvidence
+                      ? dict.quality.record.states["documentation-available"]
+                      : "—",
+                  },
                 ]}
               />
             ))}
@@ -327,8 +336,15 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </Container>
       </Section>
 
-      {/* 07 — Quiet, on warm stone. Documentation treated as material: framed
-          records with identifiers and a neutral verification state. */}
+      {/*
+       * 07 — Quiet, on warm stone. The evidence model.
+       *
+       * This used to be a ledger of four "pending verification" records whose
+       * copy described a COA database and synthesis documentation that do not
+       * exist. It now shows the rule every quality status on the site follows —
+       * true today, and the same component the product pages and the Research
+       * Hub use, so all three state one policy.
+       */}
       <Section mode="quiet" aria-labelledby="quality-title" className="bg-(--surface-raised)">
         <Container width="full">
           <SectionHeader
@@ -336,13 +352,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             label={home.quality.label}
             title={home.quality.title}
             id="quality-title"
+            lede={home.quality.lede}
+            action={
+              <TextLink href={`${path(routes.research)}#calidad`}>{home.quality.action}</TextLink>
+            }
           />
-          <DocumentLedger
-            records={home.quality.points}
-            identifierLabel={home.research.recordLabel}
-            stateLabel={home.research.stateLabel}
-            stateValue={dict.status.pending}
-          />
+          <EvidenceChain copy={dict.quality.record.chain} />
         </Container>
       </Section>
 

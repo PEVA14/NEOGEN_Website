@@ -9,18 +9,14 @@ export {
   type StillMedia,
 } from "./media";
 export {
-  allDocumentKinds,
-  documentFile,
-  documentKinds,
-  documentsFor,
-  hasDocuments,
-  isInternalKind,
-  publicDocumentsFor,
+  DOCUMENT_TYPES,
+  DOCUMENTS,
+  INTERNAL_ONLY_TYPES,
+  isKnownDocumentType,
   type DocumentFile,
-  type DocumentKind,
   type DocumentScope,
-  type DocumentTarget,
-  type ProductDocument,
+  type DocumentType,
+  type QualityDocument,
 } from "./documents";
 export {
   isApproved as isPolicyApproved,

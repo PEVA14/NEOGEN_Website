@@ -14,6 +14,9 @@
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
+import { publishedProducts } from "../src/data/catalog/index.ts";
+import { publicEvidenceIndex, resolveEvidence } from "../src/domain/quality/index.ts";
+
 const OUT = ".next";
 const failures = [];
 const fail = (what, detail) => failures.push(`${what}: ${detail}`);
@@ -100,19 +103,14 @@ const PROSE_MARKERS =
   /(COMING SOON|under construction|en construcci[oó]n|[Pp]or definir|pendientes? de verificaci[oó]n|pending verification|lorem ipsum)/gi;
 
 /*
- * "Pending verification" against a DOCUMENT is the honest state of a
- * certificate that has not been produced, and it is the ONLY place the phrase
- * may reach a reader.
+ * NO "PENDING" ALLOWANCE ANY MORE.
  *
- * The allowance is deliberately narrow: the phrase has to be introduced by a
- * documentation label — the ledger's "Estado — …" line, or the register column
- * headed "Documentación". Anywhere else it is describing a price, a format or
- * an availability we now actually have, which is how the bag came to tell
- * customers that prices were still pending after they were set.
+ * There used to be one: a document ledger's "Estado — Pendiente de
+ * verificación" and a register column headed "Documentación". Phase 11 retired
+ * both — a trust surface now shows a resolved document or a deliberate
+ * no-evidence state, never a pending one — so the phrase is a failure
+ * everywhere a reader can see it.
  */
-const ALLOWED_PENDING =
-  /(Estado|State|Documentación|Documentation)\s*(—\s*)?(Pendiente de verificación|Pending verification)/;
-
 const visibleText = (html) =>
   html
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
@@ -126,7 +124,6 @@ for (const file of htmlFiles) {
   for (const pattern of [CODE_MARKERS, PROSE_MARKERS]) {
     for (const match of text.matchAll(pattern)) {
       const around = text.slice(Math.max(0, match.index - 60), match.index + match[0].length + 60);
-      if (ALLOWED_PENDING.test(around)) continue;
       fail(
         "prototype language visible to a reader",
         `"${match[0]}" in ${file} — …${around.trim()}…`,
@@ -240,7 +237,58 @@ for (const file of [...clientAssets, ...htmlFiles]) {
   }
 }
 
-/* ------------------------------------------------------------- 7. canonicals
+/* --------------------------------------------- 7. trust states are real
+ *
+ * Every visible quality state carries `data-evidence-state`, and the resolver
+ * is the only thing that can produce one. So the number of those attributes in
+ * the built product pages must equal the number of states the resolver
+ * produces for the real registries, in both locales. Today that is zero — and
+ * a badge rendered by any other means would make it non-zero.
+ */
+const expectedStates =
+  publishedProducts.reduce((n, product) => {
+    const evidence = resolveEvidence(product);
+    return (
+      n +
+      [...evidence.product, ...evidence.presentations.flatMap((p) => p.records)].reduce(
+        (m, record) => m + record.states.length,
+        0,
+      )
+    );
+  }, 0) * 2;
+let renderedStates = 0;
+for (const file of htmlFiles) {
+  renderedStates += (readFileSync(file, "utf8").match(/data-evidence-state=/g) ?? []).length;
+}
+if (renderedStates !== expectedStates) {
+  fail(
+    "rendered quality states do not match the evidence resolver",
+    `${renderedStates} rendered, ${expectedStates} resolved — a state reached a page without a document`,
+  );
+}
+
+/* The documentation explorer exists only once a public document does. */
+if (publicEvidenceIndex(publishedProducts).length === 0) {
+  for (const file of htmlFiles) {
+    if (/[\\/]investigacion[\\/]calidad/.test(file)) {
+      fail("the documentation explorer was published with no public document", file);
+    }
+  }
+}
+
+/*
+ * Private lot fields and the issuer registry stay on the server. If either
+ * name appears in a browser bundle, quality data is being shipped to clients.
+ */
+for (const file of walk(path.join(OUT, "static"), /\.js$/)) {
+  const text = readFileSync(file, "utf8");
+  for (const marker of ["supplierBatchReference", "internalReference", "Janoshik Analytical"]) {
+    if (text.includes(marker))
+      fail("private quality data in a client bundle", `"${marker}" in ${file}`);
+  }
+}
+
+/* ------------------------------------------------------------- 8. canonicals
  *
  * A build that shipped with the fallback origin would publish canonical URLs
  * pointing at a developer's machine.

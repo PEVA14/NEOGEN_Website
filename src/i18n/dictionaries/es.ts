@@ -29,8 +29,10 @@ const es = {
         "{name} — {classification}. Presentaciones: {presentations}. Catálogo NEOGEN México.",
       catalog:
         "{count} compuestos de investigación en cuatro categorías: metabólicos, péptidos, mezclas y disolventes. Catálogo NEOGEN México.",
+      qualityExplorer:
+        "Documentación de calidad de NEOGEN, vinculada a la presentación y al lote exactos que examina.",
       research:
-        "Registro de compuestos NEOGEN y las clases de documentación técnica que acompañan a cada uno.",
+        "Índice de compuestos NEOGEN, áreas de investigación y el modelo con que se documenta la calidad de cada presentación.",
       cart: "Tu bag de NEOGEN México.",
       checkout: "Proceso de pago de NEOGEN México.",
     },
@@ -84,11 +86,11 @@ const es = {
         },
         {
           title: "Preciso",
-          body: "Formato, parámetros de almacenamiento y datos específicos por lote, presentados directamente. La documentación completa respalda decisiones de investigación informadas.",
+          body: "Cantidad por vial, viales por presentación y composición cuando la fuente la declara. Nada se infiere a partir de un nombre.",
         },
         {
           title: "Documentado",
-          body: "Cada compuesto va acompañado de su documentación. Certificados de análisis, parámetros de almacenamiento y protocolos de manejo: referenciados, no asumidos.",
+          body: "La documentación se vincula a la presentación y al lote exactos que examina. Donde no existe un documento, no aparece un sello en su lugar.",
         },
       ],
     },
@@ -117,12 +119,12 @@ const es = {
         {
           eyebrow: "Especificación",
           statement: "Documentación antes que promesa.",
-          body: "Formulación, acción molecular y grado de pureza se publican por lote cuando el análisis está disponible. Hasta entonces, los campos permanecen abiertos.",
+          body: "Un análisis se publica con su emisor, su fecha y la presentación exacta que examina. Nada se afirma antes de que exista el documento.",
         },
         {
           eyebrow: "Disponibilidad",
           statement: "RETA — Retatrutide Research.",
-          body: "El primero de los tres compuestos insignia de NEOGEN. Catálogo, precios y documentación en preparación.",
+          body: "El primero de los tres compuestos insignia de NEOGEN.",
         },
       ],
       specs: {
@@ -157,8 +159,8 @@ const es = {
         },
         {
           index: "03",
-          title: "Protocolos",
-          body: "Documentación completa, secuencias de almacenamiento y metodologías de reconstitución.",
+          title: "Materiales",
+          body: "Disolventes y consumibles de laboratorio.",
           link: "Explorar catálogo",
         },
       ],
@@ -181,7 +183,7 @@ const es = {
       label: "Investigación",
       title: "NEOGEN Research",
       action: "Ir a investigación",
-      lede: "Perfiles de compuestos, documentación de análisis y literatura de investigación. Cada producto del catálogo conectado con su evidencia.",
+      lede: "El índice de compuestos, las áreas en que se estudian y el modelo con que se documenta su calidad.",
       /**
        * Encabezados de columna del registro y etiquetas del expediente.
        *
@@ -204,25 +206,9 @@ const es = {
     quality: {
       index: "07",
       label: "Calidad",
-      title: "Análisis y documentación",
-      points: [
-        {
-          title: "Compuestos",
-          body: "Biblioteca completa con datos de compuesto, pesos específicos y clasificaciones documentadas.",
-        },
-        {
-          title: "Análisis",
-          body: "Base de datos de COA que vincula perfiles analíticos y documentación con cada lote.",
-        },
-        {
-          title: "Biblioteca",
-          body: "Documentación científica con rutas de síntesis y metodologías de ensayo.",
-        },
-        {
-          title: "Documentación",
-          body: "Secuencias de reconstitución, protocolos de almacenamiento y fichas técnicas.",
-        },
-      ],
+      title: "Evidencia, no sellos",
+      lede: "Cada estado de calidad en NEOGEN proviene de un documento que puede consultarse, vinculado a la presentación exacta que examina.",
+      action: "Cómo se documenta",
     },
 
     ghkcu: {
@@ -273,8 +259,6 @@ const es = {
       index: "01",
       section: "Producto",
       qualifier: "Compuesto de investigación",
-      descriptor:
-        "Vial de vidrio farmacéutico con cierre de aluminio satinado y etiqueta de papel técnico. Presentado en un entorno controlado; cada contenedor se documenta por lote.",
       variantLabel: "Selecciona formato",
       variantPending: "Formatos pendientes de verificación",
       quantityLabel: "Cantidad",
@@ -282,7 +266,7 @@ const es = {
       pricePending: "Precio pendiente",
       addToBag: "Añadir a la bag",
       commercePending: "Compra no habilitada — pendiente de revisión regulatoria y de procesador",
-      documentation: "Ver documentación",
+      documentation: "Ver calidad y documentación",
       shippingLabel: "Envío",
     },
     specifications: {
@@ -301,28 +285,41 @@ const es = {
       classification: "Clasificación de catálogo",
       presentation: "Presentaciones",
       composition: "Composición",
-    },
-    documentation: {
-      index: "03",
-      label: "Documentación",
-      qualifier: "Verificación técnica",
-      title: "Análisis y documentación",
-      records: [
-        { title: "Certificado de análisis", body: "Perfil analítico por lote." },
-        { title: "Ficha técnica", body: "Especificación de material y formato." },
-        { title: "Protocolo de manejo", body: "Secuencias de reconstitución y almacenamiento." },
-      ],
-      /** Ningún documento existe todavía; no se ofrece descarga. */
-      unavailable: "Documento no disponible",
+      ladder: "Escala de presentaciones",
+      pack: "× {n} viales",
     },
     research: {
-      index: "04",
       label: "Investigación",
-      qualifier: "Literatura relacionada",
+      qualifier: "Referencias y áreas",
       title: "Investigación relacionada",
-      lede: "Literatura y documentación conectadas con este compuesto.",
-      empty: "Aún no hay literatura publicada para este compuesto.",
-      action: "Ir a NEOGEN Research",
+      lede: "Las referencias que cita esta página y las áreas donde continuar leyendo.",
+      routes: "Continuar por área",
+      hub: "Índice de NEOGEN Research",
+    },
+    quality: {
+      label: "Calidad",
+      qualifier: "Evidencia por presentación",
+      title: "Calidad y documentación",
+    },
+    overview: {
+      label: "Perfil",
+      qualifier: "Contexto con fuentes",
+      title: "Perfil del compuesto",
+      researchContext: "Contexto de investigación",
+      areas: "Áreas de investigación",
+      mechanism: "Mecanismo y vías",
+      technical: "Notas técnicas",
+      keyReferences: "Referencias principales",
+    },
+    interlude: {
+      presentations: "Presentaciones",
+      range: "Escala",
+      area: "Área",
+    },
+    media: {
+      alternate: "Vista",
+      detail: "Detalle",
+      packaging: "Empaque",
     },
     /**
      * CROSS-SELL — laboratory consumables, listed as adjacent products.
@@ -415,49 +412,64 @@ const es = {
     title: "NEOGEN Research",
     articleTitle: "Artículo",
     /*
-     * NEOGEN Research is documentation infrastructure, not a blog.
-     *
-     * No literature has been published, so the hub does NOT dress an empty
-     * archive in article cards. What it shows instead is real: the compound
-     * register and the classes of record the documentation system carries,
-     * each with its neutral verification state. Nothing here asserts that a
-     * document exists, describes a finding, or names a source.
+     * An index and an evidence model, not a blog. Every section below shows
+     * something that exists — areas, compounds, the rules documentation
+     * follows — and the reference index states its own rule rather than
+     * implying an archive is on its way.
      */
     hub: {
       index: "01",
       label: "Investigación",
-      qualifier: "Documentación y evidencia",
-      title: "Documentación",
-      lede: "Cada compuesto se publica junto a su registro técnico. Los documentos aparecen aquí a medida que se verifican.",
-      register: {
+      qualifier: "Índice y evidencia",
+      title: "NEOGEN Research",
+      lede: "El índice de los compuestos del catálogo, las áreas en que se estudian y el modelo con que se documenta su calidad.",
+      areas: {
         index: "02",
-        label: "Compuestos",
-        qualifier: "Registro",
-        title: "Registro de compuestos",
-        action: "Catálogo completo",
-        /* Columnas con datos reales del registro. Antes eran "Código /
-           Documentación / Literatura", y dos de las tres sólo podían mostrar
-           un marcador de posición. */
-        columns: ["Categoría", "Presentaciones", "Desde"],
-        countLabel: "Compuestos publicados",
+        label: "Áreas",
+        qualifier: "Por área de estudio",
+        title: "Áreas de investigación",
+        compounds: "Compuestos",
+        references: "Referencias",
+        enter: "Entrar",
       },
-      documents: {
+      finder: {
         index: "03",
-        label: "Documentación",
-        qualifier: "Clases de registro",
-        title: "Clases de registro",
-        /* Describes what the SYSTEM carries, not what has been published. */
-        lede: "El sistema de documentación contempla las siguientes clases de registro por compuesto y por lote.",
-        unavailable: "Documento no disponible",
+        label: "Compuestos",
+        qualifier: "Índice",
+        title: "Índice de compuestos",
+        searchLabel: "Buscar",
+        searchPlaceholder: "Nombre o presentación",
+        areaLabel: "Área",
+        areaAll: "Todas las áreas",
+        results: "{n} compuestos",
+        result: "{n} compuesto",
+        empty: "Ningún compuesto coincide con la búsqueda.",
+        clear: "Limpiar",
+        columns: {
+          compound: "Compuesto",
+          areas: "Áreas",
+          presentations: "Presentaciones",
+          documentation: "Documentación",
+        },
+        documents: "{n} documentos públicos",
+        document: "1 documento público",
       },
-      literature: {
+      quality: {
         index: "04",
-        label: "Literatura",
-        qualifier: "Publicaciones",
-        title: "Literatura",
-        empty: "Aún no hay literatura publicada.",
-        /* Says what will appear, without promising when or claiming a source. */
-        note: "Las referencias se publicarán con su identificador y su vínculo a la fuente original.",
+        label: "Calidad",
+        qualifier: "Modelo de evidencia",
+        title: "Cómo se documenta la calidad",
+        lede: "Un documento se vincula a lo más específico que examina: la presentación, o el lote. Nada se extiende de una presentación a otra, y ningún estado aparece sin un documento detrás.",
+        explorer: "Explorar documentación",
+      },
+      references: {
+        index: "05",
+        label: "Referencias",
+        qualifier: "Fuentes",
+        title: "Referencias",
+        empty:
+          "No hay referencias publicadas. Una referencia aparece aquí cuando una fuente verificada respalda una afirmación en la página de un compuesto.",
+        citedBy: "Citada en",
       },
     },
   },
@@ -519,6 +531,140 @@ const es = {
       "medical-disclaimer": "Aviso médico",
     },
   },
+  /**
+   * QUALITY — the evidence ledger and the rules it follows.
+   *
+   * Every state label below names a DOCUMENT that exists, never a property of
+   * a substance: "Certificado de análisis" says a certificate is available, not
+   * that anything is pure. And no label renders unless `domain/quality`
+   * resolved a real, public, approved document for that exact presentation.
+   *
+   * The empty-state copy states the policy once, plainly. It is not "pending"
+   * and it promises no date.
+   */
+  quality: {
+    record: {
+      panelLabel: "Estado de calidad",
+      coverageLabel: "Cobertura",
+      coverage: "{n} de {total} presentaciones con documentación pública",
+      emptyTitle: "Este compuesto no tiene documentación pública.",
+      emptyBody:
+        "La documentación se publica cuando existe, vinculada a la presentación exacta y, cuando corresponde, al lote que examina. Un análisis de una presentación nunca se muestra como válido para otra.",
+      tableCaption: "Documentación publicada por presentación",
+      columns: {
+        presentation: "Presentación",
+        state: "Estado",
+        type: "Tipo",
+        issuer: "Emisor",
+        lot: "Lote",
+        date: "Fecha",
+        document: "Documento",
+      },
+      noRecord: "Sin documento público",
+      compoundLevel: "Compuesto",
+      states: {
+        "documentation-available": "Documentación técnica",
+        "coa-available": "Certificado de análisis",
+        "lot-coa": "Certificado de lote",
+        "third-party-tested": "Análisis independiente",
+        "janoshik-verified": "Informe Janoshik verificable",
+      },
+      types: {
+        "technical-document": "Documento técnico",
+        "supplier-documentation": "Documentación de proveedor",
+        coa: "Certificado de análisis",
+        "lot-coa": "Certificado de análisis de lote",
+        "third-party-analysis": "Análisis de tercero",
+        "handling-storage": "Almacenamiento y manejo",
+        "analytical-report": "Informe analítico",
+      },
+      issuerRoles: {
+        "independent-laboratory": "Laboratorio independiente",
+        manufacturer: "Fabricante",
+        supplier: "Proveedor",
+        neogen: "NEOGEN",
+      },
+      reportId: "Informe",
+      view: "Ver documento",
+      external: "abre en otra pestaña",
+      chain: {
+        label: "Cómo se resuelve la evidencia",
+        steps: {
+          product: {
+            title: "Compuesto",
+            rule: "Solo documentación técnica. Ningún análisis se asigna al compuesto completo.",
+          },
+          variant: {
+            title: "Presentación",
+            rule: "Un análisis nombra la presentación exacta que examinó.",
+          },
+          lot: {
+            title: "Lote",
+            rule: "Un certificado de lote cubre ese lote y ningún otro.",
+          },
+          document: {
+            title: "Documento",
+            rule: "Cada estado visible proviene de un documento que puede consultarse.",
+          },
+        },
+        resolved: "con documento público",
+        unresolved: "sin documento público",
+      },
+    },
+    explorer: {
+      index: "01",
+      label: "Investigación",
+      qualifier: "Calidad",
+      title: "Documentación de calidad",
+      lede: "Cada documento público del catálogo, con la presentación y el lote exactos que examina.",
+      devNotice:
+        "Vista de desarrollo. Esta página no se publica mientras no exista ningún documento público.",
+      filters: {
+        product: "Compuesto",
+        presentation: "Presentación",
+        lot: "Lote",
+        type: "Tipo",
+        issuer: "Emisor",
+        all: "Todos",
+      },
+      results: "{n} documentos",
+      result: "{n} documento",
+      empty: "Ningún documento coincide con los filtros.",
+      caption: "Documentos públicos",
+      columns: {
+        product: "Compuesto",
+        presentation: "Presentación",
+        lot: "Lote",
+        type: "Tipo",
+        issuer: "Emisor",
+        date: "Fecha",
+        document: "Documento",
+      },
+      view: "Ver documento",
+      external: "abre en otra pestaña",
+    },
+  },
+
+  /** Reference presentation. No summaries: NEOGEN does not paraphrase sources. */
+  citations: {
+    label: "Referencias",
+    sourceTypes: {
+      "journal-article": "Artículo",
+      "review-article": "Revisión",
+      "clinical-trial-registry": "Registro de ensayo",
+      preprint: "Preprint",
+      book: "Libro",
+      "regulatory-document": "Documento regulatorio",
+      dataset: "Conjunto de datos",
+      other: "Fuente",
+    },
+    doi: "DOI",
+    pmid: "PMID",
+    open: "Abrir fuente",
+    external: "abre en otra pestaña",
+    etAl: "et al.",
+  },
+
   checkout: {
     index: "01",
     label: "Compra",
@@ -970,6 +1116,21 @@ const es = {
     productLabel: "Área de investigación",
     all: "Todo el catálogo",
     countLabel: "Compuestos",
+    research: {
+      label: "Investigación",
+      qualifier: "En esta área",
+      title: "Investigación en esta área",
+      lede: "Las referencias citadas por los compuestos de esta área.",
+      empty: "Ningún compuesto de esta área cita referencias publicadas.",
+      hub: "Índice de NEOGEN Research",
+    },
+    related: {
+      label: "Áreas",
+      qualifier: "Compuestos compartidos",
+      title: "Áreas relacionadas",
+      /* "{n} compuestos en común" */
+      shared: "{n} en común",
+    },
     areas: {
       metabolic: {
         title: "Investigación metabólica",

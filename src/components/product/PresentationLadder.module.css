@@ -1,0 +1,63 @@
+/*
+ * PRESENTATION LADDER — oversized numerals on one rule.
+ * Scrolls in its own container when a seven-step ladder outgrows a phone, so
+ * the figures keep their scale instead of shrinking to fit.
+ */
+.ladder {
+  border-block-start: 1px solid var(--border-default);
+  display: flex;
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  overflow-x: auto;
+  padding: 0;
+  scrollbar-width: thin;
+}
+
+.step {
+  border-inline-end: 1px solid var(--border-subtle);
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  min-inline-size: 7rem;
+  padding: var(--space-sm) var(--space-md) var(--space-md);
+}
+
+.step:last-child {
+  border-inline-end: 0;
+}
+
+.index {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+}
+
+.figure {
+  align-items: baseline;
+  display: flex;
+  gap: var(--space-3xs);
+  white-space: nowrap;
+}
+
+.value {
+  color: var(--ink-primary);
+  font-family: var(--font-display);
+  font-size: var(--text-5xl);
+  font-stretch: var(--font-stretch-display);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--tracking-display);
+  line-height: 0.9;
+}
+
+.unit {
+  color: var(--ink-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.pack {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}

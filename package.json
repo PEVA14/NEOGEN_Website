@@ -10,12 +10,14 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "npm run lint && npm run typecheck && npm run check:catalog && npm run check:media && npm run check:commerce && npm run check:checkout && npm run build && npm run check:output",
+    "check": "npm run lint && npm run typecheck && npm run check:catalog && npm run check:media && npm run check:commerce && npm run check:checkout && npm run check:quality && npm run check:content && npm run build && npm run check:output",
     "check:catalog": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-catalog.mjs",
     "check:commerce": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-commerce.mjs",
     "check:media": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-media.mjs",
-    "check:output": "node scripts/check-output.mjs",
-    "check:checkout": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-checkout.mjs"
+    "check:output": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-output.mjs",
+    "check:checkout": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-checkout.mjs",
+    "check:quality": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-quality.mjs",
+    "check:content": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-content.mjs"
   },
   "dependencies": {
     "@react-three/fiber": "^9.7.0",

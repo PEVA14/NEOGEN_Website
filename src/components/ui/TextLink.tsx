@@ -40,9 +40,17 @@ export function TextLink({
     <Link
       href={href}
       className={cn(
-        // min-h-6 = 24px, the WCAG 2.2 minimum target size. The label is 11px
-        // mono, so without it these actions measure 17px tall.
-        "neogen-mono inline-flex min-h-6 items-center gap-(--space-2xs) text-2xs",
+        /*
+         * A 44px TARGET WITH A 24px FOOTPRINT.
+         *
+         * `min-h-11` is the project's 44px tap-target standard; `-my-2.5`
+         * takes 10px back above and below, so the link still occupies the
+         * 24px it always did and no surrounding composition moves. It used to
+         * be `min-h-6` alone — WCAG 2.2's 24px floor, but short of the 44px
+         * every other control on the site meets, and the Phase 11 audit
+         * flagged it on every product page.
+         */
+        "neogen-mono -my-2.5 inline-flex min-h-11 items-center gap-(--space-2xs) text-2xs",
         "uppercase underline decoration-(--border-default) underline-offset-4",
         "transition-colors duration-(--motion-duration-fast) ease-(--ease-standard)",
         "hover:decoration-(--ink-primary)",

@@ -26,8 +26,10 @@ const en: Dictionary = {
         "{name} — {classification}. Presentations: {presentations}. NEOGEN Mexico catalogue.",
       catalog:
         "{count} research compounds across four categories: metabolic, peptides, blends and solvents. NEOGEN Mexico catalogue.",
+      qualityExplorer:
+        "NEOGEN quality documentation, tied to the exact presentation and lot each document examines.",
       research:
-        "The NEOGEN compound register and the classes of technical documentation that accompany each one.",
+        "NEOGEN compound index, research areas, and the model each presentation's quality is documented by.",
       cart: "Your NEOGEN Mexico bag.",
       checkout: "NEOGEN Mexico payment process.",
     },
@@ -81,11 +83,11 @@ const en: Dictionary = {
         },
         {
           title: "Precise",
-          body: "Format, storage parameters and lot-specific data surfaced directly. Complete documentation supports informed research decisions.",
+          body: "Amount per vial, vials per presentation, and composition where the source states it. Nothing is inferred from a name.",
         },
         {
           title: "Documented",
-          body: "Full documentation accompanies each compound. Certificates of analysis, storage parameters and handling protocols — referenced, not assumed.",
+          body: "Documentation attaches to the exact presentation and lot it examines. Where no document exists, no seal appears in its place.",
         },
       ],
     },
@@ -106,12 +108,12 @@ const en: Dictionary = {
         {
           eyebrow: "Specification",
           statement: "Documentation before promise.",
-          body: "Formulation, molecular action and purity grade are published per lot once analysis is available. Until then the fields stay open.",
+          body: "An analysis is published with its issuer, its date and the exact presentation it examines. Nothing is claimed before the document exists.",
         },
         {
           eyebrow: "Availability",
           statement: "RETA — Retatrutide Research.",
-          body: "The first of NEOGEN's three flagship compounds. Catalogue, pricing and documentation in preparation.",
+          body: "The first of NEOGEN's three flagship compounds.",
         },
       ],
       specs: {
@@ -146,8 +148,8 @@ const en: Dictionary = {
         },
         {
           index: "03",
-          title: "Protocols",
-          body: "Comprehensive documentation, storage sequences and reconstitution methodologies.",
+          title: "Materials",
+          body: "Solvents and laboratory consumables.",
           link: "Explore catalogue",
         },
       ],
@@ -170,7 +172,7 @@ const en: Dictionary = {
       label: "Research",
       title: "NEOGEN Research",
       action: "Go to research",
-      lede: "Compound profiles, analysis documentation and research literature. Every product in the catalogue connected to its evidence.",
+      lede: "The compound index, the areas they are studied in, and the model their quality is documented by.",
       /**
        * Register column heads and document-record labels.
        *
@@ -193,25 +195,9 @@ const en: Dictionary = {
     quality: {
       index: "07",
       label: "Quality",
-      title: "Analysis and documentation",
-      points: [
-        {
-          title: "Compounds",
-          body: "Complete compound library detailing compound data, specific weights and documented classifications.",
-        },
-        {
-          title: "Analysis",
-          body: "COA database linking analytical profiles and documentation to each compound lot.",
-        },
-        {
-          title: "Library",
-          body: "Scientific documentation database detailing synthesis routes and assay methodologies.",
-        },
-        {
-          title: "Documentation",
-          body: "Reconstitution sequences, storage protocols and raw technical specification sheets.",
-        },
-      ],
+      title: "Evidence, not seals",
+      lede: "Every quality status on NEOGEN comes from a document you can open, tied to the exact presentation it examines.",
+      action: "How it is documented",
     },
 
     ghkcu: {
@@ -254,8 +240,6 @@ const en: Dictionary = {
       index: "01",
       section: "Product",
       qualifier: "Research compound",
-      descriptor:
-        "Pharmaceutical glass vial with a satin aluminium seal and a technical paper label. Presented in a controlled environment; each container is documented lot by lot.",
       variantLabel: "Select format",
       variantPending: "Formats pending verification",
       quantityLabel: "Quantity",
@@ -263,7 +247,7 @@ const en: Dictionary = {
       pricePending: "Price pending",
       addToBag: "Add to bag",
       commercePending: "Purchase not enabled — pending regulatory and processor review",
-      documentation: "View documentation",
+      documentation: "View quality and documentation",
       shippingLabel: "Shipping",
     },
     specifications: {
@@ -282,28 +266,41 @@ const en: Dictionary = {
       classification: "Catalogue classification",
       presentation: "Presentations",
       composition: "Composition",
-    },
-    documentation: {
-      index: "03",
-      label: "Documentation",
-      qualifier: "Technical verification",
-      title: "Analysis and documentation",
-      records: [
-        { title: "Certificate of analysis", body: "Per-lot analytical profile." },
-        { title: "Technical sheet", body: "Material and format specification." },
-        { title: "Handling protocol", body: "Reconstitution and storage sequences." },
-      ],
-      /** No document exists yet; no download is offered. */
-      unavailable: "Document unavailable",
+      ladder: "Presentation range",
+      pack: "× {n} vials",
     },
     research: {
-      index: "04",
       label: "Research",
-      qualifier: "Related literature",
+      qualifier: "References and areas",
       title: "Related research",
-      lede: "Literature and documentation connected to this compound.",
-      empty: "No literature published for this compound yet.",
-      action: "Go to NEOGEN Research",
+      lede: "The references this page cites, and the areas to continue reading in.",
+      routes: "Continue by area",
+      hub: "NEOGEN Research index",
+    },
+    quality: {
+      label: "Quality",
+      qualifier: "Evidence per presentation",
+      title: "Quality and documentation",
+    },
+    overview: {
+      label: "Profile",
+      qualifier: "Sourced context",
+      title: "Compound profile",
+      researchContext: "Research context",
+      areas: "Areas of investigation",
+      mechanism: "Mechanism and pathways",
+      technical: "Technical notes",
+      keyReferences: "Key references",
+    },
+    interlude: {
+      presentations: "Presentations",
+      range: "Range",
+      area: "Area",
+    },
+    media: {
+      alternate: "View",
+      detail: "Detail",
+      packaging: "Packaging",
     },
     /**
      * CROSS-SELL — laboratory consumables, listed as adjacent products.
@@ -383,36 +380,56 @@ const en: Dictionary = {
     hub: {
       index: "01",
       label: "Research",
-      qualifier: "Documentation and evidence",
-      title: "Documentation",
-      lede: "Each compound is published alongside its technical record. Documents appear here as they are verified.",
-      register: {
+      qualifier: "Index and evidence",
+      title: "NEOGEN Research",
+      lede: "The index of the catalogue's compounds, the areas they are studied in, and the model their quality is documented by.",
+      areas: {
         index: "02",
-        label: "Compounds",
-        qualifier: "Register",
-        title: "Compound register",
-        action: "Full catalog",
-        /* Columns carrying real register data. They were "Code / Documentation
-           / Literature", and two of the three could only ever show a
-           placeholder. */
-        columns: ["Category", "Presentations", "From"],
-        countLabel: "Published compounds",
+        label: "Areas",
+        qualifier: "By area of study",
+        title: "Research areas",
+        compounds: "Compounds",
+        references: "References",
+        enter: "Enter",
       },
-      documents: {
+      finder: {
         index: "03",
-        label: "Documentation",
-        qualifier: "Record classes",
-        title: "Record classes",
-        lede: "The documentation system carries the following classes of record, per compound and per lot.",
-        unavailable: "Document unavailable",
+        label: "Compounds",
+        qualifier: "Index",
+        title: "Compound index",
+        searchLabel: "Search",
+        searchPlaceholder: "Name or presentation",
+        areaLabel: "Area",
+        areaAll: "All areas",
+        results: "{n} compounds",
+        result: "{n} compound",
+        empty: "No compound matches the search.",
+        clear: "Clear",
+        columns: {
+          compound: "Compound",
+          areas: "Areas",
+          presentations: "Presentations",
+          documentation: "Documentation",
+        },
+        documents: "{n} public documents",
+        document: "1 public document",
       },
-      literature: {
+      quality: {
         index: "04",
-        label: "Literature",
-        qualifier: "Publications",
-        title: "Literature",
-        empty: "No literature has been published yet.",
-        note: "References will be published with their identifier and a link to the original source.",
+        label: "Quality",
+        qualifier: "Evidence model",
+        title: "How quality is documented",
+        lede: "A document attaches to the most specific thing it examines: the presentation, or the lot. Nothing extends from one presentation to another, and no status appears without a document behind it.",
+        explorer: "Explore documentation",
+      },
+      references: {
+        index: "05",
+        label: "References",
+        qualifier: "Sources",
+        title: "References",
+        empty:
+          "No references are published. A reference appears here when a verified source supports a statement on a compound's page.",
+        citedBy: "Cited on",
       },
     },
   },
@@ -463,6 +480,128 @@ const en: Dictionary = {
       "medical-disclaimer": "Medical Disclaimer",
     },
   },
+  /** QUALITY — see the Spanish source for the content rules. */
+  quality: {
+    record: {
+      panelLabel: "Quality status",
+      coverageLabel: "Coverage",
+      coverage: "{n} of {total} presentations with public documentation",
+      emptyTitle: "This compound has no public documentation.",
+      emptyBody:
+        "Documentation is published when it exists, tied to the exact presentation and, where it applies, to the lot it examines. An analysis of one presentation is never shown as valid for another.",
+      tableCaption: "Published documentation by presentation",
+      columns: {
+        presentation: "Presentation",
+        state: "Status",
+        type: "Type",
+        issuer: "Issuer",
+        lot: "Lot",
+        date: "Date",
+        document: "Document",
+      },
+      noRecord: "No public document",
+      compoundLevel: "Compound",
+      states: {
+        "documentation-available": "Technical documentation",
+        "coa-available": "Certificate of analysis",
+        "lot-coa": "Lot certificate",
+        "third-party-tested": "Independent analysis",
+        "janoshik-verified": "Verifiable Janoshik report",
+      },
+      types: {
+        "technical-document": "Technical document",
+        "supplier-documentation": "Supplier documentation",
+        coa: "Certificate of analysis",
+        "lot-coa": "Lot certificate of analysis",
+        "third-party-analysis": "Third-party analysis",
+        "handling-storage": "Storage and handling",
+        "analytical-report": "Analytical report",
+      },
+      issuerRoles: {
+        "independent-laboratory": "Independent laboratory",
+        manufacturer: "Manufacturer",
+        supplier: "Supplier",
+        neogen: "NEOGEN",
+      },
+      reportId: "Report",
+      view: "View document",
+      external: "opens in a new tab",
+      chain: {
+        label: "How evidence resolves",
+        steps: {
+          product: {
+            title: "Compound",
+            rule: "Technical documentation only. No analysis is assigned to the whole compound.",
+          },
+          variant: {
+            title: "Presentation",
+            rule: "An analysis names the exact presentation it examined.",
+          },
+          lot: {
+            title: "Lot",
+            rule: "A lot certificate covers that lot and no other.",
+          },
+          document: {
+            title: "Document",
+            rule: "Every visible status comes from a document you can open.",
+          },
+        },
+        resolved: "with a public document",
+        unresolved: "no public document",
+      },
+    },
+    explorer: {
+      index: "01",
+      label: "Research",
+      qualifier: "Quality",
+      title: "Quality documentation",
+      lede: "Every public document in the catalogue, with the exact presentation and lot it examines.",
+      devNotice: "Development view. This page is not published while no public document exists.",
+      filters: {
+        product: "Compound",
+        presentation: "Presentation",
+        lot: "Lot",
+        type: "Type",
+        issuer: "Issuer",
+        all: "All",
+      },
+      results: "{n} documents",
+      result: "{n} document",
+      empty: "No document matches the filters.",
+      caption: "Public documents",
+      columns: {
+        product: "Compound",
+        presentation: "Presentation",
+        lot: "Lot",
+        type: "Type",
+        issuer: "Issuer",
+        date: "Date",
+        document: "Document",
+      },
+      view: "View document",
+      external: "opens in a new tab",
+    },
+  },
+
+  citations: {
+    label: "References",
+    sourceTypes: {
+      "journal-article": "Article",
+      "review-article": "Review",
+      "clinical-trial-registry": "Trial registry",
+      preprint: "Preprint",
+      book: "Book",
+      "regulatory-document": "Regulatory document",
+      dataset: "Dataset",
+      other: "Source",
+    },
+    doi: "DOI",
+    pmid: "PMID",
+    open: "Open source",
+    external: "opens in a new tab",
+    etAl: "et al.",
+  },
+
   checkout: {
     index: "01",
     label: "Purchase",
@@ -884,6 +1023,20 @@ const en: Dictionary = {
     productLabel: "Research area",
     all: "Full catalogue",
     countLabel: "Compounds",
+    research: {
+      label: "Research",
+      qualifier: "In this area",
+      title: "Research in this area",
+      lede: "The references cited by this area's compounds.",
+      empty: "No compound in this area cites a published reference.",
+      hub: "NEOGEN Research index",
+    },
+    related: {
+      label: "Areas",
+      qualifier: "Shared compounds",
+      title: "Related areas",
+      shared: "{n} shared",
+    },
     areas: {
       metabolic: {
         title: "Metabolic Research",

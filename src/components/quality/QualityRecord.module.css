@@ -1,0 +1,215 @@
+/*
+ * QUALITY RECORD — an instrument panel beside a ledger.
+ *
+ * With evidence: an oversized coverage figure ("03 / 07") on a warm-stone
+ * panel, then a real table, then the chain. Without: one quiet plate and the
+ * chain — no figure, because "00 / 07" set at display scale would read as a
+ * failure metric rather than as the absence it is.
+ */
+.record {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+.panel,
+.emptyPlate {
+  background: var(--surface-base);
+  border: 1px solid var(--border-default);
+  display: grid;
+  gap: var(--space-2xs);
+  padding: var(--space-md) var(--space-lg);
+}
+
+@media (min-width: 64rem) {
+  .panel {
+    align-items: end;
+    grid-template-columns: auto 1fr;
+    column-gap: var(--space-xl);
+  }
+  .panel .panelLabel {
+    grid-column: 1 / -1;
+  }
+}
+
+.emptyPlate {
+  border-inline-start: 2px solid var(--border-strong);
+  max-inline-size: 48rem;
+}
+
+.panelLabel {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.figure {
+  align-items: baseline;
+  display: flex;
+  gap: var(--space-2xs);
+  margin: 0;
+}
+
+.figureValue {
+  color: var(--ink-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-5xl);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--tracking-display);
+  line-height: 0.9;
+}
+
+.figureOf {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-xl);
+}
+
+.coverage {
+  color: var(--ink-secondary);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.emptyTitle {
+  color: var(--ink-primary);
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-stretch: var(--font-stretch-display);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-snug);
+  margin: 0;
+  text-wrap: balance;
+}
+
+.emptyBody {
+  max-inline-size: 60ch;
+}
+
+/* --- ledger ------------------------------------------------------------ */
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.tableWrap:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}
+
+.table {
+  border-collapse: collapse;
+  inline-size: 100%;
+  min-inline-size: 52rem;
+}
+
+.caption {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  padding-block-end: var(--space-xs);
+  text-align: start;
+  text-transform: uppercase;
+}
+
+.table th,
+.table td {
+  border-block-end: 1px solid var(--border-subtle);
+  padding-block: var(--space-sm);
+  padding-inline-end: var(--space-md);
+  text-align: start;
+  vertical-align: top;
+}
+
+.table thead th {
+  border-block-end-color: var(--border-default);
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: 400;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.table tbody th {
+  color: var(--ink-primary);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.table tbody td {
+  color: var(--ink-secondary);
+  font-size: var(--text-sm);
+}
+
+.noRecord {
+  color: var(--ink-muted) !important;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs) !important;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.states {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.state {
+  align-items: baseline;
+  color: var(--ink-primary);
+  display: flex;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  gap: var(--space-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.glyph {
+  font-size: var(--text-sm);
+}
+
+.reportId {
+  color: var(--ink-muted);
+  display: block;
+  margin-block-start: var(--space-3xs);
+}
+
+.view {
+  color: var(--ink-primary);
+  display: inline-flex;
+  flex-direction: column;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  justify-content: center;
+  letter-spacing: var(--tracking-label);
+  min-block-size: 2.75rem;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-transform: uppercase;
+  text-underline-offset: 0.25em;
+}
+
+.view:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}
+
+.fileMeta {
+  color: var(--ink-muted);
+  text-decoration: none;
+}

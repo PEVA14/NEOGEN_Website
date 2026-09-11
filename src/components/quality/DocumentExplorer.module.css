@@ -1,0 +1,100 @@
+.explorer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.filters {
+  border-block-end: 1px solid var(--border-default);
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+  padding-block-end: var(--space-md);
+}
+
+.filter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+}
+
+.label,
+.count {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.select {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-block-end: 1px solid var(--border-default);
+  border-radius: var(--radius-none);
+  color: var(--ink-primary);
+  font-size: var(--text-sm);
+  min-block-size: 2.75rem;
+}
+
+.select:focus-visible,
+.link:focus-visible,
+.tableWrap:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}
+
+.empty {
+  color: var(--ink-secondary);
+  margin: 0;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  border-collapse: collapse;
+  inline-size: 100%;
+  min-inline-size: 52rem;
+}
+
+.caption {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  padding-block-end: var(--space-xs);
+  text-align: start;
+  text-transform: uppercase;
+}
+
+.table th,
+.table td {
+  border-block-end: 1px solid var(--border-subtle);
+  font-size: var(--text-sm);
+  font-weight: 400;
+  padding-block: var(--space-xs);
+  padding-inline-end: var(--space-md);
+  text-align: start;
+}
+
+.table thead th {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+.link {
+  color: var(--ink-primary);
+  display: inline-block;
+  line-height: 2.75rem;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}

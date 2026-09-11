@@ -2,7 +2,6 @@ export { Button } from "./Button";
 export { CatalogIndex, type CatalogEntry } from "./CatalogIndex";
 export { CompoundIndexHead, CompoundRow, type CompoundRowField } from "./CompoundRow";
 export { DiscoveryGrid, type DiscoveryEntry, type DiscoveryGridCopy } from "./DiscoveryGrid";
-export { DocumentLedger, type DocumentRecord } from "./DocumentLedger";
 export { EditorialSpread, type SpreadPrinciple } from "./EditorialSpread";
 export { ProductCard } from "./ProductCard";
 export { SpecimenPlate } from "./SpecimenPlate";

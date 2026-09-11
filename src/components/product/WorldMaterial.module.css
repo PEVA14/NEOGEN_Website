@@ -1,0 +1,214 @@
+/*
+ * WORLD MATERIAL — three environment studies, one per flagship.
+ *
+ * Built entirely from gradients over the world tokens in `worlds.css`. No
+ * imagery, no animation, and nothing that could be mistaken for a photograph
+ * of a product: each reads as an instrument, a light source, or a geological
+ * section. Opacities are kept low enough that the diagrammatic silhouette
+ * above stays the subject of the frame.
+ */
+.material {
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+}
+
+/* --- RETA: precision ------------------------------------------------------ */
+
+.graticule {
+  background-image:
+    linear-gradient(
+      to right,
+      color-mix(in oklab, var(--world-light) 7%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--world-light) 7%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 10% 8%;
+  inset: 0;
+  position: absolute;
+}
+
+.crosshair {
+  inset: 0;
+  position: absolute;
+}
+
+.crosshair::before,
+.crosshair::after {
+  background: color-mix(in oklab, var(--world-accent) 55%, transparent);
+  content: "";
+  position: absolute;
+}
+
+.crosshair::before {
+  block-size: 1px;
+  inline-size: 18%;
+  inset-block-start: 50%;
+  inset-inline-start: 41%;
+}
+
+.crosshair::after {
+  block-size: 14%;
+  inline-size: 1px;
+  inset-block-start: 43%;
+  inset-inline-start: 50%;
+}
+
+/* Measurement ticks along two edges: every 5%, every fifth tick longer. */
+.ticks {
+  position: absolute;
+}
+
+.ticks[data-edge="top"] {
+  background-image:
+    repeating-linear-gradient(
+      to right,
+      color-mix(in oklab, var(--world-light) 45%, transparent) 0 1px,
+      transparent 1px 25%
+    ),
+    repeating-linear-gradient(
+      to right,
+      color-mix(in oklab, var(--world-light) 22%, transparent) 0 1px,
+      transparent 1px 5%
+    );
+  background-position: top left;
+  background-repeat: no-repeat;
+  background-size:
+    100% 0.75rem,
+    100% 0.4rem;
+  block-size: 0.75rem;
+  inset-block-start: 0;
+  inset-inline: 0;
+}
+
+.ticks[data-edge="left"] {
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--world-light) 45%, transparent) 0 1px,
+      transparent 1px 25%
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--world-light) 22%, transparent) 0 1px,
+      transparent 1px 5%
+    );
+  background-repeat: no-repeat;
+  background-size:
+    0.75rem 100%,
+    0.4rem 100%;
+  inline-size: 0.75rem;
+  inset-block: 0;
+  inset-inline-start: 0;
+}
+
+/* --- GLOW: light ---------------------------------------------------------- */
+
+.bloom {
+  background: radial-gradient(
+    closest-side,
+    color-mix(in oklab, var(--world-light) 42%, transparent) 0%,
+    color-mix(in oklab, var(--world-accent) 22%, transparent) 45%,
+    transparent 100%
+  );
+  block-size: 78%;
+  inline-size: 110%;
+  inset-block-start: 14%;
+  inset-inline-start: -5%;
+  position: absolute;
+}
+
+.halo {
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in oklab, var(--world-light) 30%, transparent);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 0 3rem color-mix(in oklab, var(--world-accent) 25%, transparent);
+  inline-size: 62%;
+  inset-block-start: 26%;
+  inset-inline-start: 19%;
+  position: absolute;
+}
+
+/* Fine refracted rules crossing the field — light, not graphics. */
+.caustics {
+  background-image: repeating-linear-gradient(
+    115deg,
+    transparent 0 14px,
+    color-mix(in oklab, var(--world-light) 8%, transparent) 14px 15px
+  );
+  inset: 0;
+  mask-image: radial-gradient(closest-side, #000 20%, transparent 80%);
+  position: absolute;
+}
+
+/* --- GHK-Cu: material ----------------------------------------------------- */
+
+.core {
+  block-size: 88%;
+  border-inline: 1px solid color-mix(in oklab, var(--world-light) 16%, transparent);
+  display: grid;
+  grid-template-rows: 1.1fr 1.6fr 0.9fr 1.4fr;
+  /* Set to the right third of the frame so the diagrammatic silhouette,
+     centred and tilted, never crosses the strata — two drawings overlapping
+     read as one muddled one. */
+  inline-size: 24%;
+  inset-block-start: 6%;
+  inset-inline-start: 70%;
+  position: absolute;
+}
+
+.stratum[data-layer="oxide"] {
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--world-accent) 38%, var(--world-void)) 0%,
+    color-mix(in oklab, var(--world-accent) 20%, var(--world-void)) 100%
+  );
+}
+
+.stratum[data-layer="copper"] {
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 3px,
+      color-mix(in oklab, var(--world-light) 8%, transparent) 3px 4px
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--world-accent) 58%, var(--world-void)),
+      color-mix(in oklab, var(--world-accent) 34%, var(--world-void))
+    );
+}
+
+.stratum[data-layer="patina"] {
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--world-patina) 55%, var(--world-void)),
+    color-mix(in oklab, var(--world-patina) 30%, var(--world-void))
+  );
+}
+
+.stratum[data-layer="deep"] {
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--world-accent) 14%, var(--world-void)),
+    var(--world-void)
+  );
+}
+
+.depth {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--world-light) 35%, transparent) 0 1px,
+    transparent 1px 10%
+  );
+  block-size: 88%;
+  inline-size: 0.6rem;
+  inset-block-start: 6%;
+  inset-inline-start: calc(70% - 1rem);
+  position: absolute;
+}

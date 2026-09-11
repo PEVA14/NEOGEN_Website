@@ -40,6 +40,11 @@ export const routes = {
    */
   area: (slug: string) => `/productos/area/${slug}`,
   research: "/investigacion",
+  /**
+   * The public documentation explorer. A 404 in production until at least one
+   * public document resolves — see the page for why.
+   */
+  qualityExplorer: "/investigacion/calidad",
   article: (slug: string) => `/investigacion/${slug}`,
   cart: "/carrito",
   checkout: "/checkout",

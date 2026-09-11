@@ -1,0 +1,144 @@
+/*
+ * RESEARCH AREA INDEX — a register of places.
+ *
+ * Each row is one link. A thin area-toned band on the leading edge carries the
+ * area's material from `styles/areas.css`; the compound count hangs right at
+ * display scale. Rows, not panels: this surface is read, not shopped.
+ */
+.index {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  border-block-start: 1px solid var(--border-subtle);
+  position: relative;
+}
+
+.row:last-child {
+  border-block-end: 1px solid var(--border-subtle);
+}
+
+.link {
+  align-items: center;
+  color: inherit;
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: 3rem minmax(0, 1fr) auto;
+  min-block-size: 2.75rem;
+  padding-block: var(--space-md);
+  padding-inline: var(--space-sm);
+  text-decoration: none;
+  transition: background-color var(--motion-duration-fast) var(--ease-standard);
+}
+
+.row::before {
+  background: var(--area-line);
+  content: "";
+  inline-size: 3px;
+  inset-block: var(--space-sm);
+  inset-inline-start: 0;
+  position: absolute;
+}
+
+.link:hover {
+  background: var(--area-wash);
+}
+
+.link:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: calc(-1 * var(--focus-ring-width));
+}
+
+.number {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+  min-inline-size: 0;
+}
+
+.title {
+  color: var(--ink-primary);
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-stretch: var(--font-stretch-display);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-snug);
+}
+
+.body {
+  color: var(--ink-secondary);
+  font-size: var(--text-sm);
+  max-inline-size: 60ch;
+}
+
+.examples {
+  color: var(--area-ink);
+  overflow-wrap: anywhere;
+}
+
+.figures {
+  display: flex;
+  gap: var(--space-lg);
+}
+
+.figure {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+}
+
+.figureValue {
+  color: var(--ink-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-3xl);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.figureLabel {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.enter {
+  display: none;
+}
+
+@media (min-width: 64rem) {
+  .link {
+    grid-template-columns: 4rem minmax(0, 1fr) auto 7rem;
+  }
+  .enter {
+    color: var(--ink-muted);
+    display: block;
+    letter-spacing: var(--tracking-label);
+    text-align: end;
+    text-transform: uppercase;
+  }
+  .link:hover .enter {
+    color: var(--ink-primary);
+  }
+}
+
+@media (max-width: 39.999rem) {
+  .link {
+    grid-template-columns: 2rem minmax(0, 1fr);
+  }
+  .figures {
+    grid-column: 2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .link {
+    transition: none;
+  }
+}

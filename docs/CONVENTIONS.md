@@ -136,9 +136,12 @@ rendered as a pending value.**
   molecular mass and lot have no row on the product page — an empty labelled
   row makes a finished page look unfinished, and a labelled `PLACEHOLDER`
   puts an internal marker in front of a customer.
-- The one exception is a **document** that has not been produced. A
-  certificate of analysis has a real, honest pending state, and the record
-  ledger states it. `scripts/check-output.mjs` allows the phrase only there.
+- **No "pending" state on a trust surface.** Phase 11 retired the old
+  exception that let a document ledger say "pending verification". A quality
+  surface now shows a document the resolver accepted, or one deliberate
+  no-evidence statement — never a hollow badge, a "coming soon", or a row of
+  unavailable placeholders. `check:output` forbids the pending phrase
+  everywhere.
 - **Never** substitute an invented value for a missing one.
 - Never fabricate scientific claims, certifications, COAs, lab results, lot
   numbers, provenance, shipping promises, prices, specs or payment capabilities.
@@ -400,7 +403,63 @@ declarations, and that is the correct output.
 cookie, which was enough for the build to prerender the whole checkout as
 static HTML.
 
-## 13. Commands
+## 13. Trust and content (Phase 11)
+
+**One resolver decides every quality state.** `domain/quality/resolveEvidence`
+is the only code that can produce `documentation-available`, `coa-available`,
+`lot-coa`, `third-party-tested` or `janoshik-verified`. No component sets a
+badge, no product carries a verified flag, and every rendered state carries
+`data-evidence-state` — `check:output` asserts the rendered count equals the
+resolver's count.
+
+**Evidence resolves at the narrowest level and never widens.** PRODUCT →
+PRESENTATION → LOT → DOCUMENT. Analyses (COA, lot COA, third-party, analytical
+report) may attach only to a presentation or a lot; an analysis attached to a
+whole product is refused, because it could only be read as verifying every
+strength. A lot COA covers that lot only. `ALLOWED_LEVELS` is where that rule
+lives.
+
+**Type and issuer are separate.** A third-party analysis is a type; Janoshik is
+an issuer. "Janoshik verified" requires issuer exactly `janoshik`, type
+`third-party-analysis`, a real report id, variant or lot scope, public and
+approved — all five. A Janoshik record without a report id is refused, not
+downgraded.
+
+**Supplier data stays internal twice over.** `supplier-documentation` is an
+internal-only type, the supplier issuer has `publicName: false`, and
+`publicLot()` copies named fields so `supplierBatchReference` cannot reach a
+page. `check:output` fails if private lot fields or the issuer registry appear
+in a browser bundle.
+
+**Content has a class and a status.** A (business decision), B (product fact),
+C (scientific source), D (derived copy), E (blocked); `draft`,
+`source-needed`, `owner-review`, `approved`. Only approved renders. D must name
+the A/B/C it derives from; E never becomes D. `content/lifecycle.ts`.
+
+**A scientific sentence cannot render without a public reference.**
+`ProductOverview` statements are `SourcedStatement`s; `publicOverview` drops
+any without an approved, valid reference, and returns null — omitting the
+section — when nothing is publishable. There is no dose, administration,
+protocol, cycle, frequency or reconstitution field in the model, and
+`FORBIDDEN_PUBLIC_TERMS` blocks the same ideas in free text and in every
+dictionary string.
+
+**One reference registry, read from both ends.** Product ↔ reference links are
+derived from overview citations (`content/research.ts`); the PDP, area pages
+and the Research Hub all read that derivation. There is no second list of
+"papers about this compound".
+
+**Gated routes 404 honestly.** The documentation explorer
+(`/investigacion/calidad`) renders in development as a labelled architectural
+view and does not exist in production until a public document resolves. Links
+to it are rendered under the same condition.
+
+**Notifications are provider-independent and cannot fail an order.** The order
+domain does not import them. `server/notifications.ts` builds structured
+messages (facts, not prose), writes them to an outbox, then attempts a channel.
+Today the channel is `none` and every message is left pending.
+
+## 14. Commands
 
 ```bash
 npm run dev          # development server
@@ -411,6 +470,8 @@ npm run check        # every gate, in order
 npm run check:catalog   # registry integrity
 npm run check:commerce  # bag arithmetic + payment state machine
 npm run check:checkout  # server-side pricing, gates, idempotency, policies
+npm run check:quality   # evidence resolver, lots, Janoshik rules, media readiness
+npm run check:content   # references, sourced statements, forbidden vocabulary, notifications
 npm run check:media     # media declarations vs real files
 npm run check:output    # what the build actually emitted
 npm run format       # Prettier

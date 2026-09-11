@@ -22,6 +22,7 @@ import { createOrder, recordAttempt, transition } from "@/domain/order";
 import { isLocale, type Locale } from "@/i18n/config";
 import { localizePath } from "@/i18n/routing";
 import { activeProvider, bagEnabled } from "@/payments";
+import { notifyOrderPlaced } from "@/server/notifications";
 import { orderRepository } from "@/server/persistence";
 
 import { clearDraft, currentDraft, ensureDraft, rememberOrder, saveDraft } from "./session";
@@ -337,6 +338,14 @@ export async function placeOrder(form: FormData): Promise<void> {
   await saveDraft(touch(withAcks, { orderId: final.id }));
   await rememberOrder(final.id);
   await clearDraft();
+
+  /*
+   * NOTIFICATIONS — after the order is durable, never before, and never able
+   * to fail it. `notifyOrderPlaced` swallows its own errors: an order that
+   * was recorded has been placed, whether or not an email went out. Today no
+   * channel is registered, so both messages are queued as pending.
+   */
+  await notifyOrderPlaced(final, locale);
 
   redirect(localizePath(routes.orderConfirmation(final.id), locale));
 }

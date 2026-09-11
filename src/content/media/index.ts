@@ -75,3 +75,35 @@ export const CARD_SIZES = "(min-width: 90rem) 28rem, (min-width: 48rem) 33vw, 10
  * two columns above 64rem.
  */
 export const PLATE_SIZES = "(min-width: 64rem) 34rem, 100vw";
+
+/**
+ * WHAT A FLAGSHIP STAGE SHOWS WHILE NO LIVE MODEL IS RUNNING.
+ *
+ * Two different questions share one frame, and they must not be confused:
+ *
+ *   with a MODEL  — the still is the model's own rendered `poster`, because it
+ *                   stands in for that exact scene while the GLB loads.
+ *   without one   — the still is the product's `primary` photograph. A render
+ *                   of a scene that does not exist is not a substitute.
+ *
+ * So GLOW gaining a photograph lights up its stage with no layout change, and
+ * RETA never shows a photograph in the frame its 3D object is about to occupy.
+ */
+export function resolveStageStill(media: ProductMedia): ProductImage | null {
+  return media.model ? media.poster : (media.primary ?? media.poster);
+}
+
+/**
+ * The supplementary images, in display order: alternates, then detail, then
+ * packaging. Empty for every product today, and the strip that renders them
+ * then renders nothing.
+ */
+export function galleryImages(
+  media: ProductMedia,
+): readonly { role: "alternate" | "detail" | "packaging"; image: ProductImage }[] {
+  return [
+    ...media.alternates.map((image) => ({ role: "alternate" as const, image })),
+    ...(media.detail ? [{ role: "detail" as const, image: media.detail }] : []),
+    ...(media.packaging ? [{ role: "packaging" as const, image: media.packaging }] : []),
+  ];
+}

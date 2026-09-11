@@ -2,6 +2,7 @@ import { routes } from "@/config/routes";
 import { siteConfig } from "@/config/site";
 import { publishedProducts } from "@/data/catalog";
 import { publicPolicies } from "@/content/policies";
+import { publicEvidenceIndex } from "@/domain/quality";
 import { publicAreas } from "@/data/discovery";
 import { localeTags } from "@/i18n/config";
 import { localizePath } from "@/i18n/routing";
@@ -41,6 +42,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
      * sitemap cannot advertise a policy URL that 404s.
      */
     ...publicPolicies().map((policy) => routes.policy(policy.slug)),
+    /* The documentation explorer exists only once a public document does. */
+    ...(publicEvidenceIndex(publishedProducts).length > 0 ? [routes.qualityExplorer] : []),
   ];
 
   return paths.flatMap((path) =>

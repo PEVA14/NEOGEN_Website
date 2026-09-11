@@ -2,16 +2,20 @@ import { notFound } from "next/navigation";
 
 import { SectionHeader } from "@/components/layout";
 import { Container, Section } from "@/components/primitives";
+import { EvidenceChain } from "@/components/quality";
+import { CitationRail, CompoundFinder, ResearchAreaIndex } from "@/components/research";
 import { Body, Mono } from "@/components/typography";
-import { CompoundIndexHead, CompoundRow, DocumentLedger, TextLink } from "@/components/ui";
+import { TextLink } from "@/components/ui";
 import { routes } from "@/config/routes";
-import { isLocale, localeTags } from "@/i18n/config";
+import { researchReferenceIndex, referencesForArea } from "@/content/research";
 import { formatStrength, publishedProducts } from "@/data/catalog";
-import { formatPrice, getPrices } from "@/data/commerce";
+import { productsInArea, publicAreas, publicAreasFor } from "@/data/discovery";
+import { publicEvidenceIndex, resolveEvidence } from "@/domain/quality";
+import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/getDictionary";
+import { localizePath } from "@/i18n/routing";
 import { alternates } from "@/lib/alternates";
 import { socialMetadata } from "@/lib/meta";
-import { localizePath } from "@/i18n/routing";
 
 import type { Metadata } from "next";
 
@@ -27,34 +31,33 @@ export async function generateMetadata({
   return {
     title: dict.research.title,
     description,
-    ...socialMetadata({
-      locale,
-      path: routes.research,
-      title: dict.research.title,
-      description,
-    }),
+    ...socialMetadata({ locale, path: routes.research, title: dict.research.title, description }),
     alternates: alternates(locale, routes.research),
   };
 }
 
 /**
- * NEOGEN RESEARCH — documentation infrastructure, not a blog.
+ * NEOGEN RESEARCH — an index and an evidence model.
  *
- * WHAT THIS PAGE IS, GIVEN THAT NOTHING HAS BEEN PUBLISHED YET.
- * -------------------------------------------------------------
- * The obvious move — an article grid with three placeholder cards — would be a
- * page pretending to have an archive. So the hub is built around what actually
- * exists: the compound register — every published compound, its category, its
- * presentations and its price — and the classes of record the documentation
- * system carries. Both are real structure. Neither asserts that any particular
- * document exists, describes a finding, or names a source.
+ * WHAT CHANGED. The hub used to be a static 85-row register above a ledger of
+ * three "document unavailable" records and an empty literature section. It
+ * read as an isolated table with two apologies under it. It is now built for
+ * browsing without buying:
  *
- * Literature gets its own section and an honest empty state rather than being
- * hidden. An empty section that says so is information; a missing section is a
- * gap the reader cannot see.
+ *   01  masthead
+ *   02  RESEARCH AREAS   — the eight places, with real compound counts
+ *   03  COMPOUND INDEX   — searchable, filterable by area
+ *   04  QUALITY MODEL    — the rule evidence follows, drawn as a chain
+ *   05  REFERENCES       — the citation index, from the same registry the
+ *                          product pages cite
  *
- * The rhythm is the site's: masthead → register → records → literature, all
- * Quiet Mode. Research is where a reader reads, so nothing here moves.
+ * Every section shows something that exists. The reference index is empty,
+ * and says what would put something in it rather than implying an archive is
+ * coming. Nothing here is "latest research": there is none to feature.
+ *
+ * SERVER-FIRST. The finder receives a thin list — names, area labels,
+ * presentation summaries, a documentation label resolved here — and no
+ * catalogue, price map or document registry reaches the browser.
  */
 export default async function ResearchPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -64,27 +67,48 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
   const hub = dict.research.hub;
   const path = (to: string) => localizePath(to, locale);
 
-  /*
-   * THE REGISTER IS THE CATALOGUE, NOT THE THREE WORLDS.
-   *
-   * It used to iterate `worldIds`, so a "compound register" on a research site
-   * listed three compounds while the catalogue held eighty-three — and filled
-   * its three columns with "Código PLACEHOLDER", "Pendiente de verificación"
-   * and "Por definir", none of which a reader can use. Reading the registry
-   * makes it an actual register, and every column now carries a fact the
-   * catalogue already knows.
-   */
-  const register = [...publishedProducts].sort((a, b) => a.name.localeCompare(b.name));
-  const prices = await getPrices(register.flatMap((p) => p.variants.map((v) => v.id)));
-  const from = new Map(
-    register.map((product) => {
-      const cheapest = product.variants
-        .map((v) => prices.get(v.id))
-        .filter((m): m is NonNullable<typeof m> => Boolean(m))
-        .sort((a, b) => a.amount - b.amount)[0];
-      return [product.slug, cheapest ? formatPrice(cheapest, localeTags[locale]) : null];
-    }),
-  );
+  const areas = publicAreas();
+  const areaEntries = areas.map((area) => {
+    const items = productsInArea(area.id);
+    return {
+      id: area.id,
+      index: String(area.order).padStart(2, "0"),
+      title: dict.discovery.areas[area.id].title,
+      body: dict.discovery.areas[area.id].body,
+      href: path(routes.area(area.slug)),
+      compounds: items.length,
+      references: referencesForArea(area.id).length,
+      examples: items.slice(0, 3).map((p) => p.name),
+    };
+  });
+
+  const finderEntries = [...publishedProducts]
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((product) => {
+      const evidence = resolveEvidence(product);
+      const count = [...evidence.product, ...evidence.presentations.flatMap((p) => p.records)]
+        .length;
+      return {
+        slug: product.slug,
+        name: product.name,
+        subtitle: product.subtitle,
+        href: path(routes.product(product.slug)),
+        areas: publicAreasFor(product.slug).map((a) => ({
+          id: a.id,
+          label: dict.discovery.areas[a.id].title,
+        })),
+        presentations: product.variants.map((v) => formatStrength(v.strength)).join(" · "),
+        documentation:
+          count === 0
+            ? null
+            : count === 1
+              ? hub.finder.document
+              : hub.finder.documents.replace("{n}", String(count)),
+      };
+    });
+
+  const hasPublicDocuments = publicEvidenceIndex(publishedProducts).length > 0;
+  const referenceIndex = researchReferenceIndex();
 
   return (
     <>
@@ -101,88 +125,84 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
         </Container>
       </Section>
 
-      {/* 02 — THE REGISTER. The same shape the homepage uses, at full scale. */}
-      <Section mode="quiet" aria-labelledby="register-title">
+      <Section mode="quiet" aria-labelledby="areas-title" className="pt-0">
         <Container width="full">
           <SectionHeader
-            index={hub.register.index}
-            label={`${hub.register.label} // ${hub.register.qualifier}`}
-            title={hub.register.title}
-            id="register-title"
-            action={<TextLink href={path(routes.products)}>{hub.register.action}</TextLink>}
+            index={hub.areas.index}
+            label={`${hub.areas.label} // ${hub.areas.qualifier}`}
+            title={hub.areas.title}
+            id="areas-title"
           />
-          <Mono size="2xs" className="block text-(--ink-muted)">
-            {hub.register.countLabel} — {String(register.length).padStart(2, "0")}
-          </Mono>
-          <ul>
-            <CompoundIndexHead columns={[...hub.register.columns]} />
-            {register.map((product, index) => (
-              <CompoundRow
-                key={product.id}
-                index={String(index + 1).padStart(2, "0")}
-                world={product.world}
-                worldLabel={
-                  product.world
-                    ? dict.home.products.worldLabels[product.world]
-                    : dict.products.catalog.categoryLabels[product.category]
-                }
-                name={product.name}
-                href={path(routes.product(product.slug))}
-                fields={[
-                  {
-                    key: hub.register.columns[0],
-                    value: dict.products.catalog.categoryLabels[product.category],
-                  },
-                  {
-                    key: hub.register.columns[1],
-                    value: product.variants.map((v) => formatStrength(v.strength)).join(" · "),
-                  },
-                  { key: hub.register.columns[2], value: from.get(product.slug) ?? "—" },
-                ]}
+          <ResearchAreaIndex entries={areaEntries} copy={hub.areas} />
+        </Container>
+      </Section>
+
+      <Section mode="quiet" aria-labelledby="index-title" id="indice">
+        <Container width="full">
+          <SectionHeader
+            index={hub.finder.index}
+            label={`${hub.finder.label} // ${hub.finder.qualifier}`}
+            title={hub.finder.title}
+            id="index-title"
+            action={<TextLink href={path(routes.products)}>{dict.discovery.all}</TextLink>}
+          />
+          <CompoundFinder
+            entries={finderEntries}
+            areas={areaEntries.map((a) => ({ id: a.id, label: a.title }))}
+            copy={hub.finder}
+          />
+        </Container>
+      </Section>
+
+      <Section
+        mode="quiet"
+        aria-labelledby="quality-model-title"
+        id="calidad"
+        className="bg-(--surface-raised)"
+      >
+        <Container width="full">
+          <SectionHeader
+            index={hub.quality.index}
+            label={`${hub.quality.label} // ${hub.quality.qualifier}`}
+            title={hub.quality.title}
+            id="quality-model-title"
+            lede={hub.quality.lede}
+            action={
+              /* Only a link to a page that exists: the explorer 404s in
+                 production until a public document does. */
+              hasPublicDocuments ? (
+                <TextLink href={path(routes.qualityExplorer)}>{hub.quality.explorer}</TextLink>
+              ) : undefined
+            }
+          />
+          <EvidenceChain copy={dict.quality.record.chain} />
+        </Container>
+      </Section>
+
+      <Section mode="quiet" aria-labelledby="references-title">
+        <Container width="full">
+          <SectionHeader
+            index={hub.references.index}
+            label={`${hub.references.label} // ${hub.references.qualifier}`}
+            title={hub.references.title}
+            id="references-title"
+          />
+          {referenceIndex.length === 0 ? (
+            <Body tone="muted" className="max-w-(--container-prose)">
+              {hub.references.empty}
+            </Body>
+          ) : (
+            <>
+              <CitationRail
+                references={referenceIndex.map((e) => e.reference)}
+                copy={dict.citations}
               />
-            ))}
-          </ul>
-        </Container>
-      </Section>
-
-      {/*
-       * 03 — RECORD CLASSES, on warm stone.
-       *
-       * Reuses the product page's document vocabulary at catalogue scale: this
-       * describes what the documentation system CARRIES, not what has been
-       * filed. Every record shows the unavailable state, because none has.
-       */}
-      <Section mode="quiet" aria-labelledby="records-title" className="bg-(--surface-raised)">
-        <Container width="full">
-          <SectionHeader
-            index={hub.documents.index}
-            label={`${hub.documents.label} // ${hub.documents.qualifier}`}
-            title={hub.documents.title}
-            id="records-title"
-            lede={hub.documents.lede}
-          />
-          <DocumentLedger
-            records={dict.pdp.documentation.records}
-            identifierLabel={dict.home.research.recordLabel}
-            stateLabel={dict.home.research.stateLabel}
-            stateValue={hub.documents.unavailable}
-          />
-        </Container>
-      </Section>
-
-      {/* 04 — LITERATURE. Empty, and saying so. */}
-      <Section mode="quiet" aria-labelledby="literature-title">
-        <Container width="full">
-          <SectionHeader
-            index={hub.literature.index}
-            label={`${hub.literature.label} // ${hub.literature.qualifier}`}
-            title={hub.literature.title}
-            id="literature-title"
-          />
-          <Body tone="muted">{hub.literature.empty}</Body>
-          <Body tone="muted" size="sm" className="neogen-mono mt-(--space-sm)">
-            {hub.literature.note}
-          </Body>
+              <Mono size="2xs" className="mt-(--space-sm) block text-(--ink-muted)">
+                {hub.references.citedBy} —{" "}
+                {[...new Set(referenceIndex.flatMap((e) => e.products))].length}
+              </Mono>
+            </>
+          )}
         </Container>
       </Section>
     </>

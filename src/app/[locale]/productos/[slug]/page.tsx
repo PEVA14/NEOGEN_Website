@@ -3,15 +3,31 @@ import { notFound } from "next/navigation";
 import { SectionHeader } from "@/components/layout";
 import { Container, Grid, Section } from "@/components/primitives";
 import { AddToBag } from "@/components/commerce";
-import { CommercePanel, ProductPlate, ProductStage, SpecTable } from "@/components/product";
-import { Body } from "@/components/typography";
-import { DocumentLedger, ProductCard, TextLink } from "@/components/ui";
+import {
+  CommercePanel,
+  FlagshipInterlude,
+  MediaStrip,
+  PresentationLadder,
+  ProductPlate,
+  ProductStage,
+  SpecTable,
+  WorldMaterial,
+  type LadderStep,
+} from "@/components/product";
+import { QualityRecord } from "@/components/quality";
+import { CitationRail } from "@/components/research";
+import { Body, Mono } from "@/components/typography";
+import { ProductCard, TextLink } from "@/components/ui";
 import { routes } from "@/config/routes";
 import { getWorld } from "@/config/worlds";
-import { documentFile, documentKinds, productMedia } from "@/content";
+import { galleryImages, productMedia, resolveStageStill } from "@/content/media";
+import { publicOverview } from "@/content/overview";
+import { referencesForProduct } from "@/content/research";
+import { resolveEvidence } from "@/domain/quality";
 import {
   formatStrength,
   getProduct,
+  type Strength,
   presentationRange,
   isPublishable,
   products,
@@ -43,6 +59,28 @@ import type { Metadata } from "next";
  * research, related compounds — because that spine is the product record, and
  * it should not depend on whether a compound happens to be a flagship.
  */
+/**
+ * A strength as a ladder figure — the number large, the unit small.
+ *
+ * Built from the strength union, not by splitting a formatted string, so a
+ * solution's "mg / ml" and a blend's components are set correctly rather than
+ * guessed at from where a space falls.
+ */
+function ladderStep(strength: Strength, vials: number | null): LadderStep {
+  switch (strength.kind) {
+    case "solid":
+      return { value: String(strength.mg), unit: "mg", vials };
+    case "solution":
+      return { value: String(strength.mg), unit: `mg / ${strength.ml} ml`, vials };
+    case "volume":
+      return { value: String(strength.ml), unit: "ml", vials };
+    case "iu":
+      return { value: String(strength.iu), unit: "IU", vials };
+    case "blend":
+      return { value: strength.componentsMg.join("+"), unit: "mg", vials };
+  }
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -127,6 +165,25 @@ export default async function ProductPage({
   const media = productMedia(product.slug);
   /* Approved areas — 83 of 85 products have at least one. */
   const areas = publicAreasFor(product.slug);
+  const gallery = galleryImages(media);
+
+  /* Trust and understanding, resolved on the server. */
+  const evidence = resolveEvidence(product);
+  const presentationLabels = product.variants.map((v) => ({
+    variantId: v.id,
+    label: `${formatStrength(v.strength)}${v.vials ? ` × ${v.vials}` : ""}`,
+  }));
+  const overview = publicOverview(product.slug, locale);
+  const references = referencesForProduct(product.slug);
+  const citationNumber = (id: string) =>
+    String(references.findIndex((r) => r.id === id) + 1).padStart(2, "0");
+  const worldStatement = world
+    ? world.id === "reta"
+      ? dict.home.reta.beats[0].statement
+      : world.id === "glow"
+        ? dict.home.glow.statement
+        : dict.home.ghkcu.statement
+    : "";
 
   const variantIds = product.variants.map((v) => v.id);
   const commerce = await getPrices(variantIds);
@@ -174,6 +231,24 @@ export default async function ProductPage({
   const relatedPrice = priceFor(related);
   const materialPrice = priceFor(materials);
 
+  /*
+   * SECTION NUMBERING FOLLOWS WHAT RENDERS.
+   *
+   * The profile exists only for products with approved sourced content, and
+   * materials and related only when there is something to list. Hardcoded
+   * indices left gaps — "02, 04, 05" — wherever a section was absent, so the
+   * spine is numbered from the sections that actually render.
+   */
+  const renderedSections = [
+    "quality",
+    ...(overview ? ["overview"] : []),
+    "research",
+    "specifications",
+    ...(materials.length > 0 ? ["materials"] : []),
+    ...(related.length > 0 ? ["related"] : []),
+  ];
+  const sectionIndex = (id: string) => String(renderedSections.indexOf(id) + 2).padStart(2, "0");
+
   const commercePanel = (
     <CommercePanel
       world={product.world}
@@ -199,7 +274,7 @@ export default async function ProductPage({
         /* Composition where the source states one; otherwise nothing. The old
            copy described the glass vial, which is packaging, not product. */
         descriptor: product.composition,
-        documentationHref: `#${pdp.documentation.index}`,
+        documentationHref: "#calidad",
         placeholder,
       }}
     >
@@ -250,7 +325,11 @@ export default async function ProductPage({
                the same lookup the card and the social card make. */
             modelPath={media.model}
             environment={world.environment}
-            poster={media.poster}
+            poster={resolveStageStill(media)}
+            material={<WorldMaterial world={world.id} />}
+            frameMarks={
+              media.model ? <WorldMaterial world={world.id} interior={false} /> : undefined
+            }
             posterAlt={dict.home.reta.vialAlt}
             loadingLabel={dict.home.reta.loadingLabel}
             staticLabel={dict.home.reta.staticLabel}
@@ -274,28 +353,190 @@ export default async function ProductPage({
         </Section>
       )}
 
-      {/* 02 — INFORMATION. Quiet Mode takes over here. */}
+      {/* Supplementary photography, when it exists. Nothing today. */}
+      {gallery.length > 0 ? (
+        <Section mode="quiet" aria-label={pdp.inspectionLabel}>
+          <Container width="full">
+            <MediaStrip images={gallery} labels={pdp.media} />
+          </Container>
+        </Section>
+      ) : null}
+
+      {/*
+       * 02 — QUALITY / DOCUMENTATION. Directly after commerce.
+       *
+       * Once intent is established, the next question a careful buyer asks is
+       * whether THIS presentation is documented. Every state comes from
+       * `resolveEvidence`; with nothing public, the block says so once and
+       * shows the rule evidence follows.
+       */}
+      <Section
+        mode="quiet"
+        aria-labelledby="quality-title"
+        id="calidad"
+        className="bg-(--surface-raised)"
+      >
+        <Container width="full">
+          <SectionHeader
+            index={sectionIndex("quality")}
+            label={`${pdp.quality.label} // ${pdp.quality.qualifier}`}
+            title={pdp.quality.title}
+            id="quality-title"
+          />
+          <QualityRecord
+            presentations={presentationLabels}
+            evidence={evidence}
+            copy={dict.quality.record}
+            localeTag={localeTags[locale]}
+          />
+        </Container>
+      </Section>
+
+      {/* Impact — the flagship's world, once more, between trust and reference. */}
+      {world ? (
+        <FlagshipInterlude
+          world={world.id}
+          titleId="interlude-title"
+          eyebrow={dict.home.products.worldLabels[world.id]}
+          statement={worldStatement}
+          facts={[
+            { key: pdp.interlude.range, value: presentationRange(product) },
+            {
+              key: pdp.interlude.presentations,
+              value: String(product.variants.length).padStart(2, "0"),
+            },
+            ...(areas[0]
+              ? [{ key: pdp.interlude.area, value: dict.discovery.areas[areas[0].id].title }]
+              : []),
+          ]}
+        />
+      ) : null}
+
+      {/*
+       * 03 — PROFILE. Only when approved, sourced content exists.
+       *
+       * No overview has been written against sources, so this section is
+       * absent on every product today — not a heading over a placeholder.
+       * Every sentence it can render carries at least one public reference.
+       */}
+      {overview ? (
+        <Section mode="quiet" aria-labelledby="overview-title">
+          <Container width="full">
+            <SectionHeader
+              index={sectionIndex("overview")}
+              label={`${pdp.overview.label} // ${pdp.overview.qualifier}`}
+              title={pdp.overview.title}
+              id="overview-title"
+              lede={overview.summary ?? undefined}
+            />
+            <div className="grid gap-(--space-xl) lg:grid-cols-12">
+              <div className="flex flex-col gap-(--space-lg) lg:col-span-7">
+                {(
+                  [
+                    [pdp.overview.researchContext, overview.researchContext],
+                    [pdp.overview.mechanism, overview.mechanismNotes],
+                  ] as const
+                ).map(([heading, statements]) =>
+                  statements.length > 0 ? (
+                    <div key={heading} className="flex flex-col gap-(--space-sm)">
+                      <Mono size="2xs" className="text-(--ink-muted) uppercase">
+                        {heading}
+                      </Mono>
+                      {statements.map((statement) => (
+                        <Body key={statement.id}>
+                          {statement.text}{" "}
+                          <Mono size="2xs" className="text-(--ink-muted)">
+                            [{statement.references.map((r) => citationNumber(r.id)).join(", ")}]
+                          </Mono>
+                        </Body>
+                      ))}
+                    </div>
+                  ) : null,
+                )}
+                {overview.technicalNotes.length > 0 ? (
+                  <div className="flex flex-col gap-(--space-sm)">
+                    <Mono size="2xs" className="text-(--ink-muted) uppercase">
+                      {pdp.overview.technical}
+                    </Mono>
+                    {overview.technicalNotes.map((note) => (
+                      <Body key={note}>{note}</Body>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+              <div className="lg:col-span-5">
+                <CitationRail references={references} copy={dict.citations} />
+              </div>
+            </div>
+          </Container>
+        </Section>
+      ) : null}
+
+      {/*
+       * RESEARCH — citations this page actually makes, and where to read on.
+       *
+       * The references are derived from the overview's citations, the same
+       * records the Research Hub indexes. With none, the section is a route
+       * map into the areas this compound belongs to — it never announces an
+       * absence of literature.
+       */}
+      <Section mode="quiet" aria-labelledby="research-title">
+        <Container width="full">
+          <SectionHeader
+            index={sectionIndex("research")}
+            label={`${pdp.research.label} // ${pdp.research.qualifier}`}
+            title={pdp.research.title}
+            id="research-title"
+            lede={pdp.research.lede}
+            action={<TextLink href={path(routes.research)}>{pdp.research.hub}</TextLink>}
+          />
+          {!overview ? <CitationRail references={references} copy={dict.citations} /> : null}
+          {areas.length > 0 ? (
+            <nav aria-label={pdp.research.routes} className="mt-(--space-lg)">
+              <Mono size="2xs" className="mb-(--space-2xs) block text-(--ink-muted) uppercase">
+                {pdp.research.routes}
+              </Mono>
+              <ul className="flex flex-wrap gap-x-(--space-lg)">
+                {areas.map((area) => (
+                  <li key={area.id}>
+                    <TextLink href={path(routes.area(area.slug))}>
+                      {dict.discovery.areas[area.id].title}
+                    </TextLink>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          ) : null}
+        </Container>
+      </Section>
+
+      {/*
+       * SPECIFICATIONS — led by the presentation ladder.
+       *
+       * The ladder sets the catalogue's own facts as figures; the table below
+       * keeps the full technical record. The rows that only a verified source
+       * could fill — purity, storage, molecular mass — are not rendered at
+       * all rather than shown empty.
+       *
+       * "Clasificación de catálogo", not "Categoría": the value is where the
+       * compound is filed, and several compounds filed under Péptidos are not
+       * peptides.
+       */}
       <Section mode="quiet" aria-labelledby="spec-title">
         <Container width="full">
           <SectionHeader
-            index={pdp.specifications.index}
+            index={sectionIndex("specifications")}
             label={`${pdp.specifications.label} // ${pdp.specifications.qualifier}`}
             title={pdp.specifications.title}
             id="spec-title"
           />
-          {/*
-           * Real values where the catalogue supports them; the rows that only
-           * a verified source can fill — storage, molecular mass, purity — are
-           * not rendered at all rather than shown as placeholders.
-           *
-           * The category row is labelled CLASSIFICATION, not "Category". It is
-           * a merchandising bucket — four of them across the whole catalogue —
-           * and under a heading that says "Especificaciones del producto",
-           * "Categoría — Péptidos" reads as a statement about what the
-           * substance is. Several compounds filed under Péptidos are not
-           * peptides, so the label has to say that this is where the compound
-           * is filed, not what it is.
-           */}
+          <div className="mb-(--space-xl)">
+            <PresentationLadder
+              label={pdp.specifications.ladder}
+              packLabel={pdp.specifications.pack}
+              steps={product.variants.map((v) => ladderStep(v.strength, v.vials))}
+            />
+          </div>
           <SpecTable
             rows={[
               { key: pdp.specifications.compound, value: product.name },
@@ -317,49 +558,6 @@ export default async function ProductPage({
         </Container>
       </Section>
 
-      {/* 03 — DOCUMENTATION. */}
-      <Section
-        mode="quiet"
-        aria-labelledby="doc-title"
-        id={pdp.documentation.index}
-        className="bg-(--surface-raised)"
-      >
-        <Container width="full">
-          <SectionHeader
-            index={pdp.documentation.index}
-            label={`${pdp.documentation.label} // ${pdp.documentation.qualifier}`}
-            title={pdp.documentation.title}
-            id="doc-title"
-          />
-          {/* Localized copy joined to the file registry by position — the
-              dictionary's record order and `documentKinds` are the same list. */}
-          <DocumentLedger
-            records={pdp.documentation.records.map((record, index) => ({
-              ...record,
-              file: documentFile(documentKinds[index], { slug: product.slug }),
-            }))}
-            identifierLabel={dict.home.research.recordLabel}
-            stateLabel={dict.home.research.stateLabel}
-            stateValue={pdp.documentation.unavailable}
-          />
-        </Container>
-      </Section>
-
-      {/* 04 — RESEARCH. */}
-      <Section mode="quiet" aria-labelledby="research-title">
-        <Container width="full">
-          <SectionHeader
-            index={pdp.research.index}
-            label={`${pdp.research.label} // ${pdp.research.qualifier}`}
-            title={pdp.research.title}
-            id="research-title"
-            lede={pdp.research.lede}
-            action={<TextLink href={path(routes.research)}>{pdp.research.action}</TextLink>}
-          />
-          <Body tone="muted">{pdp.research.empty}</Body>
-        </Container>
-      </Section>
-
       {/*
        * 05 — COMPLEMENTARY MATERIALS.
        *
@@ -375,7 +573,7 @@ export default async function ProductPage({
         <Section mode="quiet" aria-labelledby="materials-title" className="bg-(--surface-raised)">
           <Container width="full">
             <SectionHeader
-              index={pdp.materials.index}
+              index={sectionIndex("materials")}
               label={`${pdp.materials.label} // ${pdp.materials.qualifier}`}
               title={pdp.materials.title}
               id="materials-title"
@@ -406,12 +604,12 @@ export default async function ProductPage({
         </Section>
       ) : null}
 
-      {/* 06 — RELATED, by discovery area. */}
+      {/* RELATED, by discovery area. */}
       {related.length > 0 ? (
         <Section mode="quiet" aria-labelledby="related-title">
           <Container width="full">
             <SectionHeader
-              index={pdp.related.index}
+              index={sectionIndex("related")}
               label={`${pdp.related.label} // ${pdp.related.qualifier}`}
               title={pdp.related.title}
               id="related-title"
