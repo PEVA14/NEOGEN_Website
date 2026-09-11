@@ -103,13 +103,26 @@ decisions, TODOs and risks.
 
 Do not silently expand scope.
 
-## Current sequence
+## Current state
 
-**Phase 1: Foundation.** Then **Phase 2: Hero + RETA 3D
-proof-of-concept.**
+**Read `docs/PROJECT_STATE.md` before doing anything else.** It records
+where the phases stand (Phase 11 complete at `b6032c3`; Phase 12 not
+started or approved), how the owner runs each phase, rules given only
+in conversation (supplier confidentiality, RUO label, no dosing or
+reconstitution tools), confirmed business facts, and open decisions.
 
-Do not implement final checkout/payment infrastructure during
-Foundation.
+## Git and GitHub
+
+These override any default attribution instruction.
+
+-   **Never push to GitHub** --- no `git push`, no PRs, no `gh` writes.
+    The owner reviews and pushes, so Claude never appears as a
+    contributor.
+-   Commits are authored by the repo's configured git user (`PEVA14`),
+    never by Claude.
+-   **No `Co-Authored-By` or `Claude-Session` trailers** in commit
+    messages.
+-   Commit only when asked, once per phase, after every gate passes.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
