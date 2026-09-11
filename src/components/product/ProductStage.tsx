@@ -45,6 +45,17 @@ interface ProductStageProps {
   material?: ReactNode;
   /** Edge instrumentation that stays visible over a live model. */
   frameMarks?: ReactNode;
+  /**
+   * The compound's name, set across the field behind everything.
+   *
+   * Decorative and `aria-hidden`: the commerce panel renders the name as the
+   * page's real heading a few hundred pixels to the right, and announcing it
+   * twice helps nobody. It is the same device as the Hero's ghosted wordmark
+   * and the specimen plate's ghosted name — the one composition NEOGEN repeats
+   * at every scale, which is what makes a flagship page read as the same
+   * system as the card that led to it.
+   */
+  wordmark?: string;
   /** The commerce panel, server-rendered. */
   children: ReactNode;
 }
@@ -86,6 +97,7 @@ export function ProductStage({
   viewerHint,
   material,
   frameMarks,
+  wordmark,
   children,
 }: ProductStageProps) {
   const stage = useRef<HTMLDivElement>(null);
@@ -199,6 +211,13 @@ export function ProductStage({
     <div ref={stage} className={styles.stage} data-world={world}>
       {/* The environment. Full-bleed, with the world's atmospheric wash. */}
       <div className={styles.field} aria-hidden="true" />
+
+      {/* The name across the field, cropped by both edges. */}
+      {wordmark ? (
+        <div className={styles.wordmarkLayer} aria-hidden="true">
+          <span className={styles.wordmark}>{wordmark}</span>
+        </div>
+      ) : null}
 
       {/*
        * Laid out on the SAME grid as the composition, so the static fallback

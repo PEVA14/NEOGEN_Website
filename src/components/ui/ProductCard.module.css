@@ -27,6 +27,82 @@
   text-decoration: none;
 }
 
+/* --- Feature: the plate beside the block, on a wide screen ----------------
+ *
+ * One card in a composition is allowed to be large. Below 64rem it is a
+ * standard card — a two-column card on a phone is two cramped columns.
+ */
+
+@media (min-width: 64rem) {
+  .card[data-format="feature"] .link {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: var(--space-xl);
+    align-items: stretch;
+    padding: var(--space-md);
+  }
+
+  .card[data-format="feature"] .body {
+    padding-block-start: var(--space-2xs);
+    justify-content: center;
+  }
+
+  /*
+   * The spacer exists to align prices across a ROW of standard cards. In the
+   * feature card there is no row to align to, and letting it grow left the
+   * name at the top of a tall column and the price at the bottom of it with
+   * half a card of nothing between them.
+   */
+  .card[data-format="feature"] .spacer {
+    flex: 0 0 auto;
+    min-block-size: var(--space-lg);
+  }
+
+  .card[data-format="feature"] .name {
+    font-size: var(--text-3xl);
+  }
+
+  .card[data-format="feature"] .cta {
+    align-self: start;
+    min-inline-size: 14rem;
+  }
+}
+
+/* --- Flagship: the dark card ---------------------------------------------
+ *
+ * THE WORLD ALREADY KNOWS HOW TO BE READABLE. The card carries `data-world`,
+ * so `worlds.css` has re-pointed `--ink-primary`, `--ink-secondary` and
+ * `--ink-muted` at measured mixes of the world's light tone — values that were
+ * tuned against these exact grounds and clear AA in all three worlds. The card
+ * therefore overrides NO text colour: its ordinary rules resolve correctly on
+ * their own.
+ *
+ * This block first tried to re-pin the text to `--ink-inverse`, which inside a
+ * world is `--world-void` — the ground itself. Every line of the card rendered
+ * black on black. That is the same trap CONVENTIONS §11 documents for the
+ * purchase panel, arriving from the other direction: in a world, the
+ * "inverse" tokens point INTO the dark, not out of it.
+ *
+ * What does need pinning is the ACTION. `.cta` uses `--surface-inverse`, which
+ * a world remaps to its own light tone, so an unpinned button renders in
+ * product colour — the failure §3 exists to prevent. It is pinned to the raw
+ * paper/charcoal pair, which no world redefines.
+ */
+
+.card[data-format="flagship"] {
+  background-color: var(--world-void);
+  border-color: color-mix(in oklab, var(--world-accent) 40%, transparent);
+}
+
+.card[data-format="flagship"]:hover {
+  border-color: color-mix(in oklab, var(--world-accent) 70%, transparent);
+}
+
+.card[data-format="flagship"] .cta {
+  background-color: var(--neogen-paper);
+  color: var(--neogen-charcoal);
+}
+
 .link:focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: calc(var(--focus-ring-offset-width) * -1);

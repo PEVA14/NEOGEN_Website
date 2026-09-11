@@ -13,19 +13,23 @@ import { SectionHeader } from "@/components/layout";
 import { Container, Grid, Section } from "@/components/primitives";
 import {
   CatalogIndex,
-  CompoundIndexHead,
+  CompoundRail,
   DiscoveryGrid,
-  CompoundRow,
   EditorialSpread,
   ProductCard,
   TextLink,
 } from "@/components/ui";
 import { EvidenceChain } from "@/components/quality";
 import { routes } from "@/config/routes";
-import { resolveEvidence } from "@/domain/quality";
 import { worldIds, type WorldId } from "@/config/worlds";
 import { isLocale, localeTags } from "@/i18n/config";
-import { formatStrength, isPublishable, presentationRange, products } from "@/data/catalog";
+import {
+  formatStrength,
+  isPublishable,
+  presentationRange,
+  products,
+  publishedProducts,
+} from "@/data/catalog";
 import { formatPrice, getPrices } from "@/data/commerce";
 import { productsInArea, publicAreas, publicAreasFor } from "@/data/discovery";
 import { getDictionary } from "@/i18n/getDictionary";
@@ -89,6 +93,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
    */
   const areas = publicAreas();
   const areaProducts = areas.map((area) => ({ area, items: productsInArea(area.id) }));
+  /* The catalogue's real size, for the rail's tail card. Derived, never typed. */
+  const publishedCount = publishedProducts.length;
   const areaPriceMap = await getPrices(
     areaProducts.flatMap(({ items }) => items.flatMap((p) => p.variants.map((v) => v.id))),
   );
@@ -106,6 +112,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     return {
       id: area.id,
       index: String(area.order).padStart(2, "0"),
+      short: dict.discovery.areas[area.id].short,
       title: dict.discovery.areas[area.id].title,
       body: dict.discovery.areas[area.id].body,
       href: path(routes.area(area.slug)),
@@ -114,6 +121,26 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       from: ranked[0]?.price ? formatPrice(ranked[0].price, localeTags[locale]) : null,
     };
   });
+
+  /*
+   * THE RAIL — one compound per area, cheapest first, then the rest of the
+   * catalogue behind a tail card.
+   *
+   * Taking the cheapest publishable product in each area gives a dozen cards
+   * that are genuinely spread across the catalogue rather than twelve
+   * metabolic compounds, and "cheapest" is the same defensible entry-point
+   * rule the discovery panels already use. Everything is read from the
+   * registry; nothing here is curated by hand.
+   */
+  const railProducts = areaProducts
+    .map(({ area, items }) => {
+      const cheapest = items
+        .map((product) => ({ product, price: cheapestIn(product) }))
+        .filter((row) => row.price)
+        .sort((a, b) => a.price!.amount - b.price!.amount)[0];
+      return cheapest ? { area, ...cheapest } : null;
+    })
+    .filter((row): row is NonNullable<typeof row> => row !== null);
 
   const heroCopy: HeroCopy = { ...home.hero, ctaHref: path(routes.products) };
 
@@ -276,9 +303,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       <GlowMoment copy={glowCopy} />
 
       {/*
-       * 06 — Quiet. The compound register, drawn from the product registry.
-       * Category and presentation count are facts; documentation is the one
-       * genuinely unknown field, and it is the only one that says "pending".
+       * 03 — Quiet. THE COMPOUND RAIL.
+       *
+       * This was a three-row register of the flagships whose documentation
+       * column read "—" three times: an 85-compound catalogue introducing
+       * itself with three rows and a blank. It now runs a card per discovery
+       * area off the right edge of the frame, which is how a catalogue says
+       * "there is more of this" without claiming anything.
        */}
       <Section mode="quiet" aria-labelledby="research-title">
         <Container width="full">
@@ -290,49 +321,30 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             lede={home.research.lede}
             action={<TextLink href={path(routes.research)}>{home.research.action}</TextLink>}
           />
-          <ul>
-            <CompoundIndexHead columns={[...home.research.columns]} />
-            {flagships.map((product, index) => (
-              <CompoundRow
-                key={product.id}
-                index={String(index + 1).padStart(2, "0")}
-                world={product.world}
-                worldLabel={
-                  product.world
-                    ? home.products.worldLabels[product.world]
-                    : dict.products.catalog.categoryLabels[product.category]
-                }
-                name={product.name}
-                href={path(routes.product(product.slug))}
-                /*
-                 * Every value is read off the registry except documentation,
-                 * which is genuinely unknown and says so. The row previously
-                 * put the category under "Código" and the VARIANT COUNT under
-                 * "Artículos" — reading, for RETA, as "7 articles", of which
-                 * zero exist.
-                 */
-                fields={[
-                  {
-                    key: home.research.fields.category,
-                    value: dict.products.catalog.categoryLabels[product.category],
-                  },
-                  {
-                    key: home.research.fields.presentations,
-                    value: String(product.variants.length),
-                  },
-                  /* From the resolver, like every other trust surface. "—" is the
-                     honest value when no public document exists — not "pending",
-                     which promised a document nobody has scheduled. */
-                  {
-                    key: home.research.fields.documentation,
-                    value: resolveEvidence(product).hasEvidence
-                      ? dict.quality.record.states["documentation-available"]
-                      : "—",
-                  },
-                ]}
-              />
-            ))}
-          </ul>
+          <CompoundRail
+            total={publishedCount}
+            href={path(routes.products)}
+            copy={{
+              label: home.research.railLabel,
+              tailLabel: home.research.tailLabel,
+              tailAction: home.research.tailAction,
+            }}
+            items={railProducts.map(({ area, product, price }) => ({
+              slug: product.slug,
+              world: product.world,
+              worldLabel: product.world ? home.products.worldLabels[product.world] : undefined,
+              areaId: area.id,
+              eyebrow: dict.discovery.areas[area.id].short,
+              name: product.name,
+              subtitle: product.subtitle,
+              href: path(routes.product(product.slug)),
+              price: price ? formatPrice(price, localeTags[locale]) : null,
+              priceFrom: dict.products.catalog.from,
+              presentationRange: presentationRange(product),
+              presentations: product.variants.length,
+              ctaLabel: home.products.cta,
+            }))}
+          />
         </Container>
       </Section>
 
@@ -376,14 +388,17 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             action={<TextLink href={path(routes.products)}>{home.products.action}</TextLink>}
           />
           {/*
-           * Staggered, not a centred row of three.
+           * Staggered, not a centred row of three, and now in the DARK
+           * register.
            *
-           * The card architecture is identical for every flagship — SYSTEM
-           * STATUS V1 is explicit that there are no bespoke card systems per
-           * product — so the composition is what carries the art direction. A
-           * descending step gives the row a reading direction and stops it
-           * resolving into the three-rectangle shape the rest of the page has
-           * been working to avoid.
+           * The card architecture is still identical for every flagship —
+           * SYSTEM STATUS V1 is explicit that there are no bespoke card
+           * systems per product — but the three products that own an
+           * Experience world are the only three in the catalogue whose card
+           * may carry it, so the section lands as the page's commercial
+           * climax instead of as three pale rectangles after two dark
+           * Experience beats. The action stays neutral on all three
+           * (CONVENTIONS §11): paper on charcoal, never the world's colour.
            */}
           <Grid className="items-start">
             {flagships.map((product, position) => (
@@ -408,6 +423,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                   presentations={product.variants.length}
                   index={String(position + 1).padStart(2, "0")}
                   ctaLabel={home.products.cta}
+                  format="flagship"
                 />
               </div>
             ))}

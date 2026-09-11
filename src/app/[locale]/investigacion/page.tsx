@@ -73,6 +73,7 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
     return {
       id: area.id,
       index: String(area.order).padStart(2, "0"),
+      short: dict.discovery.areas[area.id].short,
       title: dict.discovery.areas[area.id].title,
       body: dict.discovery.areas[area.id].body,
       href: path(routes.area(area.slug)),

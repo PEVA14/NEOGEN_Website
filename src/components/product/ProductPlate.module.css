@@ -43,9 +43,18 @@
   background-color: var(--surface-raised);
 }
 
+/*
+ * The plate branch supplies its own frame, so this one stands down: no border,
+ * no ground, no corner marks. See the note in ProductPlate.tsx.
+ */
+.frame[data-chrome="none"] {
+  border: 0;
+  background-color: transparent;
+}
+
 /* Registration marks at opposing corners, as on the flagship plate. */
-.frame::before,
-.frame::after {
+.frame[data-chrome="frame"]::before,
+.frame[data-chrome="frame"]::after {
   content: "";
   position: absolute;
   inline-size: 1.25rem;
@@ -53,14 +62,14 @@
   border: 1px solid var(--border-default);
 }
 
-.frame::before {
+.frame[data-chrome="frame"]::before {
   inset-block-start: -1px;
   inset-inline-start: -1px;
   border-block-end: 0;
   border-inline-end: 0;
 }
 
-.frame::after {
+.frame[data-chrome="frame"]::after {
   inset-block-end: -1px;
   inset-inline-end: -1px;
   border-block-start: 0;
@@ -72,13 +81,6 @@
   inline-size: 100%;
   block-size: 100%;
   object-fit: cover;
-}
-
-.silhouette {
-  block-size: 62%;
-  inline-size: auto;
-  color: var(--ink-muted);
-  opacity: 0.55;
 }
 
 .caption {

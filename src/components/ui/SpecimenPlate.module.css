@@ -2,6 +2,9 @@
  * A specimen plate: 4:5, zero radius, 1px structure. The same frame the
  * product page and the catalogue card both use, so a compound keeps its shape
  * from listing to page.
+ *
+ * `feature` is the wide variant — 5:4 rather than 4:5 — for the one card in a
+ * composition that is allowed to be large.
  */
 
 .plate {
@@ -16,20 +19,30 @@
   isolation: isolate;
 }
 
+.plate[data-size="feature"] {
+  aspect-ratio: 5 / 4;
+}
+
 /*
- * The ground. A vertical wash rather than a flat fill — a flat panel reads as
- * an empty box, a graded one reads as a lit environment. Held very low in
- * contrast: this is a laboratory, not a gradient.
+ * The ground. A diagonal wash rather than a flat fill — a flat panel reads as
+ * an empty box, a graded one reads as a lit environment. The light falls from
+ * the upper left, which is where the specular runs on the 3D stages, so the
+ * static plates and the live canvas agree about where the light is.
  */
 .ground {
   position: absolute;
   inset: 0;
   z-index: 0;
   background:
+    radial-gradient(
+      120% 90% at 18% 8%,
+      color-mix(in oklab, var(--neogen-paper) 55%, transparent),
+      transparent 62%
+    ),
     linear-gradient(
-      to bottom,
-      color-mix(in oklab, var(--area-wash, var(--surface-raised)) 55%, transparent),
-      var(--area-wash, var(--surface-raised))
+      160deg,
+      color-mix(in oklab, var(--area-wash, var(--surface-raised)) 45%, transparent),
+      var(--area-wash, var(--surface-raised)) 78%
     ),
     var(--surface-raised);
 }
@@ -40,7 +53,7 @@
 .plate::after {
   content: "";
   position: absolute;
-  z-index: 2;
+  z-index: 3;
   inline-size: 1rem;
   block-size: 1rem;
   border: 1px solid var(--area-line, var(--border-default));
@@ -60,12 +73,57 @@
   border-inline-start: 0;
 }
 
+/* --- The compound name, as plate type ------------------------------------
+ *
+ * Set in the display face at its condensed width, cropped by both edges, and
+ * held at low contrast so the silhouette and the annotations stay dominant.
+ * The size is a container query rather than a viewport one: the same plate
+ * appears at card, plate and feature scale, and the type has to be
+ * proportional to ITS box, not to the window.
+ */
+
+.nameLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  container-type: inline-size;
+  pointer-events: none;
+}
+
+.name {
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 600;
+  font-size: var(--plate-name-size, 22cqi);
+  line-height: 0.82;
+  letter-spacing: var(--tracking-display);
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--area-ink, var(--ink-muted));
+  /*
+   * 0.16 on a light ground. Measured against the wash rather than chosen: the
+   * hero's ghosted wordmark sits at 0.13 on charcoal and reads as intentional;
+   * below about 0.10 here it read as a printing fault, and above 0.22 it
+   * competed with the product name set in real text beneath the plate.
+   */
+  opacity: 0.16;
+  transform: translateY(-4%);
+}
+
+/* The wide plate is 5:4, so the same inline size covers more of the frame. */
+.plate[data-size="feature"] .name {
+  font-size: calc(var(--plate-name-size, 22cqi) * 0.8);
+}
+
 /* --- Datum lines --------------------------------------------------------- */
 
 .datums {
   position: absolute;
   inset: 0;
-  z-index: 1;
+  z-index: 2;
 }
 
 /*
@@ -86,11 +144,15 @@
   block-size: 58%;
   inline-size: auto;
   color: var(--area-ink, var(--ink-muted));
-  opacity: 0.7;
+  opacity: 0.78;
 }
 
 .plate[data-size="plate"] .silhouette {
   block-size: 62%;
+}
+
+.plate[data-size="feature"] .silhouette {
+  block-size: 74%;
 }
 
 /* --- Annotations --------------------------------------------------------- */
@@ -116,11 +178,33 @@
   inset-inline-start: 0.75rem;
 }
 
-/* On a world the ground is dark, so the marks need the world's own light. */
+/* --- On a world the ground is dark --------------------------------------- */
+
 .plate[data-world] {
   background-color: var(--world-void);
 }
 
+.plate[data-world] .ground {
+  background:
+    radial-gradient(
+      120% 90% at 22% 10%,
+      color-mix(in oklab, var(--world-light) 22%, transparent),
+      transparent 60%
+    ),
+    linear-gradient(
+      160deg,
+      color-mix(in oklab, var(--world-accent) 16%, transparent),
+      transparent 70%
+    ),
+    var(--world-void);
+}
+
 .plate[data-world] .silhouette {
-  opacity: 0.55;
+  opacity: 0.62;
+}
+
+/* Light type on a dark ground carries further, so it is held lower. */
+.plate[data-world] .name {
+  color: var(--world-light);
+  opacity: 0.13;
 }

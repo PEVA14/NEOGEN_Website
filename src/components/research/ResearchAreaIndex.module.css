@@ -36,7 +36,7 @@
 .row::before {
   background: var(--area-line);
   content: "";
-  inline-size: 3px;
+  inline-size: 5px;
   inset-block: var(--space-sm);
   inset-inline-start: 0;
   position: absolute;
@@ -63,11 +63,19 @@
   min-inline-size: 0;
 }
 
+.framing {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
 .title {
   color: var(--ink-primary);
   font-family: var(--font-display);
-  font-size: var(--text-2xl);
+  font-size: var(--text-3xl);
   font-stretch: var(--font-stretch-display);
+  letter-spacing: var(--tracking-display);
+  text-transform: uppercase;
   letter-spacing: var(--tracking-tight);
   line-height: var(--leading-snug);
 }

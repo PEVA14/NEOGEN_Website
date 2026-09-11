@@ -14,6 +14,22 @@ import styles from "./ProductCard.module.css";
 import type { WorldId } from "@/config/worlds";
 import type { DiscoveryAreaId } from "@/data/discovery";
 
+/**
+ * THREE FORMATS, ONE ARCHITECTURE.
+ *
+ *   standard  the grid card. 4:5 plate over the commercial block.
+ *   feature   the wide card: a 5:4 plate beside the block on a wide screen,
+ *             for the one product a composition is led by. Stacks below 64rem.
+ *   flagship  the dark card — the world's own ground, for RETA, GLOW and
+ *             GHK-Cu. The action stays neutral (paper on a dark card) exactly
+ *             as it stays charcoal on a light one: CONVENTIONS §11.
+ *
+ * The card is never restyled BY the product beyond this: there is no bespoke
+ * per-compound card, and the format is chosen by the composition that renders
+ * it, not by the product's own record.
+ */
+export type ProductCardFormat = "standard" | "feature" | "flagship";
+
 export interface ProductCardProps {
   /** Identity key: the link, the media lookup and the plate all read it. */
   slug: string;
@@ -41,6 +57,8 @@ export interface ProductCardProps {
   index?: string;
   ctaLabel: string;
   headingLevel?: 2 | 3;
+  /** Composition role. See `ProductCardFormat`. */
+  format?: ProductCardFormat;
 }
 
 /**
@@ -84,6 +102,7 @@ export function ProductCard({
   index,
   ctaLabel,
   headingLevel = 3,
+  format = "standard",
 }: ProductCardProps) {
   const warmed = useRef(false);
   const still = stillMedia(slug);
@@ -113,7 +132,15 @@ export function ProductCard({
   };
 
   return (
-    <article className={styles.card} onPointerEnter={warm}>
+    <article
+      className={styles.card}
+      data-format={format}
+      /* The dark card carries the world so `areas.css` can resolve its ground,
+         its hairlines and its ink from one attribute — the same mechanism the
+         plate uses, rather than a second palette for cards. */
+      data-world={format === "flagship" ? (world ?? undefined) : undefined}
+      onPointerEnter={warm}
+    >
       {/*
        * The whole card is the target, with the CTA as the visible affordance.
        * One link rather than several: a card with a linked image, a linked
@@ -135,9 +162,11 @@ export function ProductCard({
             <SpecimenPlate
               areaId={areaId}
               world={world}
+              name={name}
               presentations={presentations}
               index={index}
               annotation={presentationRange ?? undefined}
+              size={format === "feature" ? "feature" : "card"}
             />
           )}
         </span>

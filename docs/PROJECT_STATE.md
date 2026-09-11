@@ -1,6 +1,6 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-09-11**, after Phase 11 (`b6032c3`).
+Last updated **2026-09-11**, after Phase 12.
 
 This file is the memory of the project for a new session. It records what is
 not derivable from the code: where the phases stand, how the owner runs the
@@ -24,9 +24,10 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 | `0a63800`   | Phase 9 — commerce core (bag, order model, payment domain with `none` adapter) + commercial creative overhaul                   |
 | `2281321`   | Phase 10 — checkout, order persistence boundary, payment-event idempotency, policy architecture                                 |
 | `b6032c3`   | Phase 11 — trust architecture, content foundation, research integration                                                         |
+| _this_      | Phase 12 — creative overhaul: specimen plate, card formats, area identity, homepage rail, area mastheads                        |
 
-**Phase 11 is complete and approved-for-commit. Phase 12 has not been started
-or approved.** Do not begin it without a brief from the owner.
+**Phase 12 is complete. Phase 13 has not been started or approved.** Do not
+begin it without a brief from the owner.
 
 Pushing is the owner's job — see §3. Check `git status -sb` for what is
 still unpushed rather than trusting this file.
@@ -208,15 +209,54 @@ Visual polish deferred on purpose is tracked in `docs/DEFERRED_POLISH.md`.
   214 pages; 0 axe violations on audited surfaces; PDP initial JS ≈193 KB gzip,
   three.js absent from every initial payload.
 
-## 8. Recommendation for Phase 12 (not approved)
+## 8. Phase 12 in brief
+
+A creative overhaul. Nothing about the trust, commerce or content architecture
+changed; what changed is what a customer sees.
+
+- **The specimen plate became a composition.** It was an outlined vial on a
+  near-white ground — a wireframe, 85 times. The compound's own name is now set
+  oversized and cropped behind the silhouette (the Hero's move at product
+  scale), sized from the name's own length so every plate crops alike. One
+  component, so cards, the catalogue, area pages and the generic PDP all
+  changed at once. A photograph still replaces it entirely.
+- **Area tones were raised from 5–8% to 14–20%** and gained `--area-deep`, an
+  inverted ground. The eight areas were, in practice, eight identical panels.
+- **Three card formats:** `standard`, `feature` (wide, leads a composition) and
+  `flagship` (the world's dark ground, neutral action).
+- **The homepage's three-row register is gone**, replaced by a horizontal
+  compound rail — one product per area, running off the right edge, with a tail
+  card carrying the catalogue's real size. Quiet sections renumbered 01–05.
+- **Areas are named commercially** (`short`: "Metabolismo") with the research
+  framing beside them in mono, and got full mastheads on their own material.
+- The catalogue gained an area strip; the generic PDP gained the real plate.
+- **Gates at commit:** `check:quality` 169 assertions, `check:content` 184;
+  build 214 pages; 0 axe A/AA violations on six audited surfaces at 375–1728;
+  no horizontal overflow at 375/768/1280/1440/1728; PDP initial JS 193.1 KB
+  gzip (unchanged from Phase 11), three.js absent from every initial payload.
+
+**Two bugs found and fixed during QA, both worth remembering:**
+
+1. `role="group"` on a `<ul>` replaces its implicit list role and orphans every
+   `<li>` — a serious axe `listitem` violation. A scroll region and a list must
+   be two elements.
+2. Inside `[data-world]`, the "inverse" tokens point INTO the dark:
+   `--ink-inverse` is `--world-void`. Re-pinning card text to it rendered the
+   whole flagship card black on black. A world already re-points
+   `--ink-primary`/`-secondary`/`-muted` at measured, AA-clearing mixes, so
+   components inside a world should override no text colour at all. Only the
+   ACTION needs pinning, to raw paper/charcoal — CONVENTIONS §11.
+
+## 9. Recommendation for Phase 13 (not approved)
 
 Photography and first evidence together, for RETA, GLOW and GHK-Cu: shoot the
-flagships (layouts already accept the media — it is a registry exercise), and
+flagships (layouts already accept the media — it is a registry exercise, and
+Phase 12 made the fallback good enough that this is no longer urgent), and
 ingest the first real COA or Janoshik report for one exact presentation to
 exercise the evidence chain end to end. Durable persistence follows once the
 vendor and counsel questions are answered.
 
-## 9. Things that do not travel with the repository
+## 10. Things that do not travel with the repository
 
 - **Conversation history** from earlier sessions (the briefs and reports).
   This file is the substitute.

@@ -129,7 +129,7 @@ const en: Dictionary = {
     },
 
     catalog: {
-      index: "04",
+      index: "02",
       label: "Discovery",
       title: "Explore the catalogue",
       action: "All products",
@@ -167,33 +167,20 @@ const en: Dictionary = {
       mediaLabel: "Media pending",
     },
 
+    /** See the Spanish source for why the three-row register was replaced. */
     research: {
-      index: "06",
+      index: "03",
       label: "Research",
       title: "NEOGEN Research",
       action: "Go to research",
       lede: "The compound index, the areas they are studied in, and the model their quality is documented by.",
-      /**
-       * Register column heads and document-record labels.
-       *
-       * These were "Code / Documentation / Articles". The first showed the
-       * category under a label promising an identifier, and the third showed
-       * the number of presentations under the word "Articles" — asserting that
-       * seven articles exist about RETA when none do. Each column now names
-       * what it shows.
-       */
-      columns: ["Category", "Presentations", "Documentation"],
-      recordLabel: "Record",
-      stateLabel: "State",
-      fields: {
-        category: "Category",
-        presentations: "Presentations",
-        documentation: "Documentation",
-      },
+      railLabel: "Catalogue compounds",
+      tailLabel: "Published compounds",
+      tailAction: "See the full catalogue",
     },
 
     quality: {
-      index: "07",
+      index: "04",
       label: "Quality",
       title: "Evidence, not seals",
       lede: "Every quality status on NEOGEN comes from a document you can open, tied to the exact presentation it examines.",
@@ -213,7 +200,7 @@ const en: Dictionary = {
     },
 
     products: {
-      index: "08",
+      index: "05",
       label: "Products",
       title: "Flagship compounds",
       action: "Full catalogue",
@@ -1023,6 +1010,11 @@ const en: Dictionary = {
     productLabel: "Research area",
     all: "Full catalogue",
     countLabel: "Compounds",
+    /** Area masthead copy — see `components/ui/AreaMasthead`. */
+    masthead: {
+      compounds: "Compounds in this area",
+      examples: "Way in",
+    },
     research: {
       label: "Research",
       qualifier: "In this area",
@@ -1039,34 +1031,42 @@ const en: Dictionary = {
     },
     areas: {
       metabolic: {
+        short: "Metabolism",
         title: "Metabolic Research",
         body: "Compounds studied in the context of metabolic regulation.",
       },
       recovery: {
+        short: "Recovery",
         title: "Recovery & Repair",
         body: "Compounds studied in the context of tissue repair.",
       },
       longevity: {
+        short: "Longevity",
         title: "Longevity & Cellular",
         body: "Compounds studied in the context of cellular ageing.",
       },
       growth: {
+        short: "Growth",
         title: "Growth & Performance",
         body: "Compounds studied in the context of growth pathways.",
       },
       skin: {
+        short: "Skin",
         title: "Skin & Aesthetics",
         body: "Compounds studied in the context of the dermal matrix and pigment.",
       },
       neuro: {
+        short: "Neuro",
         title: "Neuro & Sleep",
         body: "Compounds studied in the context of cognitive function and sleep.",
       },
       hormonal: {
+        short: "Hormonal",
         title: "Hormonal & Reproductive",
         body: "Compounds studied in the context of hormonal regulation.",
       },
       materials: {
+        short: "Materials",
         title: "Research Materials",
         body: "Solvents and consumables for laboratory preparation and handling.",
       },

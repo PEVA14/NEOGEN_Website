@@ -107,11 +107,18 @@
   gap: var(--space-2xs);
 }
 
-/* 24px minimum hit area — measured at 17px. See the header's navLink note. */
+/*
+ * A 44px TARGET WITH A 24px FOOTPRINT — the same treatment `TextLink` took in
+ * Phase 11, applied here for the same reason: these were the last 24px targets
+ * on the site, and the footer is where a thumb reaches on a phone. The
+ * negative block margin gives back the 10px above and below, so the stacked
+ * link list keeps the rhythm it had.
+ */
 .link {
   display: inline-flex;
   align-items: center;
-  min-block-size: 1.5rem;
+  min-block-size: 2.75rem;
+  margin-block: -0.625rem;
   color: var(--ink-secondary);
   font-size: var(--text-sm);
   text-decoration: underline;

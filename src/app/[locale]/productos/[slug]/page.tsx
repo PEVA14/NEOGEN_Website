@@ -330,6 +330,7 @@ export default async function ProductPage({
             frameMarks={
               media.model ? <WorldMaterial world={world.id} interior={false} /> : undefined
             }
+            wordmark={product.name}
             posterAlt={dict.home.reta.vialAlt}
             loadingLabel={dict.home.reta.loadingLabel}
             staticLabel={dict.home.reta.staticLabel}
@@ -344,6 +345,10 @@ export default async function ProductPage({
           <Container width="full">
             <ProductPlate
               slug={product.slug}
+              name={product.name}
+              areaId={areas[0]?.id ?? null}
+              presentations={product.variants.length}
+              annotation={presentationRange(product)}
               mediaLabel={pdp.inspectionLabel}
               meta={dict.products.catalog.categoryLabels[product.category]}
             >

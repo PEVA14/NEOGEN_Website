@@ -55,6 +55,36 @@
   background-image: var(--world-atmosphere);
 }
 
+/* --- The compound name, across the field ---------------------------------
+ *
+ * Behind the object and the panel, cropped by both edges. It sits BELOW the
+ * canvas layer in the stack, so the live model passes in front of it exactly
+ * as the Hero's vial passes in front of the NEOGEN wordmark.
+ *
+ * Held at 0.07: the field is the darkest surface on the site and this type is
+ * enormous, so the opacity that reads as "ghosted poster" here is roughly half
+ * what the same device needs on a specimen plate.
+ */
+.wordmarkLayer {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: clamp(6rem, 19vw, 20rem);
+  line-height: 0.8;
+  letter-spacing: var(--tracking-display);
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--world-light);
+  opacity: 0.07;
+}
+
 /* --- Layers --------------------------------------------------------------- */
 
 /*

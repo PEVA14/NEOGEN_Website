@@ -1,12 +1,13 @@
 import Image from "next/image";
 
 import { Mono } from "@/components/typography";
-import { VialSilhouette } from "@/components/ui";
+import { SpecimenPlate } from "@/components/ui";
 import { PLATE_SIZES, stillMedia } from "@/content/media";
 
 import styles from "./ProductPlate.module.css";
 
 import type { ReactNode } from "react";
+import type { DiscoveryAreaId } from "@/data/discovery";
 
 /**
  * THE GENERIC PRODUCT OPENING — for the ~83 products without a world.
@@ -37,12 +38,24 @@ import type { ReactNode } from "react";
  */
 export function ProductPlate({
   slug,
+  name,
+  areaId,
+  presentations,
+  annotation,
   mediaLabel,
   meta,
   children,
 }: {
   /** Product identity — the key its media is registered under. */
   slug: string;
+  /** The compound's name, set as the plate's ghosted type. */
+  name: string;
+  /** Primary discovery area, for the plate's tone. */
+  areaId: DiscoveryAreaId | null;
+  /** How many presentations, for the plate's datum lines. */
+  presentations: number;
+  /** The presentation range, as the plate's technical annotation. */
+  annotation?: string;
   mediaLabel: string;
   /**
    * The right-hand end of the caption rail — the compound's catalogue
@@ -58,7 +71,13 @@ export function ProductPlate({
   return (
     <div className={styles.plate}>
       <div className={styles.media}>
-        <div className={styles.frame}>
+        {/*
+         * The specimen plate brings its own frame, ground and registration
+         * marks, so in that branch this element carries none of its own —
+         * otherwise every border and corner mark is drawn twice, one pixel
+         * apart.
+         */}
+        <div className={styles.frame} data-chrome={still.kind === "image" ? "frame" : "none"}>
           {still.kind === "image" ? (
             <Image
               src={still.image.src}
@@ -73,7 +92,25 @@ export function ProductPlate({
               priority
             />
           ) : (
-            <VialSilhouette className={styles.silhouette} />
+            /*
+             * The SAME specimen plate the card shows, at plate scale.
+             *
+             * This frame used to hold a bare silhouette on a flat ground: the
+             * one product page treatment that had no tone, no identity and
+             * nothing of the compound in it, on the 83 products that need the
+             * most help. A customer arriving from a composed card met a
+             * blank box. It is now the card's plate, larger — so the media a
+             * product shows in the catalogue and the media it shows on its own
+             * page are the same object.
+             */
+            <SpecimenPlate
+              areaId={areaId}
+              world={null}
+              name={name}
+              presentations={presentations}
+              annotation={annotation}
+              size="plate"
+            />
           )}
         </div>
         <div className={styles.caption}>

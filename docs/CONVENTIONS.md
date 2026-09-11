@@ -198,6 +198,33 @@ regenerating supplier-derived data every time a photograph arrives.
 - Files go in `public/images/products/<slug>/`, models in
   `public/models/<slug>.glb`. See `public/images/README.md`.
 
+### The fallback hierarchy (Phase 12)
+
+When a product has no photograph — which is all 85 today — what renders is
+decided in this order, and never by inventing an asset:
+
+```
+real photography  →  real product model (GLB)  →  product-world material
+                  →  specimen plate  →  typographic / technical composition
+```
+
+- **The specimen plate is the workhorse**, and it is a COMPOSITION, not a
+  placeholder: an area-toned ground, the compound's own name set oversized and
+  cropped behind the silhouette, one datum line per presentation, the
+  presentation range as its annotation. Every variation is read from the
+  registry, so two products differ exactly when they ARE different.
+- **The name is sized from its own length** (`245 / length`, clamped 10–34cqi),
+  so "GLOW" and "Retatrutide Research" crop by the same amount instead of one
+  floating and the other showing four letters.
+- **The ghosted name is `aria-hidden` everywhere it appears.** Every surface
+  that renders a plate also renders the name as real text beside it.
+- **Never**: a broken placeholder, a grey rectangle, or an invented photograph.
+  The plate is visibly non-photographic on purpose, which is also why it still
+  never becomes a social card.
+- The same device runs at three scales — the Hero's wordmark, the flagship
+  stage's field wordmark, the plate's name. That repetition is what makes a
+  card, a product page and the front door read as one system.
+
 ### The checks
 
 Three scripts guard the invariants that have actually broken before. All run
@@ -336,6 +363,18 @@ Commerce inside a world keeps its own neutral action colour: `[data-world]` maps
 `--surface-inverse` to the world's light tone, so a purchase panel must pin that
 pair back to paper/charcoal or it renders a product-coloured button — the exact
 failure §3 exists to prevent.
+
+**The mirror of that trap, found in Phase 12: inside a world the "inverse"
+tokens point INTO the dark.** `--ink-inverse` is `--world-void` — the ground
+itself. A component that re-pins its text to `--ink-inverse` to "make it
+readable on a dark card" renders black on black. It is never necessary: a world
+has already re-pointed `--ink-primary`, `--ink-secondary` and `--ink-muted` at
+mixes of its light tone that were measured to clear AA in all three worlds. So
+
+- inside `[data-world]`, override **no text colour** — the ordinary rules
+  resolve correctly on their own;
+- pin only the **action**, and pin it to the raw `--neogen-paper` /
+  `--neogen-charcoal` pair, which no world redefines.
 
 ## 12. Checkout and orders (Phase 10)
 

@@ -3,77 +3,100 @@
  *
  * Eight areas, each with a MATERIAL rather than a hue. The Design Bible gives
  * saturated colour to the three product worlds and nowhere else — so areas get
- * washes and hairlines mixed out of the existing neutrals, with at most a trace
- * of temperature. Eight saturated category colours would turn a laboratory
- * into a rainbow and would compete with the worlds that are supposed to own it.
+ * washes and hairlines mixed out of the existing neutrals, with a trace of
+ * temperature. Eight saturated category colours would turn a laboratory into a
+ * rainbow and would compete with the worlds that are supposed to own it.
  *
- * `--area-wash` is the plate ground, `--area-line` the structural hairline,
- * `--area-ink` the silhouette. All three are `color-mix` over the paper and
- * graphite already in `tokens.css`, so a re-theme of the neutrals carries.
+ * PHASE 12 — THE TONES WERE RAISED. They were mixed at 5–8% over paper, which
+ * measured as a difference of under two levels against the surface behind them:
+ * eight areas that were, in practice, eight identical panels. They now carry
+ * 14–20%, which is visible as a material and still nowhere near a world's
+ * saturation. The relationship the Bible asks for — worlds loud, areas quiet —
+ * is a ratio, and it survives both tones being legible.
+ *
+ * FOUR ROLES, not three:
+ *   --area-wash   the light ground. Charcoal text sits on it.
+ *   --area-line   the structural hairline.
+ *   --area-ink    the silhouette and technical annotations.
+ *   --area-deep   the INVERTED ground, for panels that go dark. Paper sits on
+ *                 it. Added in Phase 12 so an area can compose in two
+ *                 registers instead of only ever being a pale rectangle.
+ *
+ * All four are `color-mix` over the paper, graphite and charcoal already in
+ * `tokens.css`, so a re-theme of the neutrals carries.
  *
  * Applied via `[data-area]`, section-scoped exactly like `[data-world]`.
  */
 
 [data-area] {
   --area-wash: var(--neogen-warm-stone);
-  --area-line: var(--border-subtle);
+  --area-line: var(--border-default);
   --area-ink: var(--ink-muted);
+  --area-deep: var(--neogen-charcoal);
 }
 
 /* Metabolic — cool, clinical, the most technical of the eight. */
 [data-area="metabolic"] {
-  --area-wash: color-mix(in oklab, var(--neogen-paper) 92%, #4a6fa5);
-  --area-line: color-mix(in oklab, var(--border-default) 70%, #4a6fa5);
-  --area-ink: color-mix(in oklab, var(--ink-muted) 78%, #2f4d78);
+  --area-wash: color-mix(in oklab, var(--neogen-paper) 84%, #4a6fa5);
+  --area-line: color-mix(in oklab, var(--border-default) 55%, #4a6fa5);
+  --area-ink: color-mix(in oklab, var(--ink-muted) 62%, #2f4d78);
+  --area-deep: color-mix(in oklab, var(--neogen-charcoal) 84%, #4a6fa5);
 }
 
 /* Recovery — tissue, warmth without sweetness. */
 [data-area="recovery"] {
-  --area-wash: color-mix(in oklab, var(--neogen-paper) 92%, #b07a5a);
-  --area-line: color-mix(in oklab, var(--border-default) 70%, #b07a5a);
-  --area-ink: color-mix(in oklab, var(--ink-muted) 78%, #7a4d33);
+  --area-wash: color-mix(in oklab, var(--neogen-paper) 84%, #b07a5a);
+  --area-line: color-mix(in oklab, var(--border-default) 55%, #b07a5a);
+  --area-ink: color-mix(in oklab, var(--ink-muted) 62%, #7a4d33);
+  --area-deep: color-mix(in oklab, var(--neogen-charcoal) 85%, #b07a5a);
 }
 
 /* Longevity — deep, mineral, the quietest. */
 [data-area="longevity"] {
-  --area-wash: color-mix(in oklab, var(--neogen-paper) 93%, #4f6b5c);
-  --area-line: color-mix(in oklab, var(--border-default) 70%, #4f6b5c);
-  --area-ink: color-mix(in oklab, var(--ink-muted) 78%, #33473c);
+  --area-wash: color-mix(in oklab, var(--neogen-paper) 85%, #4f6b5c);
+  --area-line: color-mix(in oklab, var(--border-default) 55%, #4f6b5c);
+  --area-ink: color-mix(in oklab, var(--ink-muted) 62%, #33473c);
+  --area-deep: color-mix(in oklab, var(--neogen-charcoal) 85%, #4f6b5c);
 }
 
 /* Growth — graphite, structural. */
 [data-area="growth"] {
-  --area-wash: color-mix(in oklab, var(--neogen-paper) 91%, var(--neogen-graphite));
-  --area-line: color-mix(in oklab, var(--border-default) 75%, var(--neogen-graphite));
-  --area-ink: color-mix(in oklab, var(--ink-muted) 80%, var(--neogen-charcoal));
+  --area-wash: color-mix(in oklab, var(--neogen-paper) 82%, var(--neogen-graphite));
+  --area-line: color-mix(in oklab, var(--border-default) 60%, var(--neogen-graphite));
+  --area-ink: color-mix(in oklab, var(--ink-muted) 68%, var(--neogen-charcoal));
+  --area-deep: var(--neogen-charcoal);
 }
 
-/* Skin — the amber the GLOW world owns, held well back. */
+/* Skin — the amber the GLOW world owns, held back from it. */
 [data-area="skin"] {
-  --area-wash: color-mix(in oklab, var(--neogen-paper) 90%, #c79a4e);
-  --area-line: color-mix(in oklab, var(--border-default) 68%, #c79a4e);
-  --area-ink: color-mix(in oklab, var(--ink-muted) 76%, #8a6524);
+  --area-wash: color-mix(in oklab, var(--neogen-paper) 82%, #c79a4e);
+  --area-line: color-mix(in oklab, var(--border-default) 52%, #c79a4e);
+  --area-ink: color-mix(in oklab, var(--ink-muted) 60%, #8a6524);
+  --area-deep: color-mix(in oklab, var(--neogen-charcoal) 84%, #c79a4e);
 }
 
 /* Neuro — indigo, low saturation. */
 [data-area="neuro"] {
-  --area-wash: color-mix(in oklab, var(--neogen-paper) 92%, #5b5a8f);
-  --area-line: color-mix(in oklab, var(--border-default) 70%, #5b5a8f);
-  --area-ink: color-mix(in oklab, var(--ink-muted) 78%, #3c3b66);
+  --area-wash: color-mix(in oklab, var(--neogen-paper) 84%, #5b5a8f);
+  --area-line: color-mix(in oklab, var(--border-default) 55%, #5b5a8f);
+  --area-ink: color-mix(in oklab, var(--ink-muted) 62%, #3c3b66);
+  --area-deep: color-mix(in oklab, var(--neogen-charcoal) 84%, #5b5a8f);
 }
 
 /* Hormonal — oxide, restrained. */
 [data-area="hormonal"] {
-  --area-wash: color-mix(in oklab, var(--neogen-paper) 92%, #a5605a);
-  --area-line: color-mix(in oklab, var(--border-default) 70%, #a5605a);
-  --area-ink: color-mix(in oklab, var(--ink-muted) 78%, #713a35);
+  --area-wash: color-mix(in oklab, var(--neogen-paper) 84%, #a5605a);
+  --area-line: color-mix(in oklab, var(--border-default) 55%, #a5605a);
+  --area-ink: color-mix(in oklab, var(--ink-muted) 62%, #713a35);
+  --area-deep: color-mix(in oklab, var(--neogen-charcoal) 85%, #a5605a);
 }
 
 /* Materials — the most neutral of all: these are consumables, not compounds. */
 [data-area="materials"] {
-  --area-wash: color-mix(in oklab, var(--neogen-paper) 95%, var(--neogen-graphite));
-  --area-line: var(--border-default);
-  --area-ink: var(--ink-muted);
+  --area-wash: color-mix(in oklab, var(--neogen-paper) 88%, var(--neogen-graphite));
+  --area-line: var(--border-strong);
+  --area-ink: var(--ink-secondary);
+  --area-deep: var(--neogen-graphite);
 }
 
 /*
@@ -84,4 +107,5 @@
   --area-wash: color-mix(in oklab, var(--world-void) 88%, var(--world-light));
   --area-line: color-mix(in oklab, var(--border-default) 60%, var(--world-accent));
   --area-ink: var(--world-light);
+  --area-deep: var(--world-void);
 }

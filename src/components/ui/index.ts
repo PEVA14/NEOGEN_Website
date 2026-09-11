@@ -1,9 +1,11 @@
+export { AreaMasthead, type AreaFact } from "./AreaMasthead";
 export { Button } from "./Button";
 export { CatalogIndex, type CatalogEntry } from "./CatalogIndex";
 export { CompoundIndexHead, CompoundRow, type CompoundRowField } from "./CompoundRow";
+export { CompoundRail, type CompoundRailCopy } from "./CompoundRail";
 export { DiscoveryGrid, type DiscoveryEntry, type DiscoveryGridCopy } from "./DiscoveryGrid";
 export { EditorialSpread, type SpreadPrinciple } from "./EditorialSpread";
-export { ProductCard } from "./ProductCard";
+export { ProductCard, type ProductCardFormat, type ProductCardProps } from "./ProductCard";
 export { SpecimenPlate } from "./SpecimenPlate";
 export { TextLink } from "./TextLink";
 export { VialSilhouette } from "./VialSilhouette";

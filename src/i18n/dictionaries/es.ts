@@ -140,7 +140,7 @@ const es = {
     },
 
     catalog: {
-      index: "04",
+      index: "02",
       label: "Descubrimiento",
       title: "Explora el catálogo",
       action: "Todos los productos",
@@ -178,33 +178,28 @@ const es = {
       mediaLabel: "Medio pendiente",
     },
 
+    /**
+     * EL RIEL DE COMPUESTOS.
+     *
+     * Esta sección mostraba un registro de tres filas — los tres insignia —
+     * con una columna de documentación que decía "—" tres veces. Un catálogo
+     * de 85 compuestos se presentaba con tres renglones y un vacío. Ahora
+     * muestra compuestos reales a escala de producto, uno por área, y termina
+     * en el catálogo completo.
+     */
     research: {
-      index: "06",
+      index: "03",
       label: "Investigación",
       title: "NEOGEN Research",
       action: "Ir a investigación",
       lede: "El índice de compuestos, las áreas en que se estudian y el modelo con que se documenta su calidad.",
-      /**
-       * Encabezados de columna del registro y etiquetas del expediente.
-       *
-       * Estas columnas eran "Código / Documentación / Artículos". La primera
-       * mostraba la categoría bajo una etiqueta que prometía un identificador,
-       * y la tercera mostraba el número de presentaciones bajo la palabra
-       * "Artículos" — es decir, afirmaba que existen 7 artículos sobre RETA
-       * cuando no existe ninguno. Ahora cada columna nombra lo que muestra.
-       */
-      columns: ["Categoría", "Presentaciones", "Documentación"],
-      recordLabel: "Registro",
-      stateLabel: "Estado",
-      fields: {
-        category: "Categoría",
-        presentations: "Presentaciones",
-        documentation: "Documentación",
-      },
+      railLabel: "Compuestos del catálogo",
+      tailLabel: "Compuestos publicados",
+      tailAction: "Ver catálogo completo",
     },
 
     quality: {
-      index: "07",
+      index: "04",
       label: "Calidad",
       title: "Evidencia, no sellos",
       lede: "Cada estado de calidad en NEOGEN proviene de un documento que puede consultarse, vinculado a la presentación exacta que examina.",
@@ -224,7 +219,7 @@ const es = {
     },
 
     products: {
-      index: "08",
+      index: "05",
       label: "Productos",
       title: "Compuestos insignia",
       action: "Catálogo completo",
@@ -1116,6 +1111,11 @@ const es = {
     productLabel: "Área de investigación",
     all: "Todo el catálogo",
     countLabel: "Compuestos",
+    /** Copia de la portada de área — ver `components/ui/AreaMasthead`. */
+    masthead: {
+      compounds: "Compuestos en esta área",
+      examples: "Punto de entrada",
+    },
     research: {
       label: "Investigación",
       qualifier: "En esta área",
@@ -1131,36 +1131,57 @@ const es = {
       /* "{n} compuestos en común" */
       shared: "{n} en común",
     },
+    /**
+     * EACH AREA CARRIES TWO NAMES.
+     *
+     * `short` is the commercial one — one word, set large, the way a shop
+     * names a department. `title` is the research framing, set small beside
+     * it. Eight headings that all began "Investigación …" read as eight
+     * versions of one category; the short name is what makes them eight
+     * places.
+     *
+     * Both are class A: merchandising labels the owner decided. Neither says
+     * anything about what a compound does, and the `body` line keeps the
+     * "estudiados en el contexto de" framing that does the careful work.
+     */
     areas: {
       metabolic: {
+        short: "Metabolismo",
         title: "Investigación metabólica",
         body: "Compuestos estudiados en el contexto de la regulación metabólica.",
       },
       recovery: {
+        short: "Recuperación",
         title: "Recuperación y reparación",
         body: "Compuestos estudiados en el contexto de la reparación tisular.",
       },
       longevity: {
+        short: "Longevidad",
         title: "Longevidad y función celular",
         body: "Compuestos estudiados en el contexto del envejecimiento celular.",
       },
       growth: {
+        short: "Desarrollo",
         title: "Desarrollo y rendimiento",
         body: "Compuestos estudiados en el contexto de las vías de crecimiento.",
       },
       skin: {
+        short: "Piel",
         title: "Piel y estética",
         body: "Compuestos estudiados en el contexto de la matriz dérmica y el pigmento.",
       },
       neuro: {
+        short: "Neuro",
         title: "Neurología y sueño",
         body: "Compuestos estudiados en el contexto de la función cognitiva y el sueño.",
       },
       hormonal: {
+        short: "Hormonal",
         title: "Hormonal y reproductiva",
         body: "Compuestos estudiados en el contexto de la regulación hormonal.",
       },
       materials: {
+        short: "Materiales",
         title: "Materiales de investigación",
         body: "Disolventes y consumibles para preparación y manejo en laboratorio.",
       },

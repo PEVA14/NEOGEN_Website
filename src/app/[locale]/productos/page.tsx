@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { CatalogBrowser, type CatalogProduct } from "@/components/catalog";
@@ -110,6 +111,26 @@ export default async function ProductsPage({ params }: { params: Promise<{ local
     };
   });
 
+  /*
+   * THE AREA STRIP — eight named ways into 85 products.
+   *
+   * The catalogue is where "Productos" lands, and it opened straight onto a
+   * filter row and a grid of 85: one undifferentiated pile, with the eight
+   * areas reachable only from the homepage. The strip is the department board
+   * a customer expects at the entrance, and it is a row of links to pages that
+   * exist rather than a menu that reproduces them.
+   *
+   * Counts are read from the registry, so an area that empties stops claiming
+   * a number, and `publicAreas()` keeps the strip out of the DOM entirely if
+   * no assignment is ever approved.
+   */
+  const areaStrip = areas.map((area) => ({
+    id: area.id,
+    href: path(routes.area(area.slug)),
+    short: dict.discovery.areas[area.id].short,
+    count: published.filter((p) => publicAreasFor(p.slug).some((a) => a.id === area.id)).length,
+  }));
+
   return (
     <Section mode="quiet" aria-labelledby="catalog-title">
       <Container width="full">
@@ -121,6 +142,30 @@ export default async function ProductsPage({ params }: { params: Promise<{ local
           lede={catalog.lede}
           as="h1"
         />
+
+        {areaStrip.length > 0 ? (
+          <nav
+            aria-label={dict.discovery.label}
+            className="mb-(--space-2xl) border-y border-(--border-subtle) py-(--space-sm)"
+          >
+            <ul className="flex flex-wrap gap-x-(--space-lg) gap-y-(--space-2xs)">
+              {areaStrip.map((area) => (
+                <li key={area.id} data-area={area.id}>
+                  <Link
+                    href={area.href}
+                    className="neogen-mono -my-2.5 inline-flex min-h-11 items-center gap-(--space-2xs) text-2xs tracking-(--tracking-label) text-(--ink-secondary) uppercase transition-colors duration-(--motion-duration-fast) ease-(--ease-standard) hover:text-(--ink-primary)"
+                  >
+                    <span aria-hidden="true" className="inline-block size-1.5 bg-(--area-line)" />
+                    {area.short}
+                    <span className="text-(--ink-muted) tabular-nums">
+                      {String(area.count).padStart(2, "0")}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ) : null}
 
         <CatalogBrowser
           products={entries}
@@ -137,8 +182,10 @@ export default async function ProductsPage({ params }: { params: Promise<{ local
             filtersLabel: catalog.filtersLabel,
             filtersApplied: catalog.filtersApplied,
             areaLabel: dict.discovery.label,
+            /* Short names in the filter row: a chip reading "Investigación
+               metabólica" wraps to two lines and pushes the row to three. */
             areaLabels: Object.fromEntries(
-              areas.map((area) => [area.id, dict.discovery.areas[area.id].title]),
+              areas.map((area) => [area.id, dict.discovery.areas[area.id].short]),
             ),
             areaOrder: areas.map((area) => area.id),
             sortLabel: catalog.sortLabel,

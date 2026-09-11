@@ -1,5 +1,29 @@
 # Deferred polish — Homepage
 
+> **Phase 12 update (2026-09-11).** The creative overhaul changed the status of
+> several items below. Items 4 and 5 — "real product media" — are still blocked
+> on photography, but they are **no longer the visual ceiling**: the specimen
+> plate is now a composed object carrying the compound's own name, so a page
+> without photography reads as designed rather than as unfinished. The
+> diagnosis that "the remaining ceiling is asset-driven rather than structural"
+> was right about the cause and wrong about the consequence — the structure
+> could still do considerably more with the same absent assets, and now does.
+>
+> Item 6 (transitions) is **unchanged and still declined** for V1, for the
+> reason given below: the canvas-boot frame budget. Nothing in Phase 12 added
+> page-to-page motion.
+>
+> **New deferred item (7): the discovery mega-menu.** The Phase 12 brief raised
+> richer navigation behaviour. It was not built. `Productos` and
+> `Investigación` remain the only primary destinations, and the eight areas are
+> reached from the homepage grid and from a new area strip at the top of the
+> catalogue — which is where someone who clicked "Productos" actually lands.
+> A disclosure menu duplicating those eight links would be a second, weaker
+> copy of a surface that already exists. Revisit if the catalogue grows a
+> second axis worth navigating. **Quality was deliberately NOT added to the
+> nav:** `/investigacion/calidad` is a real 404 in production until a public
+> document resolves, and a link to a 404 is worse than no link.
+
 > **Scope note (2026-09-08).** The Living Laboratory interaction layer is
 > deferred to V2 — see `V2_LIVING_LABORATORY.md`. Items below that describe
 > cinematic 3D choreography are no longer V1 completion criteria; they are

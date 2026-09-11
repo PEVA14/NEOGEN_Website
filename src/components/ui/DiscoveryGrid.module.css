@@ -1,5 +1,6 @@
 /*
- * Eight area panels on the 12-column grid, in an alternating 7/5 rhythm.
+ * Eight area panels on the 12-column grid, in a four-row rhythm that uses two
+ * different splits — 8/4 and 7/5 — so no two rows resolve into the same shape.
  * Zero radius, 1px structure, area tone as the ground.
  */
 
@@ -17,11 +18,19 @@
     grid-template-columns: repeat(12, minmax(0, 1fr));
   }
 
-  .cell[data-span="wide"] {
+  .cell[data-span="a"] {
+    grid-column: span 8;
+  }
+
+  .cell[data-span="b"] {
+    grid-column: span 4;
+  }
+
+  .cell[data-span="c"] {
     grid-column: span 7;
   }
 
-  .cell[data-span="narrow"] {
+  .cell[data-span="d"] {
     grid-column: span 5;
   }
 }
@@ -45,7 +54,7 @@
   text-decoration: none;
   transition:
     border-color var(--motion-duration-base) var(--ease-standard),
-    transform var(--motion-duration-base) var(--ease-standard);
+    background-color var(--motion-duration-base) var(--ease-standard);
 }
 
 .panel:hover {
@@ -75,36 +84,34 @@
 }
 
 /*
- * THE COMMERCIAL LABEL, LARGE AND CLEAN.
- *
- * Condensed display face at a scale that carries the section. `text-wrap:
- * balance` matters here: "Longevidad y función celular" is four words and must
- * not break to a lonely last line.
+ * THE COMMERCIAL LABEL, LARGE AND CLEAN — one word, department-scale. The
+ * research framing sits under it in mono, which is where the careful language
+ * belongs: visible, but not stamped across every heading on the page.
  */
 .titleWrap {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
 }
 
 .title {
   font-family: var(--font-display);
   font-stretch: var(--font-stretch-display);
   font-weight: 700;
-  font-size: var(--text-2xl);
-  line-height: 1;
-  letter-spacing: -0.015em;
+  font-size: var(--text-3xl);
+  line-height: 0.95;
+  letter-spacing: var(--tracking-display);
   color: var(--ink-primary);
-  text-wrap: balance;
+  text-transform: uppercase;
   display: block;
 }
 
-@media (min-width: 64rem) {
-  .cell[data-span="wide"] .title {
-    font-size: var(--text-3xl);
-  }
+.framing {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
 }
 
-/* The research framing lives here, in supporting type — not stamped across
-   the heading. */
 .body {
   color: var(--ink-secondary);
   font-size: var(--text-sm);
@@ -140,16 +147,68 @@
   color: var(--ink-secondary);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  transition: transform var(--motion-duration-fast) var(--ease-standard);
 }
 
 .panel:hover .enter {
   color: var(--ink-primary);
 }
 
+/* --- The inverted register ------------------------------------------------
+ *
+ * The two densest areas, on their own dark material. Everything readable is
+ * re-pinned to the inverse ink; nothing else about the panel changes, so the
+ * two registers are the same panel in two materials rather than two designs.
+ */
+
+.panel[data-register="deep"] {
+  background: var(--area-deep, var(--surface-inverse));
+  border-color: color-mix(in oklab, var(--area-line, var(--border-default)) 60%, transparent);
+}
+
+.panel[data-register="deep"]:hover {
+  border-color: color-mix(in oklab, var(--ink-inverse) 55%, transparent);
+}
+
+.panel[data-register="deep"] .title,
+.panel[data-register="deep"] .from {
+  color: var(--ink-inverse);
+}
+
+.panel[data-register="deep"] .body {
+  color: color-mix(in oklab, var(--ink-inverse) 86%, transparent);
+}
+
+.panel[data-register="deep"] .index,
+.panel[data-register="deep"] .count,
+.panel[data-register="deep"] .framing,
+.panel[data-register="deep"] .examples,
+.panel[data-register="deep"] .enter {
+  color: color-mix(in oklab, var(--ink-inverse) 74%, transparent);
+}
+
+.panel[data-register="deep"] .head,
+.panel[data-register="deep"] .foot {
+  border-color: color-mix(in oklab, var(--ink-inverse) 26%, transparent);
+}
+
+.panel[data-register="deep"]:hover .enter {
+  color: var(--ink-inverse);
+}
+
+.panel[data-register="deep"]:focus-visible {
+  outline-color: var(--neogen-paper);
+}
+
+/* On a wide screen the lead panels set their name at department scale. */
+@media (min-width: 64rem) {
+  .cell[data-span="a"] .title,
+  .cell[data-span="c"] .title {
+    font-size: var(--text-4xl);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .panel,
-  .enter {
+  .panel {
     transition: none;
   }
 }

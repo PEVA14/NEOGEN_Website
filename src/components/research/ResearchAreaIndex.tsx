@@ -9,6 +9,9 @@ import type { DiscoveryAreaId } from "@/data/discovery/types";
 export interface ResearchAreaEntry {
   id: DiscoveryAreaId;
   index: string;
+  /** The commercial name, set as the row's title — "Metabolismo". */
+  short: string;
+  /** The research framing, in mono beneath it. */
   title: string;
   body: string;
   href: string;
@@ -49,7 +52,14 @@ export function ResearchAreaIndex({
               {entry.index}
             </Mono>
             <span className={styles.main}>
-              <span className={styles.title}>{entry.title}</span>
+              {/* The commercial name leads, the research framing sits under it
+                  in mono — the same two-name treatment the discovery panels and
+                  the area mastheads use, so an area is called the same thing
+                  wherever a reader meets it. */}
+              <span className={styles.title}>{entry.short}</span>
+              <Mono size="2xs" className={styles.framing}>
+                {entry.title}
+              </Mono>
               <span className={styles.body}>{entry.body}</span>
               {entry.examples.length > 0 ? (
                 <Mono size="2xs" className={styles.examples}>

@@ -1,0 +1,132 @@
+/*
+ * A horizontal specimen rail.
+ *
+ * The catalogue holds 85 compounds and the homepage was showing three of them,
+ * in a table. A rail shows a dozen at product scale and — because it runs off
+ * the right edge — says there are more, which a grid of three cannot.
+ */
+
+.wrap {
+  position: relative;
+}
+
+/*
+ * FULL-BLEED TO THE RIGHT. The rail starts on the container's left edge and
+ * runs past the right one, so the last card is cut by the viewport rather than
+ * stopping politely inside the margin. That crop is the whole signal.
+ */
+.scroller {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  padding-block-end: var(--space-sm);
+  margin-inline-end: calc(var(--gutter) * -1);
+  padding-inline-end: var(--gutter);
+  /* The scrollbar is the affordance; hiding it would leave no way to tell the
+     rail scrolls at all on a trackpad-less machine. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+.scroller:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: var(--gutter);
+  align-items: stretch;
+}
+
+.item {
+  flex: 0 0 auto;
+  inline-size: 15rem;
+  scroll-snap-align: start;
+}
+
+@media (min-width: 48rem) {
+  .item {
+    inline-size: 17rem;
+  }
+}
+
+@media (min-width: 80rem) {
+  .item {
+    inline-size: 19rem;
+  }
+}
+
+/* The tail card: a plain link to the whole catalogue, so the rail ends in an
+   action rather than simply running out of products. */
+.tail {
+  flex: 0 0 auto;
+  inline-size: 15rem;
+  display: flex;
+}
+
+@media (min-width: 48rem) {
+  .tail {
+    inline-size: 17rem;
+  }
+}
+
+.tailLink {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: var(--space-2xs);
+  inline-size: 100%;
+  min-block-size: 100%;
+  padding: var(--space-md);
+  border: 1px solid var(--border-default);
+  background-color: var(--surface-raised);
+  color: var(--ink-primary);
+  text-decoration: none;
+  transition: border-color var(--motion-duration-base) var(--ease-standard);
+}
+
+.tailLink:hover {
+  border-color: var(--ink-secondary);
+}
+
+.tailLink:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}
+
+.tailCount {
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-5xl);
+  line-height: 0.9;
+  letter-spacing: var(--tracking-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.tailLabel,
+.tailAction {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.tailAction {
+  color: var(--ink-primary);
+  padding-block-start: var(--space-xs);
+  border-block-start: 1px solid var(--border-subtle);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroller {
+    scroll-behavior: auto;
+  }
+
+  .tailLink {
+    transition: none;
+  }
+}

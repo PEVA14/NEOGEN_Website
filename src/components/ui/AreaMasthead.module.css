@@ -1,0 +1,143 @@
+/*
+ * AN AREA'S FRONT DOOR.
+ *
+ * A department deserves a masthead, not a heading. This is the area's own
+ * material, full-bleed, with the commercial name at the largest scale the
+ * system has and the facts that matter set as a band beneath it.
+ */
+
+.masthead {
+  position: relative;
+  padding-block: var(--space-3xl) var(--space-xl);
+  background: var(--area-deep, var(--surface-inverse));
+  color: var(--ink-inverse);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/*
+ * The ground: a single light source from the upper left, the same direction
+ * the specimen plates and the 3D stages are lit from, so a reader moving from
+ * the catalogue into an area does not cross a change of lighting.
+ */
+.ground {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(
+      90% 120% at 12% 0%,
+      color-mix(in oklab, var(--area-wash, var(--neogen-paper)) 26%, transparent),
+      transparent 58%
+    ),
+    linear-gradient(
+      180deg,
+      transparent 55%,
+      color-mix(in oklab, var(--neogen-charcoal) 35%, transparent)
+    );
+}
+
+/* A hairline register across the field — the laboratory grid the hero
+   establishes, reused at department scale. */
+.register {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.register span {
+  border-inline-start: 1px solid color-mix(in oklab, var(--ink-inverse) 9%, transparent);
+}
+
+.inner {
+  position: relative;
+  z-index: 1;
+}
+
+.eyebrow {
+  color: color-mix(in oklab, var(--ink-inverse) 72%, transparent);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+/*
+ * THE NAME AT DEPARTMENT SCALE.
+ *
+ * `--text-6xl` is the hero's size. An area is the second-largest thing in the
+ * information architecture and is allowed to use it.
+ */
+.name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-6xl);
+  line-height: 0.86;
+  letter-spacing: var(--tracking-display);
+  text-transform: uppercase;
+  color: var(--ink-inverse);
+  margin-block-start: var(--space-xs);
+}
+
+.framing {
+  display: block;
+  margin-block-start: var(--space-sm);
+  color: color-mix(in oklab, var(--ink-inverse) 74%, transparent);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.body {
+  margin-block-start: var(--space-md);
+  max-inline-size: var(--container-prose);
+  color: color-mix(in oklab, var(--ink-inverse) 88%, transparent);
+  font-size: var(--text-lg);
+  text-wrap: pretty;
+}
+
+/* --- The fact band -------------------------------------------------------- */
+
+.facts {
+  margin: var(--space-2xl) 0 0;
+  padding-block-start: var(--space-md);
+  border-block-start: 1px solid color-mix(in oklab, var(--ink-inverse) 24%, transparent);
+  display: grid;
+  gap: var(--space-lg);
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+}
+
+.factKey {
+  color: color-mix(in oklab, var(--ink-inverse) 66%, transparent);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.factValue {
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-3xl);
+  line-height: 1;
+  letter-spacing: var(--tracking-tight);
+  color: var(--ink-inverse);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A value that is a list of names rather than a figure sets at reading size. */
+.factValue[data-kind="text"] {
+  font-family: var(--font-mono);
+  font-stretch: normal;
+  font-weight: 400;
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
