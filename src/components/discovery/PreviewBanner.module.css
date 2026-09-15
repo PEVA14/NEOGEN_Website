@@ -1,0 +1,48 @@
+.banner {
+  position: fixed;
+  inset-inline: 0;
+  inset-block-end: 0;
+  z-index: var(--z-drawer);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2xs) var(--space-lg);
+  padding: var(--space-xs) var(--gutter);
+  background: var(--status-error-ink);
+  color: var(--neogen-paper);
+  border-block-start: 2px solid var(--neogen-paper);
+}
+
+.label {
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.body {
+  margin: 0;
+  flex: 1 1 24rem;
+  font-size: var(--text-sm);
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 2.75rem;
+  color: var(--neogen-paper);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.back:focus-visible {
+  outline: var(--focus-ring-width) solid var(--neogen-paper);
+  outline-offset: var(--focus-ring-offset-width);
+}
+
+.spacer {
+  block-size: 7rem;
+}

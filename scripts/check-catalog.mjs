@@ -40,6 +40,21 @@ import {
   featuredInArea,
   relatedAreas,
 } from "../src/domain/discovery/index.ts";
+import {
+  activeFilterCount,
+  applyFilters,
+  clearFilters,
+  EMPTY_FILTERS,
+  facetOptions,
+  facetVisible,
+  flagCounts,
+  flagVisible,
+  matches,
+  parseFilters,
+  priceBounds,
+  serializeFilters,
+  toggleValue,
+} from "../src/components/catalog/filters.ts";
 import { AVAILABILITY } from "../src/data/commerce/availability.ts";
 import { getAvailability, getPrices, ORDER_LIMITS } from "../src/data/commerce/index.ts";
 import { routes } from "../src/config/routes.ts";
@@ -496,6 +511,213 @@ for (const area of AREAS) {
       relatedAreas(area.id).map((r) => r.area.id),
     );
     check(plan.nextArea?.id !== area.id, "continue never sends an area to itself", area.id);
+  }
+}
+
+/* ---- catalogue filter engine ------------------------------------------- *
+ *
+ * The browser on the catalogue and on every area page runs this engine. Its
+ * promises: facets OR within and AND across, counts are disjunctive, unpriced
+ * products never pass a price bound, a facet with nothing to discriminate is
+ * hidden, and the URL round-trips.
+ */
+{
+  const check = (condition, what, detail = "") => {
+    if (!condition) fail(`filters: ${what}`, detail);
+  };
+  const p = (overrides) => ({
+    id: overrides.slug,
+    index: "01",
+    subtitle: null,
+    category: "peptides",
+    categoryLabel: "Péptidos",
+    productType: "compound",
+    areas: [],
+    areaId: null,
+    world: null,
+    href: "#",
+    price: null,
+    priceAmount: 1000,
+    strengths: "5 mg",
+    range: "5 mg",
+    presentations: 1,
+    formats: ["solid"],
+    vials: [10],
+    availability: [],
+    documented: false,
+    photographed: false,
+    ctaLabel: "x",
+    ...overrides,
+  });
+  const FX = [
+    p({
+      slug: "alpha",
+      name: "Tirzepatide",
+      index: "01",
+      areas: ["metabolic"],
+      priceAmount: 5000,
+      presentations: 3,
+    }),
+    p({
+      slug: "beta",
+      name: "Beta",
+      index: "02",
+      areas: ["skin"],
+      priceAmount: 2000,
+      formats: ["blend"],
+    }),
+    p({
+      slug: "gamma",
+      name: "Gamma",
+      index: "03",
+      areas: ["metabolic", "skin"],
+      priceAmount: null,
+      world: "reta",
+    }),
+    p({
+      slug: "delta",
+      name: "Delta",
+      index: "04",
+      areas: ["neuro"],
+      priceAmount: 9000,
+      vials: [6],
+    }),
+  ];
+  const slugs = (list) => list.map((x) => x.slug).join(",");
+  const withList = (facet, values) => ({
+    ...EMPTY_FILTERS,
+    lists: { ...EMPTY_FILTERS.lists, [facet]: values },
+  });
+
+  check(
+    slugs(applyFilters(FX, EMPTY_FILTERS)) === "alpha,beta,gamma,delta",
+    "no filters → everything, index order",
+  );
+  check(
+    slugs(applyFilters(FX, withList("area", ["metabolic", "skin"]))) === "alpha,beta,gamma",
+    "options within a facet are OR",
+  );
+  check(
+    slugs(
+      applyFilters(FX, {
+        ...withList("area", ["metabolic", "skin"]),
+        lists: { ...withList("area", ["metabolic", "skin"]).lists, format: ["blend"] },
+      }),
+    ) === "beta",
+    "facets combine with AND",
+  );
+  const areaCounts = Object.fromEntries(
+    facetOptions(FX, withList("area", ["metabolic"]), "area").map((o) => [o.value, o.count]),
+  );
+  check(
+    areaCounts.skin === 2 && areaCounts.neuro === 1,
+    "a facet's own selection does not zero its other options",
+    JSON.stringify(areaCounts),
+  );
+  const formatCounts = Object.fromEntries(
+    facetOptions(FX, withList("area", ["neuro"]), "format").map((o) => [o.value, o.count]),
+  );
+  check(
+    formatCounts.blend === 0 && formatCounts.solid === 1,
+    "other facets narrow a facet's counts",
+    JSON.stringify(formatCounts),
+  );
+  check(
+    slugs(applyFilters(FX, { ...EMPTY_FILTERS, priceMin: 0 })) === "alpha,beta,delta",
+    "an unpriced product never passes a price bound",
+  );
+  check(
+    slugs(applyFilters(FX, { ...EMPTY_FILTERS, priceMax: 5000 })) === "alpha,beta",
+    "price max is inclusive",
+  );
+  check(
+    slugs(applyFilters(FX, { ...EMPTY_FILTERS, sort: "price-asc" })) === "beta,alpha,delta,gamma",
+    "unpriced sorts last ascending",
+  );
+  check(
+    slugs(applyFilters(FX, { ...EMPTY_FILTERS, sort: "price-desc" })) === "delta,alpha,beta,gamma",
+    "unpriced sorts last descending",
+  );
+  check(
+    slugs(applyFilters(FX, { ...EMPTY_FILTERS, query: "tirzepatida" })) === "alpha",
+    "search matches a Spanish INN",
+  );
+  check(
+    slugs(applyFilters(FX, withList("vials", ["6"]))) === "delta",
+    "pack size filters on the stated vials",
+  );
+  check(
+    slugs(
+      applyFilters(FX, { ...EMPTY_FILTERS, flags: { ...EMPTY_FILTERS.flags, flagship: true } }),
+    ) === "gamma",
+    "flagship flag",
+  );
+
+  /* Visibility: nothing to discriminate → no control. */
+  check(
+    !facetVisible(facetOptions(FX, EMPTY_FILTERS, "availability")),
+    "a facet with no data is hidden",
+  );
+  check(!flagVisible(flagCounts(FX, EMPTY_FILTERS, "documented")), "a flag nobody holds is hidden");
+  check(
+    flagVisible(flagCounts(FX, EMPTY_FILTERS, "flagship")),
+    "a flag some products hold is shown",
+  );
+  check(
+    !facetVisible(facetOptions(FX.slice(0, 1), EMPTY_FILTERS, "format")),
+    "a single-option facet is hidden",
+  );
+  check(priceBounds([FX[0]]) === null, "one priced product gives no price range");
+
+  /* URL round trip, and hostile input. */
+  const rich = {
+    ...toggleValue(toggleValue(EMPTY_FILTERS, "area", "metabolic"), "format", "solid"),
+    query: "bpc",
+    priceMin: 1000,
+    priceMax: 9000,
+    sort: "price-desc",
+    view: "index",
+    flags: { ...EMPTY_FILTERS.flags, flagship: true },
+  };
+  check(
+    JSON.stringify(parseFilters(serializeFilters(rich))) === JSON.stringify(rich),
+    "filters survive a URL round trip",
+  );
+  check(serializeFilters(EMPTY_FILTERS) === "", "default filters serialise to no query string");
+  const hostile = parseFilters("?min=-5&max=abc&orden=drop&vista=x&insignia=yes");
+  check(
+    hostile.priceMin === null &&
+      hostile.priceMax === null &&
+      hostile.sort === "index" &&
+      hostile.view === "grid" &&
+      !hostile.flags.flagship,
+    "malformed URL values are dropped, not thrown on",
+    JSON.stringify(hostile),
+  );
+  check(
+    activeFilterCount(rich) === 5,
+    "active count ignores sort and view",
+    String(activeFilterCount(rich)),
+  );
+  const cleared = clearFilters(rich);
+  check(
+    activeFilterCount(cleared) === 0 && cleared.sort === "price-desc",
+    "clearing keeps sort and view",
+  );
+  check(!matches(FX[0], { ...EMPTY_FILTERS, query: "zzz" }), "a non-matching query excludes");
+
+  /* The real catalogue: area facet counts agree with the discovery registry. */
+  const realEntries = publishedProducts.map((product, i) => ({
+    ...p({ slug: product.slug, name: product.name, index: String(i + 1).padStart(3, "0") }),
+    areas: publicAreasFor(product.slug).map((a) => a.id),
+  }));
+  for (const option of facetOptions(realEntries, EMPTY_FILTERS, "area")) {
+    const expected = productsInAreaForCheck(option.value).length;
+    check(
+      option.count === expected,
+      "area facet count equals the area's product count",
+      `${option.value}: ${option.count} vs ${expected}`,
+    );
   }
 }
 

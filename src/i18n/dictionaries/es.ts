@@ -359,7 +359,8 @@ const es = {
       title: "Compuestos",
       lede: "Cada compuesto se presenta con su ficha de material y su documentación técnica.",
       searchLabel: "Buscar",
-      searchPlaceholder: "Nombre del compuesto",
+      searchPlaceholder: "Nombre, clase o concentración",
+      searchClear: "Borrar búsqueda",
       filterLabel: "Compuesto",
       filterAll: "Todos",
       categoryLabels: {
@@ -380,9 +381,55 @@ const es = {
       countLabel: "Mostrando",
       sortPriceAsc: "Precio ↑",
       sortPriceDesc: "Precio ↓",
+      sortNameDesc: "Nombre Z–A",
+      sortPresentations: "Más presentaciones",
+      /**
+       * FILTROS — cada uno opera sobre un dato que el registro sí contiene.
+       *
+       * Disponibilidad, documentación y fotografía existen como filtros pero no
+       * aparecen mientras sus datos estén vacíos: un filtro que no puede
+       * filtrar es peor que uno ausente.
+       */
+      facets: {
+        /* El panel de filtros se puede ocultar; entre paréntesis, cuántos hay activos. */
+        hide: "Ocultar filtros",
+        show: "Mostrar filtros",
+        heading: "Filtrar",
+        area: "Área",
+        alsoIn: "También en",
+        category: "Clasificación",
+        type: "Tipo de producto",
+        format: "Formato",
+        vials: "Viales por empaque",
+        availability: "Disponibilidad",
+        price: "Precio desde",
+        priceMin: "Mínimo",
+        priceMax: "Máximo",
+        selection: "Selección",
+        flagship: "Solo compuestos insignia",
+        documented: "Con documentación pública",
+        photographed: "Con fotografía",
+        formats: {
+          solid: "Sólido (mg)",
+          solution: "Solución (mg/ml)",
+          volume: "Volumen (ml)",
+          iu: "Unidades (UI)",
+          blend: "Mezcla",
+        },
+        /* "× 10 viales" */
+        vialsValue: "× {n} viales",
+        active: "Filtros activos",
+        /* "Quitar filtro: Metabolismo" */
+        remove: "Quitar filtro",
+        clearAll: "Limpiar todo",
+        /* "Ver 16 resultados" */
+        showResults: "Ver {n} resultados",
+        showResult: "Ver 1 resultado",
+      },
       typeLabel: "Tipo",
       filtersLabel: "Filtros",
       filtersApplied: "activos",
+      filterApplied: "activo",
       /** Qualifier before a "from" price on a card. */
       from: "Desde",
       /** Shown when the filters exclude everything. Never a fabricated state. */
@@ -1115,6 +1162,17 @@ const es = {
     masthead: {
       compounds: "Compuestos en esta área",
       examples: "Punto de entrada",
+    },
+    /**
+     * VISTA PREVIA DE DISEÑO — solo en desarrollo.
+     *
+     * La ruta `…/area/<slug>/vista-previa` no existe en producción. Estas
+     * cadenas nunca llegan a un cliente.
+     */
+    preview: {
+      label: "Vista previa de diseño · Datos ficticios",
+      body: "Contexto, investigación y documentación con datos de muestra para revisar el diseño. Esta página solo existe en desarrollo y nunca se publica.",
+      back: "Ver la página real",
     },
     /**
      * INVESTIGACIÓN CONECTADA — solo existe cuando hay referencias públicas.

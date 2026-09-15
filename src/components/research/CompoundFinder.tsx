@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useId, useMemo, useState } from "react";
 
 import { Mono } from "@/components/typography";
+import { fold, matchesText as matches } from "@/lib/search";
 
 import styles from "./CompoundFinder.module.css";
 
@@ -56,24 +57,6 @@ export interface CompoundFinderCopy {
  * letters, which is where INNs sit — and a query matches if either the folded
  * text or the stemmed text contains it.
  */
-function fold(value: string): string {
-  return value
-    .toLocaleLowerCase("es")
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "");
-}
-
-function stem(value: string): string {
-  return fold(value)
-    .split(/[\s\-/]+/)
-    .map((word) => (word.length > 5 ? word.replace(/[aeo]$/, "") : word))
-    .join(" ");
-}
-
-function matches(haystack: string, query: string): boolean {
-  return fold(haystack).includes(fold(query)) || stem(haystack).includes(stem(query));
-}
-
 export function CompoundFinder({
   entries,
   areas,

@@ -293,6 +293,33 @@ announced.**
   keyboard could reach (`scrollable-region-focusable`). In that context the
   ladder now wraps.
 
+## 8c. After Phase 12.1 — filters, catalogue entrance and area preview
+
+Owner request (2026-09-15), not a numbered phase:
+
+- **Faceted filtering on the catalogue and every area page** — search (incl.
+  Spanish INNs), area / "also in", classification, product type, format,
+  pack size, price range, flagship; sort by index, name A–Z / Z–A, price ↑ / ↓,
+  most presentations; grid or register view. State lives in the URL. The
+  sidebar can be hidden on desktop ("Ocultar filtros"). The presentation-count
+  facet was removed at the owner's request.
+- **Catalogue entrance** — the one-line area strip became a compact area index
+  (swatch, name, count, size gauge; hover wash), and search became a refined
+  hairline field with result count, clear and a `/` shortcut. A first, louder
+  version (display-size tiles, charcoal search slab with suggestions) was
+  rejected by the owner as too big; direction is "elegant first, simplicity
+  that shines". Availability, documentation and photography filters appear
+  automatically once that data exists. All eight areas now use the browser.
+- **Area design preview** at `…/area/<slug>/vista-previa`, development only, so
+  the owner can see context, research and evidence before real sources
+  exist. Sample data is visibly marked and cannot ship (CONVENTIONS §15).
+- Area section surfaces now alternate by rendered position.
+- Gates: `check:content` 201 assertions; new filter-engine block in
+  `check:catalog`; new preview block in `check:output`; all negative-controlled.
+  QA 0 axe / 0 overflow / 0 sub-44px at 375, 768, 1440 on catalogue and area
+  pages; preview is a real 404 in production. Initial JS: catalogue 189.8 KB
+  gzip (was 186.8), area 193.5 KB (was 190.4).
+
 ## 9. Recommendation for Phase 13 (not approved)
 
 Photography and first evidence together, for RETA, GLOW and GHK-Cu: shoot the

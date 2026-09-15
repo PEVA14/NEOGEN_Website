@@ -327,6 +327,25 @@ for (const area of publicAreas()) {
   }
 }
 
+/* ------------------------------------------- 7c. the design preview never ships
+ *
+ * `…/area/<slug>/vista-previa` renders SAMPLE context, research and evidence
+ * for design review, in development only. In production the route must not
+ * exist, and neither sample marker phrase may appear in anything emitted.
+ */
+for (const file of htmlFiles) {
+  if (/[\\/]vista-previa\.html$/.test(file)) {
+    fail("the area design preview was prerendered into production", file);
+  }
+}
+for (const file of clientAssets) {
+  const text = readFileSync(file, "utf8");
+  for (const phrase of ["MUESTRA FICTICIA", "FICTIONAL SAMPLE", "muestra-ficticia"]) {
+    if (text.includes(phrase))
+      fail("design-preview sample data in production output", `"${phrase}" in ${file}`);
+  }
+}
+
 /* The documentation explorer exists only once a public document does. */
 if (publicEvidenceIndex(publishedProducts).length === 0) {
   for (const file of htmlFiles) {

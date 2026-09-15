@@ -1,3 +1,4 @@
+export { AreaBoard, type AreaBoardEntry } from "./AreaBoard";
 export { AreaMasthead, type AreaFact } from "./AreaMasthead";
 export { Button } from "./Button";
 export { CatalogIndex, type CatalogEntry } from "./CatalogIndex";

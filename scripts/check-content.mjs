@@ -522,6 +522,34 @@ eq(
 );
 eq(auditAreaOverviews().length, 0, "the declared area overviews audit clean");
 
+/* ---- design preview fixtures: visibly fake, never a real source ---------- *
+ *
+ * `content/preview/areaPreview.ts` feeds sample data to a development-only
+ * route. It cannot be imported here (it is server-only), so its SOURCE is
+ * scanned: no DOI or PMID, every URL on example.org, every visible sentence
+ * marked, and no forbidden vocabulary.
+ */
+{
+  const source = readFileSync("src/content/preview/areaPreview.ts", "utf8");
+  /* Comments and import lines out: "@/content/lifecycle" is a path, not copy. */
+  const code = source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^import[^;]*;$/gms, "");
+  ok(!/doi:\s*"10\./.test(code), "preview fixtures carry no DOI");
+  ok(!/pmid:\s*"\d/.test(code), "preview fixtures carry no PMID");
+  const urls = [...code.matchAll(/https?:\/\/[^\s"`$]+/g)].map((m) => m[0]);
+  ok(
+    urls.length > 0 && urls.every((u) => u.startsWith("https://example.org/")),
+    "preview URLs are all on example.org",
+    urls.join(" "),
+  );
+  ok(
+    /\[MUESTRA FICTICIA\]/.test(code) && /\[FICTIONAL SAMPLE\]/.test(code),
+    "preview sentences carry both marker phrases",
+  );
+  const strings = [...code.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map((m) => m[1]);
+  const term = strings.map((v) => forbiddenTermIn(v)).find(Boolean);
+  ok(!term, "preview fixtures contain no forbidden vocabulary", term ?? "");
+}
+
 /* ---- the real registries ----------------------------------------------- */
 
 eq(REFERENCES.length, 0, "no reference is declared until one is checked against its source");

@@ -1,0 +1,146 @@
+/*
+ * The area index. Hairline compartments with open ends: rules above, below
+ * and between, none at the outer edges, so the row reads as one index rather
+ * than eight boxes. Zero radius; colour only in the swatch, the gauge and the
+ * hover wash.
+ */
+
+.board {
+  margin-block-end: var(--space-2xl);
+}
+
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  border-block: 1px solid var(--border-subtle);
+  background: var(--border-subtle);
+}
+
+@media (min-width: 40rem) {
+  .grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 80rem) {
+  .grid {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+}
+
+.cell {
+  display: flex;
+  min-inline-size: 0;
+  background: var(--surface-base);
+}
+
+.tile {
+  position: relative;
+  display: grid;
+  gap: var(--space-2xs);
+  inline-size: 100%;
+  padding: var(--space-sm) var(--space-sm) var(--space-xs);
+  color: var(--ink-secondary);
+  text-decoration: none;
+  background-color: transparent;
+  transition:
+    background-color var(--motion-duration-base) var(--ease-standard),
+    color var(--motion-duration-base) var(--ease-standard);
+}
+
+.tile:hover {
+  background-color: color-mix(in oklab, var(--area-wash) 70%, transparent);
+  color: var(--ink-primary);
+}
+
+.tile:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: calc(-1 * var(--focus-ring-width));
+}
+
+.top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-2xs);
+}
+
+/* A small square of the area's ink, with its wash as a halo. */
+.swatch {
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  background: var(--area-ink);
+  box-shadow: 0 0 0 3px var(--area-wash);
+}
+
+.name {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--ink-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Overlaid, so a hidden arrow never costs the name its width. */
+.arrow {
+  position: absolute;
+  inset-block-start: var(--space-sm);
+  inset-inline-end: var(--space-sm);
+  font-size: var(--text-xs);
+  color: var(--ink-primary);
+  opacity: 0;
+  transform: translateX(-0.25rem);
+  transition:
+    opacity var(--motion-duration-base) var(--ease-standard),
+    transform var(--motion-duration-base) var(--ease-standard);
+}
+
+.tile:hover .arrow,
+.tile:focus-visible .arrow {
+  opacity: 1;
+  transform: none;
+}
+
+.meta {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.count {
+  color: var(--ink-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Size against the largest area, as a hairline. */
+.gauge {
+  display: block;
+  block-size: 2px;
+  margin-block-start: var(--space-3xs);
+  background: color-mix(in oklab, var(--area-line) 45%, transparent);
+}
+
+.fill {
+  display: block;
+  block-size: 100%;
+  inline-size: calc(var(--share, 0) * 100%);
+  background: var(--area-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile,
+  .arrow {
+    transition: none;
+  }
+
+  .arrow {
+    transform: none;
+  }
+}

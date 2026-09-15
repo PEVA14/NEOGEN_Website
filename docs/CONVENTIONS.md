@@ -527,7 +527,48 @@ separately from the product page's `data-evidence-state`.
 order", labelled as entry compounds. Popularity, recommendation and sales
 vocabulary is banned from the dictionaries by `check:content`.
 
-## 15. Commands
+## 15. Catalogue filtering and the design preview
+
+**One filter engine** (`components/catalog/filters.ts`) serves the catalogue and
+every area page. Filters OR within a facet and AND across facets; each option's
+count is computed with every other facet applied but not its own. Every facet
+reads a field the registry holds — area, classification, product type, format,
+pack size, price, flagship — and availability, public
+documentation and photography are wired but **render only when at least two
+options exist in scope** (`facetVisible` / `flagVisible`). An unpriced product
+never passes a price bound. Filter state is the URL query string (read through
+`useSyncExternalStore`, written with `replaceState`); the server renders the
+unfiltered list. Entries are built once, server-side, in `server/catalog.ts`.
+There is deliberately **no presentation-count facet** (owner decision,
+2026-09-15); "most presentations" remains a sort. On a wide screen the facet
+sidebar can be hidden from the results toolbar — the results take its column
+and the active filters stay applied and visible as chips. That choice is view
+state for the visit, not part of the URL.
+
+**The catalogue entrance** is a compact area index (`components/ui/AreaBoard`):
+one slim hairline compartment per public area — a small swatch in the area's
+ink, the name at reading size, the compound count in mono, and a 2px gauge of
+`count / largest area` (a fact, never popularity). Hover washes the compartment
+in its area tone and brings in an arrow. **The search** is a single hairline
+field: icon, query at reading size, a clear control, a `/` keycap hint, and a
+visual echo of the result count (the toolbar count stays the announced one);
+focus turns the hairline into a 2px ink rule. `/` focuses it from anywhere,
+Escape clears it. The owner's direction (2026-09-15): elegant first —
+attraction through material detail and precision, not scale or display type.
+`check:catalog` asserts all of it.
+
+**The area design preview** (`/<locale>/productos/area/<slug>/vista-previa`)
+renders the real area renderer with sample context, research and evidence from
+`content/preview/areaPreview.ts`, passed through the same injectable
+registries the live page uses. It is **development only**: the `[vista]`
+segment generates no params in production and `dynamicParams = false` makes it
+a real 404. Every sample string carries `[MUESTRA FICTICIA]` /
+`[FICTIONAL SAMPLE]` and every URL is on `example.org`; `check:content` scans
+the module source and `check:output` fails if the route or either phrase
+reaches production output. Never promote a fixture from this module into a
+real registry.
+
+## 16. Commands
 
 ```bash
 npm run dev          # development server

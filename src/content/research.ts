@@ -1,5 +1,5 @@
-import { areaCitedReferenceIds } from "@/content/areas";
-import { citedReferenceIds } from "@/content/overview";
+import { AREA_OVERVIEWS, areaCitedReferenceIds } from "@/content/areas";
+import { citedReferenceIds, OVERVIEWS } from "@/content/overview";
 import { isPublicReference, REFERENCES } from "@/content/references";
 import { publishedProducts } from "@/data/catalog";
 import { productsInArea } from "@/data/discovery";
@@ -59,20 +59,46 @@ export interface AreaResearchEntry {
   products: readonly string[];
 }
 
+/** The registries the area research connection reads. Real by default. */
+export interface AreaResearchDeps {
+  overviews: typeof OVERVIEWS;
+  areaOverviews: typeof AREA_OVERVIEWS;
+  references: readonly Reference[];
+}
+
+const AREA_RESEARCH_DEPS: AreaResearchDeps = {
+  overviews: OVERVIEWS,
+  areaOverviews: AREA_OVERVIEWS,
+  references: REFERENCES,
+};
+
 /**
  * The area page's research connection: each public reference the area cites,
  * with the area's own compounds that cite it. A reference cited only by the
  * area context carries an empty product list — it is still a real citation,
  * but the page must not attach it to a compound that never cited it.
+ *
+ * Registries are injectable for the same reason the evidence resolver's are:
+ * so a check, or the development-only design preview, can drive every branch
+ * without a fixture ever touching the real registry.
  */
-export function areaResearch(area: DiscoveryAreaId): readonly AreaResearchEntry[] {
+export function areaResearch(
+  area: DiscoveryAreaId,
+  deps: AreaResearchDeps = AREA_RESEARCH_DEPS,
+): readonly AreaResearchEntry[] {
   const items = productsInArea(area);
-  return referencesForArea(area).map((reference) => ({
-    reference,
-    products: items
-      .filter((p) => citedReferenceIds(p.slug).includes(reference.id))
-      .map((p) => p.slug),
-  }));
+  const productDeps = { overviews: deps.overviews, references: deps.references };
+  const citedBy = new Map(items.map((p) => [p.slug, citedReferenceIds(p.slug, productDeps)]));
+  const ids = new Set([
+    ...[...citedBy.values()].flat(),
+    ...areaCitedReferenceIds(area, { overviews: deps.areaOverviews, references: deps.references }),
+  ]);
+  return deps.references
+    .filter((ref) => ids.has(ref.id) && isPublicReference(ref))
+    .map((reference) => ({
+      reference,
+      products: items.filter((p) => citedBy.get(p.slug)?.includes(reference.id)).map((p) => p.slug),
+    }));
 }
 
 export interface ResearchIndexEntry {
