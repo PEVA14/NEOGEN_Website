@@ -28,6 +28,12 @@ import {
   isPublishable,
 } from "../src/content/lifecycle.ts";
 import {
+  AREA_OVERVIEWS,
+  areaCitedReferenceIds,
+  auditAreaOverviews,
+  publicAreaOverview,
+} from "../src/content/areas/index.ts";
+import {
   auditOverviews,
   citedReferenceIds,
   OVERVIEWS,
@@ -151,10 +157,11 @@ ok(FORBIDDEN_PUBLIC_TERMS.length >= 20, "the forbidden list covers both locales"
  * NO DOSE FIELD EXISTS in the content model — checked in the source, because a
  * type is erased at runtime and "we did not add one" has to stay true.
  */
-const overviewTypes = readFileSync("src/content/overview/types.ts", "utf8").replace(
-  /\/\*[\s\S]*?\*\/|\/\/.*$/gm,
-  "",
-);
+/* The area overview (Phase 12.1) is held to the same rule. */
+const overviewTypes = ["src/content/overview/types.ts", "src/content/areas/types.ts"]
+  .map((file) => readFileSync(file, "utf8"))
+  .join("\n")
+  .replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "");
 for (const field of [
   "dose",
   "dosage",
@@ -168,7 +175,7 @@ for (const field of [
 ]) {
   ok(
     !new RegExp(`\\b${field}\\w*\\s*[?]?:`, "i").test(overviewTypes),
-    `the ProductOverview model has no \`${field}\` field`,
+    `neither overview model has a \`${field}\` field`,
   );
 }
 
@@ -192,6 +199,11 @@ for (const locale of ["es", "en"]) {
     /base de datos de coa|coa database/i,
     /rutas de síntesis|synthesis routes/i,
     /por lote cuando el análisis|per lot once analysis/i,
+    /*
+     * Phase 12.1: no ranking language. There is no sales, review or
+     * popularity data behind any product, so no string may imply one.
+     */
+    /más vendid|best.?sell|más popular|most popular|recomendad|recommended|favorit|top ventas|trending/i,
   ]) {
     ok(!banned.test(source), `the ${locale} dictionary does not promise ${banned}`);
   }
@@ -423,6 +435,92 @@ eq(
   ["r1"],
   "cited ids come only from what renders",
 );
+
+/* ---- area overview: the same rules, one level up (Phase 12.1) ----------- */
+
+const areaOverview = (overrides) => ({
+  area: "metabolic",
+  summary: null,
+  themes: [],
+  pathways: [],
+  keyReferences: [],
+  ...overrides,
+});
+const renderArea = (o, locale = "es") =>
+  publicAreaOverview("metabolic", locale, { overviews: { metabolic: o }, references: pool });
+
+eq(
+  renderArea(areaOverview({ themes: [science({})] }))?.themes.length,
+  1,
+  "a sourced, approved area theme renders",
+);
+eq(
+  renderArea(areaOverview({ themes: [science({ references: [] })] })),
+  null,
+  "an area theme with NO reference cannot render, and the section is omitted",
+);
+eq(
+  renderArea(areaOverview({ pathways: [science({ references: ["r2"] })] })),
+  null,
+  "an area pathway citing only an unapproved reference cannot render",
+);
+eq(
+  renderArea(
+    areaOverview({
+      themes: [
+        science({
+          provenance: { class: "derived-copy", status: "approved", derivedFrom: ["product-fact"] },
+        }),
+      ],
+    }),
+  ),
+  null,
+  "a scientific sentence dressed as derived copy cannot render in an area",
+);
+eq(
+  renderArea(
+    areaOverview({
+      themes: [science({ text: { es: "Protocolo de dosis diaria.", en: "Daily dose protocol." } })],
+    }),
+  ),
+  null,
+  "forbidden vocabulary cannot render in an area overview",
+);
+eq(
+  renderArea(
+    areaOverview({
+      summary: {
+        id: "sum",
+        text: { es: "Área del catálogo.", en: "Catalogue area." },
+        provenance: { class: "business-decision", status: "approved" },
+      },
+    }),
+  ),
+  null,
+  "a summary with no sourced statement is not a context section",
+);
+eq(
+  areaCitedReferenceIds("metabolic", {
+    overviews: { metabolic: areaOverview({ themes: [science({})], keyReferences: ["r1", "r2"] }) },
+    references: pool,
+  }),
+  ["r1"],
+  "an area cites only public references",
+);
+eq(
+  auditAreaOverviews({
+    overviews: { metabolic: areaOverview({ themes: [science({ references: [] })] }) },
+    references: pool,
+  }).map((i) => i.code),
+  ["statement_without_reference"],
+  "the area audit reports an unsourced statement",
+);
+eq(
+  Object.keys(AREA_OVERVIEWS).length,
+  0,
+  "no area overview is declared until written against sources",
+);
+eq(auditAreaOverviews().length, 0, "the declared area overviews audit clean");
 
 /* ---- the real registries ----------------------------------------------- */
 

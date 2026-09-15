@@ -1,6 +1,6 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-09-11**, after Phase 12.
+Last updated **2026-09-14**, after Phase 12.1.
 
 This file is the memory of the project for a new session. It records what is
 not derivable from the code: where the phases stand, how the owner runs the
@@ -24,9 +24,10 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 | `0a63800`   | Phase 9 — commerce core (bag, order model, payment domain with `none` adapter) + commercial creative overhaul                   |
 | `2281321`   | Phase 10 — checkout, order persistence boundary, payment-event idempotency, policy architecture                                 |
 | `b6032c3`   | Phase 11 — trust architecture, content foundation, research integration                                                         |
-| _this_      | Phase 12 — creative overhaul: specimen plate, card formats, area identity, homepage rail, area mastheads                        |
+| `fb3b7aa`   | Phase 12 — creative overhaul: specimen plate, card formats, area identity, homepage rail, area mastheads                        |
+| _this_      | Phase 12.1 — discovery area depth: data-derived sections after the masthead                                                     |
 
-**Phase 12 is complete. Phase 13 has not been started or approved.** Do not
+**Phase 12.1 is complete. Phase 13 has not been started or approved.** Do not
 begin it without a brief from the owner.
 
 Pushing is the owner's job — see §3. Check `git status -sb` for what is
@@ -175,7 +176,8 @@ also encoded in `src/config/site.ts`; anything undecided there is `null`.
    document against the physical report before approval.
 10. Lot receiving process, which lots become public, and whether lot ids are
     printed on labels.
-11. Who writes and sources product overviews, and who approves references.
+11. Who writes and sources product overviews **and area context**
+    (`AREA_OVERVIEWS`, Phase 12.1), and who approves references.
 12. P0 photography for RETA, GLOW and GHK-Cu, plus a rendered RETA still.
     0 of 85 products have photographs.
 13. Three unlabelled blends (Relaxation PM, SUPER Human Blend, Healthy Hair)
@@ -246,6 +248,50 @@ changed; what changed is what a customer sees.
    `--ink-primary`/`-secondary`/`-muted` at measured, AA-clearing mixes, so
    components inside a world should override no text colour at all. Only the
    ACTION needs pinning, to raw paper/charcoal — CONVENTIONS §11.
+
+## 8b. Phase 12.1 in brief — discovery area depth
+
+A targeted extension, not a redesign. The Phase 12 masthead is unchanged; the
+depth is added after it. Every area page is now masthead → up to seven
+sections, and **each conditional section is the output of a pure function;
+a section whose function returns nothing is not rendered, numbered or
+announced.**
+
+| Section   | Renders when                                      | Today                             |
+| --------- | ------------------------------------------------- | --------------------------------- |
+| entry     | `featuredCount(n)` > 0 (≥ 5 compounds)            | 7 of 8 (not Materials)            |
+| context   | `publicAreaOverview` resolves a sourced statement | never — `AREA_OVERVIEWS` is empty |
+| compounds | always                                            | 8 of 8                            |
+| research  | `areaResearch` returns a public reference         | never — `REFERENCES` is empty     |
+| evidence  | `publicEvidenceIndex` accepts a record            | never — `DOCUMENTS` is empty      |
+| related   | `relatedAreas` finds a shared compound            | 6 of 8 (not Hormonal, Materials)  |
+| continue  | always                                            | 8 of 8                            |
+
+- **Entry order is "flagship first, then catalogue order"** (`entryOrder`), and
+  the masthead's "Punto de entrada" line now reads the same order — Metabolism
+  lists Retatrutide Research · Semaglutide · Tirzepatide (same three names as
+  before; RETA now first). No popularity, recommendation or sales language
+  exists, and `check:content` bans it from both dictionaries.
+- **Evidence may be counted, never aggregated into a verdict.**
+  `evidenceCoverage` returns exactly `{records, compounds, presentations}`;
+  every ledger row keeps its own presentation or lot and its own states.
+  `check:quality` fails if the type gains any other field.
+- **Areas may carry sourced context** (`content/areas`) under the product
+  overview's own validators; a summary with no sourced statement is not a
+  context section.
+- Large areas (≥ 8) reuse the catalogue's browser scoped to the area; small
+  areas get a plain grid.
+- **Gates at commit:** `check:quality` 176 assertions (was 169),
+  `check:content` 196 (was 184), new area-derivation block in
+  `check:catalog`, new area-section block in `check:output`, each
+  negative-controlled. Build 214 pages. 48 area audits (8 areas × 375 / 768 /
+  1280 / 1440 / 1728, plus English at 1440): 0 axe A/AA, 0 horizontal
+  overflow, 0 sub-44px targets. Area initial JS 190.4 KB gzip (Phase 12: 193.3);
+  three.js absent from every initial payload.
+- One accessibility bug found and fixed in QA: RETA's seven-step presentation
+  ladder overflowed the five-column entry spread into a scroll region no
+  keyboard could reach (`scrollable-region-focusable`). In that context the
+  ladder now wraps.
 
 ## 9. Recommendation for Phase 13 (not approved)
 

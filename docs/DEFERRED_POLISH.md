@@ -1,5 +1,25 @@
 # Deferred polish — Homepage
 
+> **Phase 12.1 update (2026-09-14) — discovery area depth.** Deferred on
+> purpose, each for a stated reason:
+>
+> - **Area-only citations are not in the Research Hub index.**
+>   `researchReferenceIndex` lists references cited by at least one product.
+>   An `AREA_OVERVIEWS` statement may cite a reference no product cites; it
+>   shows on that area page but not in the hub index until the hub learns to
+>   list area citers. Both registries are empty, so nothing is missing today.
+> - **Hormonal and Materials have no related-areas section**, because none of
+>   their compounds is filed elsewhere. That is the taxonomy, not a gap — a
+>   hand-written relation would be exactly what the rule forbids.
+> - **Entry order has no merchandising input.** "Flagship first, then catalogue
+>   order" is the only defensible rule without sales or margin data. If the
+>   owner later wants a curated order, it belongs in the assignments data with
+>   an owner-confirmed provenance, not in page code.
+> - **Compare, saved products, recently viewed** — still not built. The area
+>   page now has the continuation paths (related areas, next area, materials,
+>   catalogue, hub) that make them less urgent; recently viewed is the next
+>   cheapest to add, being local-only.
+>
 > **Phase 12 update (2026-09-11).** The creative overhaul changed the status of
 > several items below. Items 4 and 5 — "real product media" — are still blocked
 > on photography, but they are **no longer the visual ceiling**: the specimen

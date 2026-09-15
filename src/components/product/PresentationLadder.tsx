@@ -2,6 +2,8 @@ import { Mono } from "@/components/typography";
 
 import styles from "./PresentationLadder.module.css";
 
+import type { Strength } from "@/data/catalog";
+
 export interface LadderStep {
   /** The number set large — "10". */
   value: string;
@@ -54,4 +56,27 @@ export function PresentationLadder({
       ))}
     </ol>
   );
+}
+
+/**
+ * A strength as a ladder figure — the number large, the unit small.
+ *
+ * Built from the strength union, not by splitting a formatted string, so a
+ * solution's "mg / ml" and a blend's components are set correctly rather than
+ * guessed at from where a space falls. Shared by the product page and the area
+ * page's entry spread, so one compound's ladder reads identically on both.
+ */
+export function ladderStep(strength: Strength, vials: number | null): LadderStep {
+  switch (strength.kind) {
+    case "solid":
+      return { value: String(strength.mg), unit: "mg", vials };
+    case "solution":
+      return { value: String(strength.mg), unit: `mg / ${strength.ml} ml`, vials };
+    case "volume":
+      return { value: String(strength.ml), unit: "ml", vials };
+    case "iu":
+      return { value: String(strength.iu), unit: "IU", vials };
+    case "blend":
+      return { value: strength.componentsMg.join("+"), unit: "mg", vials };
+  }
 }

@@ -26,6 +26,7 @@ import { ISSUERS, LOTS, publicLot } from "../src/data/quality/index.ts";
 import {
   auditDocuments,
   evaluateDocument,
+  evidenceCoverage,
   isJanoshikVerified,
   publicEvidenceIndex,
   resolveEvidence,
@@ -458,6 +459,64 @@ eq(
   "gallery images come in alternate → detail → packaging order",
 );
 eq(galleryImages(NO_MEDIA).length, 0, "no supplementary media → an empty gallery");
+
+/* ---- AREA COVERAGE: counts over records, never an area verdict ----------
+ *
+ * A discovery area page may count public records among its compounds. It may
+ * not turn one compound's document into a property of the area. These drive
+ * `publicEvidenceIndex` + `evidenceCoverage` exactly as the area page does.
+ */
+
+const AREA = [ALPHA, BETA];
+const areaReg = reg([
+  jan({ id: "area-jan-alpha-10" }),
+  doc({ id: "area-coa-beta-5", scope: { level: "variant", slug: "beta", variantId: "beta-5mg" } }),
+  doc({ id: "area-private-lot", scope: { level: "lot", lotId: "L-ALPHA-10-PRIVATE" } }),
+  doc({ id: "area-draft", status: "draft" }),
+]);
+const areaRecords = publicEvidenceIndex(AREA, areaReg);
+
+eq(
+  evidenceCoverage(areaRecords),
+  { records: 2, compounds: 2, presentations: 2 },
+  "area coverage counts only accepted records — private lots and drafts are not counted",
+);
+eq(
+  Object.keys(evidenceCoverage(areaRecords)).sort(),
+  ["compounds", "presentations", "records"],
+  "coverage has exactly three counts — no area state, purity or verified field exists",
+);
+eq(
+  areaRecords
+    .filter((r) => r.states.includes("janoshik-verified"))
+    .map((r) => `${r.slug}:${r.variantId}`),
+  ["alpha:alpha-10mg"],
+  "a Janoshik record on one presentation is verified on that row and no other",
+);
+ok(
+  !areaRecords.some((r) => r.slug === "alpha" && r.variantId === "alpha-5mg"),
+  "the area ledger has no row for a presentation nothing documents",
+);
+eq(
+  evidenceCoverage(publicEvidenceIndex([ALPHA], areaReg)),
+  { records: 1, compounds: 1, presentations: 1 },
+  "a different area's compounds contribute nothing to this area's coverage",
+);
+eq(
+  evidenceCoverage(publicEvidenceIndex(AREA, reg([]))),
+  { records: 0, compounds: 0, presentations: 0 },
+  "no documents → zero coverage, and the page omits the section",
+);
+eq(
+  evidenceCoverage(
+    publicEvidenceIndex(
+      AREA,
+      reg([doc({ type: "technical-document", scope: { level: "product", slug: "alpha" } })]),
+    ),
+  ),
+  { records: 1, compounds: 1, presentations: 0 },
+  "a compound-level technical sheet covers no presentation",
+);
 
 /* ---- report ------------------------------------------------------------ */
 

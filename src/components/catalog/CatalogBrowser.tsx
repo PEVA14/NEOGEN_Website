@@ -129,9 +129,16 @@ type Sort = "index" | "name" | "price-asc" | "price-desc";
 export function CatalogBrowser({
   products,
   copy,
+  cardHeadingLevel = 2,
 }: {
   products: readonly CatalogProduct[];
   copy: CatalogCopy;
+  /**
+   * The cards' heading level. The catalogue's cards sit directly under its h1,
+   * so they are h2; on an area page they sit under a numbered h2 section, so
+   * they are h3. Heading order must follow the page, not the component.
+   */
+  cardHeadingLevel?: 2 | 3;
 }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string>("all");
@@ -394,9 +401,7 @@ export function CatalogBrowser({
                 presentations={product.presentations}
                 index={product.index}
                 ctaLabel={product.ctaLabel}
-                /* The catalogue's h1 is the page title and these are the
-                   content directly under it — h3 would skip a level. */
-                headingLevel={2}
+                headingLevel={cardHeadingLevel}
               />
             </div>
           ))}

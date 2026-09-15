@@ -403,3 +403,34 @@ export function publicEvidenceIndex(
     );
   });
 }
+
+/**
+ * EVIDENCE COVERAGE — exact counts over records, for a set of products.
+ *
+ * A discovery area may say how many public records exist among its compounds.
+ * It may NOT say anything that sounds like a property of the area: there is no
+ * area-level state, no "verified" flag, no purity figure, and this type has no
+ * field that could carry one. Each count is a count of things that exist —
+ * accepted records, the distinct compounds they belong to, the distinct
+ * presentations they cover — and the records themselves travel with their own
+ * narrow scope, so the page lists "Janoshik, 10 mg, lot L-12" rather than
+ * crediting the area with the laboratory's name.
+ *
+ * `check:quality` asserts the shape (exactly these three counts) so a future
+ * "areaState" or "purity" field is a failing check, not a quiet addition.
+ */
+export interface EvidenceCoverage {
+  records: number;
+  compounds: number;
+  presentations: number;
+}
+
+export function evidenceCoverage(records: readonly IndexedEvidence[]): EvidenceCoverage {
+  return {
+    records: records.length,
+    compounds: new Set(records.map((r) => r.slug)).size,
+    presentations: new Set(
+      records.filter((r) => r.variantId !== null).map((r) => `${r.slug}:${r.variantId}`),
+    ).size,
+  };
+}

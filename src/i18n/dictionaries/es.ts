@@ -1116,12 +1116,20 @@ const es = {
       compounds: "Compuestos en esta área",
       examples: "Punto de entrada",
     },
+    /**
+     * INVESTIGACIÓN CONECTADA — solo existe cuando hay referencias públicas.
+     *
+     * Ya no hay texto para el caso vacío. Una sección que anuncia "ningún
+     * compuesto cita referencias" es un marcador de ausencia; la página
+     * simplemente no la muestra.
+     */
     research: {
       label: "Investigación",
-      qualifier: "En esta área",
-      title: "Investigación en esta área",
-      lede: "Las referencias citadas por los compuestos de esta área.",
-      empty: "Ningún compuesto de esta área cita referencias publicadas.",
+      qualifier: "Referencias públicas",
+      title: "Investigación conectada",
+      lede: "Las referencias que citan los compuestos de esta área y su contexto.",
+      references: "Referencias",
+      citingCompounds: "Compuestos que citan",
       hub: "Índice de NEOGEN Research",
     },
     related: {
@@ -1130,6 +1138,71 @@ const es = {
       title: "Áreas relacionadas",
       /* "{n} compuestos en común" */
       shared: "{n} en común",
+      /* "de 16 en esta área" */
+      ofTotal: "de {total} en esta área",
+      sharedCompounds: "Compuestos compartidos",
+      enter: "Entrar al área",
+    },
+    /**
+     * LA PÁGINA DE ÁREA — secciones después de la portada.
+     *
+     * Cada sección aparece solo cuando sus datos existen. Ningún texto de esta
+     * sección dice que un compuesto sea popular, recomendado o más vendido: no
+     * existe dato que lo respalde. El orden de entrada es "insignia primero,
+     * luego orden de catálogo", y la sección lo llama por lo que es.
+     */
+    page: {
+      entry: {
+        label: "Entrada",
+        /* "3 de 16" */
+        qualifier: "{n} de {total}",
+        title: "Compuestos de entrada",
+        presentations: "Presentaciones",
+        pack: "× {n} viales",
+        documentation: "Documentación",
+        alsoIn: "También en",
+        cta: "Ver compuesto",
+        records: "{n} registros públicos",
+        record: "1 registro público",
+      },
+      context: {
+        label: "Contexto",
+        qualifier: "Con fuentes publicadas",
+        title: "Contexto del área",
+        themes: "Temas de investigación",
+        pathways: "Vías estudiadas",
+      },
+      compounds: {
+        label: "Índice",
+        /* "16 compuestos" */
+        qualifier: "{n} compuestos",
+        title: "Todos los compuestos",
+      },
+      evidence: {
+        label: "Calidad",
+        qualifier: "Registros públicos",
+        title: "Documentación en esta área",
+        lede: "Cada documento cubre únicamente la presentación o el lote que examina. Un registro no se extiende al resto del área.",
+        records: "Registros públicos",
+        compounds: "Compuestos con registro",
+        presentations: "Presentaciones con registro",
+        caption: "Registros públicos de documentación de los compuestos de esta área",
+        explorer: "Explorar la documentación",
+      },
+      continue: {
+        label: "Continuar",
+        qualifier: "Desde esta área",
+        title: "Seguir explorando",
+        nextArea: "Siguiente área",
+        catalogue: "Catálogo",
+        catalogueName: "Todos los compuestos",
+        research: "Investigación",
+        researchName: "NEOGEN Research",
+        researchMeta: "Índice de compuestos y áreas",
+        materials: "Materiales",
+        /* "16 compuestos" */
+        count: "{n} compuestos",
+      },
     },
     /**
      * EACH AREA CARRIES TWO NAMES.

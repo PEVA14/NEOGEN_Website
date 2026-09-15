@@ -14,7 +14,11 @@
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
+import { publicAreaOverview } from "../src/content/areas/index.ts";
+import { areaResearch } from "../src/content/research.ts";
 import { publishedProducts } from "../src/data/catalog/index.ts";
+import { productsInArea, publicAreas } from "../src/data/discovery/index.ts";
+import { featuredInArea, relatedAreas } from "../src/domain/discovery/index.ts";
 import { publicEvidenceIndex, resolveEvidence } from "../src/domain/quality/index.ts";
 
 const OUT = ".next";
@@ -265,6 +269,62 @@ if (renderedStates !== expectedStates) {
     "rendered quality states do not match the evidence resolver",
     `${renderedStates} rendered, ${expectedStates} resolved — a state reached a page without a document`,
   );
+}
+
+/* ---------------------------------------- 7b. area pages follow their data
+ *
+ * A discovery area page renders a section exactly when its derivation returns
+ * something. Read back from the build, in both locales: a context, research or
+ * evidence section that appears with no source behind it — or an entry or
+ * related section that silently vanished — fails here. The area ledger's
+ * states are counted against the resolver separately from the product pages.
+ */
+for (const area of publicAreas()) {
+  const items = productsInArea(area.id);
+  const expected = {
+    "area-entry": featuredInArea(items).length > 0,
+    "area-context": ["es", "en"].some((l) => publicAreaOverview(area.id, l) !== null),
+    "area-compounds": true,
+    "area-research": areaResearch(area.id).length > 0,
+    "area-evidence": publicEvidenceIndex(items).length > 0,
+    "area-related": relatedAreas(area.id).length > 0,
+    "area-continue": true,
+  };
+  const expectedStates = publicEvidenceIndex(items).reduce((n, r) => n + r.states.length, 0);
+  for (const locale of ["es", "en"]) {
+    const file = htmlFiles.find((f) =>
+      new RegExp(`[\\\\/]${locale}[\\\\/]productos[\\\\/]area[\\\\/]${area.slug}\\.html$`).test(f),
+    );
+    if (!file) {
+      fail("public area page was not prerendered", `${locale}/${area.slug}`);
+      continue;
+    }
+    const html = readFileSync(file, "utf8");
+    for (const [id, shouldRender] of Object.entries(expected)) {
+      const rendered = html.includes(`id="${id}"`);
+      if (rendered !== shouldRender) {
+        fail(
+          "area section does not follow its data",
+          `${locale}/${area.slug} #${id} ${rendered ? "rendered" : "missing"}, derivation says ${shouldRender}`,
+        );
+      }
+    }
+    const states = (html.match(/data-area-evidence-state=/g) ?? []).length;
+    if (states !== expectedStates) {
+      fail(
+        "area evidence states do not match the resolver",
+        `${locale}/${area.slug}: ${states} rendered, ${expectedStates} resolved`,
+      );
+    }
+    /* No area-level trust claim may be printed, whatever the registries hold. */
+    for (const phrase of [
+      /verificad[oa] por janoshik en (toda|el área)|area (is )?janoshik.verified/i,
+      /≥\s*\d+\s*%/,
+    ]) {
+      if (phrase.test(html))
+        fail("area page prints an aggregate trust claim", `${locale}/${area.slug} ${phrase}`);
+    }
+  }
 }
 
 /* The documentation explorer exists only once a public document does. */

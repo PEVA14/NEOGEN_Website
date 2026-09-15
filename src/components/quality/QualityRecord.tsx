@@ -39,8 +39,9 @@ export interface QualityPresentation {
   label: string;
 }
 
-/* A distinct SHAPE per state, so the ledger reads in greyscale. */
-const GLYPH: Record<EvidenceState, string> = {
+/* A distinct SHAPE per state, so the ledger reads in greyscale. Shared with the
+   area page's evidence ledger, so a state has one shape everywhere. */
+export const GLYPH: Record<EvidenceState, string> = {
   "documentation-available": "□",
   "coa-available": "◇",
   "lot-coa": "◆",

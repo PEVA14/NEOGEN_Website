@@ -30,8 +30,16 @@ import {
   assignmentsFor,
   isPublic,
   publicAreas,
+  productsInArea as productsInAreaForCheck,
   publicAreasFor,
 } from "../src/data/discovery/index.ts";
+import {
+  continuePlan,
+  entryOrder,
+  featuredCount,
+  featuredInArea,
+  relatedAreas,
+} from "../src/domain/discovery/index.ts";
 import { AVAILABILITY } from "../src/data/commerce/availability.ts";
 import { getAvailability, getPrices, ORDER_LIMITS } from "../src/data/commerce/index.ts";
 import { routes } from "../src/config/routes.ts";
@@ -336,6 +344,158 @@ for (const area of AREAS) {
     if (shownAreas.has(area.id) && !listed) fail("public area missing from sitemap", path);
     if (!shownAreas.has(area.id) && listed)
       fail("sitemap advertises an empty discovery area", path);
+  }
+}
+
+/* ---- area page derivations (Phase 12.1) -------------------------------- *
+ *
+ * Every conditional section on a discovery area page is the output of one of
+ * these functions. Driven with fixtures for the rules and with the real
+ * registry for the invariants.
+ */
+{
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  const check = (condition, what, detail = "") => {
+    if (!condition) fail(what, detail);
+  };
+
+  /* featuredCount: the thresholds, including the floor. */
+  for (const [total, expected] of [
+    [0, 0],
+    [4, 0],
+    [5, 2],
+    [11, 2],
+    [12, 3],
+    [16, 3],
+  ]) {
+    check(
+      featuredCount(total) === expected,
+      "featuredCount threshold",
+      `${total} → ${featuredCount(total)}`,
+    );
+  }
+
+  /* entryOrder: flagships first, catalogue order otherwise, stable. */
+  const fx = [
+    { slug: "a", world: null },
+    { slug: "b", world: null },
+    { slug: "flag-1", world: "reta" },
+    { slug: "c", world: null },
+    { slug: "flag-2", world: "glow" },
+  ];
+  check(
+    same(
+      entryOrder(fx).map((p) => p.slug),
+      ["flag-1", "flag-2", "a", "b", "c"],
+    ),
+    "entryOrder puts flagships first and keeps catalogue order",
+    entryOrder(fx)
+      .map((p) => p.slug)
+      .join(","),
+  );
+  check(
+    featuredInArea(fx).length === 2,
+    "five compounds feature two",
+    String(featuredInArea(fx).length),
+  );
+  check(featuredInArea(fx.slice(0, 4)).length === 0, "four compounds feature none");
+
+  /* relatedAreas: by shared compounds only, ranked, never self, never empty. */
+  const areasFx = [
+    { id: "metabolic", order: 1, slug: "m" },
+    { id: "recovery", order: 2, slug: "r" },
+    { id: "longevity", order: 3, slug: "l" },
+    { id: "skin", order: 5, slug: "s" },
+  ];
+  const membership = {
+    metabolic: ["p1", "p2", "p3"],
+    recovery: ["p1"],
+    longevity: ["p2", "p3"],
+    skin: ["p9"],
+  };
+  const deps = {
+    areas: () => areasFx,
+    productsIn: (id) => (membership[id] ?? []).map((slug) => ({ slug, world: null })),
+  };
+  const rel = relatedAreas("metabolic", 4, deps);
+  check(
+    same(
+      rel.map((r) => [r.area.id, r.shared.length]),
+      [
+        ["longevity", 2],
+        ["recovery", 1],
+      ],
+    ),
+    "relatedAreas ranks by shared count and omits areas sharing nothing",
+    JSON.stringify(rel.map((r) => [r.area.id, r.shared.length])),
+  );
+  /* Negative control: a hand-written relation cannot appear — skin shares nothing. */
+  check(!rel.some((r) => r.area.id === "skin"), "an area with no shared compound is never related");
+
+  /* continuePlan: skips self, related areas and materials; wraps. */
+  const areasPlan = [...areasFx, { id: "materials", order: 8, slug: "x" }];
+  const plan = continuePlan("longevity", ["metabolic"], areasPlan);
+  check(
+    plan.nextArea?.id === "skin",
+    "continuePlan picks the next unrelated area",
+    plan.nextArea?.id,
+  );
+  check(plan.materials?.id === "materials", "continuePlan offers materials from a compound area");
+  const wrap = continuePlan("skin", ["recovery", "longevity"], areasPlan);
+  check(wrap.nextArea?.id === "metabolic", "continuePlan wraps past the end", wrap.nextArea?.id);
+  const fromMaterials = continuePlan("materials", [], areasPlan);
+  check(fromMaterials.materials === null, "materials never offers itself");
+  check(
+    continuePlan("metabolic", ["recovery", "longevity", "skin"], areasPlan).nextArea === null,
+    "no next area when every other compound area is already related",
+  );
+
+  /* The real registry. */
+  for (const area of publicAreas()) {
+    const items = productsInAreaForCheck(area.id);
+    const featured = featuredInArea(items);
+    const slugs = new Set(items.map((p) => p.slug));
+    check(
+      featured.length === featuredCount(items.length),
+      "featured size follows featuredCount",
+      area.id,
+    );
+    check(
+      featured.every((p) => slugs.has(p.slug)),
+      "featured compounds belong to the area",
+      area.id,
+    );
+    check(
+      new Set(featured.map((p) => p.slug)).size === featured.length,
+      "featured compounds are distinct",
+      area.id,
+    );
+    for (const r of relatedAreas(area.id)) {
+      check(r.area.id !== area.id, "an area is never related to itself", area.id);
+      check(
+        r.shared.length > 0,
+        "a related area shares at least one compound",
+        `${area.id}→${r.area.id}`,
+      );
+      const back = relatedAreas(r.area.id, AREAS.length).find((x) => x.area.id === area.id);
+      check(
+        back?.shared.length === r.shared.length,
+        "shared-compound counts are symmetric",
+        `${area.id}↔${r.area.id}`,
+      );
+      for (const p of r.shared) {
+        check(
+          publicAreasFor(p.slug).some((a) => a.id === r.area.id) && slugs.has(p.slug),
+          "a shared compound is publicly filed in both areas",
+          `${p.slug} ${area.id}↔${r.area.id}`,
+        );
+      }
+    }
+    const plan = continuePlan(
+      area.id,
+      relatedAreas(area.id).map((r) => r.area.id),
+    );
+    check(plan.nextArea?.id !== area.id, "continue never sends an area to itself", area.id);
   }
 }
 

@@ -12,7 +12,7 @@ import {
   ProductStage,
   SpecTable,
   WorldMaterial,
-  type LadderStep,
+  ladderStep,
 } from "@/components/product";
 import { QualityRecord } from "@/components/quality";
 import { CitationRail } from "@/components/research";
@@ -27,7 +27,6 @@ import { resolveEvidence } from "@/domain/quality";
 import {
   formatStrength,
   getProduct,
-  type Strength,
   presentationRange,
   isPublishable,
   products,
@@ -59,27 +58,6 @@ import type { Metadata } from "next";
  * research, related compounds — because that spine is the product record, and
  * it should not depend on whether a compound happens to be a flagship.
  */
-/**
- * A strength as a ladder figure — the number large, the unit small.
- *
- * Built from the strength union, not by splitting a formatted string, so a
- * solution's "mg / ml" and a blend's components are set correctly rather than
- * guessed at from where a space falls.
- */
-function ladderStep(strength: Strength, vials: number | null): LadderStep {
-  switch (strength.kind) {
-    case "solid":
-      return { value: String(strength.mg), unit: "mg", vials };
-    case "solution":
-      return { value: String(strength.mg), unit: `mg / ${strength.ml} ml`, vials };
-    case "volume":
-      return { value: String(strength.ml), unit: "ml", vials };
-    case "iu":
-      return { value: String(strength.iu), unit: "IU", vials };
-    case "blend":
-      return { value: strength.componentsMg.join("+"), unit: "mg", vials };
-  }
-}
 
 export async function generateMetadata({
   params,

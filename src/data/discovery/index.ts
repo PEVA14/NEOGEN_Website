@@ -57,8 +57,8 @@ export function productsInArea(area: DiscoveryAreaId): readonly Product[] {
  * Areas with at least one product to show.
  *
  * Drives the nav, the homepage and the catalogue's filter row, so an area
- * cannot appear anywhere until it has something in it. Today this is empty:
- * every assignment is still a draft.
+ * cannot appear anywhere until it has something in it. All eight have
+ * owner-confirmed products since 2026-09-10.
  */
 export function publicAreas(): readonly DiscoveryArea[] {
   return AREAS.filter((area) => productsInArea(area.id).length > 0).sort(

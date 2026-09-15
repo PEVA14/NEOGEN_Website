@@ -1,16 +1,34 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { CatalogBrowser, type CatalogProduct } from "@/components/catalog";
+import {
+  AreaContext,
+  AreaEvidence,
+  AreaResearch,
+  ContinueExploring,
+  EntryCompounds,
+  RelatedAreas,
+  type AreaEvidenceRow,
+  type ContinueDestination,
+} from "@/components/discovery";
 import { SectionHeader } from "@/components/layout";
 import { Container, Grid, Section } from "@/components/primitives";
-import { CitationRail } from "@/components/research";
-import { Body, Mono } from "@/components/typography";
-import { AreaMasthead, ProductCard, TextLink, type AreaFact } from "@/components/ui";
-import { referencesForArea } from "@/content/research";
+import { ladderStep } from "@/components/product";
+import {
+  AreaMasthead,
+  ProductCard,
+  TextLink,
+  type AreaFact,
+  type ProductCardProps,
+} from "@/components/ui";
 import { routes } from "@/config/routes";
-import { presentationRange } from "@/data/catalog";
+import { publicAreaOverview } from "@/content/areas";
+import { areaResearch } from "@/content/research";
+import { formatStrength, presentationRange, publishedProducts, type Product } from "@/data/catalog";
 import { formatPrice, getPrices } from "@/data/commerce";
-import { areaBySlug, productsInArea, publicAreas } from "@/data/discovery";
+import { areaBySlug, productsInArea, publicAreas, publicAreasFor } from "@/data/discovery";
+import { continuePlan, entryOrder, featuredInArea, relatedAreas } from "@/domain/discovery";
+import { evidenceCoverage, publicEvidenceIndex, resolveEvidence } from "@/domain/quality";
 import { isLocale, localeTags } from "@/i18n/config";
 import { getDictionary } from "@/i18n/getDictionary";
 import { localizePath } from "@/i18n/routing";
@@ -20,21 +38,33 @@ import { socialMetadata } from "@/lib/meta";
 import type { Metadata } from "next";
 
 /**
- * A DISCOVERY AREA — one commercial view of the catalogue.
+ * A DISCOVERY AREA — category page, editorial landing, research index and
+ * shopping surface, in that order of reading and never at commerce's expense.
  *
  * ONLY AREAS WITH SOMETHING TO SHOW EXIST AS ROUTES.
  * --------------------------------------------------
  * `generateStaticParams` reads `publicAreas()`, which counts only products
- * whose assignment is owner-confirmed or source-backed. Draft assignments are
- * filtered out one level down, in `publicAreasFor`, so they cannot reach this
- * page even by accident.
+ * whose assignment is owner-confirmed or source-backed. The owner confirmed
+ * all 91 pairs on 2026-09-10, so all eight areas prerender today; an area whose
+ * products were all withdrawn stops being a route at all. `dynamicParams =
+ * false` makes that a true HTTP 404 rather than a soft one.
  *
- * The owner confirmed all 91 pairs on 2026-09-10, so all eight areas
- * prerender today. The gate is still the one that matters: an area whose
- * products were all withdrawn stops being a route at all, rather than
- * advertising a section of the shop with nothing in it.
+ * THE PAGE, AFTER THE APPROVED MASTHEAD (Phase 12.1):
  *
- * `dynamicParams = false` makes that a true HTTP 404 rather than a soft one.
+ *   entry       entry compounds — when the area is large enough (`featuredCount`)
+ *   context     sourced area context — only when `publicAreaOverview` resolves
+ *   compounds   every compound in the area — always; the shopping surface
+ *   research    connected references — only when public references resolve
+ *   evidence    public documentation records — only when the resolver accepts one
+ *   related     areas sharing compounds — only when overlap exists
+ *   continue    where to go next — always
+ *
+ * Every conditional section is decided by a function, and a section whose
+ * function returns nothing has no heading, no empty state and no number: the
+ * Quiet spine is numbered from what renders. Today that means Metabolism shows
+ * entry → compounds → related → continue, and Hormonal shows entry → compounds
+ * → continue. Context, research and evidence appear on their own the day real
+ * sources and documents are approved — no page change needed.
  */
 export async function generateMetadata({
   params,
@@ -69,6 +99,13 @@ export async function generateStaticParams() {
   return publicAreas().map((area) => ({ area: area.slug }));
 }
 
+/*
+ * The full list gets the catalogue's search, sort and view controls once an
+ * area is big enough to need them. Below this a search box over four compounds
+ * is a control that cannot help anyone.
+ */
+const BROWSER_THRESHOLD = 8;
+
 export default async function AreaPage({
   params,
 }: {
@@ -85,76 +122,180 @@ export default async function AreaPage({
 
   const dict = await getDictionary(locale);
   const copy = dict.discovery.areas[area.id];
+  const page = dict.discovery.page;
+  const tag = localeTags[locale];
   const path = (to: string) => localizePath(to, locale);
 
   const prices = await getPrices(items.flatMap((p) => p.variants.map((v) => v.id)));
-  const from = (slug: string) => {
-    const product = items.find((p) => p.slug === slug);
-    const cheapest = product?.variants
+  const cheapest = (product: Product) =>
+    product.variants
       .map((v) => prices.get(v.id))
       .filter((m): m is NonNullable<typeof m> => Boolean(m))
-      .sort((a, b) => a.amount - b.amount)[0];
-    return cheapest ? formatPrice(cheapest, localeTags[locale]) : null;
+      .sort((a, b) => a.amount - b.amount)[0] ?? null;
+  const from = (product: Product) => {
+    const money = cheapest(product);
+    return money ? formatPrice(money, tag) : null;
+  };
+  const presentationLabel = (product: Product, variantId: string | null) => {
+    const variant = product.variants.find((v) => v.id === variantId);
+    return variant
+      ? `${formatStrength(variant.strength)}${variant.vials ? ` × ${variant.vials}` : ""}`
+      : dict.quality.record.compoundLevel;
   };
 
-  /*
-   * RESEARCH IN THIS AREA — derived, never tagged.
-   *
-   * The references are those cited by the public overviews of this area's
-   * products. Area copy stays a merchandising label; it never acquires a
-   * bibliography that nothing on a product page supports.
-   */
-  const references = referencesForArea(area.id);
+  /* ---- 01 masthead facts ------------------------------------------------ */
 
-  /*
-   * RELATED AREAS — by shared compounds, a fact of the approved assignments.
-   * Ranked by overlap, so the area a reader is most likely to continue into
-   * comes first, and an area sharing nothing is not listed.
-   */
-  const slugs = new Set(items.map((p) => p.slug));
-  const related = publicAreas()
-    .filter((other) => other.id !== area.id)
-    .map((other) => ({
-      area: other,
-      shared: productsInArea(other.id).filter((p) => slugs.has(p.slug)).length,
-    }))
-    .filter((entry) => entry.shared > 0)
-    .sort((a, b) => b.shared - a.shared)
-    .slice(0, 4);
-
-  /*
-   * THE ENTRY POINT, and the names a reader recognises. Both are facts the
-   * registry already holds — the cheapest publishable price in the area, and
-   * the three cheapest compounds, which is the same defensible "way in" rule
-   * the homepage's discovery panels use.
-   */
-  const cheapestFirst = [...items]
-    .map((product) => ({ product, price: from(product.slug) }))
-    .filter((row) => row.price !== null);
+  const entry = entryOrder(items);
   const entryPrice =
     items
-      .flatMap((p) => p.variants.map((v) => prices.get(v.id)))
+      .map(cheapest)
       .filter((m): m is NonNullable<typeof m> => Boolean(m))
       .sort((a, b) => a.amount - b.amount)[0] ?? null;
 
   const facts: AreaFact[] = [
     { key: dict.discovery.countLabel, value: String(items.length).padStart(2, "0") },
     ...(entryPrice
-      ? [{ key: dict.products.catalog.from, value: formatPrice(entryPrice, localeTags[locale]) }]
+      ? [{ key: dict.products.catalog.from, value: formatPrice(entryPrice, tag) }]
       : []),
-    ...(cheapestFirst.length > 0
+    {
+      /*
+       * The same order the entry section below uses — flagship first, then
+       * catalogue order — so the names in the masthead are the compounds that
+       * lead the page, not a second list that disagrees with it.
+       */
+      key: dict.discovery.masthead.examples,
+      value: entry
+        .slice(0, 3)
+        .map((p) => p.name)
+        .join(" · "),
+      kind: "text",
+    },
+  ];
+
+  /* ---- entry compounds -------------------------------------------------- */
+
+  const featured = featuredInArea(items);
+  const [leadProduct, ...otherProducts] = featured;
+  const recordLabel = (product: Product) => {
+    const evidence = resolveEvidence(product);
+    const n = evidence.product.length + evidence.presentations.flatMap((p) => p.records).length;
+    if (n === 0) return null;
+    return n === 1 ? page.entry.record : page.entry.records.replace("{n}", String(n));
+  };
+  const cardFor = (product: Product): ProductCardProps => ({
+    slug: product.slug,
+    world: product.world,
+    worldLabel: product.world ? dict.home.products.worldLabels[product.world] : undefined,
+    areaId: area.id,
+    eyebrow: dict.products.catalog.categoryLabels[product.category],
+    name: product.name,
+    subtitle: product.subtitle,
+    href: path(routes.product(product.slug)),
+    price: from(product),
+    priceFrom: dict.products.catalog.from,
+    presentationRange: presentationRange(product),
+    presentations: product.variants.length,
+    ctaLabel: dict.home.products.cta,
+    format: product.world ? "flagship" : "standard",
+  });
+
+  /* ---- sourced sections: context, research, evidence -------------------- */
+
+  const context = publicAreaOverview(area.id, locale);
+
+  const research = areaResearch(area.id);
+  const researchReferences = research.map((entryRow) => entryRow.reference);
+  const citingSlugs = new Set(research.flatMap((entryRow) => entryRow.products));
+  const citingCompounds = items
+    .filter((p) => citingSlugs.has(p.slug))
+    .map((p) => ({ slug: p.slug, name: p.name, href: path(routes.product(p.slug)) }));
+
+  const evidenceRecords = publicEvidenceIndex(items);
+  const coverage = evidenceCoverage(evidenceRecords);
+  const date = (iso: string | null) =>
+    iso ? new Intl.DateTimeFormat(tag, { dateStyle: "medium" }).format(new Date(iso)) : "—";
+  const evidenceRows: AreaEvidenceRow[] = evidenceRecords.map((record) => {
+    const product = items.find((p) => p.slug === record.slug)!;
+    return {
+      documentId: record.documentId,
+      product: product.name,
+      productHref: `${path(routes.product(product.slug))}#calidad`,
+      scope: presentationLabel(product, record.variantId),
+      lot: record.lot?.id ?? null,
+      type: record.type,
+      issuer: record.issuer.name ?? dict.quality.record.issuerRoles[record.issuer.kind],
+      reportId: record.reportId,
+      date: date(record.issuedOn),
+      href: record.href,
+      external: record.external,
+      states: record.states,
+    };
+  });
+
+  /* ---- related and continue --------------------------------------------- */
+
+  const related = relatedAreas(area.id);
+  const plan = continuePlan(
+    area.id,
+    related.map((r) => r.area.id),
+  );
+  const areaCount = (id: typeof area.id) => productsInArea(id).length;
+  const countLabel = (n: number) => page.continue.count.replace("{n}", String(n));
+
+  const destinations: ContinueDestination[] = [
+    ...(plan.nextArea
       ? [
           {
-            key: dict.discovery.masthead.examples,
-            value: cheapestFirst
-              .slice(0, 3)
-              .map((row) => row.product.name)
-              .join(" · "),
-            kind: "text" as const,
+            key: "next",
+            kind: page.continue.nextArea,
+            name: dict.discovery.areas[plan.nextArea.id].short,
+            meta: countLabel(areaCount(plan.nextArea.id)),
+            href: path(routes.area(plan.nextArea.slug)),
+            areaId: plan.nextArea.id,
           },
         ]
       : []),
+    ...(plan.materials
+      ? [
+          {
+            key: "materials",
+            kind: page.continue.materials,
+            name: dict.discovery.areas.materials.short,
+            meta: countLabel(areaCount("materials")),
+            href: path(routes.area(plan.materials.slug)),
+            areaId: plan.materials.id,
+          },
+        ]
+      : []),
+    {
+      key: "catalogue",
+      kind: page.continue.catalogue,
+      name: page.continue.catalogueName,
+      meta: countLabel(publishedProducts.length),
+      href: path(routes.products),
+    },
+    {
+      key: "research",
+      kind: page.continue.research,
+      name: page.continue.researchName,
+      meta: page.continue.researchMeta,
+      href: path(routes.research),
+    },
   ];
+
+  /* ---- the spine, numbered from what renders ----------------------------- */
+
+  const sections = [
+    ...(leadProduct ? ["entry"] : []),
+    ...(context ? ["context"] : []),
+    "compounds",
+    ...(research.length > 0 ? ["research"] : []),
+    ...(evidenceRecords.length > 0 ? ["evidence"] : []),
+    ...(related.length > 0 ? ["related"] : []),
+    "continue",
+  ];
+  const index = (id: string) => String(sections.indexOf(id) + 1).padStart(2, "0");
+  const label = (section: string, qualifier: string) => `${section} // ${qualifier}`;
 
   return (
     <>
@@ -169,120 +310,275 @@ export default async function AreaPage({
         titleId="area-title"
       />
 
-      <Section mode="quiet" aria-labelledby="area-products-title">
+      {leadProduct ? (
+        <Section mode="quiet" id="area-entry" aria-labelledby="area-entry-title">
+          <Container width="full">
+            <SectionHeader
+              index={index("entry")}
+              label={label(
+                page.entry.label,
+                page.entry.qualifier
+                  .replace("{n}", String(featured.length))
+                  .replace("{total}", String(items.length)),
+              )}
+              title={page.entry.title}
+              id="area-entry-title"
+            />
+            <EntryCompounds
+              lead={{
+                slug: leadProduct.slug,
+                name: leadProduct.name,
+                subtitle: leadProduct.subtitle,
+                href: path(routes.product(leadProduct.slug)),
+                world: leadProduct.world,
+                worldLabel: leadProduct.world
+                  ? dict.home.products.worldLabels[leadProduct.world]
+                  : undefined,
+                areaId: area.id,
+                classification: dict.products.catalog.categoryLabels[leadProduct.category],
+                range: presentationRange(leadProduct),
+                presentationCount: leadProduct.variants.length,
+                ladder: leadProduct.variants.map((v) => ladderStep(v.strength, v.vials)),
+                price: from(leadProduct),
+                alsoIn: publicAreasFor(leadProduct.slug)
+                  .filter((other) => other.id !== area.id)
+                  .map((other) => ({
+                    id: other.id,
+                    label: dict.discovery.areas[other.id].short,
+                    href: path(routes.area(other.slug)),
+                  })),
+                records: recordLabel(leadProduct),
+              }}
+              others={otherProducts.map(cardFor)}
+              copy={{
+                presentations: page.entry.presentations,
+                pack: page.entry.pack,
+                documentation: page.entry.documentation,
+                alsoIn: page.entry.alsoIn,
+                from: dict.products.catalog.from,
+                cta: page.entry.cta,
+              }}
+            />
+          </Container>
+        </Section>
+      ) : null}
+
+      {context ? (
+        <Section
+          mode="quiet"
+          id="area-context"
+          aria-labelledby="area-context-title"
+          className="bg-(--surface-raised)"
+        >
+          <Container width="full">
+            <SectionHeader
+              index={index("context")}
+              label={label(page.context.label, page.context.qualifier)}
+              title={page.context.title}
+              id="area-context-title"
+            />
+            <AreaContext
+              overview={context}
+              copy={{ themes: page.context.themes, pathways: page.context.pathways }}
+              citations={dict.citations}
+            />
+          </Container>
+        </Section>
+      ) : null}
+
+      {/*
+       * EVERY COMPOUND — the primary shopping surface, before any research.
+       *
+       * Large areas get the catalogue's own browser (search, type, sort, grid
+       * or index view) scoped to this area, with its area filter row omitted
+       * because the page already is the filter. Small areas get a plain grid.
+       * Both are server-rendered in full; the browser only adds controls.
+       */}
+      <Section mode="quiet" id="area-compounds" aria-labelledby="area-compounds-title">
         <Container width="full">
           <SectionHeader
-            index="01"
-            label={`${dict.discovery.label} // ${copy.short}`}
-            title={dict.discovery.masthead.compounds}
-            id="area-products-title"
+            index={index("compounds")}
+            label={label(
+              page.compounds.label,
+              page.compounds.qualifier.replace("{n}", String(items.length)),
+            )}
+            title={page.compounds.title}
+            id="area-compounds-title"
             action={<TextLink href={path(routes.products)}>{dict.discovery.all}</TextLink>}
           />
-
-          {/*
-           * THE FIRST CARD LEADS.
-           *
-           * An area's cheapest compound is its entry point, so it gets the wide
-           * `feature` card and the rest follow in the 3-up grid. A grid where
-           * every cell has the same weight gives a reader no way in; this one
-           * names the way in.
-           */}
-          <Grid className="items-start">
-            {items.map((product, position) => (
-              <div
-                key={product.id}
-                className={
-                  position === 0 ? "col-span-12" : "col-span-12 md:col-span-6 lg:col-span-4"
-                }
-              >
-                <ProductCard
-                  slug={product.slug}
-                  world={product.world}
-                  worldLabel={
-                    product.world ? dict.home.products.worldLabels[product.world] : undefined
-                  }
-                  /* Every product here is in this area by definition, so the
-                   plate takes this area's tone and the eyebrow says something
-                   the heading does not: the factual catalogue bucket. */
-                  areaId={area.id}
-                  eyebrow={dict.products.catalog.categoryLabels[product.category]}
-                  name={product.name}
-                  subtitle={product.subtitle}
-                  href={path(routes.product(product.slug))}
-                  price={from(product.slug)}
-                  priceFrom={dict.products.catalog.from}
-                  presentationRange={presentationRange(product)}
-                  presentations={product.variants.length}
-                  index={String(position + 1).padStart(2, "0")}
-                  ctaLabel={dict.home.products.cta}
-                  headingLevel={2}
-                  format={position === 0 ? "feature" : "standard"}
-                />
-              </div>
-            ))}
-          </Grid>
-        </Container>
-      </Section>
-
-      <Section mode="quiet" aria-labelledby="area-research-title" className="bg-(--surface-raised)">
-        <Container width="full">
-          <SectionHeader
-            index="02"
-            label={`${dict.discovery.research.label} // ${dict.discovery.research.qualifier}`}
-            title={dict.discovery.research.title}
-            id="area-research-title"
-            lede={references.length > 0 ? dict.discovery.research.lede : undefined}
-            action={
-              <TextLink href={`${path(routes.research)}#indice`}>
-                {dict.discovery.research.hub}
-              </TextLink>
-            }
-          />
-          {references.length > 0 ? (
-            <CitationRail references={references} copy={dict.citations} />
+          {items.length >= BROWSER_THRESHOLD ? (
+            <CatalogBrowser
+              cardHeadingLevel={3}
+              products={items.map((product, position): CatalogProduct => ({
+                id: product.id,
+                index: String(position + 1).padStart(2, "0"),
+                slug: product.slug,
+                name: product.name,
+                subtitle: product.subtitle,
+                category: product.category,
+                categoryLabel: dict.products.catalog.categoryLabels[product.category],
+                areas: publicAreasFor(product.slug).map((a) => a.id),
+                areaId: area.id,
+                range: presentationRange(product),
+                priceAmount: cheapest(product)?.amount ?? null,
+                presentations: product.variants.length,
+                world: product.world,
+                worldLabel: product.world
+                  ? dict.home.products.worldLabels[product.world]
+                  : undefined,
+                href: path(routes.product(product.slug)),
+                price: from(product),
+                strengths: product.variants.map((v) => formatStrength(v.strength)).join(" · "),
+                ctaLabel: dict.home.products.cta,
+              }))}
+              copy={{
+                ...dict.products.catalog,
+                areaLabel: dict.discovery.label,
+                areaLabels: {},
+                areaOrder: [],
+                placeholder: dict.status.placeholder,
+              }}
+            />
           ) : (
-            <Body tone="muted" className="max-w-(--container-prose)">
-              {dict.discovery.research.empty}
-            </Body>
+            <Grid className="items-start">
+              {items.map((product, position) => (
+                <div key={product.id} className="col-span-12 md:col-span-6 lg:col-span-4">
+                  <ProductCard
+                    {...cardFor(product)}
+                    format="standard"
+                    index={String(position + 1).padStart(2, "0")}
+                  />
+                </div>
+              ))}
+            </Grid>
           )}
         </Container>
       </Section>
 
-      {related.length > 0 ? (
-        <Section mode="quiet" aria-labelledby="related-areas-title">
+      {research.length > 0 ? (
+        <Section
+          mode="quiet"
+          id="area-research"
+          aria-labelledby="area-research-title"
+          className="bg-(--surface-raised)"
+        >
           <Container width="full">
             <SectionHeader
-              index="03"
-              label={`${dict.discovery.related.label} // ${dict.discovery.related.qualifier}`}
-              title={dict.discovery.related.title}
-              id="related-areas-title"
+              index={index("research")}
+              label={label(dict.discovery.research.label, dict.discovery.research.qualifier)}
+              title={dict.discovery.research.title}
+              id="area-research-title"
+              lede={dict.discovery.research.lede}
+              action={
+                <TextLink href={`${path(routes.research)}#indice`}>
+                  {dict.discovery.research.hub}
+                </TextLink>
+              }
             />
-            {/*
-             * Related areas as their own material, not as a list of links.
-             * Each carries its `data-area`, so the eight tones do the work of
-             * telling a reader which department they are about to enter — the
-             * same mechanism the homepage's discovery panels use.
-             */}
-            <ul className="grid gap-(--gutter) md:grid-cols-2 lg:grid-cols-4">
-              {related.map(({ area: other, shared }) => (
-                <li key={other.id} data-area={other.id}>
-                  <Link
-                    href={path(routes.area(other.slug))}
-                    className="flex min-h-(--space-4xl) flex-col justify-between border border-(--area-line) bg-(--area-wash) p-(--space-md) text-(--ink-primary) no-underline transition-colors duration-(--motion-duration-base) ease-(--ease-standard) hover:border-(--ink-secondary)"
-                  >
-                    <span className="font-display text-(length:--text-2xl) leading-none font-bold tracking-(--tracking-display) uppercase">
-                      {dict.discovery.areas[other.id].short}
-                    </span>
-                    <Mono size="2xs" className="mt-(--space-md) block text-(--ink-muted) uppercase">
-                      {dict.discovery.related.shared.replace("{n}", String(shared))}
-                    </Mono>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <AreaResearch
+              references={researchReferences}
+              compounds={citingCompounds}
+              copy={{
+                references: dict.discovery.research.references,
+                citingCompounds: dict.discovery.research.citingCompounds,
+              }}
+              citations={dict.citations}
+            />
           </Container>
         </Section>
       ) : null}
+
+      {evidenceRecords.length > 0 ? (
+        <Section
+          mode="quiet"
+          id="area-evidence"
+          aria-labelledby="area-evidence-title"
+          className="bg-(--surface-raised)"
+        >
+          <Container width="full">
+            <SectionHeader
+              index={index("evidence")}
+              label={label(page.evidence.label, page.evidence.qualifier)}
+              title={page.evidence.title}
+              id="area-evidence-title"
+              lede={page.evidence.lede}
+            />
+            <AreaEvidence
+              rows={evidenceRows}
+              coverage={coverage}
+              explorerHref={path(routes.qualityExplorer)}
+              copy={{
+                records: page.evidence.records,
+                compounds: page.evidence.compounds,
+                presentations: page.evidence.presentations,
+                caption: page.evidence.caption,
+                explorer: page.evidence.explorer,
+                columns: dict.quality.record.columns,
+                compound: dict.quality.explorer.columns.product,
+                states: dict.quality.record.states,
+                types: dict.quality.record.types,
+                reportId: dict.quality.record.reportId,
+                view: dict.quality.record.view,
+                external: dict.quality.record.external,
+              }}
+            />
+          </Container>
+        </Section>
+      ) : null}
+
+      {related.length > 0 ? (
+        <Section mode="quiet" id="area-related" aria-labelledby="area-related-title">
+          <Container width="full">
+            <SectionHeader
+              index={index("related")}
+              label={label(dict.discovery.related.label, dict.discovery.related.qualifier)}
+              title={dict.discovery.related.title}
+              id="area-related-title"
+            />
+            <RelatedAreas
+              total={items.length}
+              entries={related.map(({ area: other, shared }) => ({
+                id: other.id,
+                href: path(routes.area(other.slug)),
+                short: dict.discovery.areas[other.id].short,
+                framing: dict.discovery.areas[other.id].title,
+                shared: shared.length,
+                compounds: shared.map((subject) => {
+                  const product = items.find((p) => p.slug === subject.slug)!;
+                  return {
+                    slug: product.slug,
+                    name: product.name,
+                    href: path(routes.product(product.slug)),
+                  };
+                }),
+              }))}
+              copy={{
+                shared: dict.discovery.related.shared,
+                ofTotal: dict.discovery.related.ofTotal,
+                sharedCompounds: dict.discovery.related.sharedCompounds,
+                enter: dict.discovery.related.enter,
+              }}
+            />
+          </Container>
+        </Section>
+      ) : null}
+
+      <Section
+        mode="quiet"
+        id="area-continue"
+        aria-labelledby="area-continue-title"
+        className="bg-(--surface-raised)"
+      >
+        <Container width="full">
+          <SectionHeader
+            index={index("continue")}
+            label={label(page.continue.label, page.continue.qualifier)}
+            title={page.continue.title}
+            id="area-continue-title"
+          />
+          <ContinueExploring destinations={destinations} />
+        </Container>
+      </Section>
     </>
   );
 }

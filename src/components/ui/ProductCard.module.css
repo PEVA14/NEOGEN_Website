@@ -62,9 +62,22 @@
     font-size: var(--text-3xl);
   }
 
+  /*
+   * The action belongs to the record, not to the plate. As the grid's third
+   * child it wrapped into the plate's column and left a dead band under the
+   * record, so the plate now spans both rows and the action sits at the foot
+   * of the record column.
+   */
+  .card[data-format="feature"] .media {
+    grid-row: 1 / span 2;
+  }
+
   .card[data-format="feature"] .cta {
-    align-self: start;
+    grid-column: 2;
+    align-self: end;
+    justify-self: start;
     min-inline-size: 14rem;
+    padding-inline: var(--space-lg);
   }
 }
 

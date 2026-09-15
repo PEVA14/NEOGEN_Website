@@ -1,0 +1,132 @@
+/*
+ * AREA EVIDENCE — three counts over a record ledger.
+ */
+
+.evidence {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+.figures {
+  margin: 0;
+  display: grid;
+  gap: var(--space-lg);
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  padding-block: var(--space-md);
+  border-block: 1px solid var(--border-default);
+}
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+.figure dd {
+  margin: 0;
+}
+
+.label {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.value {
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-5xl);
+  line-height: 0.85;
+  letter-spacing: var(--tracking-display);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-primary);
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.tableWrap:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}
+
+.table {
+  inline-size: 100%;
+  min-inline-size: 52rem;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.caption {
+  caption-side: top;
+  text-align: start;
+  padding-block-end: var(--space-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.table th,
+.table td {
+  padding: var(--space-sm) var(--space-sm) var(--space-sm) 0;
+  border-block-start: 1px solid var(--border-subtle);
+  text-align: start;
+  vertical-align: top;
+}
+
+.table thead th {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: 400;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  border-block-start: 1px solid var(--border-default);
+}
+
+.states {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mono,
+.report {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.report {
+  display: block;
+  color: var(--ink-muted);
+}
+
+.link,
+.explorer {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 2.75rem;
+  color: var(--ink-primary);
+  text-decoration: underline;
+  text-decoration-color: var(--border-default);
+  text-underline-offset: 4px;
+}
+
+.link:focus-visible,
+.explorer:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}
+
+.explorer {
+  align-self: start;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}

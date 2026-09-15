@@ -1,0 +1,119 @@
+/*
+ * CONTINUE EXPLORING — a register of destinations.
+ *
+ * Hairline rows, oversized names, a leading tone band for area destinations.
+ * On a phone the row stacks kind → name → meta and the arrow stays right.
+ */
+
+.index {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-block-end: 1px solid var(--border-default);
+}
+
+.row {
+  position: relative;
+  border-block-start: 1px solid var(--border-default);
+}
+
+/* An area destination's own material, as a leading band. */
+.row[data-area]::before {
+  content: "";
+  position: absolute;
+  inset-block: var(--space-sm);
+  inset-inline-start: 0;
+  inline-size: 5px;
+  background: var(--area-line);
+}
+
+.link {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+  grid-template-areas:
+    "number kind arrow"
+    "number name arrow"
+    "number meta arrow";
+  column-gap: var(--space-sm);
+  row-gap: var(--space-3xs);
+  align-items: center;
+  min-block-size: 2.75rem;
+  padding: var(--space-md) var(--space-sm) var(--space-md) var(--space-md);
+  color: var(--ink-primary);
+  text-decoration: none;
+  transition: background-color var(--motion-duration-fast) var(--ease-standard);
+}
+
+@media (min-width: 48rem) {
+  .link {
+    grid-template-columns: 3rem minmax(9rem, 2fr) minmax(0, 5fr) minmax(0, 3fr) auto;
+    grid-template-areas: "number kind name meta arrow";
+    column-gap: var(--space-lg);
+    padding-block: var(--space-lg);
+  }
+}
+
+.link:hover {
+  background: var(--area-wash, var(--surface-raised));
+}
+
+.link:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: calc(-1 * var(--focus-ring-width));
+}
+
+.number {
+  grid-area: number;
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+}
+
+.kind,
+.meta {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.kind {
+  grid-area: kind;
+}
+
+.meta {
+  grid-area: meta;
+  font-variant-numeric: tabular-nums;
+}
+
+.name {
+  grid-area: name;
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-3xl);
+  line-height: 0.95;
+  letter-spacing: var(--tracking-display);
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.arrow {
+  grid-area: arrow;
+  font-family: var(--font-mono);
+  font-size: var(--text-xl);
+  transition: transform var(--motion-duration-fast) var(--ease-standard);
+}
+
+.link:hover .arrow {
+  transform: translateX(0.25rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .link,
+  .arrow {
+    transition: none;
+  }
+
+  .link:hover .arrow {
+    transform: none;
+  }
+}

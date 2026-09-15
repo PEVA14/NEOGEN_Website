@@ -1,3 +1,4 @@
+import { areaCitedReferenceIds } from "@/content/areas";
 import { citedReferenceIds } from "@/content/overview";
 import { isPublicReference, REFERENCES } from "@/content/references";
 import { publishedProducts } from "@/data/catalog";
@@ -44,8 +45,34 @@ export function productsCitingReference(referenceId: string): readonly string[] 
  * acquires a bibliography of its own that nothing on a product page supports.
  */
 export function referencesForArea(area: DiscoveryAreaId): readonly Reference[] {
-  const ids = new Set(productsInArea(area).flatMap((p) => citedReferenceIds(p.slug)));
+  const ids = new Set([
+    ...productsInArea(area).flatMap((p) => citedReferenceIds(p.slug)),
+    /* The area's own context section cites too, under the same rules. */
+    ...areaCitedReferenceIds(area),
+  ]);
   return REFERENCES.filter((ref) => ids.has(ref.id) && isPublicReference(ref));
+}
+
+export interface AreaResearchEntry {
+  reference: Reference;
+  /** Compounds OF THIS AREA whose public overview cites the reference. */
+  products: readonly string[];
+}
+
+/**
+ * The area page's research connection: each public reference the area cites,
+ * with the area's own compounds that cite it. A reference cited only by the
+ * area context carries an empty product list — it is still a real citation,
+ * but the page must not attach it to a compound that never cited it.
+ */
+export function areaResearch(area: DiscoveryAreaId): readonly AreaResearchEntry[] {
+  const items = productsInArea(area);
+  return referencesForArea(area).map((reference) => ({
+    reference,
+    products: items
+      .filter((p) => citedReferenceIds(p.slug).includes(reference.id))
+      .map((p) => p.slug),
+  }));
 }
 
 export interface ResearchIndexEntry {

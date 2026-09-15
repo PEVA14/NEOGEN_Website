@@ -57,7 +57,7 @@ const DEFAULT_DEPS: Deps = { overviews: OVERVIEWS, references: REFERENCES };
  * one of its references is public. A statement whose only reference was
  * withdrawn disappears with it.
  */
-function publicStatement(
+export function publicStatement(
   statement: SourcedStatement,
   locale: Locale,
   references: readonly Reference[],
@@ -78,7 +78,11 @@ function publicStatement(
   return { id: statement.id, text, references: refs };
 }
 
-function publicCopy(block: CopyBlock | null, locale: Locale): string | null {
+/*
+ * Both validators are exported so the AREA overview (`content/areas`) applies
+ * exactly these rules rather than a second copy of them that could drift.
+ */
+export function publicCopy(block: CopyBlock | null, locale: Locale): string | null {
   if (!block || !isPublishable(block.provenance)) return null;
   /* A copy block may not carry a scientific claim at all — that is what
      `SourcedStatement` is for. */

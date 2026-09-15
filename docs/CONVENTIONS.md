@@ -498,7 +498,36 @@ domain does not import them. `server/notifications.ts` builds structured
 messages (facts, not prose), writes them to an outbox, then attempts a channel.
 Today the channel is `none` and every message is left pending.
 
-## 14. Commands
+## 14. Discovery area pages (Phase 12.1)
+
+**A section renders because a function returned something.** The derivations
+live in `domain/discovery` (`featuredCount`, `entryOrder`, `featuredInArea`,
+`relatedAreas`, `continuePlan`), `content/areas` (`publicAreaOverview`),
+`content/research` (`areaResearch`) and `domain/quality`
+(`evidenceCoverage`). The page never decides visibility inline, has no empty
+states for context, research or evidence, and numbers its Quiet spine from
+what rendered. `check:output` reads each built area page back and fails if a
+section's presence disagrees with its derivation.
+
+**Variation comes from data only:** how many entry compounds (area size),
+the lead's surface (a flagship's world, else the area wash), related-area
+layout (count of relations), which continuation rows exist, and browser
+controls (≥ 8 compounds). There is no per-area configuration.
+
+**Evidence is counted, never generalised.** An area may show how many public
+records exist among its compounds, how many compounds and presentations they
+cover, and the records themselves, each with its own scope and its own
+states. It may not show an area-level state, a purity figure, or any sentence
+that turns one presentation's document into a property of the area.
+`EvidenceCoverage` has exactly three numeric fields and `check:quality`
+asserts it. Area-ledger states carry `data-area-evidence-state`, counted
+separately from the product page's `data-evidence-state`.
+
+**No ranking language.** Entry order is "flagship first, then catalogue
+order", labelled as entry compounds. Popularity, recommendation and sales
+vocabulary is banned from the dictionaries by `check:content`.
+
+## 15. Commands
 
 ```bash
 npm run dev          # development server

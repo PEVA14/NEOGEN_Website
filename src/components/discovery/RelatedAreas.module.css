@@ -1,0 +1,240 @@
+/*
+ * RELATED AREAS — panels on their own materials.
+ *
+ * The shape follows the count: one relation runs full width (name left,
+ * compounds right), two split 7/5, three or more take 7/5 then a full row.
+ */
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--gutter);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 64rem) {
+  .list {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+
+  .panel {
+    grid-column: 1 / -1;
+  }
+
+  .list[data-count="2"] .panel:nth-child(1),
+  .list[data-count="3"] .panel:nth-child(1) {
+    grid-column: span 7;
+  }
+
+  .list[data-count="2"] .panel:nth-child(2),
+  .list[data-count="3"] .panel:nth-child(2) {
+    grid-column: span 5;
+  }
+
+  /* A single relation is a horizontal record, not a tall empty box — so it
+     also drops the minimum height the stacked panels use to line up. */
+  .list[data-count="1"] .panel {
+    min-block-size: 0;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 3fr) minmax(0, 4fr);
+    grid-template-areas:
+      "head figure compounds"
+      "head figure enter";
+    column-gap: var(--space-xl);
+    align-items: start;
+  }
+
+  .list[data-count="1"] .head {
+    grid-area: head;
+  }
+  .list[data-count="1"] .figure {
+    grid-area: figure;
+  }
+  .list[data-count="1"] .compounds {
+    grid-area: compounds;
+  }
+  .list[data-count="1"] .enter {
+    grid-area: enter;
+  }
+}
+
+.panel {
+  display: grid;
+  gap: var(--space-md);
+  align-content: start;
+  padding: var(--space-md);
+  border: 1px solid var(--area-line, var(--border-subtle));
+  background: linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--area-wash, var(--surface-raised)) 45%, var(--surface-base)),
+    var(--area-wash, var(--surface-raised))
+  );
+  color: var(--ink-primary);
+}
+
+@media (min-width: 64rem) {
+  .panel {
+    padding: var(--space-lg);
+    min-block-size: 22rem;
+  }
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  padding-block-end: var(--space-sm);
+  border-block-end: 1px solid var(--area-line, var(--border-subtle));
+}
+
+.framing,
+.figureLabel,
+.compoundsLabel {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-4xl);
+  line-height: 0.9;
+  letter-spacing: var(--tracking-display);
+  text-transform: uppercase;
+}
+
+.nameLink {
+  color: inherit;
+  text-decoration: none;
+  /* The display name is large enough to be its own 44px target. */
+  display: inline-block;
+  min-block-size: 2.75rem;
+}
+
+.nameLink:hover {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+}
+
+.nameLink:focus-visible,
+.compound:focus-visible,
+.enter:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}
+
+.figure {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2xs) var(--space-xs);
+}
+
+.figureValue {
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-5xl);
+  line-height: 0.85;
+  letter-spacing: var(--tracking-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.figureOf {
+  font-family: var(--font-mono);
+  font-size: var(--text-lg);
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.figureLabel {
+  flex-basis: 100%;
+}
+
+.compounds {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+.compoundList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.compound {
+  display: flex;
+  align-items: center;
+  min-block-size: 2.75rem;
+  border-block-start: 1px solid var(--area-line, var(--border-subtle));
+  color: var(--ink-primary);
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 600;
+  font-size: var(--text-xl);
+  text-decoration: none;
+}
+
+.compound:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.enter {
+  align-self: end;
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 2.75rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-primary);
+  text-decoration: underline;
+  text-decoration-color: var(--area-line, var(--border-default));
+  text-underline-offset: 4px;
+}
+
+/* --- The deep register: the strongest relation, inverted ----------------- */
+
+.panel[data-register="deep"] {
+  background: var(--area-deep, var(--surface-inverse));
+  border-color: color-mix(in oklab, var(--area-line, var(--border-default)) 60%, transparent);
+  color: var(--neogen-paper);
+}
+
+.panel[data-register="deep"] .head,
+.panel[data-register="deep"] .compound {
+  border-color: color-mix(in oklab, var(--neogen-paper) 24%, transparent);
+}
+
+.panel[data-register="deep"] .compound,
+.panel[data-register="deep"] .enter {
+  color: var(--neogen-paper);
+}
+
+.panel[data-register="deep"] .framing,
+.panel[data-register="deep"] .figureLabel,
+.panel[data-register="deep"] .compoundsLabel,
+.panel[data-register="deep"] .figureOf {
+  color: color-mix(in oklab, var(--neogen-paper) 74%, transparent);
+}
+
+.panel[data-register="deep"] .enter {
+  text-decoration-color: color-mix(in oklab, var(--neogen-paper) 45%, transparent);
+}
+
+.panel[data-register="deep"] .nameLink:focus-visible,
+.panel[data-register="deep"] .compound:focus-visible,
+.panel[data-register="deep"] .enter:focus-visible {
+  outline-color: var(--neogen-paper);
+}
