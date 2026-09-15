@@ -568,7 +568,7 @@ the module source and `check:output` fails if the route or either phrase
 reaches production output. Never promote a fixture from this module into a
 real registry.
 
-## 16. Card reveal and storefront moments
+## 16. Card reveal and the presentation register
 
 **The card reveal** (`components/ui/ProductCard`, data from
 `server/catalog#cardDetails`) is the second layer of a product card. Rules:
@@ -585,25 +585,27 @@ real registry.
   `data-world`; a `[data-world]` frame must reset its painted background.
 - The `feature` format has no reveal (its plate changes shape at 64rem).
 
-**Storefront moments** (`components/storefront`, data from
-`server/storefront`, arithmetic in `domain/storefront`):
+**The presentation register** (`components/catalog/RegisterMatrix`) is the
+catalogue's and every area page's table view (`?vista=registro`). Its layout
+is derived from the current results by `domain/storefront#registerLayout`:
 
-- Client islands receive numbers and labels, never a registry — the price map
-  stays on the server (`check:output` guards client bundles).
-- Every derivation is pure and asserted in `check:catalog`: price per vial
-  rounds to the peso, the free-shipping threshold is inclusive, a matrix shows
-  only strengths someone sells, spectrum positions are logarithmic and every
-  priced product appears exactly once.
-- Choices are derived, never curated: the matrix area is the one with the most
-  comparable products; the shop's products are the ones with a world.
-- No popularity, ranking, discount, stock or use language anywhere (the
-  dictionary guard already bans ranking words).
-- Motion must stop: the ticker pauses on hover/focus, has a pause control and
-  is static under reduced motion. Dense plots are one focusable control with an
-  announced readout and a full-size link, not dozens of tiny targets; narrow
-  screens get an equivalent list.
-- Commerce actions are gated by `bagEnabled()` on the server; when off, the
-  control is a link to the product page, never a dead button.
+- **aligned** when the results' solid products hold at most
+  `REGISTER_MAX_COLUMNS` (10) distinct strengths — strengths across, pack
+  prices in the cells; non-solid products (solutions, volumes, IU, blends)
+  follow in a second, sequential table;
+- **sequential** otherwise (the unfiltered catalogue has 19 strengths) —
+  each row lists its presentations in order, strength and price per cell.
+
+Per pack / per vial is a toggle over the same prices. The crosshair is CSS
+`:has()`. Row order is the browser's sort. `check:catalog` asserts the layout
+rules and that every aligned cell is that variant's registry price.
+
+**Parked storefront moments.** The catalogue ticker and the flagship shop
+(`components/storefront`, data in `server/storefront`) are built and tested
+but not rendered — the owner removed them from the homepage on 2026-09-15.
+If either is placed again: islands receive numbers and labels, never a
+registry; motion must stop (pause control, static under reduced motion);
+commerce actions are gated by `bagEnabled()` on the server.
 
 ## 17. Commands
 

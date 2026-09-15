@@ -11,7 +11,7 @@ import {
 } from "react";
 
 import { Body, Mono } from "@/components/typography";
-import { CompoundIndexHead, CompoundRow, ProductCard, type CardDetailsCopy } from "@/components/ui";
+import { ProductCard, type CardDetailsCopy } from "@/components/ui";
 
 import {
   activeFilterCount,
@@ -33,6 +33,7 @@ import {
   type ListFacet,
   type Sort,
 } from "./filters";
+import { RegisterMatrix, type RegisterMatrixCopy } from "./RegisterMatrix";
 import styles from "./CatalogBrowser.module.css";
 
 export type { CatalogProduct } from "./filters";
@@ -58,8 +59,7 @@ export interface CatalogCopy {
   countLabel: string;
   empty: string;
   clear: string;
-  columns: readonly string[];
-  documentationPending: string;
+  matrix: RegisterMatrixCopy;
   facets: {
     hide: string;
     show: string;
@@ -582,24 +582,7 @@ export function CatalogBrowser({
               ))}
             </div>
           ) : (
-            <ul className={styles.index}>
-              <CompoundIndexHead columns={[...copy.columns]} />
-              {results.map((product) => (
-                <CompoundRow
-                  key={product.id}
-                  index={product.index}
-                  world={product.world}
-                  worldLabel={product.worldLabel ?? product.categoryLabel}
-                  name={product.name}
-                  href={product.href}
-                  fields={[
-                    { key: copy.columns[0], value: product.categoryLabel },
-                    { key: copy.columns[1], value: product.strengths },
-                    { key: copy.columns[2], value: product.price ?? copy.documentationPending },
-                  ]}
-                />
-              ))}
-            </ul>
+            <RegisterMatrix products={results} copy={copy.matrix} localeTag={localeTag} />
           )}
         </div>
       </div>

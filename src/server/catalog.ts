@@ -80,6 +80,12 @@ export async function catalogEntries(
       strengths: product.variants.map((v) => formatStrength(v.strength)).join(" · "),
       range: presentationRange(product),
       presentations: product.variants.length,
+      presentationList: product.variants.map((v) => ({
+        label: formatStrength(v.strength),
+        mg: v.strength.kind === "solid" ? v.strength.mg : null,
+        amount: prices.get(v.id)?.amount ?? null,
+        vials: v.vials,
+      })),
       formats: [...new Set(product.variants.map((v) => v.strength.kind as StrengthKind))],
       vials: [
         ...new Set(product.variants.map((v) => v.vials).filter((n): n is number => n !== null)),

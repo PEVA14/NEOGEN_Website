@@ -56,16 +56,13 @@ import {
   toggleValue,
 } from "../src/components/catalog/filters.ts";
 import {
-  logPosition,
-  logTicks,
+  cheapestPresentation,
   perVial,
-  presentationMatrix,
-  priceBands,
   reachesThreshold,
-  stackOnAxis,
+  registerLayout,
+  REGISTER_MAX_COLUMNS,
 } from "../src/domain/storefront/index.ts";
 import { generatedPrices } from "../src/data/commerce/prices.generated.ts";
-import { siteConfig } from "../src/config/site.ts";
 import { AVAILABILITY } from "../src/data/commerce/availability.ts";
 import { getAvailability, getPrices, ORDER_LIMITS } from "../src/data/commerce/index.ts";
 import { routes } from "../src/config/routes.ts";
@@ -735,10 +732,10 @@ for (const area of AREAS) {
 /* ---- storefront derivations ---------------------------------------------- */
 
 /**
- * The homepage's commercial moments and the card reveal compute every figure
- * through `domain/storefront`. These pin the arithmetic — a unit price, a
- * position on a log axis, which strengths a matrix shows — so a refactor
- * cannot quietly start misstating a price.
+ * The card reveal and the catalogue's presentation register compute every
+ * figure through `domain/storefront`. These pin the arithmetic — a unit price,
+ * which strengths a register aligns, which price lands in which cell — so a
+ * refactor cannot quietly start misstating a price.
  */
 {
   const check = (condition, what, detail = "") => {
@@ -759,106 +756,78 @@ for (const area of AREAS) {
     "unknowns never reach it",
   );
 
-  const mx = presentationMatrix([
-    {
-      slug: "a",
-      cells: [
-        { mg: 5, amount: 100, vials: 10 },
-        { mg: 20, amount: 300, vials: 10 },
-      ],
-    },
-    { slug: "b", cells: [{ mg: 10, amount: 200, vials: 10 }] },
-    {
-      slug: "c",
-      cells: [
-        { mg: 5, amount: null, vials: 10 },
-        { mg: 10, amount: 250, vials: 10 },
-      ],
-    },
-  ]);
-  check(mx.rows.map((r) => r.item.slug).join() === "a,c", "single-strength products are left out");
-  check(mx.columns.join() === "5,10,20", "columns are the union of held strengths, ascending");
-  check(mx.rows[0].cells[1] === null, "a strength a product lacks is an empty cell, not a zero");
-  check(mx.rows[1].from === 250, "a row's from ignores unpriced cells");
-
-  check(
-    logPosition(800, 800, 37000) === 0 && logPosition(37000, 800, 37000) === 1,
-    "log axis ends",
+  const pres = (label, mg, amount, vials = 10) => ({ label, mg, amount, vials });
+  const item = (slug, list) => ({ slug, presentationList: list });
+  const FX = [
+    item("a", [pres("5 mg", 5, 100), pres("20 mg", 20, 300)]),
+    item("b", [pres("10 mg", 10, 200)]),
+    item("blend", [pres("5 mg + 5 mg", null, 400)]),
+    item("c", [pres("5 mg", 5, null), pres("10 mg", 10, 250)]),
+  ];
+  const aligned = registerLayout(FX);
+  check(aligned.mode === "aligned", "a few shared strengths align");
+  if (aligned.mode === "aligned") {
+    check(aligned.columns.join() === "5,10,20", "columns are the union of held strengths");
+    check(
+      aligned.rows.map((r) => r.item.slug).join() === "a,b,c",
+      "solid rows keep the input order",
+    );
+    check(aligned.rows[0].cells[1] === null, "a strength a product lacks is an empty cell");
+    check(aligned.others.map((o) => o.slug).join() === "blend", "non-solids go to the others");
+    check(aligned.othersWidth === 1, "the others table is as wide as its longest ladder");
+  }
+  const many = Array.from({ length: REGISTER_MAX_COLUMNS + 1 }, (_, i) =>
+    item(`s${i}`, [pres(`${i + 1} mg`, i + 1, 100)]),
   );
-  check(Math.abs(logPosition(1000, 100, 10000) - 0.5) < 1e-9, "log axis is logarithmic");
-  check(logPosition(5, 10, 100) === 0 && logPosition(500, 10, 100) === 1, "log axis clamps");
-
-  const st = stackOnAxis([{ amount: 900 }, { amount: 100 }, { amount: 110 }, { amount: 1000 }], 4);
+  const sequential = registerLayout(many);
+  check(sequential.mode === "sequential", "too many strengths fall back to sequential");
   check(
-    st.placed.map((p) => p.item.amount).join() === "100,110,900,1000",
-    "stacking sorts by price",
-  );
-  check(st.placed[1].level === 1 && st.placed[0].level === 0, "items in one bin stack upward");
-  check(st.placed[3].bin === 3, "the maximum lands in the last bin");
-  check(st.height === 2, "height is the tallest stack", String(st.height));
-
-  check(logTicks(800, 37000).join() === "1000,2000,5000,10000,20000", "log ticks follow 1-2-5");
-
-  const bands = priceBands(
-    [{ amount: 500 }, { amount: 9999 }, { amount: 10000 }, { amount: 25000 }],
-    [3000, 10000, 20000],
+    sequential.mode === "sequential" && sequential.width === 1 && sequential.rows.length === 11,
+    "sequential keeps every row, as wide as the longest ladder",
   );
   check(
-    bands.map((b) => `${b.from}:${b.items.length}`).join() === "0:1,3000:1,10000:1,20000:1",
-    "bands are half-open and drop empty ones",
-    JSON.stringify(bands.map((b) => [b.from, b.items.length])),
+    registerLayout([item("x", [pres("10 ml", null, 50)])]).mode === "sequential",
+    "no solids means sequential",
+  );
+  check(
+    cheapestPresentation([pres("a", 1, null), pres("b", 2, 900), pres("c", 3, 400)]).label === "c",
+    "the from figure is the cheapest priced presentation",
   );
 
-  /* The real registries, exactly as the homepage builders read them. */
+  /* The real registries: every aligned cell is that variant's registry price. */
   const price = (id) => generatedPrices[id]?.amount ?? null;
-  const areaMatrices = publicAreas().map((area) => ({
-    area: area.id,
-    matrix: presentationMatrix(
-      entryOrder(productsInAreaForCheck(area.id).filter(isPublishable)).map((product) => ({
-        product,
-        slug: product.slug,
-        cells: product.variants.flatMap((v) =>
-          v.strength.kind === "solid"
-            ? [{ mg: v.strength.mg, amount: price(v.id), vials: v.vials }]
-            : [],
+  for (const area of publicAreas()) {
+    const rows = productsInAreaForCheck(area.id)
+      .filter(isPublishable)
+      .map((product) =>
+        item(
+          product.slug,
+          product.variants.map((v) =>
+            pres(
+              formatStrength(v.strength),
+              v.strength.kind === "solid" ? v.strength.mg : null,
+              price(v.id),
+              v.vials,
+            ),
+          ),
         ),
-      })),
-    ),
-  }));
-  const best = [...areaMatrices].sort((a, b) => b.matrix.rows.length - a.matrix.rows.length)[0];
-  check(Boolean(best) && best.matrix.rows.length >= 3, "some area has a comparable matrix");
-  if (best) {
-    for (const row of best.matrix.rows) {
+      );
+    const layout = registerLayout(rows);
+    if (layout.mode !== "aligned") continue;
+    for (const row of layout.rows) {
+      const product = getProduct(row.item.slug);
       for (const [i, cell] of row.cells.entries()) {
-        const mg = best.matrix.columns[i];
-        const variant = row.item.product.variants.find(
+        const mg = layout.columns[i];
+        const variant = product.variants.find(
           (v) => v.strength.kind === "solid" && v.strength.mg === mg,
         );
         check(
-          cell === null ? !variant : variant && cell.amount === price(variant.id),
-          "every matrix cell is that variant's registry price",
-          `${row.item.slug} ${mg} mg`,
+          cell === null ? !variant : Boolean(variant) && cell.amount === price(variant.id),
+          "every register cell is that variant's registry price",
+          `${area.id} ${row.item.slug} ${mg} mg`,
         );
       }
     }
-  }
-
-  const entry = publishedProducts
-    .map((product) => ({
-      slug: product.slug,
-      amount: Math.min(...product.variants.map((v) => price(v.id) ?? Infinity)),
-    }))
-    .filter((e) => Number.isFinite(e.amount));
-  const spectrum = stackOnAxis(entry, 44);
-  check(spectrum.placed.length === entry.length, "the spectrum places every priced product once");
-  check(
-    new Set(spectrum.placed.map((p) => p.item.slug)).size === entry.length,
-    "no product appears twice on the spectrum",
-  );
-  const threshold = siteConfig.fulfilment.freeShippingThreshold;
-  if (threshold !== null) {
-    const x = logPosition(threshold, spectrum.min, spectrum.max);
-    check(x > 0 && x < 1, "the free-shipping line falls inside the price axis", String(x));
   }
 }
 

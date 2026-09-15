@@ -140,7 +140,7 @@ const es = {
     },
 
     catalog: {
-      index: "03",
+      index: "02",
       label: "Descubrimiento",
       title: "Explora el catálogo",
       action: "Todos los productos",
@@ -188,7 +188,7 @@ const es = {
      * en el catálogo completo.
      */
     research: {
-      index: "06",
+      index: "03",
       label: "Investigación",
       title: "NEOGEN Research",
       action: "Ir a investigación",
@@ -199,7 +199,7 @@ const es = {
     },
 
     quality: {
-      index: "07",
+      index: "04",
       label: "Calidad",
       title: "Evidencia, no sellos",
       lede: "Cada estado de calidad en NEOGEN proviene de un documento que puede consultarse, vinculado a la presentación exacta que examina.",
@@ -219,10 +219,9 @@ const es = {
     },
 
     /**
-     * MOMENTOS COMERCIALES — añadidos a la portada, sin reemplazar ninguna
-     * sección. Todo lo que muestran sale del registro: nombres, concentraciones,
-     * precios de empaque, viales por empaque y el umbral de envío gratis
-     * confirmado. Sin popularidad, sin descuentos, sin afirmaciones.
+     * APARCADOS — el ticker del catálogo y la tienda de insignias existen como
+     * componentes pero no se muestran en la portada (decisión del dueño,
+     * 2026-09-15). Su copia se conserva para cuando encuentren lugar.
      */
     ticker: {
       label: "Catálogo completo",
@@ -231,41 +230,7 @@ const es = {
       play: "Reanudar el catálogo en movimiento",
     },
 
-    matrix: {
-      index: "02",
-      label: "Presentaciones",
-      /* "{area}" es el nombre corto del área — "Metabolismo". */
-      title: "{area}, por concentración",
-      lede: "Los compuestos del área que se venden en varias concentraciones, lado a lado. Cada celda es el precio de un empaque.",
-      action: "Ver el área",
-      caption: "Precio por concentración en {area}",
-      compound: "Compuesto",
-      from: "Desde",
-      unitLabel: "Precio",
-      perPack: "Por empaque",
-      perVial: "Por vial",
-      packNote: "Empaques de {n} viales",
-    },
-
-    spectrum: {
-      index: "04",
-      label: "Precios",
-      title: "Encuentra tu punto de entrada",
-      lede: "Los {count} compuestos del catálogo, colocados por su precio de entrada. A la derecha de la línea, un solo empaque ya alcanza el envío gratis.",
-      action: "Catálogo por precio",
-      plotLabel: "Compuestos por precio de entrada",
-      allAreas: "Todas",
-      summary: "{count} compuestos · de {min} a {max}",
-      threshold: "Envío gratis desde {price}",
-      from: "Desde",
-      view: "Ver producto",
-      keys: "Usa las flechas para recorrer los compuestos por precio y Enter para abrir el seleccionado.",
-      areaFilter: "Resaltar un área",
-      under: "Hasta {price}",
-    },
-
     shop: {
-      index: "05",
       label: "Tienda",
       title: "Elige tu presentación",
       lede: "Los tres compuestos insignia con todas sus presentaciones y precios. Cambia de mundo y de concentración sin salir de la portada.",
@@ -283,7 +248,7 @@ const es = {
     },
 
     products: {
-      index: "08",
+      index: "05",
       label: "Productos",
       title: "Compuestos insignia",
       action: "Catálogo completo",
@@ -517,8 +482,22 @@ const es = {
       clear: "Limpiar filtros",
       /** The architecture exists; the taxonomy does not. Stated, not faked. */
       /** Column heads for the index view. */
-      columns: ["Categoría", "Presentaciones", "Precio"],
-      documentationPending: "No disponible",
+      /**
+       * REGISTRO — la vista de tabla del catálogo es una matriz de
+       * presentaciones: concentraciones y precios de empaque reales.
+       */
+      matrix: {
+        caption: "Presentaciones y precios de los compuestos mostrados",
+        othersCaption: "Presentaciones en otras unidades",
+        others: "Otras unidades",
+        compound: "Compuesto",
+        from: "Desde",
+        unitLabel: "Precio",
+        perPack: "Por empaque",
+        perVial: "Por vial",
+        packNote: "Empaques de {n} viales",
+        step: "Presentación {n}",
+      },
     },
     sections: {
       experience: "Experiencia",

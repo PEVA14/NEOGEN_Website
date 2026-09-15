@@ -1,6 +1,7 @@
 import { matchesText } from "@/lib/search";
 
 import type { CardDetails } from "@/components/ui/ProductCard";
+import type { RegisterPresentation } from "@/domain/storefront";
 import type { WorldId } from "@/config/worlds";
 
 /**
@@ -51,6 +52,8 @@ export interface CatalogProduct {
   /** "5 mg – 60 mg" — on the card. */
   range: string;
   presentations: number;
+  /** Every presentation with its strength, pack price and vials — the register's cells. */
+  presentationList: readonly RegisterPresentation[];
   /** Distinct strength kinds across the presentations. */
   formats: readonly StrengthKind[];
   /** Distinct vials-per-pack counts the catalogue states. */

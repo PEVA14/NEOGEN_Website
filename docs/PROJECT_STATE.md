@@ -1,6 +1,6 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-09-15**, after the card reveal and homepage commerce layer (§8d).
+Last updated **2026-09-15**, after the owner review of the card reveal and commerce layer (§8d).
 
 This file is the memory of the project for a new session. It records what is
 not derivable from the code: where the phases stand, how the owner runs the
@@ -27,7 +27,8 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 | `fb3b7aa`   | Phase 12 — creative overhaul: specimen plate, card formats, area identity, homepage rail, area mastheads                        |
 | `4ab9b9a`   | Phase 12.1 — discovery area depth: data-derived sections after the masthead                                                     |
 | `541c61b`   | Catalogue filtering, area index, search field, area design preview (§8c)                                                        |
-| _this_      | Card reveal and homepage commerce layer (§8d)                                                                                   |
+| `b080cf3`   | Card reveal and homepage commerce layer, first version (§8d)                                                                    |
+| _this_      | Owner review of §8d: register becomes the presentation matrix; homepage trimmed                                                 |
 
 **Phase 12.1 is complete. Phase 13 has not been started or approved.** Do not
 begin it without a brief from the owner.
@@ -348,45 +349,44 @@ removing any section. Not a numbered phase.
   preview (`…/area/metabolica/vista-previa`) now includes a marked sample
   summary so the description variant can be reviewed.
 
-**Homepage — four added commercial moments** (sections renumbered 01–08; no
-existing section removed or restyled):
+**Homepage commerce layer — trialled, then trimmed by the owner the same day.**
+Four moments were added overnight (catalogue ticker, presentation matrix,
+price spectrum, flagship shop). Owner review:
 
-1. **Catalogue ticker** under the hero — every published product (area swatch,
-   name, range, entry price) moving slowly; pauses on hover/focus, has a pause
-   button (WCAG 2.2.2), static scrollable row under reduced motion.
-2. **02 Presentation matrix** after RETA — strengths × products for the area
-   with the most multi-strength solid products (derived: Metabolismo, RETA
-   first); per-pack / per-vial toggle; CSS `:has()` row-and-column crosshair.
-3. **04 Price spectrum** after discovery — all 85 products on a log price axis,
-   stacked, coloured by area, with the owner-confirmed MX$10,000 free-shipping
-   line drawn on the axis; area highlight chips; one focusable plot walked by
-   arrow keys with an announced readout and a 44 px link; price bands
-   (`<details>`) below 48rem.
-4. **05 Flagship shop** after GLOW — RETA / GLOW / GHK-Cu tabs (GLOW opens
-   selected), presentation radios with prices, live price, price per vial, pack,
-   whether that pack alone reaches free shipping, and add-to-bag gated by
-   `bagEnabled()` (off today, so it offers the product page instead).
+- **Ticker** — disliked; hidden. Component parked in `components/storefront`.
+- **Presentation matrix** — liked, but belongs in the catalogue: it **replaced
+  the register view** (`?vista=registro`) on the catalogue and every area page.
+  Aligned by strength when the results hold ≤ 10 solid strengths (every single
+  area does), sequential P-01…P-07 otherwise; non-solids in a second table.
+  The old `CompoundRow` register list was deleted.
+- **Price spectrum** — "cool but not that useful"; removed entirely (component,
+  builder, copy, log-axis derivations and their checks).
+- **Flagship shop** — nice but not for the homepage; parked, not rendered.
+  Where it could live is an open question for the owner.
+- The homepage is back to its original sections, numbered 01–05. The owner
+  called out the research rail (03) and flagship cards (05), both now carrying
+  the card reveal, as working well, and liked the dev-only area preview.
 
-All figures go through `domain/storefront` (pure; `check:catalog` drives it
-with fixtures and the real registries — two negative controls confirmed).
-Nothing ranks by popularity, discounts, estimates stock or states a use.
+Figures go through `domain/storefront` (pure; `check:catalog` drives it with
+fixtures and the real registries — negative-controlled). Nothing ranks by
+popularity, discounts, estimates stock or states a use.
 
 **Also:** the PDP presentation ladder now wraps on phones instead of scrolling
 (axe `scrollable-region-focusable` at 375 px — pre-existing).
 
-**Experimental — review first:** the ticker (motion right under the hero), the
-price spectrum's density and area colours, and whether the flagship shop and
-the closing flagship cards (08) now say the same thing twice.
+**Open:** phone behaviour of the card reveal (the "+" toggle) has not been
+tested by the owner yet.
 
-**Gates:** all `npm run check` gates pass. Production QA: 0 axe WCAG 2.2 A/AA
-violations, no horizontal overflow, no sub-44 px targets on `/es` at
-375/768/1280/1440/1728, `/en` at 375, catalogue at 375/1440, a PDP and an area
-page at 375/1440 — including every card reveal open and the interactive states.
-Initial JS gzip: home 202.7 KB (was 196.8), catalogue 191.7 (189.8), PDP 194.6
-(193.1), area 195.3 (193.5); three.js still absent from every initial payload.
+**Gates (after the owner review):** all `npm run check` gates pass; the new
+register assertions were negative-controlled. Production QA: 0 axe WCAG 2.2
+A/AA violations and no horizontal overflow on `/es` at 375/1440 and on the
+register view unfiltered (375/1440), filtered to Metabolismo (1440) and on the
+Neurología and Metabolismo area pages (375/1440), with the tables rendered.
+Initial JS gzip: home 198.4 KB, catalogue 192.4, area 196.1, PDP 194.2;
+three.js absent from every initial payload.
 
 **Not built, flagged:** the owner's "for research purposes only" line (§4) is
-still not rendered anywhere a product is sold, including the new shop counter.
+still not rendered anywhere a product is sold, including the parked shop counter.
 
 ## 9. Recommendation for Phase 13 (not approved)
 

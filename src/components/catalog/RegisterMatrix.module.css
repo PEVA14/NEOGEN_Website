@@ -1,12 +1,24 @@
 /*
- * The presentation matrix. Hairline rules, mono figures, generous rows. The
+ * The presentation register. Hairline rules, mono figures, generous rows. The
  * crosshair is the only colour: a wash under the row and column the pointer
  * rests on, in the neutral raised surface.
  */
 
+/* `minmax(0, 1fr)`: a grid item's minimum is its content, and a wide table
+   would otherwise push the whole page sideways instead of scrolling itself. */
 .matrix {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-md);
+}
+
+.srOnly {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .controls {
@@ -17,7 +29,8 @@
 }
 
 .controlLabel,
-.note {
+.note,
+.othersLabel {
   font-family: var(--font-mono);
   font-size: var(--text-2xs);
   letter-spacing: var(--tracking-label);
@@ -27,6 +40,10 @@
 
 .note {
   margin-inline-start: auto;
+}
+
+.othersLabel {
+  margin: var(--space-md) 0 0;
 }
 
 .segmented {
@@ -64,7 +81,10 @@
   outline-offset: 2px;
 }
 
+/* `position: relative` contains the visually hidden labels: absolutely
+   positioned, they would otherwise escape this scroll region and widen the page. */
 .scroller {
+  position: relative;
   overflow-x: auto;
   scrollbar-width: thin;
   border-block: 1px solid var(--ink-primary);
@@ -75,22 +95,14 @@
   outline-offset: var(--focus-ring-offset-width);
 }
 
+/* Wide enough per column to hold "$28,900", and never squeezed below that. */
 .table {
   inline-size: 100%;
-  min-inline-size: 52rem;
+  min-inline-size: calc(15rem + (var(--cols, 4) + 1) * 6.25rem);
   border-collapse: collapse;
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
-}
-
-.caption {
-  position: absolute;
-  inline-size: 1px;
-  block-size: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
 }
 
 .table th,
@@ -115,6 +127,14 @@
 
 .table td {
   color: var(--ink-primary);
+}
+
+/* A sequential cell names its strength above the price. */
+.strength {
+  display: block;
+  font-size: var(--text-2xs);
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
 }
 
 /* The first column stays put while the strengths scroll under it on a phone. */
@@ -196,15 +216,17 @@
 .table:has(td[data-col="6"]:hover) [data-col="6"],
 .table:has(td[data-col="7"]:hover) [data-col="7"],
 .table:has(td[data-col="8"]:hover) [data-col="8"],
-.table:has(td[data-col="9"]:hover) [data-col="9"],
-.table:has(td[data-col="10"]:hover) [data-col="10"],
-.table:has(td[data-col="11"]:hover) [data-col="11"] {
+.table:has(td[data-col="9"]:hover) [data-col="9"] {
   background-color: var(--surface-raised);
 }
 
 .table tbody td:not([data-empty]):hover {
   background-color: var(--neogen-charcoal);
   color: var(--neogen-paper);
+}
+
+.table tbody td:not([data-empty]):hover .strength {
+  color: color-mix(in oklab, var(--neogen-paper) 70%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {
