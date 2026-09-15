@@ -1,9 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
 import { Body, Mono } from "@/components/typography";
-import { CompoundIndexHead, CompoundRow, ProductCard } from "@/components/ui";
+import { CompoundIndexHead, CompoundRow, ProductCard, type CardDetailsCopy } from "@/components/ui";
 
 import {
   activeFilterCount,
@@ -81,6 +89,7 @@ export interface CatalogCopy {
   areaLabels: Record<string, string>;
   typeLabels: Record<string, string>;
   availabilityLabels: Record<string, string>;
+  card: CardDetailsCopy;
 }
 
 /* ---- the URL is the filter state ----------------------------------------- *
@@ -566,6 +575,8 @@ export function CatalogBrowser({
                     index={product.index}
                     ctaLabel={product.ctaLabel}
                     headingLevel={cardHeadingLevel}
+                    details={product.details}
+                    detailsCopy={copy.card}
                   />
                 </div>
               ))}

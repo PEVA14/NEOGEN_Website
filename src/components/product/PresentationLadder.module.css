@@ -1,7 +1,10 @@
 /*
  * PRESENTATION LADDER — oversized numerals on one rule.
- * Scrolls in its own container when a seven-step ladder outgrows a phone, so
- * the figures keep their scale instead of shrinking to fit.
+ *
+ * On a phone a long ladder WRAPS into rows rather than scrolling: the figures
+ * keep their scale, and there is no horizontal scroll region for a keyboard to
+ * be unable to reach (axe `scrollable-region-focusable`, found on a
+ * four-step ladder at 375px). The same rule the area spread already follows.
  */
 .ladder {
   border-block-start: 1px solid var(--border-default);
@@ -26,6 +29,18 @@
 
 .step:last-child {
   border-inline-end: 0;
+}
+
+@media (max-width: 47.99rem) {
+  .ladder {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+
+  .step {
+    flex: 1 0 7rem;
+    border-block-end: 1px solid var(--border-subtle);
+  }
 }
 
 .index {

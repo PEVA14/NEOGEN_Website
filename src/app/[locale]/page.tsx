@@ -20,6 +20,16 @@ import {
   TextLink,
 } from "@/components/ui";
 import { EvidenceChain } from "@/components/quality";
+import {
+  CatalogTicker,
+  FlagshipShop,
+  PresentationMatrix,
+  PriceSpectrum,
+} from "@/components/storefront";
+import { siteConfig } from "@/config/site";
+import { bagEnabled } from "@/payments";
+import { cardDetails, cardDetailsCopy } from "@/server/catalog";
+import { matrixData, shopProducts, spectrumData, tickerItems } from "@/server/storefront";
 import { routes } from "@/config/routes";
 import { worldIds, type WorldId } from "@/config/worlds";
 import { isLocale, localeTags } from "@/i18n/config";
@@ -39,11 +49,20 @@ import { localizePath } from "@/i18n/routing";
 import type { Metadata } from "next";
 
 /**
- * HOME — Phase 3.
+ * HOME.
  *
- *   Hero (Impact) → 01 Evolution (Quiet) → RETA (Impact)
- *   → 04 Catalogue (Quiet) → GLOW (Impact) → 06 Research + 07 Quality (Quiet)
- *   → GHK-Cu (Impact) → 08 Products (Quiet) → Footer
+ *   Hero (Impact) → Ticker → 01 Evolution (Quiet) → RETA (Impact)
+ *   → 02 Matrix → 03 Discovery → 04 Price spectrum (Quiet) → GLOW (Impact)
+ *   → 05 Flagship shop → 06 Research → 07 Quality (Quiet) → GHK-Cu (Impact)
+ *   → 08 Products (Quiet) → Footer
+ *
+ * THE COMMERCIAL LAYER (after Phase 12.1). Four moments were ADDED — nothing
+ * was removed — to make the page behave like a shop as well as a laboratory:
+ * the ticker shows the whole register under the hero; the matrix follows RETA
+ * with the strengths and prices of its own area; the price spectrum follows
+ * discovery with every product placed by entry price; the flagship shop
+ * follows GLOW with a counter to choose a presentation at. Each sits in Quiet
+ * material between Impact beats, so the rhythm below still holds.
  *
  * Two structural rules from the reference set are load-bearing:
  *
@@ -142,6 +161,24 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     })
     .filter((row): row is NonNullable<typeof row> => row !== null);
 
+  /* ---- the commercial layer ---------------------------------------------- */
+  const tag = localeTags[locale];
+  const [ticker, matrix, spectrum, shop, allPrices] = await Promise.all([
+    tickerItems(locale),
+    matrixData(locale),
+    spectrumData(locale),
+    shopProducts(locale, dict),
+    getPrices(publishedProducts.flatMap((p) => p.variants.map((v) => v.id))),
+  ]);
+  const detailsCopy = cardDetailsCopy(dict);
+  const detailsFor = (product: (typeof products)[number]) =>
+    cardDetails(product, { locale, dict, prices: allPrices });
+  const areaShort = (id: string) =>
+    dict.discovery.areas[id as keyof typeof dict.discovery.areas]?.short ?? id;
+  const areaLabels = Object.fromEntries(
+    Object.entries(dict.discovery.areas).map(([id, area]) => [id, area.short]),
+  );
+
   const heroCopy: HeroCopy = { ...home.hero, ctaHref: path(routes.products) };
 
   const reta = home.reta;
@@ -228,6 +265,18 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     <>
       <Hero copy={heroCopy} />
 
+      {/* The whole register, passing under the hero. */}
+      <CatalogTicker
+        items={ticker}
+        localeTag={tag}
+        copy={{
+          label: home.ticker.label,
+          from: home.ticker.from,
+          pause: home.ticker.pause,
+          play: home.ticker.play,
+        }}
+      />
+
       {/* 01 — Quiet. The editorial spread that sets NEOGEN's informational
           voice: an oversized index numeral against a dense right column. */}
       <Section mode="quiet" aria-labelledby="evolution-title">
@@ -245,6 +294,41 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
       {/* Impact — the object. */}
       <RetaExperience copy={retaCopy} />
+
+      {/*
+       * 02 — Quiet. THE PRESENTATION MATRIX. RETA has just shown one vial;
+       * this shows the shelf it stands on — every multi-strength compound in
+       * its area, strengths across, pack prices in the cells.
+       */}
+      {matrix ? (
+        <Section mode="quiet" aria-labelledby="matrix-title">
+          <Container width="full">
+            <SectionHeader
+              index={home.matrix.index}
+              label={home.matrix.label}
+              title={home.matrix.title.replace("{area}", areaShort(matrix.areaId))}
+              id="matrix-title"
+              lede={home.matrix.lede}
+              action={<TextLink href={matrix.areaHref}>{home.matrix.action}</TextLink>}
+            />
+            <PresentationMatrix
+              columns={matrix.columns}
+              rows={matrix.rows}
+              localeTag={tag}
+              copy={{
+                caption: home.matrix.caption.replace("{area}", areaShort(matrix.areaId)),
+                compound: home.matrix.compound,
+                from: home.matrix.from,
+                unitLabel: home.matrix.unitLabel,
+                perPack: home.matrix.perPack,
+                perVial: home.matrix.perVial,
+                packNote: home.matrix.packNote,
+                worldLabels: home.products.worldLabels,
+              }}
+            />
+          </Container>
+        </Section>
+      ) : null}
 
       {/*
        * 04 — Quiet. A catalogue index, not a feature grid: oversized category
@@ -299,8 +383,92 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </Container>
       </Section>
 
+      {/*
+       * 04 — Quiet, on warm stone. THE PRICE SPECTRUM. Discovery has just
+       * sorted the catalogue by what it is about; this sorts it by what it
+       * costs to start, with the free-shipping line drawn on the axis.
+       */}
+      {spectrum ? (
+        <Section mode="quiet" aria-labelledby="spectrum-title" className="bg-(--surface-raised)">
+          <Container width="full">
+            <SectionHeader
+              index={home.spectrum.index}
+              label={home.spectrum.label}
+              title={home.spectrum.title}
+              id="spectrum-title"
+              lede={home.spectrum.lede.replace("{count}", String(spectrum.points.length))}
+              action={
+                <TextLink href={`${path(routes.products)}?orden=price-asc`}>
+                  {home.spectrum.action}
+                </TextLink>
+              }
+            />
+            <PriceSpectrum
+              points={spectrum.points}
+              ticks={spectrum.ticks}
+              threshold={spectrum.threshold}
+              bands={spectrum.bands}
+              areas={spectrum.areas}
+              height={spectrum.height}
+              localeTag={tag}
+              copy={{
+                plotLabel: home.spectrum.plotLabel,
+                allAreas: home.spectrum.allAreas,
+                areaLabels,
+                summary: home.spectrum.summary,
+                threshold: home.spectrum.threshold,
+                from: home.spectrum.from,
+                view: home.spectrum.view,
+                keys: home.spectrum.keys,
+                areaFilter: home.spectrum.areaFilter,
+                under: home.spectrum.under,
+              }}
+            />
+          </Container>
+        </Section>
+      ) : null}
+
       {/* Impact — light. */}
       <GlowMoment copy={glowCopy} />
+
+      {/*
+       * 05 — Quiet. THE FLAGSHIP SHOP. The page's first counter: the world
+       * just seen (GLOW) opens selected, and the customer can move between
+       * the three and between presentations with the price following.
+       */}
+      {shop.length > 0 ? (
+        <Section mode="quiet" aria-labelledby="shop-title">
+          <Container width="full">
+            <SectionHeader
+              index={home.shop.index}
+              label={home.shop.label}
+              title={home.shop.title}
+              id="shop-title"
+              lede={home.shop.lede}
+            />
+            <FlagshipShop
+              products={shop}
+              initial="glow"
+              threshold={siteConfig.fulfilment.freeShippingThreshold}
+              bagEnabled={bagEnabled()}
+              localeTag={tag}
+              copy={{
+                tabsLabel: home.shop.tabsLabel,
+                worldLabels: home.products.worldLabels,
+                composition: home.shop.composition,
+                presentation: home.shop.presentation,
+                presentations: home.shop.presentations,
+                unit: home.shop.unit,
+                freeReached: home.shop.freeReached,
+                freeFrom: home.shop.freeFrom,
+                add: home.shop.add,
+                added: home.shop.added,
+                view: home.shop.view,
+              }}
+            />
+          </Container>
+        </Section>
+      ) : null}
 
       {/*
        * 03 — Quiet. THE COMPOUND RAIL.
@@ -343,6 +511,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               presentationRange: presentationRange(product),
               presentations: product.variants.length,
               ctaLabel: home.products.cta,
+              details: detailsFor(product),
+              detailsCopy,
             }))}
           />
         </Container>
@@ -424,6 +594,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                   index={String(position + 1).padStart(2, "0")}
                   ctaLabel={home.products.cta}
                   format="flagship"
+                  details={detailsFor(product)}
+                  detailsCopy={detailsCopy}
                 />
               </div>
             ))}

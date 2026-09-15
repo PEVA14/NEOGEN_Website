@@ -568,7 +568,44 @@ the module source and `check:output` fails if the route or either phrase
 reaches production output. Never promote a fixture from this module into a
 real registry.
 
-## 16. Commands
+## 16. Card reveal and storefront moments
+
+**The card reveal** (`components/ui/ProductCard`, data from
+`server/catalog#cardDetails`) is the second layer of a product card. Rules:
+
+- Every line is a registry fact, formatted on the server. Priority: approved
+  overview summary → verbatim composition (only without a summary) →
+  presentation ladder with pack prices → pack and price per vial → type and
+  areas. Never write product description copy into the card; approve an
+  overview summary instead and it appears on every card that product has.
+- Opens on fine-pointer hover (120 ms intent delay), on keyboard focus of the
+  card link, and on coarse pointers through a toggle button that is a
+  **sibling** of the link. The panel is `pointer-events: none`, so it never
+  steals the card's click. It is toned by the plate's `data-area` /
+  `data-world`; a `[data-world]` frame must reset its painted background.
+- The `feature` format has no reveal (its plate changes shape at 64rem).
+
+**Storefront moments** (`components/storefront`, data from
+`server/storefront`, arithmetic in `domain/storefront`):
+
+- Client islands receive numbers and labels, never a registry — the price map
+  stays on the server (`check:output` guards client bundles).
+- Every derivation is pure and asserted in `check:catalog`: price per vial
+  rounds to the peso, the free-shipping threshold is inclusive, a matrix shows
+  only strengths someone sells, spectrum positions are logarithmic and every
+  priced product appears exactly once.
+- Choices are derived, never curated: the matrix area is the one with the most
+  comparable products; the shop's products are the ones with a world.
+- No popularity, ranking, discount, stock or use language anywhere (the
+  dictionary guard already bans ranking words).
+- Motion must stop: the ticker pauses on hover/focus, has a pause control and
+  is static under reduced motion. Dense plots are one focusable control with an
+  announced readout and a full-size link, not dozens of tiny targets; narrow
+  screens get an equivalent list.
+- Commerce actions are gated by `bagEnabled()` on the server; when off, the
+  control is a link to the product page, never a dead button.
+
+## 17. Commands
 
 ```bash
 npm run dev          # development server

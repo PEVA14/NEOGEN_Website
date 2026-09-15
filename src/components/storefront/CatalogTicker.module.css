@@ -1,0 +1,165 @@
+/*
+ * The ticker. A hairline band, mono at 11px, full bleed. Paper ground so it
+ * reads as the first Quiet line after the hero, not as a second Impact beat.
+ */
+
+.ticker {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  border-block: 1px solid var(--border-subtle);
+  background: var(--surface-base);
+}
+
+.viewport {
+  overflow: hidden;
+  /* Fade both ends so the line enters and leaves rather than being cut. */
+  mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+}
+
+.track {
+  display: flex;
+  inline-size: max-content;
+  animation: ticker-run var(--ticker-duration, 500s) linear infinite;
+}
+
+.ticker:hover .track,
+.ticker:focus-within .track,
+.ticker[data-paused] .track {
+  animation-play-state: paused;
+}
+
+@keyframes ticker-run {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.line {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.item {
+  display: flex;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-block-size: 2.75rem;
+  padding-inline: var(--space-md);
+  border-inline-end: 1px solid var(--border-subtle);
+  color: var(--ink-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  transition:
+    color var(--motion-duration-fast) var(--ease-standard),
+    background-color var(--motion-duration-fast) var(--ease-standard);
+}
+
+.link:hover {
+  color: var(--ink-primary);
+  background: color-mix(in oklab, var(--area-wash, var(--surface-raised)) 60%, transparent);
+}
+
+.link:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: -4px;
+}
+
+.swatch {
+  inline-size: 0.375rem;
+  block-size: 0.375rem;
+  background: var(--area-ink, var(--ink-muted));
+}
+
+.name {
+  color: var(--ink-primary);
+}
+
+.range {
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.price {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-primary);
+}
+
+.from {
+  color: var(--ink-muted);
+}
+
+/* --- Control -------------------------------------------------------------- */
+
+.control {
+  display: grid;
+  place-items: center;
+  inline-size: 2.75rem;
+  border: 0;
+  border-inline-start: 1px solid var(--border-subtle);
+  background: var(--surface-base);
+  color: var(--ink-primary);
+  cursor: pointer;
+}
+
+.control:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: -4px;
+}
+
+.control [data-icon="pause"] {
+  inline-size: 0.5rem;
+  block-size: 0.625rem;
+  border-inline: 2px solid currentColor;
+}
+
+.control [data-icon="play"] {
+  inline-size: 0;
+  block-size: 0;
+  border-block: 0.3125rem solid transparent;
+  border-inline-start: 0.5rem solid currentColor;
+  margin-inline-start: 0.125rem;
+}
+
+/*
+ * REDUCED MOTION: no animation, and the line becomes a row the reader scrolls.
+ * The duplicate copy is dropped and the control is pointless, so both go.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .viewport {
+    overflow-x: auto;
+    mask-image: none;
+    scrollbar-width: thin;
+  }
+
+  .track {
+    animation: none;
+  }
+
+  .line[aria-hidden="true"],
+  .control {
+    display: none;
+  }
+
+  .ticker {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .link {
+    transition: none;
+  }
+}

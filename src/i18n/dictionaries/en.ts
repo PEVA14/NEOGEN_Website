@@ -129,7 +129,7 @@ const en: Dictionary = {
     },
 
     catalog: {
-      index: "02",
+      index: "03",
       label: "Discovery",
       title: "Explore the catalogue",
       action: "All products",
@@ -169,7 +169,7 @@ const en: Dictionary = {
 
     /** See the Spanish source for why the three-row register was replaced. */
     research: {
-      index: "03",
+      index: "06",
       label: "Research",
       title: "NEOGEN Research",
       action: "Go to research",
@@ -180,7 +180,7 @@ const en: Dictionary = {
     },
 
     quality: {
-      index: "04",
+      index: "07",
       label: "Quality",
       title: "Evidence, not seals",
       lede: "Every quality status on NEOGEN comes from a document you can open, tied to the exact presentation it examines.",
@@ -199,8 +199,64 @@ const en: Dictionary = {
       mediaLabel: "Sample pending",
     },
 
-    products: {
+    ticker: {
+      label: "Full catalog",
+      from: "From",
+      pause: "Pause the moving catalog",
+      play: "Resume the moving catalog",
+    },
+
+    matrix: {
+      index: "02",
+      label: "Presentations",
+      title: "{area}, by strength",
+      lede: "The area's compounds sold in several strengths, side by side. Every cell is the price of one pack.",
+      action: "See the area",
+      caption: "Price by strength in {area}",
+      compound: "Compound",
+      from: "From",
+      unitLabel: "Price",
+      perPack: "Per pack",
+      perVial: "Per vial",
+      packNote: "Packs of {n} vials",
+    },
+
+    spectrum: {
+      index: "04",
+      label: "Prices",
+      title: "Find your entry point",
+      lede: "All {count} compounds in the catalog, placed by entry price. Right of the line, a single pack already reaches free shipping.",
+      action: "Catalog by price",
+      plotLabel: "Compounds by entry price",
+      allAreas: "All",
+      summary: "{count} compounds · {min} to {max}",
+      threshold: "Free shipping from {price}",
+      from: "From",
+      view: "View product",
+      keys: "Use the arrow keys to move through compounds by price, and Enter to open the selected one.",
+      areaFilter: "Highlight an area",
+      under: "Up to {price}",
+    },
+
+    shop: {
       index: "05",
+      label: "Shop",
+      title: "Choose your presentation",
+      lede: "The three flagship compounds with every presentation and price. Switch world and strength without leaving the homepage.",
+      tabsLabel: "Flagship compounds",
+      composition: "Composition",
+      presentation: "Presentation",
+      presentations: "{n} in catalog",
+      unit: "{price} per vial · pack of {n}",
+      freeReached: "With this pack, your order reaches free shipping",
+      freeFrom: "Free shipping on orders from {price}",
+      add: "Add to bag",
+      added: "Added",
+      view: "View product",
+    },
+
+    products: {
+      index: "08",
       label: "Products",
       title: "Flagship compounds",
       action: "Full catalogue",
@@ -316,6 +372,14 @@ const en: Dictionary = {
   products: {
     title: "Catalog",
     detailTitle: "Product record",
+    card: {
+      open: "Show details for {name}",
+      close: "Hide details for {name}",
+      presentations: "Presentations",
+      composition: "Composition",
+      pack: "× {n} vials",
+      perVial: "{price} per vial",
+    },
     catalog: {
       index: "01",
       label: "Catalog",

@@ -39,6 +39,7 @@ import { getDictionary } from "@/i18n/getDictionary";
 import { localizePath } from "@/i18n/routing";
 import { alternates } from "@/lib/alternates";
 import { bagEnabled } from "@/payments";
+import { cardDetails, cardDetailsCopy } from "@/server/catalog";
 import { fillTemplate, presentationSummary, socialMetadata } from "@/lib/meta";
 
 import type { Metadata } from "next";
@@ -207,6 +208,10 @@ export default async function ProductPage({
     return m ? formatPrice(m, localeTags[locale]) : null;
   };
   const relatedPrice = priceFor(related);
+  /* The same reveal the catalogue cards carry, so a related card behaves like every other card. */
+  const detailsCopy = cardDetailsCopy(dict);
+  const detailsFor = (item: (typeof related)[number]) =>
+    cardDetails(item, { locale, dict, prices: relatedPriceMap });
   const materialPrice = priceFor(materials);
 
   /*
@@ -579,6 +584,8 @@ export default async function ProductPage({
                     presentationRange={presentationRange(item)}
                     presentations={item.variants.length}
                     ctaLabel={dict.home.products.cta}
+                    details={detailsFor(item)}
+                    detailsCopy={detailsCopy}
                   />
                 </div>
               ))}
@@ -625,6 +632,8 @@ export default async function ProductPage({
                     presentationRange={presentationRange(item)}
                     presentations={item.variants.length}
                     ctaLabel={dict.home.products.cta}
+                    details={detailsFor(item)}
+                    detailsCopy={detailsCopy}
                   />
                 </div>
               ))}

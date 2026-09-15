@@ -1,5 +1,6 @@
 import { matchesText } from "@/lib/search";
 
+import type { CardDetails } from "@/components/ui/ProductCard";
 import type { WorldId } from "@/config/worlds";
 
 /**
@@ -61,16 +62,11 @@ export interface CatalogProduct {
   /** True when a real photograph is registered in the media layer. */
   photographed: boolean;
   ctaLabel: string;
+  /** What the card reveals on hover, focus or tap. See `server/catalog#cardDetails`. */
+  details?: CardDetails;
 }
 
-export const LIST_FACETS = [
-  "area",
-  "category",
-  "type",
-  "format",
-  "vials",
-  "availability",
-] as const;
+export const LIST_FACETS = ["area", "category", "type", "format", "vials", "availability"] as const;
 export type ListFacet = (typeof LIST_FACETS)[number];
 
 export const FLAG_FACETS = ["flagship", "documented", "photographed"] as const;

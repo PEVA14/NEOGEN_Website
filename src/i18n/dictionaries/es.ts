@@ -140,7 +140,7 @@ const es = {
     },
 
     catalog: {
-      index: "02",
+      index: "03",
       label: "Descubrimiento",
       title: "Explora el catálogo",
       action: "Todos los productos",
@@ -188,7 +188,7 @@ const es = {
      * en el catálogo completo.
      */
     research: {
-      index: "03",
+      index: "06",
       label: "Investigación",
       title: "NEOGEN Research",
       action: "Ir a investigación",
@@ -199,7 +199,7 @@ const es = {
     },
 
     quality: {
-      index: "04",
+      index: "07",
       label: "Calidad",
       title: "Evidencia, no sellos",
       lede: "Cada estado de calidad en NEOGEN proviene de un documento que puede consultarse, vinculado a la presentación exacta que examina.",
@@ -218,8 +218,72 @@ const es = {
       mediaLabel: "Muestra pendiente",
     },
 
-    products: {
+    /**
+     * MOMENTOS COMERCIALES — añadidos a la portada, sin reemplazar ninguna
+     * sección. Todo lo que muestran sale del registro: nombres, concentraciones,
+     * precios de empaque, viales por empaque y el umbral de envío gratis
+     * confirmado. Sin popularidad, sin descuentos, sin afirmaciones.
+     */
+    ticker: {
+      label: "Catálogo completo",
+      from: "Desde",
+      pause: "Pausar el catálogo en movimiento",
+      play: "Reanudar el catálogo en movimiento",
+    },
+
+    matrix: {
+      index: "02",
+      label: "Presentaciones",
+      /* "{area}" es el nombre corto del área — "Metabolismo". */
+      title: "{area}, por concentración",
+      lede: "Los compuestos del área que se venden en varias concentraciones, lado a lado. Cada celda es el precio de un empaque.",
+      action: "Ver el área",
+      caption: "Precio por concentración en {area}",
+      compound: "Compuesto",
+      from: "Desde",
+      unitLabel: "Precio",
+      perPack: "Por empaque",
+      perVial: "Por vial",
+      packNote: "Empaques de {n} viales",
+    },
+
+    spectrum: {
+      index: "04",
+      label: "Precios",
+      title: "Encuentra tu punto de entrada",
+      lede: "Los {count} compuestos del catálogo, colocados por su precio de entrada. A la derecha de la línea, un solo empaque ya alcanza el envío gratis.",
+      action: "Catálogo por precio",
+      plotLabel: "Compuestos por precio de entrada",
+      allAreas: "Todas",
+      summary: "{count} compuestos · de {min} a {max}",
+      threshold: "Envío gratis desde {price}",
+      from: "Desde",
+      view: "Ver producto",
+      keys: "Usa las flechas para recorrer los compuestos por precio y Enter para abrir el seleccionado.",
+      areaFilter: "Resaltar un área",
+      under: "Hasta {price}",
+    },
+
+    shop: {
       index: "05",
+      label: "Tienda",
+      title: "Elige tu presentación",
+      lede: "Los tres compuestos insignia con todas sus presentaciones y precios. Cambia de mundo y de concentración sin salir de la portada.",
+      tabsLabel: "Compuestos insignia",
+      composition: "Composición",
+      presentation: "Presentación",
+      presentations: "{n} en catálogo",
+      /* "$650 por vial · empaque de 10" */
+      unit: "{price} por vial · empaque de {n}",
+      freeReached: "Con este empaque, tu pedido alcanza el envío gratis",
+      freeFrom: "Envío gratis en pedidos desde {price}",
+      add: "Añadir al carrito",
+      added: "Añadido",
+      view: "Ver producto",
+    },
+
+    products: {
+      index: "08",
       label: "Productos",
       title: "Compuestos insignia",
       action: "Catálogo completo",
@@ -352,6 +416,22 @@ const es = {
      * dropdowns; they are named once, as pending, the same way the product
      * page treats its variant selector.
      */
+    /**
+     * LO QUE REVELA UNA TARJETA — al pasar el cursor, al enfocar o con el botón
+     * «+» en pantallas táctiles. Solo datos del registro: presentaciones con su
+     * precio, empaque, precio por vial, tipo y áreas. `{name}` lo completa la
+     * tarjeta.
+     */
+    card: {
+      open: "Ver detalles de {name}",
+      close: "Ocultar detalles de {name}",
+      presentations: "Presentaciones",
+      composition: "Composición",
+      /* "× 10 viales" — viales por empaque */
+      pack: "× {n} viales",
+      /* "$390 por vial" */
+      perVial: "{price} por vial",
+    },
     catalog: {
       index: "01",
       label: "Catálogo",

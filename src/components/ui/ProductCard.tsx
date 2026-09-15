@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRef } from "react";
+import { useId, useRef, useState } from "react";
 
 import { Mono } from "@/components/typography";
 import { SpecimenPlate } from "@/components/ui/SpecimenPlate";
@@ -29,6 +29,36 @@ import type { DiscoveryAreaId } from "@/data/discovery";
  * it, not by the product's own record.
  */
 export type ProductCardFormat = "standard" | "feature" | "flagship";
+
+/**
+ * What a card reveals beyond its face. Built on the server by
+ * `server/catalog#cardDetails`; every field is a registry fact, already
+ * formatted. See that builder for the priority order.
+ */
+export interface CardDetails {
+  /** Approved overview summary. Null for every product today. */
+  summary: string | null;
+  /** Verbatim composition, where the source printed one and there is no summary. */
+  composition: string | null;
+  /** Every presentation, with its pack price where one is set. */
+  ladder: readonly { label: string; price: string | null }[];
+  /** "10 viales por empaque". */
+  pack: string | null;
+  /** Unit price of the cheapest pack — "$390 por vial". */
+  perVial: string | null;
+  /** Product type label — "Compuesto". */
+  type: string | null;
+  /** Short names of every public area the product is filed under. */
+  areas: readonly string[];
+}
+
+export interface CardDetailsCopy {
+  /** "Ver detalles de {name}" — the touch toggle's accessible name. */
+  open: string;
+  close: string;
+  presentations: string;
+  composition: string;
+}
 
 export interface ProductCardProps {
   /** Identity key: the link, the media lookup and the plate all read it. */
@@ -59,6 +89,9 @@ export interface ProductCardProps {
   headingLevel?: 2 | 3;
   /** Composition role. See `ProductCardFormat`. */
   format?: ProductCardFormat;
+  /** The reveal. Absent → the card is exactly its face, as before. */
+  details?: CardDetails;
+  detailsCopy?: CardDetailsCopy;
 }
 
 /**
@@ -103,8 +136,15 @@ export function ProductCard({
   ctaLabel,
   headingLevel = 3,
   format = "standard",
+  details,
+  detailsCopy,
 }: ProductCardProps) {
   const warmed = useRef(false);
+  const revealId = useId();
+  const [open, setOpen] = useState(false);
+  /* The feature card's plate changes shape at 64rem; the reveal is sized to the
+     4:5 plate, so it belongs to the formats that always have one. */
+  const reveals = Boolean(details && detailsCopy) && format !== "feature";
   const still = stillMedia(slug);
   const Heading = `h${headingLevel}` as "h2" | "h3";
 
@@ -139,6 +179,7 @@ export function ProductCard({
          its hairlines and its ink from one attribute — the same mechanism the
          plate uses, rather than a second palette for cards. */
       data-world={format === "flagship" ? (world ?? undefined) : undefined}
+      data-reveal={reveals ? (open ? "open" : "closed") : undefined}
       onPointerEnter={warm}
     >
       {/*
@@ -211,6 +252,114 @@ export function ProductCard({
 
         <span className={styles.cta}>{ctaLabel}</span>
       </Link>
+
+      {reveals && details && detailsCopy ? (
+        <>
+          {/* Toned like the plate it covers — the same `data-area` / `data-world`
+              scope — so the record reads as the back of the specimen. */}
+          <div
+            className={styles.reveal}
+            data-area={world ? undefined : (areaId ?? undefined)}
+            data-world={world ?? undefined}
+          >
+            <CardReveal id={revealId} details={details} copy={detailsCopy} />
+            {/*
+             * THE TOUCH EQUIVALENT. Hover does not exist on a phone, so the
+             * reveal has a button of its own: a sibling of the link, never
+             * inside it (an interactive element in an anchor is invalid and
+             * unreachable in a sensible order). Shown only where the primary
+             * pointer is coarse — a mouse user gets the reveal on hover and a
+             * keyboard user on focus, without a second tab stop per card.
+             */}
+            <button
+              type="button"
+              className={styles.revealToggle}
+              aria-expanded={open}
+              aria-controls={revealId}
+              aria-label={(open ? detailsCopy.close : detailsCopy.open).replace("{name}", name)}
+              onClick={() => setOpen((value) => !value)}
+            >
+              <span aria-hidden="true" />
+            </button>
+          </div>
+        </>
+      ) : null}
     </article>
+  );
+}
+
+/**
+ * THE REVEAL — laid over the plate, anchored to its foot.
+ *
+ * The plate is identity; the reveal is the record behind it. It rises over
+ * the plate rather than replacing it, so the top of the specimen — the name
+ * crop and the index mark — stays visible and the card never loses who it is.
+ *
+ * `pointer-events: none` throughout: a click anywhere on the revealed panel
+ * still lands on the card's link underneath, so revealing never costs a click.
+ * Density follows the data — a blend with a printed composition, a compound
+ * with a seven-step ladder and a solvent with one volume all get the blocks
+ * they have and nothing else.
+ */
+function CardReveal({
+  id,
+  details,
+  copy,
+}: {
+  id: string;
+  details: CardDetails;
+  copy: CardDetailsCopy;
+}) {
+  /*
+   * The ladder yields to the text above it, so the panel always fits the plate
+   * at the narrowest grid width: five rows alone, four under a composition,
+   * three under a summary. The rest fold into a count.
+   */
+  const cap = details.summary ? 3 : details.composition ? 4 : 5;
+  const shown = details.ladder.slice(0, cap);
+  const hidden = details.ladder.length - shown.length;
+  const meta = [details.type, ...details.areas].filter(Boolean).join(" · ");
+
+  return (
+    <div id={id} className={styles.revealPanel}>
+      <div className={styles.revealBody}>
+        {details.summary ? <p className={styles.revealSummary}>{details.summary}</p> : null}
+
+        {details.composition ? (
+          <p className={styles.revealComposition}>
+            <span className={styles.revealLabel}>{copy.composition}</span>
+            {details.composition}
+          </p>
+        ) : null}
+
+        <div className={styles.revealLadder}>
+          <span className={styles.revealHead}>
+            <span className={styles.revealLabel}>{copy.presentations}</span>
+            {details.pack ? <span className={styles.revealLabel}>{details.pack}</span> : null}
+          </span>
+          <ul>
+            {shown.map((row) => (
+              <li key={row.label}>
+                <span>{row.label}</span>
+                {row.price ? (
+                  <>
+                    <span className={styles.revealLeader} aria-hidden="true" />
+                    <span className={styles.revealPrice}>{row.price}</span>
+                  </>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+          {hidden > 0 ? <span className={styles.revealMore}>+{hidden}</span> : null}
+        </div>
+
+        {details.perVial || meta ? (
+          <p className={styles.revealMeta}>
+            {details.perVial ? <span>{details.perVial}</span> : null}
+            {meta ? <span>{meta}</span> : null}
+          </p>
+        ) : null}
+      </div>
+    </div>
   );
 }

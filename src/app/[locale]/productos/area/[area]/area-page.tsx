@@ -241,6 +241,7 @@ export async function renderAreaPage({
     dict,
     primaryArea: area.id,
     registries: sources?.quality,
+    overviews: sources?.research.overviews,
   });
 
   /* ---- the spine, numbered from what renders ----------------------------- */

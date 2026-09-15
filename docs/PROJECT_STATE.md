@@ -1,6 +1,6 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-09-14**, after Phase 12.1.
+Last updated **2026-09-15**, after the card reveal and homepage commerce layer (§8d).
 
 This file is the memory of the project for a new session. It records what is
 not derivable from the code: where the phases stand, how the owner runs the
@@ -25,7 +25,9 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 | `2281321`   | Phase 10 — checkout, order persistence boundary, payment-event idempotency, policy architecture                                 |
 | `b6032c3`   | Phase 11 — trust architecture, content foundation, research integration                                                         |
 | `fb3b7aa`   | Phase 12 — creative overhaul: specimen plate, card formats, area identity, homepage rail, area mastheads                        |
-| _this_      | Phase 12.1 — discovery area depth: data-derived sections after the masthead                                                     |
+| `4ab9b9a`   | Phase 12.1 — discovery area depth: data-derived sections after the masthead                                                     |
+| `541c61b`   | Catalogue filtering, area index, search field, area design preview (§8c)                                                        |
+| _this_      | Card reveal and homepage commerce layer (§8d)                                                                                   |
 
 **Phase 12.1 is complete. Phase 13 has not been started or approved.** Do not
 begin it without a brief from the owner.
@@ -302,14 +304,15 @@ Owner request (2026-09-15), not a numbered phase:
   pack size, price range, flagship; sort by index, name A–Z / Z–A, price ↑ / ↓,
   most presentations; grid or register view. State lives in the URL. The
   sidebar can be hidden on desktop ("Ocultar filtros"). The presentation-count
-  facet was removed at the owner's request.
+  facet was removed at the owner's request. Availability, documentation and
+  photography filters appear automatically once that data exists. All eight
+  areas now use the browser.
 - **Catalogue entrance** — the one-line area strip became a compact area index
   (swatch, name, count, size gauge; hover wash), and search became a refined
   hairline field with result count, clear and a `/` shortcut. A first, louder
   version (display-size tiles, charcoal search slab with suggestions) was
   rejected by the owner as too big; direction is "elegant first, simplicity
-  that shines". Availability, documentation and photography filters appear
-  automatically once that data exists. All eight areas now use the browser.
+  that shines".
 - **Area design preview** at `…/area/<slug>/vista-previa`, development only, so
   the owner can see context, research and evidence before real sources
   exist. Sample data is visibly marked and cannot ship (CONVENTIONS §15).
@@ -319,6 +322,71 @@ Owner request (2026-09-15), not a numbered phase:
   QA 0 axe / 0 overflow / 0 sub-44px at 375, 768, 1440 on catalogue and area
   pages; preview is a real 404 in production. Initial JS: catalogue 189.8 KB
   gzip (was 186.8), area 193.5 KB (was 190.4).
+
+## 8d. Card reveal and the homepage commerce layer
+
+Owner request (2026-09-15, overnight, autonomous): make catalogue browsing
+reveal more per product, and give the homepage "more ecommerce show" without
+removing any section. Not a numbered phase.
+
+**Product cards — the reveal.**
+
+- Every standard and flagship card (catalogue, area pages, homepage rail and
+  flagships, PDP related/materials) carries a panel that rises over the plate:
+  on hover with a fine pointer (120 ms intent delay), on keyboard focus, and on
+  touch through a 44 px "+" toggle on the plate's top-right corner (coarse
+  pointers only; it is a sibling of the card link, never inside it). Clicks on
+  the panel still open the product.
+- Content, in priority order, all registry facts built on the server
+  (`server/catalog#cardDetails`): an approved overview **summary** (none exist —
+  the slot is live, and `publicCopy` refuses scientific or unapproved copy); the
+  verbatim **composition** where the source printed one; the full
+  **presentation ladder** with each pack's price (capped 5/4/3 rows depending
+  on what sits above it); **pack size** and **price per vial** of the cheapest
+  pack; **product type** and every public **area**.
+- The panel is toned like its plate (`data-area` / `data-world`). The design
+  preview (`…/area/metabolica/vista-previa`) now includes a marked sample
+  summary so the description variant can be reviewed.
+
+**Homepage — four added commercial moments** (sections renumbered 01–08; no
+existing section removed or restyled):
+
+1. **Catalogue ticker** under the hero — every published product (area swatch,
+   name, range, entry price) moving slowly; pauses on hover/focus, has a pause
+   button (WCAG 2.2.2), static scrollable row under reduced motion.
+2. **02 Presentation matrix** after RETA — strengths × products for the area
+   with the most multi-strength solid products (derived: Metabolismo, RETA
+   first); per-pack / per-vial toggle; CSS `:has()` row-and-column crosshair.
+3. **04 Price spectrum** after discovery — all 85 products on a log price axis,
+   stacked, coloured by area, with the owner-confirmed MX$10,000 free-shipping
+   line drawn on the axis; area highlight chips; one focusable plot walked by
+   arrow keys with an announced readout and a 44 px link; price bands
+   (`<details>`) below 48rem.
+4. **05 Flagship shop** after GLOW — RETA / GLOW / GHK-Cu tabs (GLOW opens
+   selected), presentation radios with prices, live price, price per vial, pack,
+   whether that pack alone reaches free shipping, and add-to-bag gated by
+   `bagEnabled()` (off today, so it offers the product page instead).
+
+All figures go through `domain/storefront` (pure; `check:catalog` drives it
+with fixtures and the real registries — two negative controls confirmed).
+Nothing ranks by popularity, discounts, estimates stock or states a use.
+
+**Also:** the PDP presentation ladder now wraps on phones instead of scrolling
+(axe `scrollable-region-focusable` at 375 px — pre-existing).
+
+**Experimental — review first:** the ticker (motion right under the hero), the
+price spectrum's density and area colours, and whether the flagship shop and
+the closing flagship cards (08) now say the same thing twice.
+
+**Gates:** all `npm run check` gates pass. Production QA: 0 axe WCAG 2.2 A/AA
+violations, no horizontal overflow, no sub-44 px targets on `/es` at
+375/768/1280/1440/1728, `/en` at 375, catalogue at 375/1440, a PDP and an area
+page at 375/1440 — including every card reveal open and the interactive states.
+Initial JS gzip: home 202.7 KB (was 196.8), catalogue 191.7 (189.8), PDP 194.6
+(193.1), area 195.3 (193.5); three.js still absent from every initial payload.
+
+**Not built, flagged:** the owner's "for research purposes only" line (§4) is
+still not rendered anywhere a product is sold, including the new shop counter.
 
 ## 9. Recommendation for Phase 13 (not approved)
 

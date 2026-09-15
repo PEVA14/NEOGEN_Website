@@ -95,7 +95,16 @@ export function areaPreviewSources(
   const overviews: Record<string, ProductOverview> = {
     [a.slug]: {
       slug: a.slug,
-      summary: null,
+      /* Shows the card reveal's description slot — the first thing a card
+         shows once a real summary is approved. */
+      summary: {
+        id: "fx-a-summary",
+        text: {
+          es: "[MUESTRA FICTICIA] Aquí aparecerá el resumen aprobado del producto, en dos o tres líneas, sobre su tarjeta y su ficha.",
+          en: "[FICTIONAL SAMPLE] The product's approved summary will appear here, in two or three lines, on its card and its page.",
+        },
+        provenance: approved("business-decision"),
+      },
       researchContext: [
         statement(
           "fx-a-context",
