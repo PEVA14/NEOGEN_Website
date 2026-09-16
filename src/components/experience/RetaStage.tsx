@@ -1,15 +1,17 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Suspense, useCallback, useRef, useState, type ReactNode } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import type { WorldEnvironment } from "@/config/worlds";
 import type { ProductImage } from "@/content/media";
+import { useFinePointer } from "@/hooks/useFinePointer";
 import { useSectionProgress } from "@/hooks/useSectionProgress";
 
 import { CanvasErrorBoundary } from "./CanvasErrorBoundary";
 import { useVialStage } from "./useVialStage";
 import { VialFallback } from "./VialFallback";
+import type { PointerState } from "./VialModel";
 import styles from "./RetaExperience.module.css";
 
 /**
@@ -61,6 +63,79 @@ export function RetaStage({
   const track = useRef<HTMLDivElement>(null);
   const { tier, reducedMotion, palette, canRender3D } = useVialStage(track, { modelPath });
 
+  /*
+   * THE TURNTABLE'S DRIVE.
+   *
+   * Listeners sit on the pinned viewport, not the track: the track is three
+   * viewports tall, so half of it is off screen and a cursor there is nowhere
+   * near the object. A cached rect, re-read on entry, rather than a
+   * measurement per move — the stage does not resize mid-traverse.
+   *
+   * Refs, never state: this updates on every pointer move and the Canvas
+   * subtree must not re-render for it.
+   */
+  const frame = useRef<HTMLDivElement>(null);
+  const pointer = useRef<PointerState>({ x: 0, y: 0, active: false, turn: 0 });
+  const finePointer = useFinePointer();
+
+  useEffect(() => {
+    const node = frame.current;
+    // No cursor to answer on touch, and nothing should turn for a reader who
+    // asked for stillness.
+    if (!node || !finePointer || reducedMotion) return;
+
+    // Captured once: `pointer` is a ref this component owns and never
+    // reassigns, so the cleanup must not reach through `.current` (the lint
+    // rule is right in general — a ref read at cleanup time can be a different
+    // object than the one the effect set up with).
+    const drive = pointer.current;
+
+    let box = node.getBoundingClientRect();
+    let last: number | null = null;
+
+    const enter = (event: PointerEvent) => {
+      box = node.getBoundingClientRect();
+      last = box.width > 0 ? (event.clientX - box.left) / box.width : null;
+    };
+
+    const move = (event: PointerEvent) => {
+      if (box.width === 0 || box.height === 0) return;
+
+      const x = (event.clientX - box.left) / box.width;
+      const y = (event.clientY - box.top) / box.height;
+
+      // One traverse of the stage is one full revolution. Accumulating the
+      // travel — rather than mapping x to an angle — is what lets the object
+      // KEEP the angle it reached when the cursor leaves, instead of unwinding
+      // backwards to a resting offset.
+      if (last !== null) drive.turn += (x - last) * Math.PI * 2;
+      last = x;
+
+      drive.x = x * 2 - 1;
+      drive.y = y * 2 - 1;
+      drive.active = true;
+    };
+
+    const leave = () => {
+      last = null;
+      drive.active = false;
+    };
+
+    node.addEventListener("pointerenter", enter);
+    node.addEventListener("pointermove", move);
+    node.addEventListener("pointerleave", leave);
+
+    return () => {
+      node.removeEventListener("pointerenter", enter);
+      node.removeEventListener("pointermove", move);
+      node.removeEventListener("pointerleave", leave);
+      // `turn` deliberately survives: it is where the object currently is, and
+      // zeroing it here would spin the vial back on any re-subscribe.
+      last = null;
+      drive.active = false;
+    };
+  }, [finePointer, reducedMotion]);
+
   const [beat, setBeat] = useState(0);
 
   // Derives the active beat without a second scroll listener. Called from the
@@ -80,6 +155,7 @@ export function RetaStage({
   return (
     <div ref={track} className={styles.track} data-tier={tier}>
       <div
+        ref={frame}
         className={styles.viewport}
         // Drives which copy beat is lit. Under reduced motion the stylesheet
         // ignores this and shows every beat at once.
@@ -113,6 +189,7 @@ export function RetaStage({
                   reducedMotion={reducedMotion}
                   tier={tier}
                   variant="sequence"
+                  pointer={finePointer ? pointer : undefined}
                 />
               </Suspense>
             </CanvasErrorBoundary>

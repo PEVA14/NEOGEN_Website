@@ -125,7 +125,9 @@ export function ProductStage({
    * drifts out of it on wide screens.
    */
   const anchor = useRef<StageAnchor | null>(null);
-  const pointer = useRef<PointerState>({ x: 0, y: 0, active: false });
+  // `turn` is the homepage turntable's accumulated cursor drive; the presenter
+  // ignores it and keeps its restrained yaw response.
+  const pointer = useRef<PointerState>({ x: 0, y: 0, active: false, turn: 0 });
 
   /** The media frame, as fractions of the canvas box. */
   const measure = useCallback((): StageAnchor | null => {
@@ -181,6 +183,7 @@ export function ProductStage({
         x: ((event.clientX - box.left) / box.width) * 2 - 1,
         y: ((event.clientY - box.top) / box.height) * 2 - 1,
         active: true,
+        turn: pointer.current.turn,
       };
     };
 
@@ -196,7 +199,7 @@ export function ProductStage({
       node.removeEventListener("pointerenter", enter);
       node.removeEventListener("pointermove", move);
       node.removeEventListener("pointerleave", leave);
-      pointer.current = { x: 0, y: 0, active: false };
+      pointer.current = { x: 0, y: 0, active: false, turn: 0 };
     };
   }, [finePointer, reducedMotion]);
 

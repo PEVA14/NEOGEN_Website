@@ -473,6 +473,50 @@ focusable links inside it (axe `aria-hidden-focus`). The panel is the wide
 screen's real preview, so the fix was to remove the attribute — the phone's
 inline copies are `display: none` at that width, so nothing is announced twice.
 
+## 8f. The RETA vial became a turntable
+
+Owner request (2026-09-16), about the homepage RETA section: "my idea has
+always been for the vial to be small and rotating in the middle, with it being
+FULLY responsive to the mouse — if the mouse hovers on the left and goes to the
+right, the bottle spins a full circle." Reference: the framed, contained vial
+in `references/neogen-home-v1.png`.
+
+- **The four-state camera move is gone.** `choreography.ts`'s `FULL` and
+  `COMPACT` tracks used to travel: a reveal, a hard crop into the shoulder and
+  neck, a reframe, a resolve. Both are now a single held pose repeated across
+  every stop — centred, `scale 0.66` (desktop) / `0.52` (compact), the ~-15°
+  diagonal preserved. **The two are mutually exclusive:** an object that
+  travels and crops cannot also be one the cursor turns, because scroll and
+  pointer end up fighting for the same axis.
+- **The cursor drives an accumulated turn**, not an angle. `PointerState` gained
+  `turn`, summed from horizontal travel in `RetaStage` at 2π per stage width;
+  `VialModel`'s new `sequence` branch damps it in (`TURN_SETTLE 6`) on top of
+  the passive spin. Accumulating rather than mapping position is what lets the
+  vial KEEP the angle it reached — an absolute mapping unwinds the object
+  backwards the moment the cursor leaves, which is not what was asked for.
+- **Listeners sit on the pinned viewport, not the track** (the track is three
+  viewports tall, so most of it is nowhere near the object), and are gated on
+  `useFinePointer` and `!reducedMotion`. Touch keeps the passive turn only.
+- **The backdrop's light pool was re-centred** (`GLOW_CENTRE`), since it existed
+  to sit behind a subject that used to travel. Only the `full` scope reads it,
+  and only this sequence uses that scope, so the hero and PDP are untouched.
+- Scroll still drives the copy beats and the rim's breathing. Nothing was
+  removed from the copy.
+
+**Measured, not assumed** (1440×900, dev): one traverse of the stage = **0.998
+turns**; passive spin **0.0852 rad/s** against the 0.085 constant; **0.009 rad**
+residual two seconds after the cursor leaves, i.e. the angle is kept and does
+not unwind; vial occupies **38.6% of canvas height / 21.5% of width**, centred
+at **50.2% × 49.6%**. Regression: the hero holds its own track (68.9% height,
+centred 68.2%) and the PDP presenter still answers a full-stage sweep with
+**0.138 rad** — its ~8° cap — versus the sequence's 6.27.
+
+**Verification note.** R3F keeps its store in React context, so the scene
+cannot be read from outside the Canvas. These numbers came from a temporary
+dev-only handle that published the R3F state on `window`; **it was removed
+before committing.** Re-add it the same way if this ever needs measuring again
+— screenshots cannot show rotation over time.
+
 ## 9. Recommendation for Phase 13 (not approved)
 
 Photography and first evidence together, for RETA, GLOW and GHK-Cu: shoot the

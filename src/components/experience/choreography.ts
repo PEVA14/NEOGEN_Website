@@ -62,60 +62,59 @@ export interface PoseTrack {
 }
 
 /*
- * FOUR MOMENTS IN ONE CAMERA MOVE — not four slides.
+ * THE SPECIMEN ON A TURNTABLE — one held pose, not four camera moves.
  *
- * Framing is driven by `scale` together with `offsetZ`. Translating the subject
- * toward the camera changes foreshortening exactly as a dolly does, so the
- * sequence gets real perspective change and controlled CROPPING without
- * mutating the camera object R3F owns.
+ * This track used to travel: a reveal, a hard crop into the shoulder and neck,
+ * a reframe, a resolve. It was built as cinema, and as cinema it worked — but
+ * the section's intent was always a SMALL object held in the middle of the
+ * frame, turning, and answerable to the cursor.
  *
- * Apparent size is proportional to scale / (CAMERA_Z - offsetZ), which makes
- * the desktop progression roughly:
+ * Those two are mutually exclusive. An object that travels and crops cannot
+ * also be a thing you turn: the scroll keeps pulling it out from under the
+ * pointer, and the cursor is left arguing with the choreography for control of
+ * the same axis. So the pose is now CONSTANT — centred, small, diagonal — and
+ * every stop below holds the same value.
  *
- *   01 REVEAL     1.00x   whole silhouette, ~51% of frame height
- *   02 MATERIAL   2.19x   a deliberate detail: shoulder, neck, top of label
- *   03 COMPOSITION 1.37x  reframed, sharing the composition with the copy
- *   04 RESOLVE    1.02x   full silhouette again — the visual conclusion
+ * What scroll still drives: the copy beats, and the rim breathing across the
+ * sequence. What the pointer drives: rotation, in `VialModel`.
  *
- * 02 was pulled back from 2.66x: at that distance the crop filled the frame
- * with reflection rather than with product, which is cinematically empty. The
- * goal is product photography, not maximum scale.
- *
- * The diagonal never resolves to vertical: `rotationZ` stays between roughly
- * -13 and -26 degrees throughout, so every state reads as a considered
- * attitude rather than an object standing up straight.
+ * The diagonal never resolves to vertical: `rotationZ` holds ~-15 degrees, so
+ * the object reads as a considered attitude rather than standing up straight.
  */
 const FULL: PoseTrack = {
-  offsetX: [0.17, -0.05, 0.18, 0.03],
-  // 02 sits LOW in frame on purpose: dropping the vial pushes the shoulder,
-  // neck and the top of the label into the centre of the shot, which is the
-  // deliberate detail that state is meant to frame.
-  offsetY: [0.02, -0.15, 0.06, 0.0],
-  offsetZ: [-0.25, 0.65, 0.15, -0.45],
-  scale: [1.05, 1.8, 1.3, 1.12],
-  rotationY: [-0.95, -0.35, 0.65, 1.25],
-  rotationZ: [-0.34, -0.26, -0.44, -0.32],
-  rotationX: [-0.1, 0.02, -0.13, -0.05],
+  offsetX: [0, 0, 0, 0],
+  offsetY: [0, 0, 0, 0],
+  offsetZ: [0, 0, 0, 0],
+  // Apparent size is scale / (CAMERA_Z - offsetZ). At this distance 1.0 filled
+  // roughly half the frame height; this lands near a third of it, which is the
+  // proportion the figma frames the vial at — an object inside the
+  // composition rather than the composition itself.
+  scale: [0.66, 0.66, 0.66, 0.66],
+  // The base attitude only. The passive turn and the cursor's accumulated
+  // travel are added on top of this, per frame.
+  rotationY: [0, 0, 0, 0],
+  rotationZ: [-0.26, -0.26, -0.26, -0.26],
+  rotationX: [-0.05, -0.05, -0.05, -0.05],
   rimIntensity: [8, 10, 12, 7],
 };
 
 /*
- * COMPACT — its own composition, not a shrunken desktop one.
+ * COMPACT — the same turntable, composed for a portrait frame.
  *
- * The vial sits near centre and high so copy owns the lower half of a portrait
- * screen. Travel, crop and rotation are all reduced, for the same reason
- * `motion.css` lowers cinematic amplitude below 48rem: on a small screen, less
- * movement reads as more control. State 02 still crops, but far less severely —
- * a heavy crop on a narrow viewport loses the object entirely.
+ * Lifted above centre because the copy owns the lower half of a phone screen,
+ * and smaller again: the same world scale reads much larger in a narrow frame.
+ * There is no pointer here — `useFinePointer` is false on touch — so the
+ * passive turn is the whole of the motion, which is also why it never needs to
+ * compete with a cursor for the same axis.
  */
 const COMPACT: PoseTrack = {
-  offsetX: [0.03, 0.0, 0.05, 0.0],
-  offsetY: [0.15, 0.02, 0.16, 0.12],
-  offsetZ: [-0.2, 0.35, 0.05, -0.4],
-  scale: [0.9, 1.25, 1.0, 0.92],
-  rotationY: [-0.6, -0.25, 0.5, 0.9],
-  rotationZ: [-0.28, -0.22, -0.36, -0.27],
-  rotationX: [-0.07, 0.02, -0.1, -0.04],
+  offsetX: [0, 0, 0, 0],
+  offsetY: [0.12, 0.12, 0.12, 0.12],
+  offsetZ: [0, 0, 0, 0],
+  scale: [0.52, 0.52, 0.52, 0.52],
+  rotationY: [0, 0, 0, 0],
+  rotationZ: [-0.24, -0.24, -0.24, -0.24],
+  rotationX: [-0.04, -0.04, -0.04, -0.04],
   rimIntensity: [8, 10, 12, 7],
 };
 

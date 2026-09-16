@@ -338,7 +338,18 @@ What a V1 product viewer does:
 
 - holds a stable composition, anchored to a measured DOM box;
 - turns slowly and passively — the `presenter` variant in `choreography.ts`;
-- answers the cursor subtly on fine pointers only, damped, never required;
+- answers the cursor on fine pointers only, damped, and never required —
+  but at two different amplitudes, which is a deliberate split:
+  - **`presenter` (the PDP)** stays a vitrine. Yaw is capped at ~8°, pitch at a
+    third of that, and the cursor is a hint that the object is real.
+  - **`sequence` (the homepage RETA section)** is a turntable. One traverse of
+    the stage is one full revolution (measured: 0.998 turns across an exact
+    stage width), and the travel is ACCUMULATED rather than mapped from cursor
+    position, so the object keeps the angle it was left at instead of unwinding
+    when the cursor leaves. Its vial holds one centred pose at ~39% of canvas
+    height; it no longer travels or crops across four camera states, because an
+    object that travels cannot also be one you turn — scroll and cursor end up
+    fighting for the same axis;
 - resolves to a held pose under `prefers-reduced-motion`, with
   `frameloop="demand"`;
 - degrades to a static silhouette with no WebGL, and takes the cheap glass path

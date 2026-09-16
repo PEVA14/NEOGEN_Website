@@ -17,10 +17,16 @@ import type { WorldPalette } from "./worldPalette";
  */
 const GLOW_RADIUS = 0.44;
 
-/** Where the pool of light sits, as fractions of the plane. Behind the vial. */
+/**
+ * Where the pool of light sits, as fractions of the plane. Behind the vial —
+ * which the sequence now holds in the CENTRE of the frame, so the pool is
+ * centred with it. (It used to sit right of centre, tracking a subject that
+ * travelled.) Only the `full` scope reads this, and only the homepage sequence
+ * uses that scope, so the hero and the PDP are untouched.
+ */
 const GLOW_CENTRE: Record<StageTier, { x: number; y: number }> = {
-  full: { x: 0.6, y: 0.46 },
-  compact: { x: 0.52, y: 0.36 },
+  full: { x: 0.5, y: 0.5 },
+  compact: { x: 0.5, y: 0.4 },
 };
 
 /**

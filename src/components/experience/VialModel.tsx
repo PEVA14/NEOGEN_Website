@@ -49,11 +49,29 @@ const POINTER_SHIFT = 0.012;
 /** Damping rate. Low, so the object eases rather than tracks. */
 const POINTER_SETTLE = 2.4;
 
+/**
+ * Damping for the sequence's cursor drive. Much higher than the presenter's:
+ * there the pointer is a hint and lag reads as weight, here the cursor IS the
+ * turntable and lag reads as the object ignoring you.
+ */
+const TURN_SETTLE = 6;
+
 /** Cursor position over the stage, in -1..1, plus whether it is over it at all. */
 export interface PointerState {
   x: number;
   y: number;
   active: boolean;
+  /**
+   * Accumulated rotation the cursor has driven, in radians — the homepage
+   * sequence's turntable.
+   *
+   * ACCUMULATED, NOT ABSOLUTE. Mapping cursor x straight to an angle means the
+   * object unwinds the moment the cursor leaves the stage, and hands back a
+   * reversed spin nobody asked for. Accumulating travel instead means one pass
+   * across the stage is one full turn, and the object keeps the angle it
+   * reached. The presenter ignores this field.
+   */
+  turn: number;
 }
 
 /**
@@ -233,7 +251,9 @@ export function VialModel({
     // The presenter has a real, continuous rotation; the decorative sway that
     // gives the campaign sequences presence would only fight it.
     const idleSpin =
-      time === null || variant === "presenter" ? 0 : Math.sin(time * 0.35) * IDLE_ROTATION;
+      time === null || variant === "presenter" || variant === "sequence"
+        ? 0
+        : Math.sin(time * 0.35) * IDLE_ROTATION;
     const idleLift = time === null ? 0 : Math.sin(time * 0.45) * IDLE_FLOAT;
 
     const z = sampleTrack(at, track.offsetZ);
@@ -338,6 +358,28 @@ export function VialModel({
         pose.rotY + spin.current + yaw.current,
         pose.rotZ,
       );
+      node.scale.setScalar(pose.scale);
+      return;
+    }
+
+    /*
+     * SEQUENCE — the homepage turntable.
+     *
+     * The pose is constant now, so there is nothing for position or scale to
+     * ease into and they are assigned directly; damping a value that never
+     * changes only adds lag on the first frames. All of the movement is
+     * rotation: the passive turn accumulates (so a backgrounded tab resumes
+     * instead of jumping, rAF having stopped while it was away), and the
+     * cursor's accumulated travel is damped in on top of it.
+     */
+    if (variant === "sequence" && !reducedMotion) {
+      const pose = applyPose(progress.current, state.clock.elapsedTime);
+
+      spin.current += delta * SPIN_RATE;
+      yaw.current = MathUtils.damp(yaw.current, pointer?.current.turn ?? 0, TURN_SETTLE, delta);
+
+      node.position.set(pose.x, pose.y, pose.z);
+      node.rotation.set(pose.rotX, pose.rotY + spin.current + yaw.current, pose.rotZ);
       node.scale.setScalar(pose.scale);
       return;
     }
