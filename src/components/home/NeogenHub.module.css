@@ -297,11 +297,12 @@
   gap: var(--space-sm);
 }
 
-/* Capped and left-aligned: at full width three plates would become posters. */
+/* Capped and centred: at full width three plates would become posters, and
+   packed left they left a third of the panel empty. */
 @media (min-width: 64rem) {
   .plates {
     grid-template-columns: repeat(auto-fit, minmax(9rem, 11rem));
-    justify-content: start;
+    justify-content: center;
     gap: var(--space-md);
   }
 }
@@ -638,7 +639,18 @@
     border: 1px solid var(--border-subtle);
     border-block-start: 0;
     background: color-mix(in oklab, var(--neogen-paper) 4%, transparent);
-    min-block-size: 20rem;
+  }
+
+  /*
+   * ONE HEIGHT FOR EVERY PREVIEW. The five differ wildly — four plates are
+   * ~17rem tall, the evidence rule is two lines — and letting the panel size
+   * to its content made the rest of the page jump on every switch. The body
+   * holds the tallest preview and centres whatever is shorter inside it.
+   */
+  .panelBody {
+    min-block-size: 17rem;
+    display: grid;
+    align-content: center;
   }
 
   /* The panel answers the row; the row does not repeat it. */
