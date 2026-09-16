@@ -429,7 +429,11 @@ without being a grid of nav cards or a mega-menu. Nothing else removed.
   ~27px at 1440. That is near the ceiling — the panel's body is a fixed 17rem
   and type large enough to overflow it brings back the height jump between
   destinations that §8e exists to prevent, so both sizes are clamped and were
-  measured at 1024 (the breakpoint's first pixel) as well as at 1440. A door's
+  measured at 1024 (the breakpoint's first pixel) as well as at 1440. Presence
+  past that ceiling comes from weight instead: doors at 600 (a heading), rule
+  sentences at 500 (the house's supporting weight). Instrument Sans is loaded
+  variable with only `wdth` pinned, so both are real weights, not synthesised.
+  A door's
   hover is a wash rising out of its floor with the arrow stepping forward; the
   underline would fight the wash, so it is dropped at this width.
 - **Columns are padded symmetrically and their list pulled back out by that
