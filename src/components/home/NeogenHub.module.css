@@ -543,8 +543,17 @@
   .rowAction,
   .plate,
   .areaLink,
-  .listLink {
+  .listLink,
+  .listLink::before,
+  .listLink::after,
+  .list .listLink > span {
     transition: none;
+  }
+
+  /* The wash may still appear; the arrow must not travel. */
+  .list .listLink:hover > span,
+  .list .listLink:focus-visible > span {
+    transform: none;
   }
 
   .panelBody {
@@ -701,20 +710,107 @@
     color: var(--ink-secondary);
   }
 
-  /* Three doors, each the full height of the frame. */
+  /*
+   * Three doors, each the full height of the frame.
+   *
+   * COMPOSED, NOT STRANDED. A 20-character label set small at the top edge of a
+   * landscape cell leaves a third of a metre of void under it, which reads as a
+   * layout accident rather than as air. The door is numbered at the head and
+   * signed at the foot, so the name sits in the middle of a frame that is
+   * anchored at both edges — the same top-and-bottom rhythm the evidence rule
+   * below uses. Type rises one step with it; it cannot rise far enough to fill
+   * 17rem on its own, and should not try.
+   */
   .list {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    counter-reset: door;
   }
 
-  .listLink {
+  .list li {
+    counter-increment: door;
+  }
+
+  /*
+   * Scoped to `.list`: `.listLink` is also the quality explorer's link, which
+   * lives outside this counter (it would number itself `00`) and is a single
+   * line under the rule, not a full-height door.
+   */
+  .list .listLink {
+    position: relative;
     flex-direction: column;
     align-items: flex-start;
     justify-content: space-between;
+    gap: var(--space-sm);
     block-size: 100%;
     padding: var(--space-md) var(--space-md) var(--space-md) 0;
     border-block-end: 0;
-    font-size: var(--text-xl);
+    font-size: clamp(1.5rem, 0.6rem + 1.4vw, 2.25rem);
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    transition: color var(--motion-duration-fast) var(--ease-standard);
+  }
+
+  /* The door's numeral — the index device, continued into the preview. */
+  .list .listLink::before {
+    content: counter(door, decimal-leading-zero);
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    letter-spacing: var(--tracking-label);
+    line-height: 1;
+    color: var(--ink-muted);
+    transition: color var(--motion-duration-fast) var(--ease-standard);
+  }
+
+  /* A wash that rises out of the floor: the cell answers the pointer. */
+  .list .listLink::after {
+    content: "";
+    position: absolute;
+    inset: 0 0 0 calc(-1 * var(--space-md));
+    background: linear-gradient(
+      to top,
+      color-mix(in oklab, var(--neogen-paper) 7%, transparent),
+      transparent 62%
+    );
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--motion-duration-base) var(--ease-standard);
+  }
+
+  .list li:first-child .listLink::after {
+    inset-inline-start: 0;
+  }
+
+  .list .listLink:hover::after,
+  .list .listLink:focus-visible::after {
+    opacity: 1;
+  }
+
+  /* The wash is the hover state here; the underline would fight it. */
+  .list .listLink:hover,
+  .list .listLink:focus-visible {
+    text-decoration: none;
+  }
+
+  .list .listLink:hover::before,
+  .list .listLink:focus-visible::before {
+    color: var(--neogen-paper);
+  }
+
+  /* The arrow signs the foot of the door and steps forward on hover. */
+  .list .listLink > span {
+    font-size: var(--text-lg);
+    color: var(--ink-muted);
+    transition:
+      transform var(--motion-duration-base) var(--ease-standard),
+      color var(--motion-duration-fast) var(--ease-standard);
+  }
+
+  .listLink:hover > span,
+  .listLink:focus-visible > span {
+    transform: translateX(0.375rem);
+    color: var(--neogen-paper);
   }
 
   .list li + li .listLink {
@@ -736,14 +832,37 @@
     block-size: 100%;
   }
 
+  /*
+   * NUMBER AT THE HEAD, SENTENCE AT THE FOOT. Set small and pinned to the top
+   * of a 17rem column, the rule occupied a sixth of its cell and read as
+   * forgotten there. Anchoring the two rows to opposite edges makes the space
+   * between them deliberate, and the sentence carries the weight it should:
+   * this is the site's evidence rule, not a caption.
+   */
   .rulePoints li {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto 1fr;
+    grid-template-rows: auto auto;
     gap: var(--space-sm);
-    align-content: start;
+    align-content: space-between;
     padding: var(--space-md) var(--space-md) var(--space-md) 0;
-    font-size: var(--text-lg);
+    font-size: clamp(1.125rem, 0.5rem + 0.95vw, 1.5rem);
     line-height: var(--leading-snug);
+    color: var(--ink-primary);
+    text-wrap: pretty;
+  }
+
+  /*
+   * The numeral carries the head of the column. Set at label size it was a
+   * speck above a two-line sentence and the cell still read as empty; at index
+   * scale it is the column's graphic — the same device the counters under the
+   * title use, and the only honest material available here, since the rule's
+   * three sentences are the whole of its content.
+   */
+  .rulePoints li::before {
+    font-size: var(--text-3xl);
+    line-height: 0.8;
+    font-variant-numeric: tabular-nums;
+    color: color-mix(in oklab, var(--neogen-paper) 28%, var(--neogen-charcoal));
   }
 
   .rulePoints li + li {

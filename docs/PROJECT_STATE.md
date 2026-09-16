@@ -415,7 +415,18 @@ without being a grid of nav cards or a mega-menu. Nothing else removed.
 - **Previews are real data**: four specimen plates (cheapest compound per area,
   in the dark register), the eight areas with counts in their own tones, the
   three world plates with entry prices, the Research Hub's live anchors
-  (`#indice`, `#calidad`), and the evidence rule as three numbered lines.
+  (`#indice`, `#calidad`), and the evidence rule as three numbered columns.
+- **A preview fills its frame by composition, not by inflation** (owner
+  feedback, same day — the research and quality columns "look like a lot of
+  empty space"). A short label cannot fill a 17rem-tall cell by growing: a
+  53-character sentence would need display size to wrap five lines. So each
+  column is anchored at both edges instead — the research doors are numbered at
+  the head, named in the body and signed with an arrow at the foot, and the
+  evidence rule hangs its sentence at the floor under an index-scale numeral,
+  which is the only honest material available there (its three sentences are
+  the whole of its content). Type rose one step with it, no further. A door's
+  hover is a wash rising out of its floor with the arrow stepping forward; the
+  underline would fight the wash, so it is dropped at this width.
 - **Phone is its own layout**, not the desktop collapsed: no hover exists, so
   each destination is a block with its preview already open, read top to
   bottom; counters become a 2×2 block; areas run full width.
