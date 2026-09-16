@@ -702,10 +702,14 @@
   .areaName {
     flex: none;
     inline-size: 100%;
+    /* A tile names a destination, like a door: the same heading weight. */
+    font-weight: 600;
     font-size: var(--text-lg);
   }
 
   .areaCount {
+    /* Plex Mono is loaded at 400 and 500 only — 600 here would be synthesised. */
+    font-weight: 500;
     font-size: var(--text-xl);
     color: var(--ink-secondary);
   }
