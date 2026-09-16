@@ -252,13 +252,17 @@
   position: absolute;
   inset-block-end: var(--space-sm);
   inset-inline-end: var(--space-sm);
-  inline-size: 2.25rem;
-  block-size: 2.25rem;
+  inline-size: 3.5rem;
+  block-size: 3.5rem;
   color: var(--ink-primary);
-  opacity: 0.14;
+  opacity: 0.16;
   /* The row is the target; the mark must never eat its own link's pointer. */
   pointer-events: none;
-  transition: opacity var(--motion-duration-base) var(--ease-standard);
+  /* Anchored to the corner it occupies, so growing never drifts it inward. */
+  transform-origin: 100% 100%;
+  transition:
+    opacity var(--motion-duration-base) var(--ease-standard),
+    transform var(--motion-duration-base) var(--ease-standard);
 }
 
 .mark svg {
@@ -270,7 +274,8 @@
 .row[data-active] .mark,
 .rowLink:hover .mark,
 .rowLink:focus-visible .mark {
-  opacity: 0.6;
+  opacity: 1;
+  transform: scale(1.12);
 }
 
 /*
@@ -287,52 +292,60 @@
     stroke-dashoffset var(--motion-duration-base) var(--ease-standard);
 }
 
-/* CATÁLOGO — the ladder extends, rung by rung. */
+/*
+ * CATÁLOGO — the ladder throws itself open, rung by rung.
+ *
+ * 1.35 is the ceiling here, not a taste call: the longest rung runs x7→x23,
+ * so anything past ~1.55 pushes its cap outside the 32-unit viewBox and the
+ * SVG clips it.
+ */
 .row[data-active] .mark[data-mark="catalog"] [data-part],
 .rowLink:hover .mark[data-mark="catalog"] [data-part] {
-  transform: scaleX(1.12);
+  transform: scaleX(1.35);
 }
 
 .mark[data-mark="catalog"] [data-part]:nth-child(2) {
-  transition-delay: 40ms;
+  transition-delay: 60ms;
 }
 .mark[data-mark="catalog"] [data-part]:nth-child(3) {
-  transition-delay: 80ms;
-}
-.mark[data-mark="catalog"] [data-part]:nth-child(4) {
   transition-delay: 120ms;
 }
+.mark[data-mark="catalog"] [data-part]:nth-child(4) {
+  transition-delay: 180ms;
+}
 
-/* ÁREAS — the eight come up in sequence, left to right. */
+/* ÁREAS — the eight fire in sequence, swelling as they light. */
 .mark[data-mark="areas"] [data-part] {
-  opacity: 0.4;
+  opacity: 0.35;
+  transform-origin: center;
 }
 
 .row[data-active] .mark[data-mark="areas"] [data-part],
 .rowLink:hover .mark[data-mark="areas"] [data-part] {
   opacity: 1;
+  transform: scale(1.55);
 }
 
 .mark[data-mark="areas"] [data-part]:nth-child(2) {
-  transition-delay: 30ms;
-}
-.mark[data-mark="areas"] [data-part]:nth-child(3) {
-  transition-delay: 60ms;
-}
-.mark[data-mark="areas"] [data-part]:nth-child(4) {
-  transition-delay: 90ms;
-}
-.mark[data-mark="areas"] [data-part]:nth-child(5) {
   transition-delay: 45ms;
 }
+.mark[data-mark="areas"] [data-part]:nth-child(3) {
+  transition-delay: 90ms;
+}
+.mark[data-mark="areas"] [data-part]:nth-child(4) {
+  transition-delay: 135ms;
+}
+.mark[data-mark="areas"] [data-part]:nth-child(5) {
+  transition-delay: 70ms;
+}
 .mark[data-mark="areas"] [data-part]:nth-child(6) {
-  transition-delay: 75ms;
+  transition-delay: 115ms;
 }
 .mark[data-mark="areas"] [data-part]:nth-child(7) {
-  transition-delay: 105ms;
+  transition-delay: 160ms;
 }
 .mark[data-mark="areas"] [data-part]:nth-child(8) {
-  transition-delay: 135ms;
+  transition-delay: 205ms;
 }
 
 /* MUNDOS — the three rings draw apart, becoming legible as three. */
@@ -340,27 +353,44 @@
   transform-origin: center;
 }
 
+/*
+ * The outer rings travel to the edge of the frame. ±3.5 units is the limit:
+ * a ring centred at 10 with r5.5 and a 0.75 half-stroke reaches x=0.25 at
+ * that offset, so further would crop the ring against the viewBox.
+ */
 .row[data-active] .mark[data-mark="worlds"] [data-part]:nth-child(1),
 .rowLink:hover .mark[data-mark="worlds"] [data-part]:nth-child(1) {
-  transform: translateX(-2px);
+  transform: translateX(-3.5px);
+}
+
+.row[data-active] .mark[data-mark="worlds"] [data-part]:nth-child(2),
+.rowLink:hover .mark[data-mark="worlds"] [data-part]:nth-child(2) {
+  transform: scale(1.15);
 }
 
 .row[data-active] .mark[data-mark="worlds"] [data-part]:nth-child(3),
 .rowLink:hover .mark[data-mark="worlds"] [data-part]:nth-child(3) {
-  transform: translateX(2px);
+  transform: translateX(3.5px);
 }
 
-/* INVESTIGACIÓN — the entries extend from the spine. */
+.mark[data-mark="worlds"] [data-part]:nth-child(2) {
+  transition-delay: 50ms;
+}
+.mark[data-mark="worlds"] [data-part]:nth-child(3) {
+  transition-delay: 100ms;
+}
+
+/* INVESTIGACIÓN — the entries drive out from the spine, one after another. */
 .row[data-active] .mark[data-mark="research"] [data-part]:not(:first-child),
 .rowLink:hover .mark[data-mark="research"] [data-part]:not(:first-child) {
-  transform: scaleX(1.18);
+  transform: scaleX(1.4);
 }
 
 .mark[data-mark="research"] [data-part]:nth-child(3) {
-  transition-delay: 40ms;
+  transition-delay: 70ms;
 }
 .mark[data-mark="research"] [data-part]:nth-child(4) {
-  transition-delay: 80ms;
+  transition-delay: 140ms;
 }
 
 /*
@@ -377,6 +407,29 @@
 .row[data-active] .mark[data-mark="quality"] [data-part="link"],
 .rowLink:hover .mark[data-mark="quality"] [data-part="link"] {
   stroke-dashoffset: 0;
+}
+
+/* The document's own lines extend while the tie is drawn. */
+.row[data-active] .mark[data-mark="quality"] [data-part]:nth-child(2),
+.rowLink:hover .mark[data-mark="quality"] [data-part]:nth-child(2),
+.row[data-active] .mark[data-mark="quality"] [data-part]:nth-child(3),
+.rowLink:hover .mark[data-mark="quality"] [data-part]:nth-child(3) {
+  transform: scaleX(1.3);
+}
+
+.mark[data-mark="quality"] [data-part]:nth-child(3) {
+  transition-delay: 60ms;
+}
+
+/* And the presentation it names answers at the far end. */
+.mark[data-mark="quality"] [data-part]:nth-child(5) {
+  transform-origin: center;
+  transition-delay: 160ms;
+}
+
+.row[data-active] .mark[data-mark="quality"] [data-part]:nth-child(5),
+.rowLink:hover .mark[data-mark="quality"] [data-part]:nth-child(5) {
+  transform: scale(1.18);
 }
 
 /* --- Preview panel (wide screens) ---------------------------------------- */
@@ -684,11 +737,45 @@
    * top of both in all five rows. The head of the row is the free space here —
    * inboard of the figure, which keeps the corner for its count.
    */
+  /*
+   * SMALLER HERE THAN ON THE STRIP, and the descriptor is held clear of it.
+   *
+   * At 2.5rem the mark dropped out of the head band and sat across the
+   * descriptor's first line in every row — and because the first row is
+   * active by default, that put a FULL-OPACITY mark over body copy on a
+   * phone. 2rem keeps it inside the band beside the index and the count;
+   * the descriptor's inline-end padding then guarantees no wrap can ever
+   * run beneath it, whatever the row's copy length.
+   */
   .mark {
     inset-block: var(--space-sm) auto;
     inset-inline-end: 3.5rem;
-    inline-size: 1.75rem;
-    block-size: 1.75rem;
+    inline-size: 2rem;
+    block-size: 2rem;
+    /* Head of the row, so it grows downward rather than into the count. */
+    transform-origin: 100% 0;
+  }
+
+  /*
+   * Held clear of the mark's COLUMN, not merely of its current height.
+   * The mark occupies from 5.5rem to 3.5rem off the inline end, so anything
+   * less than that still lets a wrapped line run underneath it; 6rem leaves
+   * the text a real margin instead of relying on two pixels of luck.
+   */
+  .rowDescriptor {
+    padding-inline-end: 6rem;
+  }
+
+  /*
+   * NOTHING GROWS HERE. The scale is a pointer affordance and there is no
+   * pointer on this surface — but the first row is active by default, so the
+   * growth was applied anyway and pushed a full-opacity mark into the
+   * descriptor's first line. The active row still lights; it just holds size.
+   */
+  .row[data-active] .mark,
+  .rowLink:hover .mark,
+  .rowLink:focus-visible .mark {
+    transform: none;
   }
 }
 
@@ -717,12 +804,19 @@
    * The marks still brighten — that is state, not decoration — but nothing
    * travels, extends or draws itself.
    */
+  .row[data-active] .mark,
+  .rowLink:hover .mark,
+  .rowLink:focus-visible .mark,
   .row[data-active] .mark[data-mark="catalog"] [data-part],
   .rowLink:hover .mark[data-mark="catalog"] [data-part],
+  .row[data-active] .mark[data-mark="areas"] [data-part],
+  .rowLink:hover .mark[data-mark="areas"] [data-part],
   .row[data-active] .mark[data-mark="worlds"] [data-part],
   .rowLink:hover .mark[data-mark="worlds"] [data-part],
   .row[data-active] .mark[data-mark="research"] [data-part]:not(:first-child),
-  .rowLink:hover .mark[data-mark="research"] [data-part]:not(:first-child) {
+  .rowLink:hover .mark[data-mark="research"] [data-part]:not(:first-child),
+  .row[data-active] .mark[data-mark="quality"] [data-part],
+  .rowLink:hover .mark[data-mark="quality"] [data-part] {
     transform: none;
   }
 

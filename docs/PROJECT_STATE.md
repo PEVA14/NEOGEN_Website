@@ -458,9 +458,11 @@ without being a grid of nav cards or a mega-menu. Nothing else removed.
   as well"). `components/home/HubMark` — five inline SVGs in the geometric
   language the specimen plate and area board already use, since there is no
   icon system here and the Design Bible never mentions one. They rest at
-  opacity 0.14 and rise to 0.6 when the row is hovered, focused or active: the
-  same recessive-to-present behaviour the section's planned background imagery
-  will use, so the two read as one system. Each mark draws the STRUCTURE of its
+  opacity 0.16 and go to FULL opacity with a 1.12 scale when the row is
+  hovered, focused or active (owner, same day: "make them bigger, and react to
+  the hover in a more dramatic way" — they were 2.25rem and 0.14→0.6 before):
+  the same recessive-to-present behaviour the section's planned background
+  imagery will use, so the two read as one system. Each mark draws the STRUCTURE of its
   destination — the presentation ladder, the eight area dots, three world
   rings, an index spine, and a document tied to one presentation — and each
   animates a part of itself on hover (rungs extend, dots come up in sequence,
@@ -477,6 +479,14 @@ without being a grid of nav cards or a mega-menu. Nothing else removed.
   wraps across that corner and the action line is permanently visible.
   Verified by measuring TEXT ink (a Range), not element boxes: a `.rowName`
   box spans its whole column and reports a false overlap at every width.
+- **Two phone constraints that are easy to re-break.** The mark does NOT scale
+  there: the scale is a pointer affordance, there is no pointer on touch, and
+  the first row is active by default — so the growth applied anyway and pushed
+  a full-opacity mark into the descriptor's first line. And `.rowDescriptor`
+  is padded clear of the mark's COLUMN (6rem), not merely of its current
+  height; padding sized to the mark's width alone still leaves a band where a
+  wrapped line runs underneath it. Measured clearance after the fix: 10–32px
+  between the descriptor's ink and the mark's left edge, active row included.
 - Homepage sections renumbered 01–06; the hub is 01.
 
 **Gates:** all `npm run check` gates pass. Production QA: 0 axe WCAG 2.2 A/AA

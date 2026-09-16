@@ -88,7 +88,9 @@ export function HubMark({ id }: { id: HubId }) {
         viewBox="0 0 32 32"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.75"
+        // Stroke is in viewBox units, so it scales with the mark. At 3.5rem
+        // 1.75 rendered chunky; this holds the hairline character.
+        strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       >
