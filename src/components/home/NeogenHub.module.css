@@ -721,9 +721,17 @@
    * below uses. Type rises one step with it; it cannot rise far enough to fill
    * 17rem on its own, and should not try.
    */
+  /*
+   * EVERY DOOR IS PADDED THE SAME, and the list is pulled out by that padding
+   * so the first one's text still lands on the panel's content edge. Padding
+   * only the later doors (which is what this was) left door 01 flush while 02
+   * and 03 stood 24px off their separators — the same text at three different
+   * indents. `--space-md` out of the panel's `--space-lg` keeps it inside.
+   */
   .list {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-inline: calc(-1 * var(--space-md));
     counter-reset: door;
   }
 
@@ -743,9 +751,9 @@
     justify-content: space-between;
     gap: var(--space-sm);
     block-size: 100%;
-    padding: var(--space-md) var(--space-md) var(--space-md) 0;
+    padding: var(--space-md);
     border-block-end: 0;
-    font-size: clamp(1.5rem, 0.6rem + 1.4vw, 2.25rem);
+    font-size: clamp(1.875rem, 0.7rem + 1.9vw, 3rem);
     line-height: 1.05;
     letter-spacing: -0.01em;
     text-wrap: balance;
@@ -767,7 +775,7 @@
   .list .listLink::after {
     content: "";
     position: absolute;
-    inset: 0 0 0 calc(-1 * var(--space-md));
+    inset: 0;
     background: linear-gradient(
       to top,
       color-mix(in oklab, var(--neogen-paper) 7%, transparent),
@@ -776,10 +784,6 @@
     opacity: 0;
     pointer-events: none;
     transition: opacity var(--motion-duration-base) var(--ease-standard);
-  }
-
-  .list li:first-child .listLink::after {
-    inset-inline-start: 0;
   }
 
   .list .listLink:hover::after,
@@ -800,7 +804,7 @@
 
   /* The arrow signs the foot of the door and steps forward on hover. */
   .list .listLink > span {
-    font-size: var(--text-lg);
+    font-size: var(--text-xl);
     color: var(--ink-muted);
     transition:
       transform var(--motion-duration-base) var(--ease-standard),
@@ -813,10 +817,6 @@
     color: var(--neogen-paper);
   }
 
-  .list li + li .listLink {
-    padding-inline-start: var(--space-md);
-  }
-
   .list li + li {
     border-inline-start: 1px solid var(--border-subtle);
   }
@@ -826,9 +826,11 @@
     block-size: 100%;
   }
 
+  /* Padded and pulled out like the doors, and for the same reason. */
   .rulePoints {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0;
+    margin-inline: calc(-1 * var(--space-md));
     block-size: 100%;
   }
 
@@ -844,8 +846,8 @@
     grid-template-rows: auto auto;
     gap: var(--space-sm);
     align-content: space-between;
-    padding: var(--space-md) var(--space-md) var(--space-md) 0;
-    font-size: clamp(1.125rem, 0.5rem + 0.95vw, 1.5rem);
+    padding: var(--space-md);
+    font-size: clamp(1.375rem, 0.55rem + 1.25vw, 2rem);
     line-height: var(--leading-snug);
     color: var(--ink-primary);
     text-wrap: pretty;
@@ -866,7 +868,6 @@
   }
 
   .rulePoints li + li {
-    padding-inline-start: var(--space-md);
     border-inline-start: 1px solid var(--border-subtle);
   }
 }

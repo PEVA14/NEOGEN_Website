@@ -424,9 +424,21 @@ without being a grid of nav cards or a mega-menu. Nothing else removed.
   the head, named in the body and signed with an arrow at the foot, and the
   evidence rule hangs its sentence at the floor under an index-scale numeral,
   which is the only honest material available there (its three sentences are
-  the whole of its content). Type rose one step with it, no further. A door's
+  the whole of its content). Type rose with it over two passes, the owner
+  asking for bigger each time: a door's name is ~38px and a rule's sentence
+  ~27px at 1440. That is near the ceiling — the panel's body is a fixed 17rem
+  and type large enough to overflow it brings back the height jump between
+  destinations that §8e exists to prevent, so both sizes are clamped and were
+  measured at 1024 (the breakpoint's first pixel) as well as at 1440. A door's
   hover is a wash rising out of its floor with the arrow stepping forward; the
   underline would fight the wash, so it is dropped at this width.
+- **Columns are padded symmetrically and their list pulled back out by that
+  padding** (`margin-inline: calc(-1 * var(--space-md))`), so the first
+  column's text lands on the panel's content edge and every column is indented
+  identically inside its own cell. Padding only `li + li` — the obvious way to
+  keep later columns off their separators — leaves the first flush and the rest
+  indented, the same text at two different indents. The owner caught it in the
+  research doors; the evidence rule had it too.
 - **Phone is its own layout**, not the desktop collapsed: no hover exists, so
   each destination is a block with its preview already open, read top to
   bottom; counters become a 2×2 block; areas run full width.
