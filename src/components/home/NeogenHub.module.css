@@ -142,14 +142,6 @@
   gap: var(--space-lg);
 }
 
-@media (min-width: 64rem) {
-  .board {
-    grid-template-columns: minmax(0, 6fr) minmax(0, 6fr);
-    gap: var(--space-2xl);
-    align-items: start;
-  }
-}
-
 .rows {
   list-style: none;
   margin: 0;
@@ -252,27 +244,26 @@
   padding-block: 0 var(--space-md);
 }
 
-@media (min-width: 64rem) {
-  .panel {
-    display: block;
-    position: sticky;
-    inset-block-start: calc(var(--header-height) + var(--space-md));
-    padding: var(--space-md);
-    border: 1px solid var(--border-subtle);
-    background: color-mix(in oklab, var(--neogen-paper) 4%, transparent);
-    min-block-size: 22rem;
-  }
+.panelHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2xs) var(--space-lg);
+  margin-block-end: var(--space-md);
+  padding-block-end: var(--space-2xs);
+  border-block-end: 1px solid var(--border-subtle);
+}
 
-  /* The panel answers the row; the row does not repeat it. */
-  .inline {
-    display: none;
-  }
+.panelDescriptor {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+  max-inline-size: 52ch;
 }
 
 .panelLabel {
-  margin: 0 0 var(--space-md);
-  padding-block-end: var(--space-2xs);
-  border-block-end: 1px solid var(--border-subtle);
+  margin: 0;
   font-family: var(--font-mono);
   font-size: var(--text-2xs);
   letter-spacing: var(--tracking-label);
@@ -304,6 +295,15 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
   gap: var(--space-sm);
+}
+
+/* Capped and left-aligned: at full width three plates would become posters. */
+@media (min-width: 64rem) {
+  .plates {
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 11rem));
+    justify-content: start;
+    gap: var(--space-md);
+  }
 }
 
 .plateLink {
@@ -540,5 +540,130 @@
 
   .plateLink:hover .plate {
     transform: none;
+  }
+}
+
+/* --- Wide screens --------------------------------------------------------
+ *
+ * These blocks sit at the END of the file on purpose. They modify `.rowLink`,
+ * `.rowName`, `.areas`, `.list` and `.rulePoints`, which are declared above at
+ * the same specificity — a media query does not raise specificity, so placed
+ * earlier they lost the cascade and the option names collapsed into one letter
+ * per line.
+ */
+
+@media (min-width: 64rem) {
+  .board {
+    gap: var(--space-lg);
+  }
+
+  /*
+   * THE OPTIONS RUN ACROSS, THE PREVIEW SITS UNDER THEM. Five destinations
+   * read as one instrument's row of switches, and the panel below them gets
+   * the full width — which is what the plates and the eight areas want.
+   */
+  .rows {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    border-block-end: 1px solid var(--border-default);
+  }
+
+  .row {
+    border-block-end: 0;
+  }
+
+  .row + .row {
+    border-inline-start: 1px solid var(--border-subtle);
+  }
+
+  .rowLink {
+    position: relative;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    block-size: 100%;
+    padding: var(--space-sm) var(--space-sm) var(--space-md);
+    transition: background-color var(--motion-duration-base) var(--ease-standard);
+  }
+
+  /* The active switch: a 2px ink rule at its foot, the index device again. */
+  .rowLink::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: -1px;
+    block-size: 2px;
+    background: var(--neogen-paper);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--motion-duration-base) var(--ease-standard);
+  }
+
+  .row[data-active] .rowLink::after {
+    transform: scaleX(1);
+  }
+
+  .row[data-active] .rowLink {
+    background-color: color-mix(in oklab, var(--neogen-paper) 4%, transparent);
+  }
+
+  .rowName {
+    grid-column: 1;
+    grid-row: 2;
+    margin-block-start: var(--space-xs);
+    font-size: var(--text-xl);
+    line-height: 0.95;
+    overflow-wrap: anywhere;
+  }
+
+  .rowFigure {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  /* On the strip the line would crowd five columns; it reads in the panel. */
+  .rowDescriptor {
+    display: none;
+  }
+
+  .rowAction {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+}
+
+@media (min-width: 64rem) {
+  .panel {
+    display: block;
+    padding: var(--space-lg);
+    border: 1px solid var(--border-subtle);
+    border-block-start: 0;
+    background: color-mix(in oklab, var(--neogen-paper) 4%, transparent);
+    min-block-size: 20rem;
+  }
+
+  /* The panel answers the row; the row does not repeat it. */
+  .inline {
+    display: none;
+  }
+
+  /* Wide screens: the preview finally has room to lay its content out. */
+  .areas {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-lg);
+  }
+
+  .listLink {
+    border-block-end: 0;
+    border-block-start: 1px solid var(--border-subtle);
+  }
+
+  .rulePoints {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-lg);
   }
 }

@@ -405,8 +405,12 @@ without being a grid of nav cards or a mega-menu. Nothing else removed.
 
 - **`components/home/NeogenHub`** — five destinations (Catálogo, Áreas, Mundos,
   Investigación, Calidad) as a switchboard on the hero's own charcoal, with the
-  hero's hairline register continued behind it. Each row is the link; hovering
-  or focusing one swaps a preview panel beside it. Header carries the section
+  hero's hairline register continued behind it. On a wide screen the five run
+  across as a strip of switches with the preview panel beneath them at full
+  width (owner feedback, same day — it was first built as a left column with
+  the panel beside it); the active switch carries a 2px ink rule and its
+  descriptor reads in the panel head. Each switch is the link; hovering or
+  focusing one swaps the panel. Header carries the section
   numeral, the title and four counted figures (85 / 147 / 08 / 03).
 - **Previews are real data**: four specimen plates (cheapest compound per area,
   in the dark register), the eight areas with counts in their own tones, the
@@ -426,6 +430,12 @@ and 1440 and `/en` at 1440; the preview panel follows keyboard focus through
 all five rows. Homepage initial JS 192.2 KB gzip (198.4 before this pass — the
 price spectrum's removal outweighs the hub), catalogue 193.8; three.js still
 absent from every initial payload.
+
+**A cascade trap worth remembering:** the wide-screen rules were first written
+above the base rules they modify. A media query does not raise specificity, so
+the base `.rowLink` won and every option name broke one letter per line. The
+`min-width: 64rem` blocks now sit at the end of the stylesheet (CONVENTIONS
+§16).
 
 **One bug found and fixed in QA:** the preview panel was `aria-hidden` with
 focusable links inside it (axe `aria-hidden-focus`). The panel is the wide

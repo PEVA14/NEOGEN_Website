@@ -158,9 +158,13 @@ export function NeogenHub({ data, copy }: { data: HubData; copy: NeogenHubCopy }
              * focusable links inside — axe `aria-hidden-focus`, correctly.)
              */}
             <div className={styles.panel}>
-              <p className={styles.panelLabel}>
-                {copy.previewLabel} / {copy.rows[active].name}
-              </p>
+              <div className={styles.panelHead}>
+                <p className={styles.panelLabel}>
+                  {copy.previewLabel} / {copy.rows[active].name}
+                </p>
+                {/* The strip stays tight: the active destination's line reads here. */}
+                <p className={styles.panelDescriptor}>{copy.rows[active].descriptor}</p>
+              </div>
               {/* Keyed, so the panel re-enters when the destination changes. */}
               <div key={active} className={styles.panelBody}>
                 <Preview id={active} data={data} copy={copy} />

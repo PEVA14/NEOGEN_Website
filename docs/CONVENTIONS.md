@@ -601,8 +601,10 @@ Per pack / per vial is a toggle over the same prices. The crosshair is CSS
 rules and that every aligned cell is that variant's registry price.
 
 **The homepage hub** (`components/home/NeogenHub`, data from `server/hub`) is
-the gateway under the hero: five destinations as a switchboard, one preview
-panel answering whichever row the reader is on. Rules it must keep:
+the gateway under the hero: on a wide screen the five destinations run ACROSS
+as a strip of switches, and the preview panel sits BENEATH them at full width,
+answering whichever one the reader is on (owner, 2026-09-15). Rules it must
+keep:
 
 - **It stays on the hero's ground.** The same charcoal and the same token
   remap the hero uses, so the page opens as one dark composition and resolves
@@ -618,6 +620,11 @@ panel answering whichever row the reader is on. Rules it must keep:
   areas, worlds, per-area counts, entry prices. No curated ordering.
 - Plates inside it switch to `--area-deep`: an area's wash is a light mix over
   paper and reads as pasted-on against the hero's dark.
+- **Its `min-width: 64rem` blocks live at the END of the stylesheet.** They
+  restyle `.rowLink`, `.rowName`, `.areas`, `.list` and `.rulePoints`, which are
+  declared at the same specificity — a media query does not raise specificity,
+  so placed earlier they lose the cascade. That regression rendered the option
+  names one letter per line; keep new wide-screen rules below the base ones.
 
 **The flagship shop** (`components/storefront/FlagshipShop`) renders on the
 three flagship product pages and offers the OTHER two worlds — never the
