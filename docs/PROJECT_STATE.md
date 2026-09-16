@@ -1,6 +1,6 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-09-15**, after the owner review of the card reveal and commerce layer (§8d).
+Last updated **2026-09-15**, after the homepage hub (§8e).
 
 This file is the memory of the project for a new session. It records what is
 not derivable from the code: where the phases stand, how the owner runs the
@@ -29,7 +29,8 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 | `541c61b`   | Catalogue filtering, area index, search field, area design preview (§8c)                                                        |
 | `b080cf3`   | Card reveal and homepage commerce layer, first version (§8d)                                                                    |
 | `2b80dc7`   | Owner review of §8d: register becomes the presentation matrix; homepage trimmed                                                 |
-| _this_      | Flagship shop moved onto the flagship product pages                                                                             |
+| `3fe1f7e`   | Flagship shop moved onto the flagship product pages                                                                             |
+| _this_      | Homepage hub: the gateway section under the hero (§8e)                                                                          |
 
 **Phase 12.1 is complete. Phase 13 has not been started or approved.** Do not
 begin it without a brief from the owner.
@@ -395,6 +396,41 @@ initial JS 196.1 KB gzip (was 194.2), three.js still absent.
 
 **Not built, flagged:** the owner's "for research purposes only" line (§4) is
 still not rendered anywhere a product is sold, including the parked shop counter.
+
+## 8e. The homepage hub
+
+Owner request (2026-09-15): one new major homepage section under the hero — a
+gateway that makes a first visitor understand NEOGEN is more than a catalogue,
+without being a grid of nav cards or a mega-menu. Nothing else removed.
+
+- **`components/home/NeogenHub`** — five destinations (Catálogo, Áreas, Mundos,
+  Investigación, Calidad) as a switchboard on the hero's own charcoal, with the
+  hero's hairline register continued behind it. Each row is the link; hovering
+  or focusing one swaps a preview panel beside it. Header carries the section
+  numeral, the title and four counted figures (85 / 147 / 08 / 03).
+- **Previews are real data**: four specimen plates (cheapest compound per area,
+  in the dark register), the eight areas with counts in their own tones, the
+  three world plates with entry prices, the Research Hub's live anchors
+  (`#indice`, `#calidad`), and the evidence rule as three numbered lines.
+- **Phone is its own layout**, not the desktop collapsed: no hover exists, so
+  each destination is a block with its preview already open, read top to
+  bottom; counters become a 2×2 block; areas run full width.
+- **Gated destinations**: `server/hub` returns `explorer: null` until a public
+  document exists, and a new `check:output` assertion (negative-controlled)
+  fails the build if any page links the documentation explorer while it 404s.
+- Homepage sections renumbered 01–06; the hub is 01.
+
+**Gates:** all `npm run check` gates pass. Production QA: 0 axe WCAG 2.2 A/AA
+violations, no horizontal overflow, no sub-44 px targets on `/es` at 375, 768
+and 1440 and `/en` at 1440; the preview panel follows keyboard focus through
+all five rows. Homepage initial JS 192.2 KB gzip (198.4 before this pass — the
+price spectrum's removal outweighs the hub), catalogue 193.8; three.js still
+absent from every initial payload.
+
+**One bug found and fixed in QA:** the preview panel was `aria-hidden` with
+focusable links inside it (axe `aria-hidden-focus`). The panel is the wide
+screen's real preview, so the fix was to remove the attribute — the phone's
+inline copies are `display: none` at that width, so nothing is announced twice.
 
 ## 9. Recommendation for Phase 13 (not approved)
 

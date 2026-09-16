@@ -19,8 +19,10 @@ import {
   ProductCard,
   TextLink,
 } from "@/components/ui";
+import { NeogenHub } from "@/components/home";
 import { EvidenceChain } from "@/components/quality";
 import { cardDetails, cardDetailsCopy } from "@/server/catalog";
+import { hubData } from "@/server/hub";
 import { routes } from "@/config/routes";
 import { worldIds, type WorldId } from "@/config/worlds";
 import { isLocale, localeTags } from "@/i18n/config";
@@ -42,9 +44,9 @@ import type { Metadata } from "next";
 /**
  * HOME.
  *
- *   Hero (Impact) → 01 Evolution (Quiet) → RETA (Impact)
- *   → 02 Discovery (Quiet) → GLOW (Impact) → 03 Research + 04 Quality (Quiet)
- *   → GHK-Cu (Impact) → 05 Products (Quiet) → Footer
+ *   Hero (Impact) → 01 Hub (Quiet, on the hero's dark) → 02 Evolution (Quiet)
+ *   → RETA (Impact) → 03 Discovery (Quiet) → GLOW (Impact)
+ *   → 04 Research + 05 Quality (Quiet) → GHK-Cu (Impact) → 06 Products (Quiet)
  *
  * Cards on this page carry the reveal (CONVENTIONS §16). A commerce layer was
  * trialled here on 2026-09-15; the owner kept none of it on the homepage —
@@ -150,6 +152,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   /* Every published price, once, for the card reveals on this page. */
   const allPrices = await getPrices(publishedProducts.flatMap((p) => p.variants.map((v) => v.id)));
+  /* The gateway's own data: counts, areas, flagships and the routes that exist. */
+  const hub = await hubData(locale, dict);
   const detailsCopy = cardDetailsCopy(dict);
   const detailsFor = (product: (typeof products)[number]) =>
     cardDetails(product, { locale, dict, prices: allPrices });
@@ -239,6 +243,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   return (
     <>
       <Hero copy={heroCopy} />
+
+      {/*
+       * 01 — THE HUB, on the hero's ground. The index of everything the site
+       * holds, before the page starts explaining anything: five destinations,
+       * one live preview, every figure counted from a registry.
+       */}
+      <NeogenHub data={hub} copy={home.hub} />
 
       {/* 01 — Quiet. The editorial spread that sets NEOGEN's informational
           voice: an oversized index numeral against a dense right column. */}

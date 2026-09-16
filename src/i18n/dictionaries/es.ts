@@ -74,8 +74,68 @@ const es = {
       staticLabel: "Vista estática",
     },
 
-    evolution: {
+    /**
+     * EL ÍNDICE — la puerta de entrada, bajo el hero. Todo lo que muestra sale
+     * del registro: cuentas, áreas, precios de entrada y rutas que existen. El
+     * explorador de documentación solo aparece cuando hay un documento público.
+     */
+    hub: {
       index: "01",
+      label: "Índice",
+      title: "Dónde empezar",
+      lede: "El catálogo completo, las áreas en que se organiza, los tres mundos insignia y el modelo con que se documenta cada presentación.",
+      counts: {
+        products: "Compuestos",
+        presentations: "Presentaciones",
+        areas: "Áreas",
+        worlds: "Mundos",
+      },
+      previewLabel: "Vista",
+      rows: {
+        catalog: {
+          name: "Catálogo",
+          descriptor: "Cada compuesto con su escala de presentaciones y su precio.",
+          action: "Ver catálogo",
+        },
+        areas: {
+          name: "Áreas",
+          descriptor: "Ocho entradas al catálogo, por el terreno en que se investiga.",
+          action: "Ver áreas",
+        },
+        worlds: {
+          name: "Mundos",
+          descriptor: "RETA, GLOW y GHK-Cu: los tres compuestos con entorno propio.",
+          action: "Ver insignias",
+        },
+        research: {
+          name: "Investigación",
+          descriptor: "El índice de compuestos, las áreas y las referencias públicas.",
+          action: "Ir a NEOGEN Research",
+        },
+        quality: {
+          name: "Calidad",
+          descriptor: "Cómo se vincula un documento a la presentación exacta que examina.",
+          action: "Ver el modelo",
+        },
+      },
+      research: {
+        index: "Índice de compuestos",
+        areas: "Áreas de investigación",
+        model: "Modelo de evidencia",
+      },
+      quality: {
+        points: [
+          "Un análisis nombra la presentación exacta que examinó.",
+          "Un certificado de lote cubre ese lote y ningún otro.",
+          "Donde no existe un documento, no aparece un sello.",
+        ],
+        explorer: "Explorar la documentación",
+      },
+      keys: "Cada destino es un enlace; al enfocarlo se muestra su vista previa.",
+    },
+
+    evolution: {
+      index: "02",
       label: "NEOGEN",
       title: "Evolución creativa",
       lede: "Un nuevo entorno para la investigación molecular. Compuestos precisos, evidencia documentada, presentación premium.",
@@ -140,7 +200,7 @@ const es = {
     },
 
     catalog: {
-      index: "02",
+      index: "03",
       label: "Descubrimiento",
       title: "Explora el catálogo",
       action: "Todos los productos",
@@ -188,7 +248,7 @@ const es = {
      * en el catálogo completo.
      */
     research: {
-      index: "03",
+      index: "04",
       label: "Investigación",
       title: "NEOGEN Research",
       action: "Ir a investigación",
@@ -199,7 +259,7 @@ const es = {
     },
 
     quality: {
-      index: "04",
+      index: "05",
       label: "Calidad",
       title: "Evidencia, no sellos",
       lede: "Cada estado de calidad en NEOGEN proviene de un documento que puede consultarse, vinculado a la presentación exacta que examina.",
@@ -232,7 +292,7 @@ const es = {
     },
 
     products: {
-      index: "05",
+      index: "06",
       label: "Productos",
       title: "Compuestos insignia",
       action: "Catálogo completo",

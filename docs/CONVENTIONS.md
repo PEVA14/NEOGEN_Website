@@ -600,6 +600,25 @@ Per pack / per vial is a toggle over the same prices. The crosshair is CSS
 `:has()`. Row order is the browser's sort. `check:catalog` asserts the layout
 rules and that every aligned cell is that variant's registry price.
 
+**The homepage hub** (`components/home/NeogenHub`, data from `server/hub`) is
+the gateway under the hero: five destinations as a switchboard, one preview
+panel answering whichever row the reader is on. Rules it must keep:
+
+- **It stays on the hero's ground.** The same charcoal and the same token
+  remap the hero uses, so the page opens as one dark composition and resolves
+  into paper at 02. Remap the semantic tokens; never hard-code a colour.
+- **Exactly one preview copy is ever in the accessibility tree.** The panel is
+  the wide screen's real, clickable preview; the per-row inline previews are
+  the phone's. Each is `display: none` at the other width — never `aria-hidden`
+  over focusable links (axe `aria-hidden-focus`).
+- **A destination that cannot render is absent, not linked.** The builder
+  returns `explorer: null` until `publicEvidenceIndex` is non-empty, and
+  `check:output` fails the build if any page links the explorer while it 404s.
+- **Every figure is counted from a registry** — products, presentations,
+  areas, worlds, per-area counts, entry prices. No curated ordering.
+- Plates inside it switch to `--area-deep`: an area's wash is a light mix over
+  paper and reads as pasted-on against the hero's dark.
+
 **The flagship shop** (`components/storefront/FlagshipShop`) renders on the
 three flagship product pages and offers the OTHER two worlds — never the
 product the page is about, whose commerce panel is already above it. World

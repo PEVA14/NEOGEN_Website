@@ -71,8 +71,64 @@ const en: Dictionary = {
       staticLabel: "Static view",
     },
 
-    evolution: {
+    hub: {
       index: "01",
+      label: "Index",
+      title: "Where to start",
+      lede: "The full catalog, the areas it is organised by, the three flagship worlds, and the model every presentation is documented under.",
+      counts: {
+        products: "Compounds",
+        presentations: "Presentations",
+        areas: "Areas",
+        worlds: "Worlds",
+      },
+      previewLabel: "Preview",
+      rows: {
+        catalog: {
+          name: "Catalog",
+          descriptor: "Every compound with its presentation ladder and its price.",
+          action: "See the catalog",
+        },
+        areas: {
+          name: "Areas",
+          descriptor: "Eight ways into the catalog, by the ground being studied.",
+          action: "See the areas",
+        },
+        worlds: {
+          name: "Worlds",
+          descriptor:
+            "RETA, GLOW and GHK-Cu: the three compounds with an environment of their own.",
+          action: "See the flagships",
+        },
+        research: {
+          name: "Research",
+          descriptor: "The compound index, the areas, and the public references.",
+          action: "Go to NEOGEN Research",
+        },
+        quality: {
+          name: "Quality",
+          descriptor: "How a document is tied to the exact presentation it examines.",
+          action: "See the model",
+        },
+      },
+      research: {
+        index: "Compound index",
+        areas: "Research areas",
+        model: "Evidence model",
+      },
+      quality: {
+        points: [
+          "An analysis names the exact presentation it examined.",
+          "A lot certificate covers that lot and no other.",
+          "Where no document exists, no seal appears in its place.",
+        ],
+        explorer: "Explore the documentation",
+      },
+      keys: "Each destination is a link; focusing one shows its preview.",
+    },
+
+    evolution: {
+      index: "02",
       label: "NEOGEN",
       title: "Creative evolution",
       lede: "A new environment for molecular research. Precision compounds, documented evidence, premium presentation.",
@@ -129,7 +185,7 @@ const en: Dictionary = {
     },
 
     catalog: {
-      index: "02",
+      index: "03",
       label: "Discovery",
       title: "Explore the catalogue",
       action: "All products",
@@ -169,7 +225,7 @@ const en: Dictionary = {
 
     /** See the Spanish source for why the three-row register was replaced. */
     research: {
-      index: "03",
+      index: "04",
       label: "Research",
       title: "NEOGEN Research",
       action: "Go to research",
@@ -180,7 +236,7 @@ const en: Dictionary = {
     },
 
     quality: {
-      index: "04",
+      index: "05",
       label: "Quality",
       title: "Evidence, not seals",
       lede: "Every quality status on NEOGEN comes from a document you can open, tied to the exact presentation it examines.",
@@ -207,7 +263,7 @@ const en: Dictionary = {
     },
 
     products: {
-      index: "05",
+      index: "06",
       label: "Products",
       title: "Flagship compounds",
       action: "Full catalogue",

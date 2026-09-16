@@ -389,6 +389,25 @@ for (const file of htmlFiles) {
 /* ---------------------------------------------------------------- report */
 
 const scanned = `${htmlFiles.length} HTML / ${clientAssets.length} client assets`;
+/* ------------------------------------------- 8. no links to gated-off routes
+ *
+ * The documentation explorer 404s in production until a public document
+ * resolves. Any page that links it before then ships a link to a 404 — the
+ * homepage hub and the Research Hub both gate on `publicEvidenceIndex`, and
+ * this asserts the gate actually held in what was built.
+ */
+{
+  const explorerLinked = htmlFiles.filter((file) =>
+    /href="\/(?:es|en)\/investigacion\/calidad"/.test(readFileSync(file, "utf8")),
+  );
+  if (publicEvidenceIndex(publishedProducts).length === 0 && explorerLinked.length > 0) {
+    fail(
+      "a page links the documentation explorer while it 404s",
+      explorerLinked.slice(0, 3).join(", "),
+    );
+  }
+}
+
 if (failures.length) {
   console.error(`\noutput check FAILED — ${failures.length} problem(s)\n`);
   for (const f of failures.slice(0, 40)) console.error(`  ${f}`);
