@@ -511,6 +511,16 @@ at **50.2% × 49.6%**. Regression: the hero holds its own track (68.9% height,
 centred 68.2%) and the PDP presenter still answers a full-stage sweep with
 **0.138 rad** — its ~8° cap — versus the sequence's 6.27.
 
+**Then the PDP was brought to parity** (owner, same day): "I really like the
+responsiveness of the reta showcase in the home page now, make it so the
+/productos/reta one behaves the same way." `ProductStage` now accumulates
+`turn` exactly as `RetaStage` does, and the presenter branch damps it in where
+the ±8° absolute yaw used to be — `POINTER_YAW` is deleted. Pitch and parallax
+stay at vitrine amplitude and still release on exit: they are depth cues on
+other axes and never compete with the turn. **The 0.138 rad figure above is
+therefore historical**, kept because it is the measurement that proved the
+stages were independent before they were deliberately joined.
+
 **Verification note.** R3F keeps its store in React context, so the scene
 cannot be read from outside the Canvas. These numbers came from a temporary
 dev-only handle that published the R3F state on `window`; **it was removed

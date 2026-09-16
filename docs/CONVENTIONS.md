@@ -338,18 +338,19 @@ What a V1 product viewer does:
 
 - holds a stable composition, anchored to a measured DOM box;
 - turns slowly and passively — the `presenter` variant in `choreography.ts`;
-- answers the cursor on fine pointers only, damped, and never required —
-  but at two different amplitudes, which is a deliberate split:
-  - **`presenter` (the PDP)** stays a vitrine. Yaw is capped at ~8°, pitch at a
-    third of that, and the cursor is a hint that the object is real.
-  - **`sequence` (the homepage RETA section)** is a turntable. One traverse of
-    the stage is one full revolution (measured: 0.998 turns across an exact
-    stage width), and the travel is ACCUMULATED rather than mapped from cursor
-    position, so the object keeps the angle it was left at instead of unwinding
-    when the cursor leaves. Its vial holds one centred pose at ~39% of canvas
-    height; it no longer travels or crops across four camera states, because an
-    object that travels cannot also be one you turn — scroll and cursor end up
-    fighting for the same axis;
+- answers the cursor on fine pointers only, damped, and never required. Both
+  live stages are TURNTABLES, and they share one drive: horizontal travel is
+  ACCUMULATED at one revolution per stage width and damped in (`TURN_SETTLE`),
+  so the object keeps the angle it was left at. Mapping cursor position to an
+  angle instead is the trap — it spins the object backwards the moment the
+  cursor leaves. The two stages differ only in what surrounds the turn:
+  - **`sequence` (the homepage RETA section)** holds one centred pose at ~39%
+    of canvas height. It no longer travels or crops across four camera states,
+    because an object that travels cannot also be one you turn — scroll and
+    cursor end up fighting for the same axis.
+  - **`presenter` (the PDP)** keeps its measured anchor in the media well and
+    adds pitch and parallax on top, at vitrine amplitude and still falling back
+    to zero on exit: depth cues on other axes, never rotation;
 - resolves to a held pose under `prefers-reduced-motion`, with
   `frameloop="demand"`;
 - degrades to a static silhouette with no WebGL, and takes the cheap glass path

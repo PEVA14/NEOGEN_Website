@@ -171,24 +171,38 @@ export function ProductStage({
     const node = stage.current;
     if (!node || !finePointer || reducedMotion) return;
 
-    let box = node.getBoundingClientRect();
+    // Captured once: the cleanup must not reach through `.current`, which the
+    // lint rule rightly treats as possibly a different object by then.
+    const drive = pointer.current;
 
-    const enter = () => {
+    let box = node.getBoundingClientRect();
+    let last: number | null = null;
+
+    const enter = (event: PointerEvent) => {
       box = node.getBoundingClientRect();
+      last = box.width > 0 ? (event.clientX - box.left) / box.width : null;
     };
 
     const move = (event: PointerEvent) => {
       if (box.width === 0 || box.height === 0) return;
-      pointer.current = {
-        x: ((event.clientX - box.left) / box.width) * 2 - 1,
-        y: ((event.clientY - box.top) / box.height) * 2 - 1,
-        active: true,
-        turn: pointer.current.turn,
-      };
+
+      const x = (event.clientX - box.left) / box.width;
+      const y = (event.clientY - box.top) / box.height;
+
+      // One traverse of the stage is one revolution — the homepage's drive,
+      // accumulated rather than mapped from position, so the object keeps the
+      // angle it reached instead of unwinding when the cursor leaves.
+      if (last !== null) drive.turn += (x - last) * Math.PI * 2;
+      last = x;
+
+      drive.x = x * 2 - 1;
+      drive.y = y * 2 - 1;
+      drive.active = true;
     };
 
     const leave = () => {
-      pointer.current = { ...pointer.current, active: false };
+      last = null;
+      drive.active = false;
     };
 
     node.addEventListener("pointerenter", enter);
@@ -199,7 +213,10 @@ export function ProductStage({
       node.removeEventListener("pointerenter", enter);
       node.removeEventListener("pointermove", move);
       node.removeEventListener("pointerleave", leave);
-      pointer.current = { x: 0, y: 0, active: false, turn: 0 };
+      // `turn` survives deliberately: it is where the object currently is, and
+      // zeroing it would spin the vial back on any re-subscribe.
+      last = null;
+      drive.active = false;
     };
   }, [finePointer, reducedMotion]);
 

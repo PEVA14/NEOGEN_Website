@@ -40,9 +40,7 @@ const FIT_IN_PANEL = 0.62;
  * additive to a pose that is already correct without it.
  */
 const SPIN_RATE = 0.085;
-/** Peak yaw the pointer can add, in radians. ~8°. */
-const POINTER_YAW = 0.14;
-/** Peak pitch. Deliberately a third of the yaw: vertical tilt reads as wobble. */
+/** Peak pitch. Small on purpose: vertical tilt reads as wobble. */
 const POINTER_PITCH = 0.05;
 /** Peak parallax shift, as a fraction of the frame. */
 const POINTER_SHIFT = 0.012;
@@ -335,14 +333,27 @@ export function VialModel({
         const cursor = pointer?.current;
         const engaged = cursor?.active === true;
 
-        // Targets fall to zero the moment the cursor leaves, so the object
-        // eases back to its passive rotation instead of holding an offset.
-        const targetYaw = engaged ? cursor.x * POINTER_YAW : 0;
+        /*
+         * THE SAME TURNTABLE AS THE HOMEPAGE (owner request, 2026-09-16).
+         *
+         * Yaw was an absolute ±8° hint that fell back to zero the moment the
+         * cursor left. It is now the accumulated drive the sequence uses: one
+         * traverse of the stage is one revolution, and the angle SURVIVES the
+         * cursor leaving, so the object stays where it was put.
+         */
+        yaw.current = MathUtils.damp(yaw.current, cursor?.turn ?? 0, TURN_SETTLE, delta);
+
+        /*
+         * Pitch and parallax stay at vitrine amplitude and still fall back to
+         * zero on exit. They are DEPTH CUES on other axes, not rotation, so
+         * they never compete with the turn for control of the same axis — the
+         * failure that made the homepage's travelling choreography and its
+         * cursor irreconcilable.
+         */
         const targetPitch = engaged ? -cursor.y * POINTER_PITCH : 0;
         const targetShiftX = engaged ? cursor.x * POINTER_SHIFT : 0;
         const targetShiftY = engaged ? -cursor.y * POINTER_SHIFT : 0;
 
-        yaw.current = MathUtils.damp(yaw.current, targetYaw, POINTER_SETTLE, delta);
         pitch.current = MathUtils.damp(pitch.current, targetPitch, POINTER_SETTLE, delta);
         shiftX.current = MathUtils.damp(shiftX.current, targetShiftX, POINTER_SETTLE, delta);
         shiftY.current = MathUtils.damp(shiftY.current, targetShiftY, POINTER_SETTLE, delta);
