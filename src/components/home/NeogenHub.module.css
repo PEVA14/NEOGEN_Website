@@ -297,13 +297,25 @@
   gap: var(--space-sm);
 }
 
-/* Capped and centred: at full width three plates would become posters, and
-   packed left they left a third of the panel empty. */
+/*
+ * PLATES FILL THE FRAME. Capped at 11rem they sat in the middle of the panel
+ * with a third of it empty, whether there were three or four. They now take
+ * the full row at a FIXED HEIGHT — the plate's 4:5 is dropped here — so four
+ * compounds and three worlds both fill the square, and the ghosted compound
+ * name becomes the graphic, as it is on the flagship cards.
+ */
 @media (min-width: 64rem) {
   .plates {
-    grid-template-columns: repeat(auto-fit, minmax(9rem, 11rem));
-    justify-content: center;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-template-columns: none;
     gap: var(--space-md);
+    align-content: center;
+  }
+
+  .panelBody .plate > * {
+    aspect-ratio: auto;
+    block-size: 13rem;
   }
 }
 
@@ -650,7 +662,11 @@
   .panelBody {
     min-block-size: 17rem;
     display: grid;
-    align-content: center;
+    align-content: stretch;
+  }
+
+  .panelBody > * {
+    block-size: 100%;
   }
 
   /* The panel answers the row; the row does not repeat it. */
@@ -659,23 +675,79 @@
   }
 
   /* Wide screens: the preview finally has room to lay its content out. */
+  /* Eight tiles, not eight rows stacked in the top third of the panel. */
   .areas {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-auto-rows: 1fr;
   }
 
+  .areaLink {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-xs);
+    padding-block: var(--space-sm);
+    block-size: 100%;
+  }
+
+  .areaName {
+    flex: none;
+    inline-size: 100%;
+    font-size: var(--text-lg);
+  }
+
+  .areaCount {
+    font-size: var(--text-xl);
+    color: var(--ink-secondary);
+  }
+
+  /* Three doors, each the full height of the frame. */
   .list {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--space-lg);
   }
 
   .listLink {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
+    block-size: 100%;
+    padding: var(--space-md) var(--space-md) var(--space-md) 0;
     border-block-end: 0;
-    border-block-start: 1px solid var(--border-subtle);
+    font-size: var(--text-xl);
+  }
+
+  .list li + li .listLink {
+    padding-inline-start: var(--space-md);
+  }
+
+  .list li + li {
+    border-inline-start: 1px solid var(--border-subtle);
+  }
+
+  /* The rule reads as three columns of the same frame. */
+  .rule {
+    block-size: 100%;
   }
 
   .rulePoints {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--space-lg);
+    gap: 0;
+    block-size: 100%;
+  }
+
+  .rulePoints li {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    gap: var(--space-sm);
+    align-content: start;
+    padding: var(--space-md) var(--space-md) var(--space-md) 0;
+    font-size: var(--text-lg);
+    line-height: var(--leading-snug);
+  }
+
+  .rulePoints li + li {
+    padding-inline-start: var(--space-md);
+    border-inline-start: 1px solid var(--border-subtle);
   }
 }
