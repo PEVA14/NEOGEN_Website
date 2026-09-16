@@ -6,6 +6,7 @@ import { useState, type ReactNode } from "react";
 import { Container, Section } from "@/components/primitives";
 import { SpecimenPlate } from "@/components/ui/SpecimenPlate";
 
+import { HubMark } from "./HubMark";
 import styles from "./NeogenHub.module.css";
 
 import type { HubData, HubId, HubItem } from "@/server/hub";
@@ -139,6 +140,11 @@ export function NeogenHub({ data, copy }: { data: HubData; copy: NeogenHubCopy }
                     <span className={styles.rowAction} aria-hidden="true">
                       {copy.rows[id].action} →
                     </span>
+
+                    {/* Last child on purpose: the mark is absolutely
+                        positioned, so it takes no grid cell and cannot push
+                        the index out of its column. */}
+                    <HubMark id={id} />
                   </Link>
 
                   {/* On a phone every destination carries its own preview, open. */}

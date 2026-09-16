@@ -158,6 +158,7 @@
  * descriptor are one grid inside the anchor.
  */
 .rowLink {
+  position: relative;
   display: grid;
   grid-template-columns: 2.5rem minmax(0, 1fr) auto;
   align-items: baseline;
@@ -232,6 +233,150 @@
 .rowLink:focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: 2px;
+}
+
+/* --- The marks ------------------------------------------------------------
+ *
+ * A drawn mark per destination, in the row's own free corner. FADED, then
+ * surfacing: it rests at the weight of a watermark and comes forward when the
+ * row is hovered, focused or active — the same recessive-to-present behaviour
+ * the section's later background imagery will use, so the two read as one
+ * system rather than two decorations competing.
+ *
+ * Absolutely positioned on purpose: `.rowLink` is a grid whose children are
+ * placed by column, and a sixth grid child would shove the index out of its
+ * cell in every row.
+ */
+
+.mark {
+  position: absolute;
+  inset-block-end: var(--space-sm);
+  inset-inline-end: var(--space-sm);
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  color: var(--ink-primary);
+  opacity: 0.14;
+  /* The row is the target; the mark must never eat its own link's pointer. */
+  pointer-events: none;
+  transition: opacity var(--motion-duration-base) var(--ease-standard);
+}
+
+.mark svg {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.row[data-active] .mark,
+.rowLink:hover .mark,
+.rowLink:focus-visible .mark {
+  opacity: 0.6;
+}
+
+/*
+ * Parts animate individually. `transform-box: fill-box` is what makes a
+ * percentage transform-origin mean the SHAPE's own box rather than the SVG
+ * viewport — without it every scale pivots off the canvas corner.
+ */
+.mark [data-part] {
+  transform-box: fill-box;
+  transform-origin: left center;
+  transition:
+    transform var(--motion-duration-base) var(--ease-standard),
+    opacity var(--motion-duration-base) var(--ease-standard),
+    stroke-dashoffset var(--motion-duration-base) var(--ease-standard);
+}
+
+/* CATÁLOGO — the ladder extends, rung by rung. */
+.row[data-active] .mark[data-mark="catalog"] [data-part],
+.rowLink:hover .mark[data-mark="catalog"] [data-part] {
+  transform: scaleX(1.12);
+}
+
+.mark[data-mark="catalog"] [data-part]:nth-child(2) {
+  transition-delay: 40ms;
+}
+.mark[data-mark="catalog"] [data-part]:nth-child(3) {
+  transition-delay: 80ms;
+}
+.mark[data-mark="catalog"] [data-part]:nth-child(4) {
+  transition-delay: 120ms;
+}
+
+/* ÁREAS — the eight come up in sequence, left to right. */
+.mark[data-mark="areas"] [data-part] {
+  opacity: 0.4;
+}
+
+.row[data-active] .mark[data-mark="areas"] [data-part],
+.rowLink:hover .mark[data-mark="areas"] [data-part] {
+  opacity: 1;
+}
+
+.mark[data-mark="areas"] [data-part]:nth-child(2) {
+  transition-delay: 30ms;
+}
+.mark[data-mark="areas"] [data-part]:nth-child(3) {
+  transition-delay: 60ms;
+}
+.mark[data-mark="areas"] [data-part]:nth-child(4) {
+  transition-delay: 90ms;
+}
+.mark[data-mark="areas"] [data-part]:nth-child(5) {
+  transition-delay: 45ms;
+}
+.mark[data-mark="areas"] [data-part]:nth-child(6) {
+  transition-delay: 75ms;
+}
+.mark[data-mark="areas"] [data-part]:nth-child(7) {
+  transition-delay: 105ms;
+}
+.mark[data-mark="areas"] [data-part]:nth-child(8) {
+  transition-delay: 135ms;
+}
+
+/* MUNDOS — the three rings draw apart, becoming legible as three. */
+.mark[data-mark="worlds"] [data-part] {
+  transform-origin: center;
+}
+
+.row[data-active] .mark[data-mark="worlds"] [data-part]:nth-child(1),
+.rowLink:hover .mark[data-mark="worlds"] [data-part]:nth-child(1) {
+  transform: translateX(-2px);
+}
+
+.row[data-active] .mark[data-mark="worlds"] [data-part]:nth-child(3),
+.rowLink:hover .mark[data-mark="worlds"] [data-part]:nth-child(3) {
+  transform: translateX(2px);
+}
+
+/* INVESTIGACIÓN — the entries extend from the spine. */
+.row[data-active] .mark[data-mark="research"] [data-part]:not(:first-child),
+.rowLink:hover .mark[data-mark="research"] [data-part]:not(:first-child) {
+  transform: scaleX(1.18);
+}
+
+.mark[data-mark="research"] [data-part]:nth-child(3) {
+  transition-delay: 40ms;
+}
+.mark[data-mark="research"] [data-part]:nth-child(4) {
+  transition-delay: 80ms;
+}
+
+/*
+ * CALIDAD — the tie between the document and the one presentation it examines
+ * DRAWS ITSELF on hover. That link is the whole rule: it is the only part of
+ * this mark that moves, because it is the only part that is a claim about
+ * scope rather than a shape.
+ */
+.mark[data-mark="quality"] [data-part="link"] {
+  stroke-dasharray: 9;
+  stroke-dashoffset: 9;
+}
+
+.row[data-active] .mark[data-mark="quality"] [data-part="link"],
+.rowLink:hover .mark[data-mark="quality"] [data-part="link"] {
+  stroke-dashoffset: 0;
 }
 
 /* --- Preview panel (wide screens) ---------------------------------------- */
@@ -529,6 +674,22 @@
   .plateMeta {
     font-size: var(--text-2xs);
   }
+
+  /*
+   * THE MARK MOVES TO THE HEAD OF THE ROW ON A PHONE.
+   *
+   * Bottom-right is empty on the desktop strip, but a phone row is a
+   * full-width block: the descriptor wraps across that corner and the action
+   * line is permanently visible (no hover to reveal it), so the mark landed on
+   * top of both in all five rows. The head of the row is the free space here —
+   * inboard of the figure, which keeps the corner for its count.
+   */
+  .mark {
+    inset-block: var(--space-sm) auto;
+    inset-inline-end: 3.5rem;
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+  }
 }
 
 /* Two columns hold to 24rem: one column doubles the block's height for no gain. */
@@ -546,8 +707,28 @@
   .listLink,
   .listLink::before,
   .listLink::after,
-  .list .listLink > span {
+  .list .listLink > span,
+  .mark,
+  .mark [data-part] {
     transition: none;
+  }
+
+  /*
+   * The marks still brighten — that is state, not decoration — but nothing
+   * travels, extends or draws itself.
+   */
+  .row[data-active] .mark[data-mark="catalog"] [data-part],
+  .rowLink:hover .mark[data-mark="catalog"] [data-part],
+  .row[data-active] .mark[data-mark="worlds"] [data-part],
+  .rowLink:hover .mark[data-mark="worlds"] [data-part],
+  .row[data-active] .mark[data-mark="research"] [data-part]:not(:first-child),
+  .rowLink:hover .mark[data-mark="research"] [data-part]:not(:first-child) {
+    transform: none;
+  }
+
+  .mark[data-mark="quality"] [data-part="link"] {
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
   }
 
   /* The wash may still appear; the arrow must not travel. */

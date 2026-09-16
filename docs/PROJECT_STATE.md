@@ -453,6 +453,30 @@ without being a grid of nav cards or a mega-menu. Nothing else removed.
 - **Gated destinations**: `server/hub` returns `explorer: null` until a public
   document exists, and a new `check:output` assertion (negative-controlled)
   fails the build if any page links the documentation explorer while it 404s.
+- **Each switch carries a drawn mark** (owner, 2026-09-16: "let's make the
+  webpage not so minimalistic, add some icons/symbols that react to the hover
+  as well"). `components/home/HubMark` — five inline SVGs in the geometric
+  language the specimen plate and area board already use, since there is no
+  icon system here and the Design Bible never mentions one. They rest at
+  opacity 0.14 and rise to 0.6 when the row is hovered, focused or active: the
+  same recessive-to-present behaviour the section's planned background imagery
+  will use, so the two read as one system. Each mark draws the STRUCTURE of its
+  destination — the presentation ladder, the eight area dots, three world
+  rings, an index spine, and a document tied to one presentation — and each
+  animates a part of itself on hover (rungs extend, dots come up in sequence,
+  rings draw apart, entries extend, the document-to-presentation link draws).
+- **The quality mark is deliberately not a seal, badge, shield or checkmark.**
+  That section's own copy is "donde no existe un documento, no aparece un
+  sello", and a tick there would manufacture exactly the certification signal
+  the site refuses to imply. It draws the RELATIONSHIP instead: one document,
+  one presentation, joined.
+- **The mark is absolutely positioned, never a grid child.** `.rowLink` is a
+  grid whose children are placed by column; a sixth child pushes the index out
+  of its cell in every row. It sits in the empty bottom-right corner on the
+  desktop strip and moves to the row's head on a phone, where the descriptor
+  wraps across that corner and the action line is permanently visible.
+  Verified by measuring TEXT ink (a Range), not element boxes: a `.rowName`
+  box spans its whole column and reports a false overlap at every width.
 - Homepage sections renumbered 01–06; the hub is 01.
 
 **Gates:** all `npm run check` gates pass. Production QA: 0 axe WCAG 2.2 A/AA
