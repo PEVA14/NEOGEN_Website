@@ -600,12 +600,17 @@ Per pack / per vial is a toggle over the same prices. The crosshair is CSS
 `:has()`. Row order is the browser's sort. `check:catalog` asserts the layout
 rules and that every aligned cell is that variant's registry price.
 
-**Parked storefront moments.** The catalogue ticker and the flagship shop
-(`components/storefront`, data in `server/storefront`) are built and tested
-but not rendered — the owner removed them from the homepage on 2026-09-15.
-If either is placed again: islands receive numbers and labels, never a
-registry; motion must stop (pause control, static under reduced motion);
-commerce actions are gated by `bagEnabled()` on the server.
+**The flagship shop** (`components/storefront/FlagshipShop`) renders on the
+three flagship product pages and offers the OTHER two worlds — never the
+product the page is about, whose commerce panel is already above it. World
+colour stays in the plate and the tab dots; the counter itself is Quiet, and
+the action is gated by `bagEnabled()` on the server.
+
+**Parked.** The catalogue ticker (`components/storefront/CatalogTicker`, data
+in `server/storefront`) is built and tested but rendered nowhere — the owner
+removed it from the homepage on 2026-09-15. If it is placed again: islands
+receive numbers and labels, never a registry, and motion must stop (pause
+control, static under reduced motion).
 
 ## 17. Commands
 

@@ -206,22 +206,6 @@ const en: Dictionary = {
       play: "Resume the moving catalog",
     },
 
-    shop: {
-      label: "Shop",
-      title: "Choose your presentation",
-      lede: "The three flagship compounds with every presentation and price. Switch world and strength without leaving the homepage.",
-      tabsLabel: "Flagship compounds",
-      composition: "Composition",
-      presentation: "Presentation",
-      presentations: "{n} in catalog",
-      unit: "{price} per vial · pack of {n}",
-      freeReached: "With this pack, your order reaches free shipping",
-      freeFrom: "Free shipping on orders from {price}",
-      add: "Add to bag",
-      added: "Added",
-      view: "View product",
-    },
-
     products: {
       index: "05",
       label: "Products",
@@ -320,6 +304,22 @@ const en: Dictionary = {
      * do with either, and no reconstitution or administration language may
      * ever be added to this section.
      */
+    shop: {
+      label: "Shop",
+      qualifier: "Flagship compounds",
+      title: "The other worlds",
+      lede: "The other flagship compounds, with every presentation and price.",
+      tabsLabel: "Flagship compounds",
+      composition: "Composition",
+      presentation: "Presentation",
+      presentations: "{n} in catalog",
+      unit: "{price} per vial · pack of {n}",
+      freeReached: "With this pack, your order reaches free shipping",
+      freeFrom: "Free shipping on orders from {price}",
+      add: "Add to bag",
+      added: "Added",
+      view: "View product",
+    },
     materials: {
       index: "06",
       label: "Materials",

@@ -28,7 +28,8 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 | `4ab9b9a`   | Phase 12.1 — discovery area depth: data-derived sections after the masthead                                                     |
 | `541c61b`   | Catalogue filtering, area index, search field, area design preview (§8c)                                                        |
 | `b080cf3`   | Card reveal and homepage commerce layer, first version (§8d)                                                                    |
-| _this_      | Owner review of §8d: register becomes the presentation matrix; homepage trimmed                                                 |
+| `2b80dc7`   | Owner review of §8d: register becomes the presentation matrix; homepage trimmed                                                 |
+| _this_      | Flagship shop moved onto the flagship product pages                                                                             |
 
 **Phase 12.1 is complete. Phase 13 has not been started or approved.** Do not
 begin it without a brief from the owner.
@@ -361,8 +362,10 @@ price spectrum, flagship shop). Owner review:
   The old `CompoundRow` register list was deleted.
 - **Price spectrum** — "cool but not that useful"; removed entirely (component,
   builder, copy, log-axis derivations and their checks).
-- **Flagship shop** — nice but not for the homepage; parked, not rendered.
-  Where it could live is an open question for the owner.
+- **Flagship shop** — not for the homepage; it now renders on the three
+  flagship product pages, showing the OTHER two worlds (the page's own
+  commerce panel already sells the product it is about). Copy moved to
+  `pdp.shop`; the section is numbered with the rest of the PDP spine.
 - The homepage is back to its original sections, numbered 01–05. The owner
   called out the research rail (03) and flagship cards (05), both now carrying
   the card reveal, as working well, and liked the dev-only area preview.
@@ -384,6 +387,11 @@ register view unfiltered (375/1440), filtered to Metabolismo (1440) and on the
 Neurología and Metabolismo area pages (375/1440), with the tables rendered.
 Initial JS gzip: home 198.4 KB, catalogue 192.4, area 196.1, PDP 194.2;
 three.js absent from every initial payload.
+
+**Flagship shop on the PDPs:** 0 axe violations and no overflow on `/es/productos/reta`
+at 375 and 1440 and on the GLOW and GHK-Cu pages at 1440; each page's tabs offer only
+the other two worlds; a non-flagship page (Semaglutide) is unchanged. Flagship PDP
+initial JS 196.1 KB gzip (was 194.2), three.js still absent.
 
 **Not built, flagged:** the owner's "for research purposes only" line (§4) is
 still not rendered anywhere a product is sold, including the parked shop counter.

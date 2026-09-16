@@ -17,9 +17,9 @@ import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/types";
 
 /**
- * PARKED STOREFRONT MOMENTS — data for the catalogue ticker and the flagship
- * shop, built on the server so the islands receive numbers and labels only.
- * Neither is rendered today (see `components/storefront`). The presentation
+ * STOREFRONT DATA — for the flagship shop (rendered on flagship product pages,
+ * showing the other two worlds) and the parked catalogue ticker, built on the
+ * server so the islands receive numbers and labels only. The presentation
  * matrix moved into the catalogue's register view; the price spectrum was
  * removed.
  */

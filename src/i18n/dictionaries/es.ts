@@ -219,32 +219,16 @@ const es = {
     },
 
     /**
-     * APARCADOS — el ticker del catálogo y la tienda de insignias existen como
-     * componentes pero no se muestran en la portada (decisión del dueño,
-     * 2026-09-15). Su copia se conserva para cuando encuentren lugar.
+     * APARCADO — el ticker del catálogo existe como componente pero no se
+     * muestra (decisión del dueño, 2026-09-15). Su copia se conserva para
+     * cuando encuentre lugar. La tienda de insignias vive ahora en la ficha
+     * de cada compuesto insignia: ver `pdp.shop`.
      */
     ticker: {
       label: "Catálogo completo",
       from: "Desde",
       pause: "Pausar el catálogo en movimiento",
       play: "Reanudar el catálogo en movimiento",
-    },
-
-    shop: {
-      label: "Tienda",
-      title: "Elige tu presentación",
-      lede: "Los tres compuestos insignia con todas sus presentaciones y precios. Cambia de mundo y de concentración sin salir de la portada.",
-      tabsLabel: "Compuestos insignia",
-      composition: "Composición",
-      presentation: "Presentación",
-      presentations: "{n} en catálogo",
-      /* "$650 por vial · empaque de 10" */
-      unit: "{price} por vial · empaque de {n}",
-      freeReached: "Con este empaque, tu pedido alcanza el envío gratis",
-      freeFrom: "Envío gratis en pedidos desde {price}",
-      add: "Añadir al carrito",
-      added: "Añadido",
-      view: "Ver producto",
     },
 
     products: {
@@ -353,6 +337,28 @@ const es = {
      * do with either, and no reconstitution or administration language may
      * ever be added to this section.
      */
+    /**
+     * LA TIENDA DE INSIGNIAS — en la ficha de un compuesto insignia, con los
+     * OTROS dos mundos. El panel de compra de esta página ya vende este
+     * producto; repetirlo aquí sería la misma acción dos veces.
+     */
+    shop: {
+      label: "Tienda",
+      qualifier: "Compuestos insignia",
+      title: "Los otros mundos",
+      lede: "Los otros compuestos insignia, con todas sus presentaciones y precios.",
+      tabsLabel: "Compuestos insignia",
+      composition: "Composición",
+      presentation: "Presentación",
+      presentations: "{n} en catálogo",
+      /* "$650 por vial · empaque de 10" */
+      unit: "{price} por vial · empaque de {n}",
+      freeReached: "Con este empaque, tu pedido alcanza el envío gratis",
+      freeFrom: "Envío gratis en pedidos desde {price}",
+      add: "Añadir al carrito",
+      added: "Añadido",
+      view: "Ver producto",
+    },
     materials: {
       index: "06",
       label: "Materiales",

@@ -18,7 +18,9 @@ import { QualityRecord } from "@/components/quality";
 import { CitationRail } from "@/components/research";
 import { Body, Mono } from "@/components/typography";
 import { ProductCard, TextLink } from "@/components/ui";
+import { FlagshipShop } from "@/components/storefront";
 import { routes } from "@/config/routes";
+import { siteConfig } from "@/config/site";
 import { getWorld } from "@/config/worlds";
 import { galleryImages, productMedia, resolveStageStill } from "@/content/media";
 import { publicOverview } from "@/content/overview";
@@ -40,6 +42,7 @@ import { localizePath } from "@/i18n/routing";
 import { alternates } from "@/lib/alternates";
 import { bagEnabled } from "@/payments";
 import { cardDetails, cardDetailsCopy } from "@/server/catalog";
+import { shopProducts } from "@/server/storefront";
 import { fillTemplate, presentationSummary, socialMetadata } from "@/lib/meta";
 
 import type { Metadata } from "next";
@@ -215,6 +218,15 @@ export default async function ProductPage({
   const materialPrice = priceFor(materials);
 
   /*
+   * THE OTHER WORLDS. On a flagship page only, and never this product: the
+   * commerce panel above already sells it, and a second counter for the same
+   * compound is the same action twice. RETA's page offers GLOW and GHK-Cu.
+   */
+  const otherFlagships = product.world
+    ? (await shopProducts(locale, dict)).filter((item) => item.slug !== product.slug)
+    : [];
+
+  /*
    * SECTION NUMBERING FOLLOWS WHAT RENDERS.
    *
    * The profile exists only for products with approved sourced content, and
@@ -227,6 +239,7 @@ export default async function ProductPage({
     ...(overview ? ["overview"] : []),
     "research",
     "specifications",
+    ...(otherFlagships.length > 0 ? ["worlds"] : []),
     ...(materials.length > 0 ? ["materials"] : []),
     ...(related.length > 0 ? ["related"] : []),
   ];
@@ -557,6 +570,44 @@ export default async function ProductPage({
        * Verb-free by design: this lists products, it does not suggest a
        * procedure. See the dictionary note.
        */}
+      {/*
+       * THE OTHER WORLDS — the flagship counter, with this product's siblings.
+       * Quiet: the worlds appear in the plate and the tab dots, never in the
+       * controls (CONVENTIONS §3, §11), and the action is gated on the server.
+       */}
+      {otherFlagships.length > 0 ? (
+        <Section mode="quiet" aria-labelledby="worlds-title">
+          <Container width="full">
+            <SectionHeader
+              index={sectionIndex("worlds")}
+              label={`${pdp.shop.label} // ${pdp.shop.qualifier}`}
+              title={pdp.shop.title}
+              id="worlds-title"
+              lede={pdp.shop.lede}
+            />
+            <FlagshipShop
+              products={otherFlagships}
+              threshold={siteConfig.fulfilment.freeShippingThreshold}
+              bagEnabled={bagEnabled()}
+              localeTag={localeTags[locale]}
+              copy={{
+                tabsLabel: pdp.shop.tabsLabel,
+                worldLabels: dict.home.products.worldLabels,
+                composition: pdp.shop.composition,
+                presentation: pdp.shop.presentation,
+                presentations: pdp.shop.presentations,
+                unit: pdp.shop.unit,
+                freeReached: pdp.shop.freeReached,
+                freeFrom: pdp.shop.freeFrom,
+                add: pdp.shop.add,
+                added: pdp.shop.added,
+                view: pdp.shop.view,
+              }}
+            />
+          </Container>
+        </Section>
+      ) : null}
+
       {materials.length > 0 ? (
         <Section mode="quiet" aria-labelledby="materials-title" className="bg-(--surface-raised)">
           <Container width="full">
