@@ -110,7 +110,10 @@ const es = {
         research: {
           name: "Investigación",
           descriptor: "El índice de compuestos, las áreas y las referencias públicas.",
-          action: "Ir a NEOGEN Research",
+          // Shortened from "Ir a NEOGEN Research": at 182px of ink it was half
+          // again as long as any other action label and collided with the
+          // row's mark below ~1360px, where the row leaves it only 42px.
+          action: "NEOGEN Research",
         },
         quality: {
           name: "Calidad",

@@ -103,7 +103,9 @@ const en: Dictionary = {
         research: {
           name: "Research",
           descriptor: "The compound index, the areas, and the public references.",
-          action: "Go to NEOGEN Research",
+          // Shortened from "Go to NEOGEN Research" — see the Spanish note: the
+          // long label collided with the row's mark on narrower desktops.
+          action: "NEOGEN Research",
         },
         quality: {
           name: "Quality",

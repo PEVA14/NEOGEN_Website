@@ -479,6 +479,21 @@ without being a grid of nav cards or a mega-menu. Nothing else removed.
   wraps across that corner and the action line is permanently visible.
   Verified by measuring TEXT ink (a Range), not element boxes: a `.rowName`
   box spans its whole column and reports a false overlap at every width.
+- **Two bugs the owner caught in the enlarged marks, both fixed.**
+  - *Áreas clipped.* The dots swell to 1.55 on hover and the STROKE scales with
+    them, so a dot centred at 29 reached 32.95 against a 32-unit viewBox and
+    was cut against the edge. The grid is now inset to cx 7/13.5/20/26.5,
+    peaking at 30.45. The other four marks were checked the same way and clear
+    it: catalog 29.35, worlds 31.75, research 30.55, quality 29.11.
+  - *The research action collided with its mark.* "Ir a NEOGEN Research →" was
+    182px of ink where every other label is 95–127px; with the row's padding it
+    ended 198px in, and at 1280 the row is 240px wide. No mark above ~26px fits
+    beside it, and no corner escapes it either — a 56px mark occupies half of a
+    120px row whatever its anchor. The owner chose to shorten the label over
+    wrapping it or shrinking the mark, so the action is now "NEOGEN Research"
+    in both dictionaries (143px). **Measured clearance, rows lit: +33px at 1440,
+    +2px at 1280.** That is clearance, not comfort — a longer action label on
+    ANY row reopens this, so check the gap before lengthening one.
 - **Two phone constraints that are easy to re-break.** The mark does NOT scale
   there: the scale is a pointer affordance, there is no pointer on touch, and
   the first row is active by default — so the growth applied anyway and pushed

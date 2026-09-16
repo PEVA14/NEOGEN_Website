@@ -32,17 +32,24 @@ const MARKS: Record<HubId, ReactNode> = {
     </>
   ),
 
-  /** Eight dots: literally the eight public discovery areas. */
+  /**
+   * Eight dots: literally the eight public discovery areas.
+   *
+   * INSET FROM THE FRAME ON PURPOSE. The dots swell to 1.55 on hover and the
+   * STROKE scales with them, so a dot centred at 29 reached 32.95 against a
+   * 32-unit viewBox and was clipped against the edge. At 26.5 the same
+   * animation peaks at 30.45 and stays whole.
+   */
   areas: (
     <>
-      <circle data-part="" cx="8" cy="12" r="1.8" />
-      <circle data-part="" cx="15" cy="12" r="1.8" />
-      <circle data-part="" cx="22" cy="12" r="1.8" />
-      <circle data-part="" cx="29" cy="12" r="1.8" />
-      <circle data-part="" cx="8" cy="21" r="1.8" />
-      <circle data-part="" cx="15" cy="21" r="1.8" />
-      <circle data-part="" cx="22" cy="21" r="1.8" />
-      <circle data-part="" cx="29" cy="21" r="1.8" />
+      <circle data-part="" cx="7" cy="12" r="1.8" />
+      <circle data-part="" cx="13.5" cy="12" r="1.8" />
+      <circle data-part="" cx="20" cy="12" r="1.8" />
+      <circle data-part="" cx="26.5" cy="12" r="1.8" />
+      <circle data-part="" cx="7" cy="21" r="1.8" />
+      <circle data-part="" cx="13.5" cy="21" r="1.8" />
+      <circle data-part="" cx="20" cy="21" r="1.8" />
+      <circle data-part="" cx="26.5" cy="21" r="1.8" />
     </>
   ),
 
