@@ -53,20 +53,6 @@ const es = {
     metaDescription:
       "NEOGEN Atlas: tu asesor personal. Responde unas preguntas sobre tus objetivos, tu experiencia y tu presupuesto, y recibe una selección de productos NEOGEN explicada para ti.",
     intro: {
-      points: [
-        { index: "01", title: "Objetivos", body: "Qué temas te interesan y qué quieres lograr." },
-        { index: "02", title: "Sobre ti", body: "Tu experiencia y lo que más te importa." },
-        {
-          index: "03",
-          title: "Preferencias",
-          body: "Formato, tamaño de presentación e insumos.",
-        },
-        {
-          index: "04",
-          title: "Presupuesto",
-          body: "Cuánto quieres invertir y cómo piensas comprar.",
-        },
-      ],
       start: "Empezar",
       duration: "Unos dos minutos",
       boundary:
@@ -75,11 +61,23 @@ const es = {
         "Precios, presentaciones y documentación salen directamente del catálogo. Atlas sólo escribe la explicación.",
     },
     progress: "Paso {n} de {total}",
-    steps: {
-      goals: "Objetivos",
-      you: "Sobre ti",
-      preferences: "Preferencias",
-      budget: "Presupuesto",
+    /* Chrome the RENDERER needs; every question's own words live in
+       src/content/atlas/questionnaire.ts. */
+    field: {
+      optional: "Opcional",
+      selected: "{n} de {max} elegidos",
+      limit: "Ya elegiste {max}. Quita uno para cambiarlo.",
+      ranks: ["Prioridad 1", "Prioridad 2", "Prioridad 3"],
+      search: "Buscar un producto",
+      empty: "Ningún producto coincide.",
+      remove: "Quitar {name}",
+      counter: "{n} / {max}",
+      meta: {
+        products: "{n} productos",
+        compounds: "{n} compuestos",
+        compoundOne: "1 compuesto",
+        from: "Desde",
+      },
     },
     controls: {
       back: "Anterior",
@@ -87,153 +85,6 @@ const es = {
       generate: "Ver mi selección",
       restart: "Empezar de nuevo",
       edit: "Cambiar respuestas",
-    },
-    goals: {
-      title: "¿Qué te trae a NEOGEN?",
-      lede: "Empecemos por lo que buscas. Estas respuestas definen qué productos te mostramos.",
-      topics: {
-        label: "¿Qué temas te interesan?",
-        hint: "Elige hasta tres, en orden de importancia.",
-        ranks: ["Prioridad 1", "Prioridad 2", "Prioridad 3"],
-        count: "{n} productos",
-        from: "Desde",
-        selected: "{n} de {max} elegidos",
-        limit: "Ya elegiste tres. Quita uno para cambiarlo.",
-      },
-      intent: {
-        label: "¿Qué quieres lograr hoy?",
-        options: {
-          "first-order": {
-            label: "Hacer mi primer pedido",
-            hint: "Quiero saber exactamente por dónde empezar.",
-          },
-          compare: { label: "Comparar opciones", hint: "Ver alternativas antes de decidir." },
-          deepen: {
-            label: "Conocer a fondo un tema",
-            hint: "Ya sé qué me interesa; quiero ver todo lo que hay.",
-          },
-          "cover-topics": {
-            label: "Cubrir varios temas",
-            hint: "Un pedido que abarque todo lo que me interesa.",
-          },
-          browse: { label: "Sólo explorar", hint: "Conocer el catálogo sin prisa." },
-        },
-      },
-      inMind: {
-        label: "¿Ya tienes productos en mente?",
-        hint: "Opcional. Hasta tres: Atlas los incluye y te muestra qué más hay cerca.",
-        search: "Buscar un producto",
-        empty: "Ningún producto coincide.",
-        selected: "{n} de {max}",
-        remove: "Quitar {name}",
-      },
-    },
-    you: {
-      title: "Cuéntanos de ti",
-      lede: "Así ajustamos cuántos productos mostrarte y cómo explicártelos.",
-      firstName: {
-        label: "¿Cómo te llamas?",
-        hint: "Opcional. Sólo lo usamos en esta página; no se envía a la IA.",
-        placeholder: "Tu nombre",
-      },
-      experience: {
-        label: "¿Qué experiencia tienes con péptidos y productos como estos?",
-        options: {
-          new: { label: "Es mi primera vez", hint: "Prefiero empezar con algo sencillo." },
-          some: { label: "Ya he comprado antes", hint: "Conozco lo básico." },
-          experienced: { label: "Tengo mucha experiencia", hint: "Muéstrame todo el detalle." },
-        },
-      },
-      history: {
-        label: "¿Has comprado en NEOGEN antes?",
-        options: { "first-time": "Es mi primera vez en NEOGEN", returning: "Ya soy cliente" },
-      },
-      priorities: {
-        label: "¿Qué es lo más importante para ti?",
-        hint: "Elige hasta dos.",
-        options: {
-          documentation: {
-            label: "Documentación disponible",
-            hint: "Productos con documentos publicados primero.",
-          },
-          price: { label: "Buen precio", hint: "Las opciones más accesibles primero." },
-          signature: {
-            label: "Productos insignia",
-            hint: "RETA, GLOW y GHK-Cu, la línea distintiva de NEOGEN.",
-          },
-          overlap: {
-            label: "Que cubra varios temas",
-            hint: "Productos que están en más de uno de tus temas.",
-          },
-        },
-      },
-      style: {
-        label: "¿Cómo prefieres que te lo expliquemos?",
-        options: {
-          direct: { label: "Directo y breve", hint: "Sólo lo esencial." },
-          detailed: { label: "Con detalle", hint: "Todas las razones." },
-        },
-      },
-    },
-    preferences: {
-      title: "Tus preferencias",
-      lede: "Cómo quieres que sean los productos que te sugerimos.",
-      forms: {
-        label: "¿Tienes preferencia de formato?",
-        hint: "Opcional. Déjalo vacío si te da igual.",
-        options: {
-          solid: "Polvo liofilizado",
-          solution: "Solución",
-          volume: "Por volumen",
-          iu: "Unidades (UI)",
-          blend: "Mezclas",
-        },
-      },
-      size: {
-        label: "¿Qué tamaño de presentación prefieres?",
-        options: {
-          smallest: { label: "La más pequeña", hint: "Para empezar con menos." },
-          largest: { label: "La más grande", hint: "La mayor que quepa en tu presupuesto." },
-          "no-preference": { label: "Me da igual", hint: "Muéstrame la de entrada." },
-        },
-      },
-      supplies: {
-        label: "Incluir insumos",
-        hint: "Agua y otros insumos del catálogo, junto a tu selección.",
-      },
-    },
-    budget: {
-      title: "Presupuesto y contexto",
-      lede: "Comparamos tu presupuesto con los precios reales del catálogo.",
-      label: "¿Cuánto quieres invertir?",
-      options: {
-        open: { label: "Sin tope", hint: "Muéstrame todo." },
-        "8k": { label: "Hasta $8,000 MXN", hint: "Un primer pedido." },
-        "20k": { label: "Hasta $20,000 MXN", hint: "Varios productos." },
-        "40k": { label: "Hasta $40,000 MXN", hint: "Un pedido amplio." },
-      },
-      horizon: {
-        label: "¿Cómo piensas comprar?",
-        options: {
-          "one-order": { label: "Todo en un pedido", hint: "Lo que elija, lo compro de una vez." },
-          "over-time": { label: "Poco a poco", hint: "Empiezo con algo y sigo después." },
-        },
-      },
-      timing: {
-        label: "¿Para cuándo lo necesitas?",
-        options: {
-          soon: { label: "Lo antes posible", hint: "Prioriza lo disponible." },
-          "no-rush": { label: "Sin prisa", hint: "Puedo esperar." },
-        },
-      },
-      note: {
-        label: "¿Algo más que Atlas deba saber?",
-        optional: "Opcional",
-        placeholder:
-          "Por ejemplo: quiero empezar con algo de la línea insignia y dejar lo demás para mi siguiente pedido.",
-        hint: "Cuéntanos tus objetivos con tus palabras. Atlas no usa información de salud, peso ni medicamentos: si la nota la incluye, se descarta completa y el resto de tus respuestas se usa igual.",
-        counter: "{n} / {max}",
-      },
     },
     generating: {
       title: "Preparando tu selección",
@@ -290,6 +141,10 @@ const es = {
         signature: "Insignia",
         overlap: "Cruza tus temas",
         topics: "Temas",
+        research: "Qué hace",
+        studied: "Qué se ha estudiado",
+        source: "{n} fuente publicada",
+        sources: "{n} fuentes publicadas",
         open: "Ver producto",
         addAll: "Añadir lo de «Empieza aquí» a la bag",
         addedAll: "Añadido a la bag",
@@ -351,23 +206,6 @@ const es = {
           "health-note":
             "Tu nota incluía temas de salud, así que se descartó completa antes de preparar tu selección. Todas tus demás respuestas se usaron.",
           "name-private": "Sólo se usa en esta página; no se envía a la IA.",
-        },
-        fields: {
-          topics: "Temas",
-          intent: "Objetivo",
-          inMind: "Productos en mente",
-          firstName: "Nombre",
-          experience: "Experiencia",
-          history: "Con NEOGEN",
-          priorities: "Lo más importante",
-          style: "Explicación",
-          forms: "Formato",
-          size: "Tamaño",
-          includeSupplies: "Insumos",
-          budget: "Presupuesto",
-          horizon: "Forma de compra",
-          timing: "Para cuándo",
-          note: "Nota",
         },
       },
       empty: {
@@ -573,7 +411,6 @@ const es = {
         label: "Nuevo",
         title: "Tu asesor personal",
         body: "Cuéntale a Atlas qué buscas, cómo compras y cuánto quieres invertir. Revisa el catálogo completo y te dice por dónde empezar, y por qué.",
-        steps: ["Objetivos", "Sobre ti", "Preferencias", "Presupuesto"],
         action: "Empezar con Atlas",
       },
     },

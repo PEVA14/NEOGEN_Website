@@ -1,6 +1,6 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-09-15**, after the homepage hub (§8e).
+Last updated **2026-09-17**, after the Atlas questionnaire system (§8i).
 
 This file is the memory of the project for a new session. It records what is
 not derivable from the code: where the phases stand, how the owner runs the
@@ -32,6 +32,8 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 | `3fe1f7e`   | Flagship shop moved onto the flagship product pages                                                                             |
 | _this_      | Homepage hub: the gateway section under the hero (§8e)                                                                          |
 | `d1300b1`   | NEOGEN Atlas: questionnaire → retrieval → AI adapter → validated map (§8h)                                                      |
+| `d3a9e46`   | Atlas part 1 + homepage index                                                                                                   |
+| _this_      | Sourced compound profiles, the research-function axis, and the data-driven questionnaire system (§8i)                           |
 
 **Phase 12.1 is complete. Phase 13 has not been started or approved.** Do not
 begin it without a brief from the owner.
@@ -614,19 +616,16 @@ the footer, the sitemap and a band in the homepage hub.
 
 **Architecture.**
 
-    questionnaire → AtlasProfile → applyAtlasPolicy → selection signals,
-    constraints, narrative signals, presentation signals, ledger → retrieval →
-    (model | deterministic plan) → validation against the constraints →
-    AtlasResultView → UI
+    questionnaire config → answers → profileFromAnswers (by ROLE) →
+    applyAtlasPolicy → selection signals, constraints, narrative signals,
+    presentation signals → retrieval → (model | deterministic plan) →
+    validation against the constraints → AtlasResultView → UI
 
-- `domain/atlas/profile.ts` — parses 15 answers in four steps: goals (ranked
-  topics, what they want to get done, up to three products in mind), about
-  you (name, experience, NEOGEN history, priorities, explanation style),
-  preferences (format, presentation size, supplies), budget and context
-  (budget, one order or over time, timing, free note). Validation only.
+- The questionnaire itself is CONTENT, not code — see §8i.
 - `domain/atlas/policy.ts` — THE ONLY PLACE that decides what an answer may
-  influence (`ATLAS_POLICY`: selection / ranking / explanation / presentation)
-  and turns answers into weights, sizes and rules. `check:atlas` fails if
+  influence (`ATLAS_POLICY`: selection / ranking / explanation / presentation),
+  keyed by ROLE rather than by question, and turns answers into weights, sizes
+  and rules. `check:atlas` fails if
   retrieval, plan, composer, validator, prompt, assembly or the result UI read
   the profile, or if the UI imports a recommendation module.
 - `retrieval.ts` reads selection signals; `plan.ts` is the no-model plan and
@@ -662,6 +661,90 @@ correction retry can double it. Rate limit 8 / 10 min per IP, in memory.
 **Not verified:** a live generation — no key exists locally. The adapter is
 proven offline only. Availability data is empty (`AVAILABILITY = {}`), so the
 timing answer has no effect on ranking until the owner records stock.
+
+## 8i. Sourced compound profiles, research functions, and the questionnaire system
+
+Three connected pieces, 2026-09-16/17, all uncommitted-then-committed together.
+
+### Sourced compound profiles — awaiting owner review
+
+The owner asked for specific, researcher-facing descriptions of what each
+compound does. Written for RETA (retatrutide), GHK-Cu, BPC-157, TB-500 and the
+GLOW blend, with **10 references** whose metadata and every quoted figure were
+read from the source's abstract via Europe PMC (NEJM, Lancet, Cell Metabolism,
+a 2025 systematic review, a 2026 rat tendon study, and reviews for GHK and
+thymosin β4).
+
+- Content: `src/content/overview/registry.ts`, `src/content/references/registry.ts`.
+- **Nothing renders yet.** Both registries are gated by one switch:
+  `BATCH_1_FLAGSHIP_PROFILES` in `src/content/review.ts`, set to
+  `"owner-review"`. Flipping it to `"approved"` publishes the batch — the PDP
+  overview section, the citation rails, the Research Hub index, the Atlas
+  result cards and the research-function question all light up together.
+  **That approval is the owner's, not Claude's** (a permission prompt blocked
+  even a temporary local flip, correctly).
+- Statements report mechanism, model (cell / animal / human trial), published
+  figures, reported adverse events AND the evidence limits the sources state
+  (e.g. a 2026 review finding musculoskeletal claims unsubstantiated in
+  humans). No dosing; `check:content` enforces the vocabulary.
+
+### The research-function axis
+
+`src/content/functions.ts` is a vocabulary of nine research functions
+(receptors, pathways, tissue processes). A product is tagged with one only from
+inside its own overview, pointing at a sourced statement: `publicFunctions()`
+returns a tag **only while that statement is public**, so a function can never
+appear before its source. Atlas offers the function question only when at
+least one compound carries an approved tag, and a chosen function retrieves its
+compounds regardless of the visitor's chosen areas.
+
+**Boundary, raised three times and held:** the owner asked for goal-shaped
+options ("losing weight", "gaining muscle", "less appetite", "better sleep") on
+the grounds that visitors do not know what to research. Declined each time —
+matching a person's desired outcome to an unapproved compound is individual
+drug selection. What was built instead names what the literature studied.
+`check:content` fails on personal-outcome wording anywhere in the questionnaire
+content. See also the `atlas-no-health-intake` memory.
+
+### The questionnaire is data now (owner request)
+
+Owner brief (2026-09-17): build the questionnaire SYSTEM, keep the questionnaire
+CONTENT separate and editable by the owner, without touching Atlas components.
+
+- **Edit questions here:** `src/content/atlas/questionnaire.ts`. Full guide:
+  **`docs/ATLAS_QUESTIONNAIRE.md`**.
+- **System:** `src/domain/atlas/questionnaire/` — `types.ts` (schema),
+  `view.ts` (resolved, localised, registries read), `index.ts` (engine: view
+  building, conditional visibility, validation, answers → roles by
+  `ROLE_DEFAULTS`). `src/components/atlas/QuestionField.tsx` renders one
+  question per kind; `AtlasExperience.tsx` renders groups as steps and knows no
+  question.
+- **Kinds:** single-select, multi-select (cards / pills / ranked tiles /
+  registry search), toggle, number, range, short text, long text, with
+  conditional questions and conditional groups, required/optional, and
+  per-question `role`, `recap` and `shortLabel`.
+- **Ids vs labels:** answers are `{ questionId: value }` with option ids;
+  labels are bilingual content. Rewriting a label is free; changing an id is a
+  data change and `version` should be bumped (it keys the session draft).
+- **Policy is now keyed by ROLE, not by question** (`ATLAS_POLICY`), so the
+  questionnaire can change shape without touching the advisor. `profileFromAnswers`
+  maps answers by role; a role no question fills falls back to a documented
+  default. The budget role reads an option's numeric `value` OR a number
+  answer, so tiers can become a slider with no code change.
+- **Result UI is structured-data-driven:** `recap` and `ledger` entries carry
+  their own label, answer, uses and withholding, so a new question appears in
+  both with no component change.
+- **The dictionaries no longer hold questions** — only chrome (`atlas.field`,
+  controls, progress, generating, error, result). The homepage Atlas band reads
+  its step names from the questionnaire's groups.
+- **Verified:** all gates pass; both locales; 375px and 1280px with 0 axe A/AA
+  violations, no overflow and no undersized targets on all four steps and the
+  result; the API rejects unknown questions, unknown options, over-limit text,
+  too many selections and answers to hidden questions (400); a health note is
+  still discarded whole with the ledger saying so. Negative control: a
+  duplicate role plus a forward-referencing condition fails `check:atlas`.
+- **Not verified:** a live model generation (no key locally), and the `number`
+  and `range` kinds are proven by fixtures rather than by a shipped question.
 
 ## 9. Recommendation for Phase 13 (not approved)
 

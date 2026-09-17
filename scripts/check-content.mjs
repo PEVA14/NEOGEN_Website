@@ -37,8 +37,10 @@ import {
   auditOverviews,
   citedReferenceIds,
   OVERVIEWS,
+  publicFunctions,
   publicOverview,
 } from "../src/content/overview/index.ts";
+import { RESEARCH_FUNCTIONS } from "../src/content/functions.ts";
 import {
   isPublicReference,
   publicReferencesById,
@@ -287,6 +289,7 @@ const overview = (overrides) => ({
   mechanismNotes: [],
   keyReferences: [],
   technicalNotes: [],
+  functions: [],
   ...overrides,
 });
 const render = (o, locale = "es") =>
@@ -436,6 +439,80 @@ eq(
   "cited ids come only from what renders",
 );
 
+/* ---- the Atlas questionnaire is content, held to the same vocabulary ----- */
+{
+  const source = readFileSync("src/content/atlas/questionnaire.ts", "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^\s*\/\/.*$/gm, "");
+  const strings = [...source.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map((m) => m[1]);
+  const term = strings.map((value) => forbiddenTermIn(value)).find(Boolean);
+  ok(!term, "the questionnaire asks nothing in forbidden vocabulary", term ?? "");
+  /* Its answers must stay a research question, never a personal outcome. */
+  for (const banned of [
+    /bajar de peso|lose weight|weight loss/i,
+    /ganar m[uú]sculo|gain muscle|muscle gain/i,
+    /apetito|appetite/i,
+    /libido|sexual/i,
+    /dormir mejor|better sleep/i,
+  ]) {
+    ok(!banned.test(source), "the questionnaire offers no personal-outcome option", String(banned));
+  }
+}
+
+/* ---- research functions: a tag never outlives its source ---------------- */
+{
+  const tagged = (statement) => ({
+    overviews: {
+      alpha: overview({
+        researchContext: [statement],
+        functions: [{ id: "wound-healing", statement: "s1" }],
+      }),
+    },
+    references: pool,
+  });
+  eq(
+    publicFunctions("alpha", tagged(science({}))),
+    ["wound-healing"],
+    "a function backed by a public statement is public",
+  );
+  eq(
+    publicFunctions(
+      "alpha",
+      tagged(science({ provenance: { class: "scientific-source", status: "owner-review" } })),
+    ),
+    [],
+    "a function whose statement awaits review is not public",
+  );
+  eq(
+    publicFunctions("alpha", tagged(science({ references: ["r2"] }))),
+    [],
+    "a function whose statement cites only an unapproved reference is not public",
+  );
+  const tagIssues = auditOverviews({
+    overviews: {
+      alpha: overview({
+        researchContext: [science({})],
+        functions: [
+          { id: "wound-healing", statement: "missing" },
+          { id: "weight-loss", statement: "s1" },
+        ],
+      }),
+    },
+    references: pool,
+  }).map((i) => i.code);
+  ok(
+    tagIssues.includes("function_without_statement"),
+    "the audit reports a function pointing at no statement",
+  );
+  ok(tagIssues.includes("function_unknown"), "the audit reports a function outside the vocabulary");
+  for (const fn of RESEARCH_FUNCTIONS) {
+    const term = [fn.label.es, fn.label.en, fn.hint.es, fn.hint.en]
+      .map(forbiddenTermIn)
+      .find(Boolean);
+    ok(!term, `research function ${fn.id} carries no forbidden vocabulary`, term ?? "");
+  }
+}
+
 /* ---- area overview: the same rules, one level up (Phase 12.1) ----------- */
 
 const areaOverview = (overrides) => ({
@@ -552,17 +629,37 @@ eq(auditAreaOverviews().length, 0, "the declared area overviews audit clean");
 
 /* ---- the real registries ----------------------------------------------- */
 
-eq(REFERENCES.length, 0, "no reference is declared until one is checked against its source");
+const referenceIds = new Set(REFERENCES.map((r) => r.id));
+eq(referenceIds.size, REFERENCES.length, "reference ids are unique");
+const citedIds = new Set(
+  Object.values(OVERVIEWS).flatMap((o) => [
+    ...[
+      ...o.researchContext,
+      ...o.mechanismNotes,
+      ...o.areasOfInvestigation.map((a) => a.statement),
+    ].flatMap((s) => s.references),
+    ...o.keyReferences,
+  ]),
+);
+for (const id of citedIds) {
+  if (!referenceIds.has(id)) fail("an overview cites a reference that is not in the registry", id);
+}
+assertions += citedIds.size;
+for (const r of REFERENCES) {
+  if (!citedIds.has(r.id)) fail("a registered reference is cited by no overview", r.id);
+}
+assertions += REFERENCES.length;
 for (const r of REFERENCES) {
   const problems = validateReference(r);
   if (problems.length)
     fail("invalid reference in the registry", `${r.id}: ${problems.map((p) => p.code).join(", ")}`);
 }
-eq(
-  Object.keys(OVERVIEWS).length,
-  0,
-  "no product overview is declared until it is written against sources",
-);
+for (const slug of Object.keys(OVERVIEWS)) {
+  if (!publishedProducts.some((p) => p.slug === slug))
+    fail("an overview is keyed to a slug that is not a published product", slug);
+  if (OVERVIEWS[slug].slug !== slug) fail("an overview's slug does not match its key", slug);
+}
+assertions += Object.keys(OVERVIEWS).length;
 eq(auditOverviews().length, 0, "the declared overviews audit clean");
 
 /* ---- research connection: one truth, both ends ------------------------- */

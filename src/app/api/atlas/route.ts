@@ -1,8 +1,7 @@
-import { publishedProducts } from "@/data/catalog";
-import { publicAreas } from "@/data/discovery";
-import { parseAtlasProfile } from "@/domain/atlas";
+import { parseAtlasAnswers } from "@/domain/atlas";
 import { isLocale } from "@/i18n/config";
 import { generateAtlas } from "@/server/atlas/generate";
+import { atlasQuestionnaireView } from "@/server/atlas/questionnaire";
 
 /**
  * ATLAS GENERATION — one POST, provider-independent.
@@ -21,10 +20,12 @@ import { generateAtlas } from "@/server/atlas/generate";
  *   rate       — a best-effort per-address window. In-memory, so per instance:
  *                it blunts a loop, it is not a quota. A shared store is the
  *                upgrade if the endpoint is ever abused at scale.
- *   input      — `parseAtlasProfile` rejects anything outside the closed
- *                vocabularies. What each answer may then influence — and
- *                whether the note may be read at all — is the policy's call,
- *                made inside `generateAtlas`.
+ *   input      — `parseAtlasAnswers` rejects anything the questionnaire does
+ *                not describe: an unknown question, a value of the wrong
+ *                shape, an option outside the resolved list, a number out of
+ *                bounds. What each answer may then influence — and whether the
+ *                note may be read at all — is the policy's call, made inside
+ *                `generateAtlas`.
  */
 
 export const maxDuration = 60;
@@ -81,14 +82,18 @@ export async function POST(request: Request): Promise<Response> {
     return json({ ok: false, error: "invalid_answers" }, 400);
   }
 
-  const parsed = parseAtlasProfile(body.profile, {
-    topics: publicAreas().map((area) => area.id),
-    products: publishedProducts.map((product) => product.slug),
-  });
+  /*
+   * The SAME view the page rendered, rebuilt here from the same content and
+   * registries — so the rules that accepted an answer in the browser are the
+   * rules that accept it on the server, and a stale draft cannot answer a
+   * question that no longer exists.
+   */
+  const questionnaire = await atlasQuestionnaireView(body.locale);
+  const parsed = parseAtlasAnswers(body.answers, questionnaire);
   if (!parsed.ok) return json({ ok: false, error: "invalid_answers" }, 400);
 
   try {
-    const result = await generateAtlas(parsed.profile, body.locale);
+    const result = await generateAtlas(questionnaire, parsed.answers, body.locale);
     return json({ ok: true, result });
   } catch (error) {
     console.error(

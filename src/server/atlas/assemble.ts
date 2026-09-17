@@ -1,23 +1,26 @@
 import "server-only";
 
 import { routes } from "@/config/routes";
+import { publicOverview } from "@/content/overview";
 import { REFERENCES, referenceHref } from "@/content/references";
+import { referencesForProduct } from "@/content/research";
 import { formatStrength, presentationRange, publishedProducts } from "@/data/catalog";
 import { formatPrice } from "@/data/commerce";
 import { getArea } from "@/data/discovery";
+import { atlasRecap, buildAtlasLedger } from "@/domain/atlas";
 import { publicEvidenceIndex } from "@/domain/quality";
 import { localeTags, type Locale } from "@/i18n/config";
 import { localizePath } from "@/i18n/routing";
 
 import type {
   AtlasCandidate,
+  AtlasAnswers,
   AtlasDestination,
-  AtlasField,
   AtlasGeneration,
-  AtlasLedgerEntry,
   AtlasMode,
   AtlasPickList,
   AtlasPolicyDecision,
+  AtlasQuestionnaireView,
   AtlasResultProduct,
   AtlasResultSum,
   AtlasResultView,
@@ -33,12 +36,16 @@ import type { Dictionary } from "@/i18n/types";
  * act on — a name, a price, a presentation, a documentation state, a link, a
  * bag line — is read here from the registries, by identifiers the validator
  * has already confirmed. The policy decision contributes the page's
- * personalisation and the ledger. Nothing here decides what to recommend.
+ * personalisation; the questionnaire and the answers contribute the ledger and
+ * the recap, so the result page needs no knowledge of today's questions.
+ * Nothing here decides what to recommend.
  */
 export function assembleAtlasView({
   generation,
   mode,
   decision,
+  questionnaire,
+  answers,
   retrieval,
   locale,
   dict,
@@ -48,6 +55,8 @@ export function assembleAtlasView({
   generation: AtlasGeneration;
   mode: AtlasMode;
   decision: AtlasPolicyDecision;
+  questionnaire: AtlasQuestionnaireView;
+  answers: AtlasAnswers;
   retrieval: AtlasRetrieval;
   locale: Locale;
   dict: Dictionary;
@@ -65,6 +74,20 @@ export function assembleAtlasView({
     [...retrieval.candidates, ...retrieval.supplies].map((c) => [c.slug, c]),
   );
   const supplySlugs = new Set(retrieval.supplies.map((s) => s.slug));
+
+  /* Sourced statements only: publicOverview drops anything unapproved or unreferenced. */
+  const researchView = (slug: string): AtlasResultProduct["research"] => {
+    const overview = publicOverview(slug, locale);
+    const mechanism = overview?.mechanismNotes[0]?.text ?? null;
+    const studied = overview?.researchContext[0]?.text ?? null;
+    if (!mechanism && !studied) return null;
+    return {
+      mechanism,
+      studied,
+      sources: referencesForProduct(slug).length,
+      href: `${path(routes.product(slug))}#overview-title`,
+    };
+  };
 
   const productView = (
     candidate: AtlasCandidate,
@@ -99,6 +122,7 @@ export function assembleAtlasView({
           : null,
       withinBudget: candidate.withinBudget,
       documented: candidate.documented,
+      research: researchView(candidate.slug),
     };
   };
 
@@ -184,6 +208,13 @@ export function assembleAtlasView({
     };
   };
 
+  /* The three strings the ledger needs that are not a question's own words. */
+  const ledgerCopy = {
+    yes: dict.atlas.result.ledger.yes,
+    no: dict.atlas.result.ledger.no,
+    noteGiven: dict.atlas.result.ledger.noteGiven,
+  };
+
   const resultProducts = [...start, ...more, ...supplies]
     .map((p) => bySlug.get(p.slug))
     .filter((p) => p !== undefined);
@@ -203,7 +234,6 @@ export function assembleAtlasView({
     nextSteps,
     tips: generation.tips,
     budget: {
-      budget: decision.narrative.budget,
       cap: money(cap),
       capAmount: cap,
       start: sum(start),
@@ -215,12 +245,8 @@ export function assembleAtlasView({
       noteDiscarded: decision.noteDiscarded,
       healthMentioned: generation.contextMentionsHealth && !decision.noteDiscarded,
     },
-    ledger: decision.ledger.map((entry) => ({
-      field: entry.field,
-      answer: ledgerAnswer(entry, dict, (slug) => bySlug.get(slug)?.name ?? slug),
-      uses: entry.uses,
-      withheld: entry.withheld,
-    })),
+    ledger: buildAtlasLedger(questionnaire, answers, ledgerCopy, decision.noteDiscarded),
+    recap: atlasRecap(questionnaire, answers, ledgerCopy),
     references: retrieval.referenceIds
       .map((id) => REFERENCES.find((ref) => ref.id === id))
       .filter((ref) => ref !== undefined)
@@ -232,57 +258,4 @@ export function assembleAtlasView({
     },
     commerce: { bagEnabled, localeTag: tag },
   };
-}
-
-/** The visitor's own answer, in their language, for the ledger. */
-function ledgerAnswer(
-  entry: AtlasLedgerEntry,
-  dict: Dictionary,
-  productName: (slug: string) => string,
-): string | null {
-  if (!entry.answered) return null;
-  const a = dict.atlas;
-  const value = entry.value;
-  const many = (values: readonly string[], label: (v: string) => string) =>
-    values.map(label).join(" · ");
-  const field: AtlasField = entry.field;
-
-  switch (field) {
-    case "topics":
-      return many(value as string[], (id) => dict.discovery.areas[id as DiscoveryAreaId].short);
-    case "intent":
-      return a.goals.intent.options[value as keyof typeof a.goals.intent.options].label;
-    case "inMind":
-      return many(value as string[], productName);
-    case "firstName":
-      return value as string;
-    case "experience":
-      return a.you.experience.options[value as keyof typeof a.you.experience.options].label;
-    case "history":
-      return a.you.history.options[value as keyof typeof a.you.history.options];
-    case "priorities":
-      return many(
-        value as string[],
-        (p) => a.you.priorities.options[p as keyof typeof a.you.priorities.options].label,
-      );
-    case "style":
-      return a.you.style.options[value as keyof typeof a.you.style.options].label;
-    case "forms":
-      return many(
-        value as string[],
-        (f) => a.preferences.forms.options[f as keyof typeof a.preferences.forms.options],
-      );
-    case "size":
-      return a.preferences.size.options[value as keyof typeof a.preferences.size.options].label;
-    case "includeSupplies":
-      return value ? a.result.ledger.yes : a.result.ledger.no;
-    case "budget":
-      return a.budget.options[value as keyof typeof a.budget.options].label;
-    case "horizon":
-      return a.budget.horizon.options[value as keyof typeof a.budget.horizon.options].label;
-    case "timing":
-      return a.budget.timing.options[value as keyof typeof a.budget.timing.options].label;
-    case "note":
-      return a.result.ledger.noteGiven;
-  }
 }

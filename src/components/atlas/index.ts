@@ -1,3 +1,4 @@
 export { AtlasExperience } from "./AtlasExperience";
 export { AtlasMark } from "./AtlasMark";
-export type { AtlasAreaOption, AtlasCopy, AtlasProductOption } from "./types";
+export { QuestionField } from "./QuestionField";
+export type { AtlasCopy, AtlasFieldCopy } from "./types";

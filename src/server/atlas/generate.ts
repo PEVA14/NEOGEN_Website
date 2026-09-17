@@ -10,9 +10,11 @@ import {
   planAtlas,
   retrieveAtlas,
   validateAtlasGeneration,
+  profileFromAnswers,
+  type AtlasAnswers,
   type AtlasGeneration,
   type AtlasMode,
-  type AtlasProfile,
+  type AtlasQuestionnaireView,
   type AtlasResultView,
   type AtlasValidationContext,
 } from "@/domain/atlas";
@@ -23,6 +25,7 @@ import { bagEnabled } from "@/payments";
 
 import { assembleAtlasView } from "./assemble";
 import { ATLAS_SYSTEM, buildAtlasInput } from "./prompt";
+import { ATLAS_VOCABULARIES } from "./questionnaire";
 import { atlasSubjects } from "./subjects";
 
 import type { Locale } from "@/i18n/config";
@@ -30,10 +33,13 @@ import type { Locale } from "@/i18n/config";
 /**
  * ONE ATLAS REQUEST, END TO END.
  *
- *   profile → POLICY → selection signals → retrieval → (model | plan)
- *           → validation against the policy's constraints → assembly
+ *   answers → PROFILE (by role) → POLICY → selection signals → retrieval
+ *           → (model | plan) → validation against the policy's constraints
+ *           → assembly
  *
- * The profile is handed to the policy and to nothing else. The retry budget is
+ * The answers become a profile by ROLE (`profileFromAnswers`), and the profile
+ * is handed to the policy and to nothing else. Which question fills which role
+ * is questionnaire content; what a role may influence is the policy's. The retry budget is
  * time-boxed: a correction is attempted only if the first answer came back
  * quickly enough for another to fit inside the route's limit.
  */
@@ -42,7 +48,8 @@ const MAX_TOKENS = 16_000;
 const RETRY_WITHIN_MS = 22_000;
 
 export async function generateAtlas(
-  profile: AtlasProfile,
+  questionnaire: AtlasQuestionnaireView,
+  answers: AtlasAnswers,
   locale: Locale,
 ): Promise<AtlasResultView> {
   const [dict, es, en, subjects] = await Promise.all([
@@ -52,6 +59,7 @@ export async function generateAtlas(
     atlasSubjects(),
   ]);
 
+  const profile = profileFromAnswers(questionnaire, answers, ATLAS_VOCABULARIES);
   const decision = applyAtlasPolicy(profile);
   const publicEvidence = publicEvidenceIndex(publishedProducts).length > 0;
   const retrieval = retrieveAtlas(decision.selection, subjects, {
@@ -173,6 +181,8 @@ export async function generateAtlas(
     generation,
     mode,
     decision,
+    questionnaire,
+    answers,
     retrieval,
     locale,
     dict,

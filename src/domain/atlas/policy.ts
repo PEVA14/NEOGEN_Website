@@ -1,27 +1,30 @@
-import { forbiddenTermIn } from "@/content/lifecycle";
+import type {
+  AtlasConstraints,
+  AtlasIntent,
+  AtlasPolicyDecision,
+  AtlasProfile,
+  AtlasRange,
+  AtlasUse,
+  AtlasWeights,
+} from "./types";
+import type { AtlasRole } from "./questionnaire";
 
 import { mentionsPersonalHealth } from "./screen";
-import {
-  ATLAS_BUDGET_CAPS,
-  type AtlasConstraints,
-  type AtlasField,
-  type AtlasIntent,
-  type AtlasLedgerEntry,
-  type AtlasPolicyDecision,
-  type AtlasProfile,
-  type AtlasRange,
-  type AtlasUse,
-  type AtlasWeights,
-  type AtlasWithheld,
-} from "./types";
+import { forbiddenTermIn } from "@/content/lifecycle";
 
 /**
- * THE ADVISOR / SELECTION POLICY.
+ * THE ADVISOR POLICY.
  *
- * The one place that decides what each answer in a visitor's profile may
- * influence. Retrieval, the deterministic plan, the prompt, the validator and
- * the result page all consume `applyAtlasPolicy`'s output; none of them reads
- * the profile, and none of them contains a recommendation rule of its own.
+ * The one place that decides what each ANSWER ROLE may influence. Retrieval,
+ * the deterministic plan, the prompt, the validator, the ledger and the result
+ * page all consume `applyAtlasPolicy`'s output; none of them reads the profile,
+ * and none of them contains a recommendation rule of its own.
+ *
+ * IT SPEAKS ROLES, NOT QUESTIONS. The questionnaire declares which question
+ * plays which role (`content/atlas/questionnaire.ts`); this file says what a
+ * role is allowed to do. So questions can be rewritten, reordered, added or
+ * dropped without touching the policy, and a role no question fills falls back
+ * to `ROLE_DEFAULTS`.
  *
  * THE FOUR USES
  *
@@ -33,11 +36,13 @@ import {
  * THE BOUNDARY, KEPT HERE AND ONLY HERE
  *
  * Product selection is driven by what the catalogue can honestly answer: the
- * visitor's topics and their order, what they want to get done, products they
- * already have in mind, experience with the catalogue, priorities, formats,
- * preferred presentation size, supplies, budget, how they buy and when they
- * need it. Each maps to registry facts — areas, overlaps, signature products,
- * documentation, presentations, prices, availability.
+ * visitor's topics and their order, the research functions (mechanisms and
+ * processes, each backed by an approved source) they want to study, what they
+ * want to get done, products they already have in mind, experience with the
+ * catalogue, priorities, formats, preferred presentation size, supplies,
+ * budget, how they buy and when they need it. Each maps to registry facts —
+ * areas, function tags, overlaps, signature products, documentation,
+ * presentations, prices, availability.
  *
  * Two things are withheld, and each withholding is recorded in the ledger the
  * visitor sees:
@@ -54,43 +59,25 @@ import {
  * not invent one.
  */
 
-/** What each question is ALLOWED to influence. The ledger is built from this. */
-export const ATLAS_POLICY: Readonly<Record<AtlasField, readonly AtlasUse[]>> = {
+/** What each ROLE is ALLOWED to influence. The ledger is built from this. */
+export const ATLAS_POLICY: Readonly<Record<AtlasRole, readonly AtlasUse[]>> = {
   topics: ["selection", "ranking", "explanation", "presentation"],
+  "research-functions": ["selection", "ranking", "explanation"],
   intent: ["selection", "ranking", "explanation", "presentation"],
-  inMind: ["selection", "ranking", "explanation"],
-  firstName: ["presentation"],
+  "products-in-mind": ["selection", "ranking", "explanation"],
+  "first-name": ["presentation"],
   experience: ["selection", "ranking", "explanation"],
   history: ["explanation", "presentation"],
   priorities: ["ranking", "explanation"],
-  style: ["explanation", "presentation"],
+  "explanation-style": ["explanation", "presentation"],
   forms: ["selection", "explanation"],
-  size: ["selection", "ranking", "explanation", "presentation"],
-  includeSupplies: ["selection", "explanation", "presentation"],
-  budget: ["selection", "ranking", "explanation", "presentation"],
-  horizon: ["selection", "explanation"],
+  "presentation-size": ["selection", "ranking", "explanation", "presentation"],
+  "include-supplies": ["selection", "explanation", "presentation"],
+  "budget-cap": ["selection", "ranking", "explanation", "presentation"],
+  "purchase-horizon": ["selection", "explanation"],
   timing: ["ranking", "explanation"],
-  note: ["selection", "explanation"],
+  "free-note": ["selection", "explanation"],
 };
-
-/** Order of the ledger — the questionnaire's order. */
-const LEDGER_ORDER: readonly AtlasField[] = [
-  "topics",
-  "intent",
-  "inMind",
-  "firstName",
-  "experience",
-  "history",
-  "priorities",
-  "style",
-  "forms",
-  "size",
-  "includeSupplies",
-  "budget",
-  "horizon",
-  "timing",
-  "note",
-];
 
 type Breadth = "focused" | "balanced" | "spread";
 
@@ -131,6 +118,7 @@ export function applyAtlasPolicy(profile: AtlasProfile): AtlasPolicyDecision {
   const weights: AtlasWeights = {
     topic: TOPIC_WEIGHTS[breadth],
     inMind: 8,
+    function: 4,
     overlap: priority("overlap") ? 3 : profile.experience === "experienced" ? 1.5 : 1,
     signature: priority("signature") ? 3 : profile.experience === "new" ? 1.5 : 0.5,
     documented: priority("documentation") ? 3 : 0.5,
@@ -160,7 +148,7 @@ export function applyAtlasPolicy(profile: AtlasProfile): AtlasPolicyDecision {
     start,
     more,
     total: ATLAS_TOTAL_RANGE,
-    startWithinBudget: ATLAS_BUDGET_CAPS[profile.budget] !== null,
+    startWithinBudget: profile.budgetCap !== null,
     includeInMind: true,
     coverTopics: breadth !== "focused",
     moreWithinBudgetFirst: profile.horizon === "one-order",
@@ -171,42 +159,13 @@ export function applyAtlasPolicy(profile: AtlasProfile): AtlasPolicyDecision {
   const noteUsable = noteIsUsable(profile.note);
   const noteDiscarded = noteProvided && !noteUsable;
 
-  /* ---- the ledger -------------------------------------------------------- */
-  const answered: Readonly<Record<AtlasField, boolean>> = {
-    topics: true,
-    intent: true,
-    inMind: profile.inMind.length > 0,
-    firstName: profile.firstName.length > 0,
-    experience: true,
-    history: true,
-    priorities: profile.priorities.length > 0,
-    style: true,
-    forms: profile.forms.length > 0,
-    size: true,
-    includeSupplies: true,
-    budget: true,
-    horizon: true,
-    timing: true,
-    note: noteProvided,
-  };
-  const withheld: Partial<Record<AtlasField, AtlasWithheld>> = {
-    ...(profile.firstName ? { firstName: "name-private" as const } : {}),
-    ...(noteDiscarded ? { note: "health-note" as const } : {}),
-  };
-  const ledger: AtlasLedgerEntry[] = LEDGER_ORDER.map((field) => ({
-    field,
-    answered: answered[field],
-    value: field === "note" ? null : profile[field],
-    uses: answered[field] && withheld[field] !== "health-note" ? ATLAS_POLICY[field] : [],
-    withheld: withheld[field] ?? null,
-  }));
-
   return {
     selection: {
       topics: profile.topics,
+      functions: profile.functions,
       inMind: profile.inMind,
       forms: profile.forms,
-      budgetCap: ATLAS_BUDGET_CAPS[profile.budget],
+      budgetCap: profile.budgetCap,
       variant: profile.size === "largest" ? "largest-within-budget" : "entry",
       includeSupplies: profile.includeSupplies,
       perTopicFloor: breadth === "focused" ? 1 : 2,
@@ -215,6 +174,7 @@ export function applyAtlasPolicy(profile: AtlasProfile): AtlasPolicyDecision {
     constraints,
     narrative: {
       topics: profile.topics,
+      functions: profile.functions,
       intent: profile.intent,
       inMind: profile.inMind,
       experience: profile.experience,
@@ -224,7 +184,7 @@ export function applyAtlasPolicy(profile: AtlasProfile): AtlasPolicyDecision {
       forms: profile.forms,
       size: profile.size,
       includeSupplies: profile.includeSupplies,
-      budget: profile.budget,
+      budgetCap: profile.budgetCap,
       horizon: profile.horizon,
       timing: profile.timing,
       note: noteUsable ? profile.note : null,
@@ -234,7 +194,6 @@ export function applyAtlasPolicy(profile: AtlasProfile): AtlasPolicyDecision {
       style: profile.style,
       history: profile.history,
     },
-    ledger,
     noteDiscarded,
   };
 }

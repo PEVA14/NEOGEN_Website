@@ -650,7 +650,47 @@ removed it from the homepage on 2026-09-15. If it is placed again: islands
 receive numbers and labels, never a registry, and motion must stop (pause
 control, static under reduced motion).
 
-## 17. Commands
+## 17. Atlas: the questionnaire is content, the advisor is code
+
+**The questionnaire is data.** Every question, its wording in both languages,
+its options and their order live in `src/content/atlas/questionnaire.ts`; the
+schema, the engine and one renderer per kind live in
+`src/domain/atlas/questionnaire/` and `components/atlas/QuestionField.tsx`.
+Adding, reordering or rewriting a question touches content only. The full guide
+is `docs/ATLAS_QUESTIONNAIRE.md`.
+
+**Ids are the machine's, labels are the reader's.** Answers are
+`{ questionId: value }` carrying option ids. A label may be rewritten freely; an
+id is a data change, and `version` keys the session draft so a bump discards
+stale drafts instead of restoring them wrong.
+
+**One validator, two sides.** The engine works on the RESOLVED view — one
+locale, registries already read — so the browser renders and validates against
+the same object the API route rebuilds and re-validates. An answer to a hidden
+or non-existent question is dropped, not coerced.
+
+**The policy speaks roles.** A question declares a `role`; `ATLAS_POLICY` maps
+role → permitted uses (selection / ranking / explanation / presentation).
+`profileFromAnswers` fills the policy's typed profile by role, and a role no
+question fills falls back to `ROLE_DEFAULTS` — so the advisor keeps working
+with a shorter questionnaire. A question with no role is collected, echoed back
+and can move nothing.
+
+**Facts are never copied into questionnaire content.** Areas, products and
+research functions are `{ kind: "registry" }` option sources resolved at render
+time in `server/atlas/questionnaire.ts`.
+
+**The result UI reads structured data.** `recap` and `ledger` entries carry
+their own label, answer, permitted uses and withholding, so the result page has
+no knowledge of today's questions.
+
+**A research function is never asserted.** A compound is tagged with a function
+only from inside its overview, pointing at a sourced statement; the tag is
+public exactly while that statement is (`publicFunctions`). Atlas offers a
+function only when a compound carries an approved tag. Questions may not ask
+for a personal outcome to match a compound to — `check:content` fails on it.
+
+## 18. Commands
 
 ```bash
 npm run dev          # development server
@@ -664,6 +704,7 @@ npm run check:checkout  # server-side pricing, gates, idempotency, policies
 npm run check:quality   # evidence resolver, lots, Janoshik rules, media readiness
 npm run check:content   # references, sourced statements, forbidden vocabulary, notifications
 npm run check:media     # media declarations vs real files
+npm run check:atlas     # questionnaire schema, answers, roles, policy, retrieval, adapter
 npm run check:output    # what the build actually emitted
 npm run format       # Prettier
 ```

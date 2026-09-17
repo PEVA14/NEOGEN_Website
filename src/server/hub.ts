@@ -6,6 +6,7 @@ import { isPublishable, products, publishedProducts, type Product } from "@/data
 import { formatPrice, getPrices, type Money } from "@/data/commerce";
 import { productsInArea, publicAreas, publicAreasFor } from "@/data/discovery";
 import { publicEvidenceIndex } from "@/domain/quality";
+import { atlasQuestionnaireView } from "@/server/atlas/questionnaire";
 import { localeTags, type Locale } from "@/i18n/config";
 import { localizePath } from "@/i18n/routing";
 
@@ -63,6 +64,8 @@ export interface HubData {
     explorer: string | null;
     atlas: string;
   };
+  /** Atlas's steps, read from the questionnaire itself. */
+  atlasSteps: readonly string[];
 }
 
 export async function hubData(locale: Locale, dict: Dictionary): Promise<HubData> {
@@ -70,7 +73,10 @@ export async function hubData(locale: Locale, dict: Dictionary): Promise<HubData
   const path = (to: string) => localizePath(to, locale);
   const areas = publicAreas();
   const published = publishedProducts;
-  const prices = await getPrices(published.flatMap((p) => p.variants.map((v) => v.id)));
+  const [prices, questionnaire] = await Promise.all([
+    getPrices(published.flatMap((p) => p.variants.map((v) => v.id))),
+    atlasQuestionnaireView(locale),
+  ]);
 
   const cheapest = (product: Product): Money | null =>
     product.variants
@@ -139,5 +145,7 @@ export async function hubData(locale: Locale, dict: Dictionary): Promise<HubData
       explorer: publicEvidenceIndex(published).length > 0 ? path(routes.qualityExplorer) : null,
       atlas: path(routes.atlas),
     },
+    /* Named by the questionnaire, so editing its groups updates the homepage. */
+    atlasSteps: questionnaire.groups.map((group) => group.label),
   };
 }

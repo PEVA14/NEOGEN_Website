@@ -1,0 +1,17 @@
+import type { ContentStatus } from "@/content/lifecycle";
+
+/**
+ * REVIEW BATCHES — one switch per batch of sourced content.
+ *
+ * A batch is written against its sources and then read by the owner. Until
+ * the owner has read it, nothing in it renders: `publicOverview` and
+ * `isPublicReference` both require `approved`. Approving a batch is changing
+ * its one status here, not editing every record.
+ */
+
+/**
+ * Batch 1 — flagship compound profiles: retatrutide (RETA), GHK-Cu, BPC-157,
+ * TB-500 and the GLOW blend. Drafted 2026-09-16. Every reference's metadata
+ * and every quoted figure was read from the source's abstract via Europe PMC.
+ */
+export const BATCH_1_FLAGSHIP_PROFILES: ContentStatus = "owner-review";

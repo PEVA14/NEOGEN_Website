@@ -43,20 +43,6 @@ const en: Dictionary = {
     metaDescription:
       "NEOGEN Atlas: your personal advisor. Answer a few questions about your goals, experience and budget, and get a selection of NEOGEN products explained for you.",
     intro: {
-      points: [
-        {
-          index: "01",
-          title: "Goals",
-          body: "The topics you care about and what you want to get done.",
-        },
-        { index: "02", title: "About you", body: "Your experience and what matters most to you." },
-        { index: "03", title: "Preferences", body: "Format, presentation size and supplies." },
-        {
-          index: "04",
-          title: "Budget",
-          body: "How much you want to spend and how you plan to buy.",
-        },
-      ],
       start: "Get started",
       duration: "About two minutes",
       boundary:
@@ -65,11 +51,23 @@ const en: Dictionary = {
         "Prices, presentations and documentation come straight from the catalogue. Atlas only writes the explanation.",
     },
     progress: "Step {n} of {total}",
-    steps: {
-      goals: "Goals",
-      you: "About you",
-      preferences: "Preferences",
-      budget: "Budget",
+    /* Chrome the RENDERER needs; every question's own words live in
+       src/content/atlas/questionnaire.ts. */
+    field: {
+      optional: "Optional",
+      selected: "{n} of {max} chosen",
+      limit: "You've chosen {max}. Remove one to change it.",
+      ranks: ["Priority 1", "Priority 2", "Priority 3"],
+      search: "Search for a product",
+      empty: "No product matches.",
+      remove: "Remove {name}",
+      counter: "{n} / {max}",
+      meta: {
+        products: "{n} products",
+        compounds: "{n} compounds",
+        compoundOne: "1 compound",
+        from: "From",
+      },
     },
     controls: {
       back: "Back",
@@ -77,156 +75,6 @@ const en: Dictionary = {
       generate: "See my selection",
       restart: "Start over",
       edit: "Change answers",
-    },
-    goals: {
-      title: "What brings you to NEOGEN?",
-      lede: "Let's start with what you're looking for. These answers decide which products we show you.",
-      topics: {
-        label: "Which topics interest you?",
-        hint: "Pick up to three, most important first.",
-        ranks: ["Priority 1", "Priority 2", "Priority 3"],
-        count: "{n} products",
-        from: "From",
-        selected: "{n} of {max} chosen",
-        limit: "You've chosen three. Remove one to change it.",
-      },
-      intent: {
-        label: "What do you want to get done today?",
-        options: {
-          "first-order": {
-            label: "Place my first order",
-            hint: "I want to know exactly where to start.",
-          },
-          compare: { label: "Compare options", hint: "See the alternatives before deciding." },
-          deepen: {
-            label: "Go deep on one topic",
-            hint: "I know what interests me; show me everything there is.",
-          },
-          "cover-topics": {
-            label: "Cover several topics",
-            hint: "One order that spans everything I care about.",
-          },
-          browse: { label: "Just exploring", hint: "Get to know the catalogue, no rush." },
-        },
-      },
-      inMind: {
-        label: "Do you already have products in mind?",
-        hint: "Optional. Up to three: Atlas includes them and shows you what else is close by.",
-        search: "Search for a product",
-        empty: "No product matches.",
-        selected: "{n} of {max}",
-        remove: "Remove {name}",
-      },
-    },
-    you: {
-      title: "Tell us about you",
-      lede: "This decides how many products we show you and how we explain them.",
-      firstName: {
-        label: "What's your name?",
-        hint: "Optional. Used only on this page; it is not sent to the AI.",
-        placeholder: "Your name",
-      },
-      experience: {
-        label: "How much experience do you have with peptides and products like these?",
-        options: {
-          new: { label: "This is my first time", hint: "I'd rather start simple." },
-          some: { label: "I've bought before", hint: "I know the basics." },
-          experienced: { label: "I'm very experienced", hint: "Show me all the detail." },
-        },
-      },
-      history: {
-        label: "Have you ordered from NEOGEN before?",
-        options: { "first-time": "First time at NEOGEN", returning: "I'm a returning customer" },
-      },
-      priorities: {
-        label: "What matters most to you?",
-        hint: "Pick up to two.",
-        options: {
-          documentation: {
-            label: "Available documentation",
-            hint: "Products with published documents first.",
-          },
-          price: { label: "Good price", hint: "The most accessible options first." },
-          signature: {
-            label: "Signature products",
-            hint: "RETA, GLOW and GHK-Cu, NEOGEN's signature line.",
-          },
-          overlap: {
-            label: "Covers several topics",
-            hint: "Products that sit in more than one of your topics.",
-          },
-        },
-      },
-      style: {
-        label: "How should we explain it?",
-        options: {
-          direct: { label: "Short and direct", hint: "Just the essentials." },
-          detailed: { label: "In detail", hint: "Every reason." },
-        },
-      },
-    },
-    preferences: {
-      title: "Your preferences",
-      lede: "What you want the products we suggest to be like.",
-      forms: {
-        label: "Any format preference?",
-        hint: "Optional. Leave it empty if you don't mind.",
-        options: {
-          solid: "Lyophilised powder",
-          solution: "Solution",
-          volume: "By volume",
-          iu: "Units (IU)",
-          blend: "Blends",
-        },
-      },
-      size: {
-        label: "Which presentation size do you prefer?",
-        options: {
-          smallest: { label: "The smallest", hint: "To start with less." },
-          largest: { label: "The largest", hint: "The biggest that fits your budget." },
-          "no-preference": { label: "No preference", hint: "Show me the entry one." },
-        },
-      },
-      supplies: {
-        label: "Include supplies",
-        hint: "Water and other catalogue supplies, alongside your selection.",
-      },
-    },
-    budget: {
-      title: "Budget and context",
-      lede: "We compare your budget against the catalogue's real prices.",
-      label: "How much do you want to spend?",
-      options: {
-        open: { label: "No cap", hint: "Show me everything." },
-        "8k": { label: "Up to $8,000 MXN", hint: "A first order." },
-        "20k": { label: "Up to $20,000 MXN", hint: "Several products." },
-        "40k": { label: "Up to $40,000 MXN", hint: "A wide order." },
-      },
-      horizon: {
-        label: "How do you plan to buy?",
-        options: {
-          "one-order": { label: "All in one order", hint: "Whatever I pick, I buy at once." },
-          "over-time": {
-            label: "Bit by bit",
-            hint: "I'll start with something and continue later.",
-          },
-        },
-      },
-      timing: {
-        label: "When do you need it?",
-        options: {
-          soon: { label: "As soon as possible", hint: "Prioritise what's available." },
-          "no-rush": { label: "No rush", hint: "I can wait." },
-        },
-      },
-      note: {
-        label: "Anything else Atlas should know?",
-        optional: "Optional",
-        placeholder:
-          "For example: I want to start with something from the signature line and leave the rest for my next order.",
-        hint: "Tell us your goals in your own words. Atlas does not use health, weight or medication information: if the note includes it, the whole note is discarded and the rest of your answers are still used.",
-        counter: "{n} / {max}",
-      },
     },
     generating: {
       title: "Preparing your selection",
@@ -283,6 +131,10 @@ const en: Dictionary = {
         signature: "Signature",
         overlap: "Spans your topics",
         topics: "Topics",
+        research: "What it does",
+        studied: "What has been studied",
+        source: "{n} published source",
+        sources: "{n} published sources",
         open: "View product",
         addAll: "Add “Start here” to the bag",
         addedAll: "Added to the bag",
@@ -344,23 +196,6 @@ const en: Dictionary = {
           "health-note":
             "Your note included health topics, so it was discarded in full before your selection was prepared. All your other answers were used.",
           "name-private": "Used on this page only; never sent to the AI.",
-        },
-        fields: {
-          topics: "Topics",
-          intent: "Goal",
-          inMind: "Products in mind",
-          firstName: "Name",
-          experience: "Experience",
-          history: "With NEOGEN",
-          priorities: "Matters most",
-          style: "Explanation",
-          forms: "Format",
-          size: "Size",
-          includeSupplies: "Supplies",
-          budget: "Budget",
-          horizon: "How you buy",
-          timing: "When",
-          note: "Note",
         },
       },
       empty: {
@@ -560,7 +395,6 @@ const en: Dictionary = {
         label: "New",
         title: "Your personal advisor",
         body: "Tell Atlas what you're looking for, how you buy and how much you want to spend. It goes through the whole catalogue and tells you where to start, and why.",
-        steps: ["Goals", "About you", "Preferences", "Budget"],
         action: "Start with Atlas",
       },
     },

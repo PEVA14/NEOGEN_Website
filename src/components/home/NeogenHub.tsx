@@ -36,7 +36,7 @@ export interface NeogenHubCopy {
   /** Visually hidden instruction for the keyboard. */
   keys: string;
   /** The Atlas band between the head and the board. */
-  atlas: { label: string; title: string; body: string; steps: readonly string[]; action: string };
+  atlas: { label: string; title: string; body: string; action: string };
 }
 
 const ORDER: readonly HubId[] = ["catalog", "areas", "worlds", "research", "quality"];
@@ -139,7 +139,7 @@ export function NeogenHub({ data, copy }: { data: HubData; copy: NeogenHubCopy }
               <span className={styles.atlasBody}>{copy.atlas.body}</span>
             </span>
             <span className={styles.atlasSteps} aria-hidden="true">
-              {copy.atlas.steps.map((step, index) => (
+              {data.atlasSteps.map((step, index) => (
                 <span key={step} className={styles.atlasStep}>
                   <span className={styles.atlasStepIndex}>
                     {String(index + 1).padStart(2, "0")}

@@ -64,7 +64,6 @@ export function AtlasResult({
     "documentation",
   ];
   const index = (id: string) => pad(blocks.indexOf(id) + 1);
-  const answer = (field: string) => result.ledger.find((e) => e.field === field)?.answer ?? null;
 
   return (
     <div className={styles.result}>
@@ -141,15 +140,13 @@ export function AtlasResult({
             <section className={styles.block} aria-labelledby="atlas-about-title">
               <BlockHead index={index("about")} id="atlas-about-title" title={r.about.title} />
               <p className={styles.aboutText}>{result.aboutYou}</p>
+              {/* Whichever questions the questionnaire marks `recap`. */}
               <ul className={styles.answerChips}>
-                {(["topics", "intent", "experience", "budget", "inMind"] as const).map((field) => {
-                  const text = answer(field);
-                  return text ? (
-                    <li key={field} className={styles.answerChip}>
-                      <span className={styles.muted}>{r.ledger.fields[field]}</span> {text}
-                    </li>
-                  ) : null;
-                })}
+                {result.recap.map((entry) => (
+                  <li key={entry.question} className={styles.answerChip}>
+                    <span className={styles.muted}>{entry.label}</span> {entry.answer}
+                  </li>
+                ))}
               </ul>
             </section>
           )}
@@ -298,7 +295,7 @@ export function AtlasResult({
               <ul className={styles.areaCards}>
                 {result.topics.map((topic) => (
                   <li key={topic.id} className={styles.areaCard} data-area={topic.id}>
-                    <p className={styles.areaRank}>{copy.goals.topics.ranks[topic.rank]}</p>
+                    <p className={styles.areaRank}>{copy.field.ranks[topic.rank]}</p>
                     <h4 className={styles.areaName}>{topic.label}</h4>
                     <p className={styles.areaFraming}>{topic.framing}</p>
                     {topic.note ? <p className={styles.written}>{topic.note}</p> : null}
@@ -407,13 +404,13 @@ export function AtlasResult({
               <p className={styles.method}>{r.ledger.lede}</p>
               <dl className={styles.ledger}>
                 {result.ledger.map((entry) => (
-                  <div key={entry.field} data-answered={entry.answer !== null ? "" : undefined}>
-                    <dt>{r.ledger.fields[entry.field]}</dt>
+                  <div key={entry.question} data-answered={entry.answered ? "" : undefined}>
+                    <dt>{entry.label}</dt>
                     <dd>
                       <span className={styles.ledgerAnswer}>
                         {entry.answer ?? r.ledger.skipped}
                       </span>
-                      {entry.answer !== null ? (
+                      {entry.answered ? (
                         <span className={styles.ledgerUses}>
                           {entry.uses.length > 0
                             ? entry.uses.map((use) => r.ledger.uses[use]).join(" · ")
@@ -482,6 +479,8 @@ function ProductCard({
       : product.list === "supply"
         ? copy.result.supplies.title
         : copy.result.more.title;
+  const sources = product.research?.sources ?? 0;
+  const sourcesLabel = (sources === 1 ? p.source : p.sources).replace("{n}", String(sources));
 
   return (
     <article
@@ -510,6 +509,32 @@ function ProductCard({
           <p className={styles.miniLabel}>{p.why}</p>
           <p className={styles.written}>{product.why}</p>
         </div>
+      ) : null}
+
+      {product.research ? (
+        <dl className={styles.research}>
+          {product.research.mechanism ? (
+            <div>
+              <dt>{p.research}</dt>
+              <dd>{product.research.mechanism}</dd>
+            </div>
+          ) : null}
+          {product.research.studied ? (
+            <div>
+              <dt>{p.studied}</dt>
+              <dd>{product.research.studied}</dd>
+            </div>
+          ) : null}
+          {sources > 0 ? (
+            <Link
+              href={product.research.href}
+              className={styles.textLink}
+              aria-label={`${sourcesLabel} — ${product.name}`}
+            >
+              {sourcesLabel} <span aria-hidden="true">→</span>
+            </Link>
+          ) : null}
+        </dl>
       ) : null}
 
       {product.areas.length > 0 ? (

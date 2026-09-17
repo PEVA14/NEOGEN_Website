@@ -794,6 +794,66 @@
   color: var(--ink-muted);
 }
 
+/* --- Number and range ----------------------------------------------------
+   Two kinds the schema supports; the questionnaire may or may not use them
+   today. Same hairline register as the text inputs: no pill, no shadow. */
+
+.numberRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-xs);
+}
+
+.numberInput {
+  composes: textInput;
+  max-inline-size: 9rem;
+  margin-block-end: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.unit {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.slider {
+  display: block;
+  inline-size: 100%;
+  max-inline-size: 32rem;
+  min-block-size: 2.75rem;
+  margin: 0;
+  accent-color: var(--ink-primary);
+}
+
+.slider:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.sliderMeta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-md);
+  max-inline-size: 32rem;
+  margin-block-start: var(--space-2xs);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.sliderValue {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-primary);
+}
+
 /* --- Controls ------------------------------------------------------------ */
 
 .controls {

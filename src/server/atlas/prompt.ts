@@ -72,6 +72,7 @@ function row(candidate: AtlasCandidate, cap: number | null): string {
     candidate.slug,
     candidate.name,
     candidate.matchedAreas.join(",") || "-",
+    candidate.matchedFunctions.join(",") || "-",
     yesNo(candidate.inMind),
     yesNo(candidate.bridges),
     yesNo(candidate.world !== null),
@@ -126,7 +127,7 @@ export function buildAtlasInput({
 }): string {
   const area = (id: string) => dict.discovery.areas[id as keyof typeof dict.discovery.areas];
   const header =
-    "slug | name | in_visitor_topics | in_mind | spans_topics | signature | documented | public_references | forms | presentations | fits_budget | budget_share | available";
+    "slug | name | in_visitor_topics | matches_research_functions | in_mind | spans_topics | signature | documented | public_references | forms | presentations | fits_budget | budget_share | available";
   const cap = retrieval.budgetCap;
   const or = (items: readonly string[], empty: string) =>
     items.length > 0 ? items.join(", ") : empty;
@@ -136,6 +137,7 @@ export function buildAtlasInput({
     "",
     "VISITOR",
     `topics, ranked: ${narrative.topics.map((id, i) => `${i + 1}. ${id}`).join("; ")}`,
+    `research functions to study: ${or(narrative.functions, "none chosen")}`,
     `wants to: ${narrative.intent}`,
     `products in mind: ${or(narrative.inMind, "none")}`,
     `experience: ${narrative.experience}`,

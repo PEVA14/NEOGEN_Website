@@ -1,4 +1,5 @@
 import type { AtlasSubject } from "./types";
+import type { ResearchFunctionId } from "@/content/functions";
 import type { Availability } from "@/data/commerce";
 import type { Product } from "@/data/catalog";
 import type { DiscoveryAreaId } from "@/data/discovery";
@@ -14,6 +15,8 @@ export interface AtlasSubjectDeps {
   /** Owner-maintained stock state of a variant, or null when not determined. */
   availability: (variantId: string) => Availability | null;
   areas: (slug: string) => readonly DiscoveryAreaId[];
+  /** Publicly tagged research functions — `publicFunctions` on the server. */
+  functions: (slug: string) => readonly ResearchFunctionId[];
   documented: (product: Product) => boolean;
   references: (slug: string) => readonly string[];
 }
@@ -37,6 +40,7 @@ export function atlasSubjectsFrom(
       name: product.name,
       world: product.world,
       areas: deps.areas(product.slug),
+      functions: deps.functions(product.slug),
       forms: [...new Set(product.variants.map((variant) => variant.strength.kind))],
       presentations: product.variants.length,
       variants,

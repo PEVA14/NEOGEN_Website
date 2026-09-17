@@ -117,6 +117,7 @@ export function areaPreviewSources(
       mechanismNotes: [],
       keyReferences: [R1],
       technicalNotes: [],
+      functions: [],
     },
   };
   if (b.slug !== a.slug) {
@@ -135,6 +136,7 @@ export function areaPreviewSources(
       ],
       keyReferences: [],
       technicalNotes: [],
+      functions: [],
     };
   }
 

@@ -63,16 +63,23 @@ export function retrieveAtlas(
   const cap = signals.budgetCap;
   const rankOf = new Map(signals.topics.map((id, index) => [id, index]));
   const inMind = new Set(signals.inMind);
+  const functionsOf = (subject: AtlasSubject) =>
+    signals.functions.filter((id) => subject.functions.includes(id));
 
   const matchesForm = (subject: AtlasSubject) =>
     signals.forms.length === 0 ||
     subject.forms.some((form) => signals.forms.includes(form as AtlasForm));
 
-  /* A product the visitor named is always considered, whatever its area or form. */
+  /*
+   * A product the visitor named is always considered, whatever its area or
+   * form. A product publicly tagged with a chosen research function is
+   * considered whatever its area — the function is the more specific answer.
+   */
   const pool = subjects.filter(
     (subject) =>
       inMind.has(subject.slug) ||
-      (subject.areas.some((area) => rankOf.has(area)) && matchesForm(subject)),
+      ((subject.areas.some((area) => rankOf.has(area)) || functionsOf(subject).length > 0) &&
+        matchesForm(subject)),
   );
 
   const entries = pool
@@ -86,6 +93,7 @@ export function retrieveAtlas(
       .filter((area) => rankOf.has(area))
       .sort((a, b) => rankOf.get(a)! - rankOf.get(b)!);
     const bridges = matchedAreas.length > 1;
+    const matchedFunctions = functionsOf(subject);
     const suggested = suggestVariant(subject.variants, signals.variant, cap);
     const suggestedPrice = suggested?.price ?? null;
     const withinBudget = cap === null ? null : suggestedPrice !== null && suggestedPrice <= cap;
@@ -98,6 +106,7 @@ export function retrieveAtlas(
       0,
     );
     if (named) score += weights.inMind;
+    score += weights.function * matchedFunctions.length;
     if (bridges) score += weights.overlap;
     if (subject.world !== null) score += weights.signature;
     if (subject.documented) score += weights.documented;
@@ -117,6 +126,7 @@ export function retrieveAtlas(
       score: round(score),
       matchedAreas,
       bridges,
+      matchedFunctions,
       inMind: named,
       suggestedVariantId: suggested?.id ?? null,
       suggestedPrice,
@@ -133,6 +143,13 @@ export function retrieveAtlas(
    */
   const chosen = new Map<string, AtlasCandidate>();
   for (const candidate of byScore) if (candidate.inMind) chosen.set(candidate.slug, candidate);
+  /* Every chosen research function keeps its strongest product. */
+  for (const id of signals.functions) {
+    if (chosen.size >= ATLAS_CANDIDATE_LIMIT) break;
+    if ([...chosen.values()].some((c) => c.matchedFunctions.includes(id))) continue;
+    const best = byScore.find((c) => c.matchedFunctions.includes(id));
+    if (best) chosen.set(best.slug, best);
+  }
   for (const area of signals.topics) {
     for (const candidate of byScore) {
       if (chosen.size >= ATLAS_CANDIDATE_LIMIT) break;
@@ -160,6 +177,7 @@ export function retrieveAtlas(
               score: 0,
               matchedAreas: [],
               bridges: false,
+              matchedFunctions: [],
               inMind: false,
               suggestedVariantId: suggested?.id ?? null,
               suggestedPrice: suggested?.price ?? null,

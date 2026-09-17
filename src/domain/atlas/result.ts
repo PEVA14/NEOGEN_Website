@@ -1,11 +1,4 @@
-import type {
-  AtlasBudget,
-  AtlasDestination,
-  AtlasField,
-  AtlasStyle,
-  AtlasUse,
-  AtlasWithheld,
-} from "./types";
+import type { AtlasDestination, AtlasStyle, AtlasUse, AtlasWithheld } from "./types";
 import type { Money } from "@/data/commerce";
 import type { DiscoveryAreaId } from "@/data/discovery";
 
@@ -68,6 +61,22 @@ export interface AtlasResultProduct {
   suggestion: AtlasResultSuggestion | null;
   withinBudget: boolean | null;
   documented: boolean;
+  /**
+   * What the compound does and what it has been studied in — the first
+   * mechanism note and the first research statement of its PUBLIC overview,
+   * read from `content/overview`, never from the generation. Null when no
+   * approved, sourced overview exists.
+   */
+  research: AtlasResultResearch | null;
+}
+
+export interface AtlasResultResearch {
+  mechanism: string | null;
+  studied: string | null;
+  /** Public references the overview cites. */
+  sources: number;
+  /** The product page's overview section. */
+  href: string;
 }
 
 export interface AtlasResultStep {
@@ -86,7 +95,6 @@ export interface AtlasResultSum {
 }
 
 export interface AtlasResultBudget {
-  budget: AtlasBudget;
   cap: string | null;
   capAmount: number | null;
   /** The "start here" presentations together. */
@@ -95,13 +103,30 @@ export interface AtlasResultBudget {
   all: AtlasResultSum;
 }
 
-/** One question: what the visitor answered and what Atlas did with it. */
+/**
+ * One question: what the visitor answered and what Atlas did with it.
+ *
+ * Both the question's own wording and the answer's display text arrive
+ * resolved, so the result page renders a ledger of any questionnaire without
+ * knowing which questions exist.
+ */
 export interface AtlasResultLedgerEntry {
-  field: AtlasField;
+  /** The question's stable id. */
+  question: string;
+  /** The question as the visitor read it. */
+  label: string;
   /** Display text of the answer, or null when skipped. */
   answer: string | null;
+  answered: boolean;
   uses: readonly AtlasUse[];
   withheld: AtlasWithheld | null;
+}
+
+/** The answers echoed as chips above the result — questions with `recap`. */
+export interface AtlasResultRecapEntry {
+  question: string;
+  label: string;
+  answer: string;
 }
 
 export interface AtlasResultView {
@@ -129,6 +154,7 @@ export interface AtlasResultView {
     healthMentioned: boolean;
   };
   ledger: readonly AtlasResultLedgerEntry[];
+  recap: readonly AtlasResultRecapEntry[];
   references: readonly { id: string; title: string; href: string | null }[];
   documentation: { publicRecords: number; modelHref: string; explorerHref: string | null };
   commerce: { bagEnabled: boolean; localeTag: string };

@@ -144,7 +144,7 @@ export function composeAtlasGeneration(input: AtlasComposeInput): AtlasGeneratio
     copy.reasons.topics,
     ...(narrative.inMind.length > 0 ? [copy.reasons.inMind] : []),
     ...narrative.priorities.map((p) => copy.reasons.priorities[p]),
-    ...(narrative.budget !== "open" ? [copy.reasons.budget] : []),
+    ...(narrative.budgetCap !== null ? [copy.reasons.budget] : []),
   ];
 
   const pathOrder: AtlasDestination["kind"][] = [
@@ -197,7 +197,7 @@ export function composeAtlasGeneration(input: AtlasComposeInput): AtlasGeneratio
         experience: copy.experience[narrative.experience],
         intent: copy.intent[narrative.intent],
         topics: listOf(topicNames),
-        budget: narrative.budget === "open" ? copy.budgetOpen : copy.budgetSet,
+        budget: narrative.budgetCap === null ? copy.budgetOpen : copy.budgetSet,
         horizon: copy.horizon[narrative.horizon],
       }),
     ),

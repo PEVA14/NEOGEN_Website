@@ -3,7 +3,13 @@
  *
  * What this gate guarantees, each with a negative control so it can fail:
  *
- *   PROFILE       the questionnaire parser rejects out-of-vocabulary input.
+ *   SCHEMA        the questionnaire content is answerable: unique ids, one
+ *                 question per role, no forward-referencing condition.
+ *   ANSWERS       the parser rejects anything the schema does not describe,
+ *                 conditional questions appear and disappear, and answers to
+ *                 hidden questions are dropped.
+ *   ROLES         answers reach the profile by role, and a role no question
+ *                 fills falls back to its documented default.
  *   POLICY        is granular: a health note is withheld without weakening any
  *                 other answer; the name never reaches the model; presentation-
  *                 only answers cannot move selection, and selection answers do.
@@ -22,7 +28,32 @@
 
 import { readFileSync } from "node:fs";
 
-import { parseAtlasProfile } from "../src/domain/atlas/profile.ts";
+import {
+  answerIssues,
+  buildQuestionnaireView,
+  conditionHolds,
+  groupComplete,
+  initialAnswers,
+  parseAtlasAnswers,
+  profileFromAnswers,
+  validateQuestionnaire,
+  visibleGroups,
+  visibleQuestions,
+} from "../src/domain/atlas/questionnaire/index.ts";
+import { atlasRecap, buildAtlasLedger } from "../src/domain/atlas/ledger.ts";
+import { ATLAS_QUESTIONNAIRE } from "../src/content/atlas/questionnaire.ts";
+import { RESEARCH_FUNCTIONS } from "../src/content/functions.ts";
+import {
+  atlasExperienceLevels,
+  atlasForms,
+  atlasHistories,
+  atlasHorizons,
+  atlasIntents,
+  atlasPriorities,
+  atlasSizes,
+  atlasStyles,
+  atlasTimings,
+} from "../src/domain/atlas/types.ts";
 import { applyAtlasPolicy } from "../src/domain/atlas/policy.ts";
 import { ATLAS_CANDIDATE_LIMIT, retrieveAtlas } from "../src/domain/atlas/retrieval.ts";
 import { effectiveStart, planAtlas } from "../src/domain/atlas/plan.ts";
@@ -32,7 +63,7 @@ import { validateAtlasGeneration } from "../src/domain/atlas/validate.ts";
 import { referencesForProduct } from "../src/content/research.ts";
 import { publishedProducts } from "../src/data/catalog/index.ts";
 import { getAvailability, getPrices } from "../src/data/commerce/index.ts";
-import { publicAreas, publicAreasFor } from "../src/data/discovery/index.ts";
+import { productsInArea, publicAreas, publicAreasFor } from "../src/data/discovery/index.ts";
 import { relatedAreas } from "../src/domain/discovery/index.ts";
 import { publicEvidenceIndex } from "../src/domain/quality/index.ts";
 import es from "../src/i18n/dictionaries/es.ts";
@@ -44,60 +75,519 @@ const check = (condition, what, detail = "") => {
 };
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
-const vocabulary = {
-  topics: publicAreas().map((a) => a.id),
-  products: publishedProducts.map((p) => p.slug),
-};
-const raw = (overrides) => ({
-  topics: ["metabolic"],
-  intent: "first-order",
-  inMind: [],
-  firstName: "",
-  experience: "some",
-  history: "first-time",
-  priorities: [],
-  style: "direct",
-  forms: [],
-  size: "no-preference",
-  includeSupplies: false,
-  budget: "open",
-  horizon: "one-order",
-  timing: "no-rush",
-  note: "",
-  ...overrides,
-});
-const profileOf = (overrides) => {
-  const parsed = parseAtlasProfile(raw(overrides), vocabulary);
-  if (!parsed.ok) throw new Error(`fixture does not parse: ${parsed.issues.join("; ")}`);
-  return parsed.profile;
+const VOCABULARIES = {
+  intents: atlasIntents,
+  experience: atlasExperienceLevels,
+  histories: atlasHistories,
+  priorities: atlasPriorities,
+  styles: atlasStyles,
+  forms: atlasForms,
+  sizes: atlasSizes,
+  horizons: atlasHorizons,
+  timings: atlasTimings,
 };
 
-/* ---- profile ------------------------------------------------------------- */
+/*
+ * THE QUESTIONNAIRE, RESOLVED THE WAY THE SERVER RESOLVES IT.
+ *
+ * `server/atlas/questionnaire.ts` cannot be imported here (it is `server-only`),
+ * so the registry resolver is rebuilt from the same registries. Two views:
+ * `view` is the live one, and `viewWithFunctions` pretends a sourced overview
+ * has been approved, which is the only way to exercise the research-function
+ * question before the first approval.
+ */
+const areaOptions = publicAreas().map((area) => ({
+  id: area.id,
+  label: es.discovery.areas[area.id].short,
+  hint: null,
+  meta: {
+    area: area.id,
+    framing: es.discovery.areas[area.id].title,
+    compounds: productsInArea(area.id).length,
+  },
+}));
+const productOptions = publishedProducts.map((product) => ({
+  id: product.slug,
+  label: product.name,
+  hint: null,
+  meta: { areas: publicAreasFor(product.slug).map((a) => a.id) },
+}));
+const FIXTURE_FUNCTIONS = ["wound-healing", "extracellular-matrix", "gene-expression"];
+const functionOptions = RESEARCH_FUNCTIONS.filter((fn) => FIXTURE_FUNCTIONS.includes(fn.id)).map(
+  (fn) => ({ id: fn.id, label: fn.label.es, hint: fn.hint.es, meta: { compounds: 1 } }),
+);
+const resolver = (functions) => (registry) =>
+  registry === "discovery-areas"
+    ? areaOptions
+    : registry === "published-products"
+      ? productOptions
+      : functions;
+
+const view = buildQuestionnaireView(ATLAS_QUESTIONNAIRE, "es", resolver([]));
+const viewWithFunctions = buildQuestionnaireView(
+  ATLAS_QUESTIONNAIRE,
+  "es",
+  resolver(functionOptions),
+);
+const viewEn = buildQuestionnaireView(ATLAS_QUESTIONNAIRE, "en", resolver([]));
+
+const answersOf = (overrides = {}, v = view) => ({
+  ...initialAnswers(v),
+  topics: ["metabolic"],
+  ...overrides,
+});
+const profileOf = (overrides = {}, v = view) =>
+  profileFromAnswers(v, answersOf(overrides, v), VOCABULARIES);
+const LEDGER_COPY = {
+  yes: es.atlas.result.ledger.yes,
+  no: es.atlas.result.ledger.no,
+  noteGiven: es.atlas.result.ledger.noteGiven,
+};
+const ledgerOf = (overrides = {}, v = view) => {
+  const answers = answersOf(overrides, v);
+  const decision = applyAtlasPolicy(profileFromAnswers(v, answers, VOCABULARIES));
+  return buildAtlasLedger(v, answers, LEDGER_COPY, decision.noteDiscarded);
+};
+
+/* ---- schema: the questionnaire content is answerable --------------------- */
 {
-  check(parseAtlasProfile(raw({}), vocabulary).ok, "a valid questionnaire parses");
-  for (const [label, input] of [
-    ["unknown topic", raw({ topics: ["astrology"] })],
-    ["four topics", raw({ topics: vocabulary.topics.slice(0, 4) })],
-    ["repeated topic", raw({ topics: ["metabolic", "metabolic"] })],
-    ["no topic", raw({ topics: [] })],
-    ["unknown intent", raw({ intent: "dose" })],
-    ["unknown product in mind", raw({ inMind: ["invented-compound"] })],
-    ["four products in mind", raw({ inMind: vocabulary.products.slice(0, 4) })],
-    ["three priorities", raw({ priorities: ["documentation", "price", "signature"] })],
-    ["unknown form", raw({ forms: ["capsule"] })],
-    ["unknown size", raw({ size: "huge" })],
-    ["unknown budget", raw({ budget: "unlimited" })],
-    ["non-boolean supplies", raw({ includeSupplies: "yes" })],
-    ["a non-string name", raw({ firstName: 42 })],
-    ["body not an object", null],
+  check(
+    validateQuestionnaire(ATLAS_QUESTIONNAIRE).length === 0,
+    "the live questionnaire validates",
+    validateQuestionnaire(ATLAS_QUESTIONNAIRE)
+      .map((i) => `${i.code} at ${i.where}`)
+      .join("; "),
+  );
+  const q = (extra) => ({
+    version: "t",
+    groups: [
+      {
+        id: "g",
+        label: { es: "G", en: "G" },
+        title: { es: "G", en: "G" },
+        lede: { es: "G", en: "G" },
+        questions: [
+          {
+            id: "topics",
+            kind: "multi-select",
+            role: "topics",
+            required: true,
+            label: { es: "T", en: "T" },
+            options: { kind: "registry", registry: "discovery-areas" },
+          },
+          ...extra,
+        ],
+      },
+    ],
+  });
+  const codes = (questionnaire) => validateQuestionnaire(questionnaire).map((i) => i.code);
+  const single = (overrides) => ({
+    id: "x",
+    kind: "single-select",
+    label: { es: "X", en: "X" },
+    options: {
+      kind: "static",
+      items: [{ id: "a", label: { es: "A", en: "A" } }],
+    },
+    ...overrides,
+  });
+  for (const [label, questionnaire, code] of [
+    ["a duplicate question id", q([single({ id: "topics" })]), "duplicate_question_id"],
+    ["two questions on one role", q([single({ role: "topics" })]), "duplicate_role"],
+    ["a default that is not an option", q([single({ default: "zzz" })]), "default_not_an_option"],
+    [
+      "a condition on a later question",
+      q([single({ visibleWhen: { question: "later", equals: "a" } }), single({ id: "later" })]),
+      "condition_forward_reference",
+    ],
+    [
+      "a self-referencing condition",
+      q([single({ visibleWhen: { question: "x", equals: "a" } })]),
+      "condition_forward_reference",
+    ],
+    [
+      "an unknown registry",
+      q([{ ...single({}), kind: "multi-select", options: { kind: "registry", registry: "moon" } }]),
+      "registry_source_unknown",
+    ],
+    [
+      "a number question with inverted bounds",
+      q([{ id: "n", kind: "number", label: { es: "N", en: "N" }, min: 10, max: 2 }]),
+      "bad_bounds",
+    ],
+    [
+      "a free note that is not long text",
+      q([single({ id: "note", role: "free-note" })]),
+      "role_kind_mismatch",
+    ],
+    [
+      "a duplicate option id",
+      q([
+        single({
+          options: {
+            kind: "static",
+            items: [
+              { id: "a", label: { es: "A", en: "A" } },
+              { id: "a", label: { es: "B", en: "B" } },
+            ],
+          },
+        }),
+      ]),
+      "duplicate_option_id",
+    ],
   ]) {
-    check(!parseAtlasProfile(input, vocabulary).ok, `the parser rejects ${label}`);
+    check(codes(questionnaire).includes(code), `the schema check rejects ${label}`, code);
   }
+  check(
+    codes(q([single({})])).length === 0,
+    "a well-formed questionnaire passes (negative control)",
+  );
+
+  /* The advisor cannot work without topics, and every role it knows is either
+     filled by a question or documented as defaulted. */
+  const roles = view.groups.flatMap((g) => g.questions.map((question) => question.role));
+  check(roles.includes("topics"), "a question fills the topics role");
+  check(
+    new Set(roles.filter(Boolean)).size === roles.filter(Boolean).length,
+    "each role is filled at most once",
+  );
+}
+
+/* ---- the resolved view: content in, registries read ---------------------- */
+{
+  const ids = view.groups.flatMap((g) => g.questions.map((question) => question.id));
+  check(ids.length === new Set(ids).size, "every question appears once in the view");
+  const topics = view.groups[0].questions.find((question) => question.id === "topics");
+  check(
+    topics.options.length === publicAreas().length && topics.options.every((o) => o.meta?.area),
+    "registry options are read from the registry, with their own facts",
+  );
+  check(
+    topics.label === es.atlas.field.optional || topics.label.length > 0,
+    "a question's label is resolved for the locale",
+  );
+  const topicsEn = viewEn.groups[0].questions.find((question) => question.id === "topics");
+  check(topics.label !== topicsEn.label, "both locales resolve their own wording");
+  check(
+    !view.groups.some((g) => g.questions.some((question) => question.id === "research-functions")),
+    "a registry question with nothing to offer is dropped (hideWithoutOptions)",
+  );
+  check(
+    viewWithFunctions.groups.some((g) =>
+      g.questions.some((question) => question.id === "research-functions"),
+    ),
+    "…and appears as soon as the registry has options",
+  );
+  const budget = viewWithFunctions.groups
+    .flatMap((g) => g.questions)
+    .find((question) => question.role === "budget-cap");
+  check(
+    budget.options.some((o) => o.value === 8000) && budget.options.some((o) => o.value === null),
+    "an option's numeric payload survives into the view",
+  );
+}
+
+/* ---- answers: the parser rejects what the schema does not describe -------- */
+{
+  const ok = parseAtlasAnswers(answersOf(), view);
+  check(ok.ok, "a complete set of answers parses", ok.ok ? "" : JSON.stringify(ok.issues));
+  check(
+    parseAtlasAnswers({ topics: ["metabolic"] }, view).ok,
+    "optional questions may be absent entirely",
+  );
+  for (const [label, answers] of [
+    ["an unknown question", answersOf({ favouriteColour: "blue" })],
+    ["an unknown option", answersOf({ topics: ["astrology"] })],
+    [
+      "too many selections",
+      answersOf({
+        topics: publicAreas()
+          .slice(0, 4)
+          .map((a) => a.id),
+      }),
+    ],
+    ["a repeated selection", answersOf({ topics: ["metabolic", "metabolic"] })],
+    ["no answer to a required question", answersOf({ topics: [] })],
+    ["a single-select given a list", answersOf({ intent: ["compare"] })],
+    ["an unknown single-select option", answersOf({ intent: "dose" })],
+    ["a toggle given a string", answersOf({ "include-supplies": "yes" })],
+    ["a text answer given a number", answersOf({ "first-name": 42 })],
+    ["text over its limit", answersOf({ note: "x".repeat(401) })],
+    ["an unknown product", answersOf({ "products-in-mind": ["invented-compound"] })],
+    ["too many priorities", answersOf({ priorities: ["documentation", "price", "signature"] })],
+    ["an unknown form", answersOf({ forms: ["capsule"] })],
+    ["a research function the registry does not offer", answersOf({ "research-functions": ["x"] })],
+    ["a body that is not an object", null],
+  ]) {
+    check(!parseAtlasAnswers(answers, view).ok, `the parser rejects ${label}`);
+  }
+  /* A question the registry dropped cannot be answered at all. */
+  check(
+    !parseAtlasAnswers(answersOf({ "research-functions": ["wound-healing"] }), view).ok,
+    "an answer to a question that is not in the view is refused",
+  );
+  check(
+    parseAtlasAnswers(
+      answersOf({ "research-functions": ["wound-healing"] }, viewWithFunctions),
+      viewWithFunctions,
+    ).ok,
+    "…and accepted once the question exists (negative control)",
+  );
+}
+
+/* ---- conditional questions ------------------------------------------------ */
+{
+  const conditional = {
+    version: "t",
+    groups: [
+      {
+        id: "g",
+        label: { es: "G", en: "G" },
+        title: { es: "G", en: "G" },
+        lede: { es: "G", en: "G" },
+        questions: [
+          {
+            id: "experience",
+            kind: "single-select",
+            role: "experience",
+            default: "some",
+            label: { es: "E", en: "E" },
+            options: {
+              kind: "static",
+              items: [
+                { id: "new", label: { es: "N", en: "N" } },
+                { id: "some", label: { es: "S", en: "S" } },
+              ],
+            },
+          },
+          {
+            id: "follow-up",
+            kind: "short-text",
+            maxLength: 20,
+            required: true,
+            visibleWhen: { question: "experience", equals: "new" },
+            label: { es: "F", en: "F" },
+          },
+        ],
+      },
+      {
+        id: "extra",
+        label: { es: "X", en: "X" },
+        title: { es: "X", en: "X" },
+        lede: { es: "X", en: "X" },
+        visibleWhen: { question: "experience", equals: "new" },
+        questions: [
+          {
+            id: "note",
+            kind: "long-text",
+            role: "free-note",
+            maxLength: 50,
+            label: { es: "N", en: "N" },
+          },
+        ],
+      },
+    ],
+  };
+  check(validateQuestionnaire(conditional).length === 0, "the conditional fixture validates");
+  const cView = buildQuestionnaireView(conditional, "es", resolver([]));
+  const hidden = { experience: "some" };
+  const shown = { experience: "new" };
+
+  check(
+    visibleQuestions(cView.groups[0], hidden).length === 1,
+    "a follow-up is hidden while its condition fails",
+  );
+  check(
+    visibleQuestions(cView.groups[0], shown).length === 2,
+    "…and appears when the condition holds",
+  );
+  check(visibleGroups(cView, hidden).length === 1, "a conditional GROUP drops out of the rail");
+  check(visibleGroups(cView, shown).length === 2, "…and joins it when its condition holds");
+  check(
+    groupComplete(cView.groups[0], hidden) && !groupComplete(cView.groups[0], shown),
+    "a hidden required question does not block the step, a visible one does",
+  );
+  check(
+    groupComplete(cView.groups[0], { ...shown, "follow-up": "ok" }),
+    "…and stops blocking once answered",
+  );
+  const parsed = parseAtlasAnswers({ experience: "some", "follow-up": "smuggled" }, cView);
+  check(
+    parsed.ok && parsed.answers["follow-up"] === undefined,
+    "an answer to a hidden question is dropped, not stored",
+  );
+  check(
+    conditionHolds({ all: [{ question: "experience", equals: "new" }] }, shown) &&
+      !conditionHolds({ not: { question: "experience", equals: "new" } }, shown) &&
+      conditionHolds(
+        {
+          any: [
+            { question: "experience", equals: "zzz" },
+            { question: "experience", answered: true },
+          ],
+        },
+        shown,
+      ),
+    "all / any / not / answered compose",
+  );
+}
+
+/* ---- number and range kinds ---------------------------------------------- */
+{
+  const numeric = {
+    version: "t",
+    groups: [
+      {
+        id: "g",
+        label: { es: "G", en: "G" },
+        title: { es: "G", en: "G" },
+        lede: { es: "G", en: "G" },
+        questions: [
+          {
+            id: "topics",
+            kind: "multi-select",
+            role: "topics",
+            required: true,
+            label: { es: "T", en: "T" },
+            options: { kind: "registry", registry: "discovery-areas" },
+          },
+          {
+            id: "spend",
+            kind: "range",
+            role: "budget-cap",
+            min: 2000,
+            max: 40000,
+            step: 1000,
+            default: 8000,
+            label: { es: "S", en: "S" },
+          },
+          { id: "vials", kind: "number", min: 1, max: 99, label: { es: "V", en: "V" } },
+        ],
+      },
+    ],
+  };
+  check(validateQuestionnaire(numeric).length === 0, "the numeric fixture validates");
+  const nView = buildQuestionnaireView(numeric, "es", resolver([]));
+  const spend = nView.groups[0].questions[1];
+  const vials = nView.groups[0].questions[2];
+  check(initialAnswers(nView).spend === 8000, "a range starts at its default");
+  check(answerIssues(spend, 12000).length === 0, "a value inside the range is accepted");
+  check(
+    answerIssues(spend, 100).some((i) => i.code === "out_of_range"),
+    "below the floor is not",
+  );
+  check(
+    answerIssues(spend, 999999).some((i) => i.code === "out_of_range"),
+    "nor above the ceiling",
+  );
+  check(
+    answerIssues(vials, "3").some((i) => i.code === "wrong_type"),
+    "a number takes a number",
+  );
+  check(answerIssues(vials, undefined).length === 0, "an optional number may be skipped");
+  /* The budget role reads a number answer directly — tiers today, a slider tomorrow. */
+  const profile = profileFromAnswers(
+    nView,
+    { ...initialAnswers(nView), topics: ["metabolic"], spend: 15000 },
+    VOCABULARIES,
+  );
+  check(profile.budgetCap === 15000, "a range answer becomes the budget ceiling");
+}
+
+/* ---- roles: answers → profile, and defaults when a question is gone ------- */
+{
+  const profile = profileOf({
+    topics: ["skin", "metabolic"],
+    intent: "compare",
+    "products-in-mind": [publishedProducts[0].slug],
+    "first-name": "Mariana",
+    experience: "experienced",
+    priorities: ["price"],
+    forms: ["solid"],
+    "presentation-size": "largest",
+    "include-supplies": true,
+    budget: "20k",
+    "purchase-horizon": "over-time",
+    timing: "soon",
+    note: "Quiero comparar precios",
+  });
+  check(same(profile.topics, ["skin", "metabolic"]), "ranked topics reach the profile in order");
+  check(profile.intent === "compare", "an enum answer reaches the profile");
+  check(profile.budgetCap === 20000, "an option's payload becomes the budget ceiling");
+  check(profile.includeSupplies === true, "a toggle reaches the profile");
+  check(profile.firstName === "Mariana" && profile.note === "Quiero comparar precios", "text too");
+  check(same(profile.inMind, [publishedProducts[0].slug]), "named products reach the profile");
+  check(profile.size === "largest" && profile.timing === "soon", "preferences reach the profile");
+
+  /* An option id the policy does not recognise falls back, rather than leaking. */
+  const unknown = profileFromAnswers(view, answersOf({ intent: "party" }), VOCABULARIES);
+  check(unknown.intent === "first-order", "an unrecognised option id falls back to the default");
+
+  /* Drop a question and its role defaults — the shorter questionnaire still works. */
+  const shorter = {
+    ...ATLAS_QUESTIONNAIRE,
+    groups: ATLAS_QUESTIONNAIRE.groups.map((group) => ({
+      ...group,
+      questions: group.questions.filter(
+        (question) => question.role !== "timing" && question.role !== "budget-cap",
+      ),
+    })),
+  };
+  const sView = buildQuestionnaireView(shorter, "es", resolver([]));
+  const sProfile = profileFromAnswers(sView, answersOf({}, sView), VOCABULARIES);
+  check(
+    sProfile.timing === "no-rush" && sProfile.budgetCap === null,
+    "a role no question fills falls back to its documented default",
+  );
+  check(
+    applyAtlasPolicy(sProfile).constraints.startWithinBudget === false,
+    "…and the policy still decides with it",
+  );
+}
+
+/* ---- the ledger and the recap are built from the questionnaire ------------ */
+{
+  const ledger = ledgerOf({ topics: ["skin"], priorities: [], budget: "8k" });
+  const byId = new Map(ledger.map((entry) => [entry.question, entry]));
+  check(
+    ledger.length === view.groups.flatMap((g) => g.questions).length,
+    "every visible question appears in the ledger",
+  );
+  check(
+    byId.get("topics").label === es.discovery.areas.skin.short ||
+      byId.get("topics").label.length > 0,
+    "a ledger row carries the question's own wording",
+  );
+  check(byId.get("budget").answer !== null, "an answered question shows its answer");
+  check(
+    same(byId.get("topics").uses, ["selection", "ranking", "explanation", "presentation"]),
+    "the ledger reports the POLICY's permitted uses for the role",
+  );
+  check(
+    byId.get("priorities").answered === false && byId.get("priorities").uses.length === 0,
+    "a skipped question shows as skipped and used for nothing",
+  );
+  const recap = atlasRecap(view, answersOf({ topics: ["skin"] }), LEDGER_COPY);
+  check(
+    recap.length > 0 && recap.every((entry) => entry.label && entry.answer),
+    "the recap carries label and answer for every question marked recap",
+  );
+  check(
+    recap.every(
+      (entry) =>
+        view.groups.flatMap((g) => g.questions).find((q) => q.id === entry.question)?.recap,
+    ),
+    "…and nothing else",
+  );
 }
 
 /* ---- policy: granular, and the name stays on the page --------------------- */
 {
   const base = profileOf({ topics: ["skin"], budget: "20k", priorities: ["price"] });
+  const ledgerEntry = (overrides, id) =>
+    ledgerOf({ topics: ["skin"], budget: "20k", priorities: ["price"], ...overrides }).find(
+      (entry) => entry.question === id,
+    );
   const baseDecision = applyAtlasPolicy(base);
 
   for (const note of [
@@ -108,7 +598,7 @@ const profileOf = (overrides) => {
     "for personal use before the gym",
   ]) {
     const decision = applyAtlasPolicy({ ...base, note });
-    const entry = decision.ledger.find((e) => e.field === "note");
+    const entry = ledgerEntry({ note }, "note");
     check(
       decision.noteDiscarded && decision.narrative.note === null,
       "a note with health detail is withheld from the model",
@@ -150,7 +640,7 @@ const profileOf = (overrides) => {
   );
   check(named.presentation.firstName === "Mariana", "the name personalises the page");
   check(
-    named.ledger.find((e) => e.field === "firstName")?.withheld === "name-private",
+    ledgerEntry({ "first-name": "Mariana" }, "first-name")?.withheld === "name-private",
     "the ledger says the name stays private",
   );
 
@@ -171,13 +661,13 @@ const profileOf = (overrides) => {
   /* …and selection answers do. */
   for (const [label, patch] of [
     ["intent", { intent: "compare" }],
-    ["experience", { experience: "new" }],
+    ["experience", { experience: "experienced" }],
     ["priorities", { priorities: ["documentation"] }],
     ["size", { size: "largest" }],
-    ["budget", { budget: "8k" }],
+    ["budget", { budgetCap: 8000 }],
     ["horizon", { horizon: "over-time" }],
     ["timing", { timing: "soon" }],
-    ["products in mind", { inMind: [vocabulary.products[0]] }],
+    ["products in mind", { inMind: [publishedProducts[0].slug] }],
   ]) {
     const decision = applyAtlasPolicy({ ...base, ...patch });
     check(
@@ -202,7 +692,7 @@ for (const file of [
 ]) {
   const source = readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
   check(
-    !/\bAtlasProfile\b|parseAtlasProfile|from "\.\/profile"/.test(source),
+    !/\bAtlasProfile\b|profileFromAnswers/.test(source),
     "only the policy (and the request entry points) read the profile",
     file,
   );
@@ -231,6 +721,7 @@ const subjects = atlasSubjectsFrom(publishedProducts, {
   areas: (slug) => publicAreasFor(slug).map((a) => a.id),
   documented: (product) => publicEvidenceIndex([product]).length > 0,
   references: (slug) => referencesForProduct(slug).map((r) => r.id),
+  functions: () => [],
 });
 const publicEvidence = publicEvidenceIndex(publishedProducts).length > 0;
 const deps = { relatedAreas: (id) => relatedAreas(id).map((r) => r.area.id), publicEvidence };
@@ -239,13 +730,60 @@ const outsideSkin = subjects.find(
   (s) => !s.areas.includes("longevity") && !s.areas.includes("metabolic") && s.entryPrice !== null,
 );
 
+/* ---- research functions: selection, ranking and the floor ----------------- */
+{
+  /* A product outside the visitor's topics, tagged with the chosen function. */
+  const target = subjects.find((s) => !s.areas.includes("skin") && s.entryPrice !== null);
+  const tagged = subjects.map((s) =>
+    s.slug === target.slug ? { ...s, functions: ["wound-healing"] } : s,
+  );
+  const without = applyAtlasPolicy(profileOf({ topics: ["skin"] }, viewWithFunctions));
+  const withFn = applyAtlasPolicy(
+    profileOf({ topics: ["skin"], "research-functions": ["wound-healing"] }, viewWithFunctions),
+  );
+  const entry = ledgerOf(
+    { topics: ["skin"], "research-functions": ["wound-healing"] },
+    viewWithFunctions,
+  ).find((e) => e.question === "research-functions");
+  check(
+    same(entry?.uses, ["selection", "ranking", "explanation"]),
+    "research functions may select, rank and explain — not present",
+  );
+  check(
+    same(withFn.narrative.functions, ["wound-healing"]),
+    "the chosen research functions reach the narrative",
+  );
+  const before = retrieveAtlas(without.selection, tagged, deps);
+  const after = retrieveAtlas(withFn.selection, tagged, deps);
+  check(
+    !before.candidates.some((c) => c.slug === target.slug),
+    "without the function, a product outside the topics is not retrieved",
+  );
+  const hit = after.candidates.find((c) => c.slug === target.slug);
+  check(
+    hit !== undefined && same(hit.matchedFunctions, ["wound-healing"]),
+    "a chosen research function retrieves its tagged product, whatever its area",
+    target.slug,
+  );
+  check(
+    after.candidates.every((c) => c.slug === target.slug || c.matchedFunctions.length === 0),
+    "only tagged products carry a function match",
+  );
+  check(
+    retrieveAtlas(withFn.selection, subjects, deps).candidates.every(
+      (c) => c.matchedFunctions.length === 0,
+    ),
+    "untagged subjects never match a function",
+  );
+}
+
 const PROFILES = {
   firstOrderNewcomer: profileOf({
     topics: ["metabolic"],
     intent: "first-order",
     experience: "new",
     priorities: ["signature"],
-    size: "smallest",
+    "presentation-size": "smallest",
     budget: "8k",
   }),
   compareSkinValue: profileOf({
@@ -260,17 +798,17 @@ const PROFILES = {
     intent: "cover-topics",
     experience: "experienced",
     priorities: ["documentation", "overlap"],
-    size: "largest",
-    includeSupplies: true,
+    "presentation-size": "largest",
+    "include-supplies": true,
     budget: "40k",
-    horizon: "over-time",
+    "purchase-horizon": "over-time",
   }),
   deepenWithProductInMind: profileOf({
     topics: ["longevity", "metabolic"],
     intent: "deepen",
-    inMind: outsideSkin ? [outsideSkin.slug] : [],
+    "products-in-mind": outsideSkin ? [outsideSkin.slug] : [],
     timing: "soon",
-    style: "detailed",
+    "explanation-style": "detailed",
   }),
 };
 
@@ -388,7 +926,7 @@ check(
     intent: "first-order",
     experience: "new",
     priorities: ["documentation"],
-    size: "largest",
+    "presentation-size": "largest",
   });
   check(!same(first, compare), "the same topics with a different goal give a different plan");
   check(first[0].length <= 2, "a newcomer's first order starts small", first[0].join(","));

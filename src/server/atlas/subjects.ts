@@ -1,5 +1,6 @@
 import "server-only";
 
+import { publicFunctions } from "@/content/overview";
 import { referencesForProduct } from "@/content/research";
 import { publishedProducts } from "@/data/catalog";
 import { getAvailability, getPrices } from "@/data/commerce";
@@ -28,6 +29,7 @@ export async function atlasSubjects(): Promise<readonly AtlasSubject[]> {
     price: (variantId) => prices.get(variantId)?.amount ?? null,
     availability: (variantId) => availability.get(variantId) ?? null,
     areas: (slug) => publicAreasFor(slug).map((area) => area.id),
+    functions: (slug) => publicFunctions(slug),
     documented: (product) => publicEvidenceIndex([product]).length > 0,
     references: (slug) => referencesForProduct(slug).map((reference) => reference.id),
   });

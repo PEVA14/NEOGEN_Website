@@ -1,3 +1,4 @@
+import type { ResearchFunctionId } from "@/content/functions";
 import type { Availability } from "@/data/commerce";
 import type { DiscoveryAreaId } from "@/data/discovery";
 
@@ -15,11 +16,11 @@ import type { DiscoveryAreaId } from "@/data/discovery";
  * may do is an edit to the policy and nowhere else.
  */
 
-export const ATLAS_MAX_TOPICS = 3;
-export const ATLAS_MAX_PRIORITIES = 2;
-export const ATLAS_MAX_IN_MIND = 3;
-export const ATLAS_NOTE_MAX = 400;
-export const ATLAS_NAME_MAX = 40;
+/**
+ * How many ranked topics the policy weighs. The questionnaire may offer fewer
+ * (its own `max`); anything beyond this many ranks carries no weight.
+ */
+export const ATLAS_TOPIC_RANKS = 3;
 
 /* ---- The questionnaire's closed vocabularies ------------------------------ */
 
@@ -71,22 +72,18 @@ export const atlasHorizons: readonly AtlasHorizon[] = ["one-order", "over-time"]
 export type AtlasTiming = "soon" | "no-rush";
 export const atlasTimings: readonly AtlasTiming[] = ["soon", "no-rush"];
 
-/** Budget tiers in MXN, applied to REAL registry prices. */
-export type AtlasBudget = "open" | "8k" | "20k" | "40k";
-export const atlasBudgets: readonly AtlasBudget[] = ["open", "8k", "20k", "40k"];
-export const ATLAS_BUDGET_CAPS: Readonly<Record<AtlasBudget, number | null>> = {
-  open: null,
-  "8k": 8000,
-  "20k": 20000,
-  "40k": 40000,
-};
-
 /* ---- The profile ---------------------------------------------------------- */
 
 export interface AtlasProfile {
   /* Goals */
   /** One to three topics (discovery areas), RANKED: index 0 leads. */
   topics: readonly DiscoveryAreaId[];
+  /**
+   * Zero to three research functions — mechanisms or processes named by the
+   * literature (`content/functions`). Optional; only functions with an
+   * approved, sourced product behind them can be offered or accepted.
+   */
+  functions: readonly ResearchFunctionId[];
   intent: AtlasIntent;
   /** Published product slugs the visitor already has in mind. */
   inMind: readonly string[];
@@ -102,15 +99,17 @@ export interface AtlasProfile {
   size: AtlasSize;
   includeSupplies: boolean;
   /* Budget and context */
-  budget: AtlasBudget;
+  /**
+   * The MXN ceiling, applied to REAL registry prices; null is no ceiling. It
+   * arrives as an option's `value` or as a number answer, so the budget
+   * question can be tiers today and a slider tomorrow.
+   */
+  budgetCap: number | null;
   horizon: AtlasHorizon;
   timing: AtlasTiming;
   /** Free text, normalised but NOT yet judged — the policy decides its use. */
   note: string;
 }
-
-/** Every question, by name — the ledger's keys. */
-export type AtlasField = keyof AtlasProfile;
 
 /* ---- What the policy hands downstream ------------------------------------- */
 
@@ -124,23 +123,12 @@ export type AtlasWithheld =
   /** The name personalises the page and is never sent to the model. */
   | "name-private";
 
-export interface AtlasLedgerEntry {
-  field: AtlasField;
-  /** False when the visitor skipped an optional question. */
-  answered: boolean;
-  /**
-   * The answer, for the page to echo back. The note's text is never echoed —
-   * only whether one was given.
-   */
-  value: string | readonly string[] | boolean | null;
-  uses: readonly AtlasUse[];
-  withheld: AtlasWithheld | null;
-}
-
 export interface AtlasWeights {
-  /** Per topic rank. Length ≥ ATLAS_MAX_TOPICS. */
+  /** Per topic rank. Length ≥ ATLAS_TOPIC_RANKS. */
   topic: readonly number[];
   inMind: number;
+  /** Per research function the product is publicly tagged with. */
+  function: number;
   /** Filed under more than one of the visitor's topics. */
   overlap: number;
   /** One of the three signature products with their own environment. */
@@ -161,6 +149,7 @@ export interface AtlasWeights {
 
 export interface AtlasSelectionSignals {
   topics: readonly DiscoveryAreaId[];
+  functions: readonly ResearchFunctionId[];
   inMind: readonly string[];
   forms: readonly AtlasForm[];
   budgetCap: number | null;
@@ -195,6 +184,7 @@ export interface AtlasConstraints {
 /** What the model may know about the visitor. Nothing else is sent. */
 export interface AtlasNarrativeSignals {
   topics: readonly DiscoveryAreaId[];
+  functions: readonly ResearchFunctionId[];
   intent: AtlasIntent;
   inMind: readonly string[];
   experience: AtlasExperienceLevel;
@@ -204,7 +194,7 @@ export interface AtlasNarrativeSignals {
   forms: readonly AtlasForm[];
   size: AtlasSize;
   includeSupplies: boolean;
-  budget: AtlasBudget;
+  budgetCap: number | null;
   horizon: AtlasHorizon;
   timing: AtlasTiming;
   /** Null when absent or discarded. */
@@ -222,8 +212,7 @@ export interface AtlasPolicyDecision {
   constraints: AtlasConstraints;
   narrative: AtlasNarrativeSignals;
   presentation: AtlasPresentationSignals;
-  ledger: readonly AtlasLedgerEntry[];
-  /** The note was provided and discarded. */
+  /** The note was provided and discarded. The ledger records it per question. */
   noteDiscarded: boolean;
 }
 
@@ -243,6 +232,8 @@ export interface AtlasSubject {
   /** Non-null for the signature products, which carry an Experience world. */
   world: string | null;
   areas: readonly DiscoveryAreaId[];
+  /** Research functions backed by an approved, sourced statement. */
+  functions: readonly ResearchFunctionId[];
   forms: readonly string[];
   presentations: number;
   variants: readonly AtlasSubjectVariant[];
@@ -260,6 +251,8 @@ export interface AtlasCandidate extends AtlasSubject {
   matchedAreas: readonly DiscoveryAreaId[];
   /** Filed under more than one of the visitor's topics. */
   bridges: boolean;
+  /** The visitor's research functions this product is tagged with. */
+  matchedFunctions: readonly ResearchFunctionId[];
   /** The visitor named it. */
   inMind: boolean;
   /** The presentation the result puts forward, chosen by the size preference. */

@@ -1,3 +1,4 @@
+import { RESEARCH_FUNCTION_IDS, type ResearchFunctionId } from "@/content/functions";
 import { forbiddenTermIn, isPublishable } from "@/content/lifecycle";
 import { publicReferencesById, REFERENCES } from "@/content/references";
 
@@ -32,7 +33,9 @@ export type OverviewIssueCode =
   | "statement_not_scientific_class"
   | "forbidden_term"
   | "derived_copy_without_lineage"
-  | "empty_text";
+  | "empty_text"
+  | "function_unknown"
+  | "function_without_statement";
 
 export interface OverviewIssue {
   slug: string;
@@ -138,6 +141,29 @@ export function publicOverview(
   return empty ? null : result;
 }
 
+/**
+ * The research functions a product is PUBLICLY tagged with: those whose
+ * backing statement renders in every locale. A tag never outlives its source.
+ */
+export function publicFunctions(
+  slug: string,
+  deps: Deps = DEFAULT_DEPS,
+): readonly ResearchFunctionId[] {
+  const overview = deps.overviews[slug];
+  if (!overview) return [];
+  const rendered = (locale: Locale) => {
+    const o = publicOverview(slug, locale, deps);
+    return new Set([...(o?.mechanismNotes ?? []), ...(o?.researchContext ?? [])].map((s) => s.id));
+  };
+  const es = rendered("es");
+  const en = rendered("en");
+  const ids = (overview.functions ?? [])
+    .filter((tag) => RESEARCH_FUNCTION_IDS.includes(tag.id))
+    .filter((tag) => es.has(tag.statement) && en.has(tag.statement))
+    .map((tag) => tag.id);
+  return [...new Set(ids)];
+}
+
 /** Every reference id a product's public overview cites. */
 export function citedReferenceIds(slug: string, deps: Deps = DEFAULT_DEPS): readonly string[] {
   const ids = new Set<string>();
@@ -198,6 +224,27 @@ export function auditOverviews(deps: Deps = DEFAULT_DEPS): readonly OverviewIssu
             });
           }
         }
+      }
+    }
+    const statementIds = new Set(
+      [...overview.researchContext, ...overview.mechanismNotes].map((s) => s.id),
+    );
+    for (const tag of overview.functions ?? []) {
+      if (!RESEARCH_FUNCTION_IDS.includes(tag.id)) {
+        issues.push({
+          slug: overview.slug,
+          itemId: tag.statement,
+          code: "function_unknown",
+          detail: tag.id,
+        });
+      }
+      if (!statementIds.has(tag.statement)) {
+        issues.push({
+          slug: overview.slug,
+          itemId: tag.statement,
+          code: "function_without_statement",
+          detail: tag.id,
+        });
       }
     }
     for (const block of [overview.summary, ...overview.technicalNotes]) {

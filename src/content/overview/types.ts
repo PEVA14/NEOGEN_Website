@@ -1,3 +1,4 @@
+import type { ResearchFunctionId } from "@/content/functions";
 import type { ContentProvenance, LocalizedText } from "@/content/lifecycle";
 import type { DiscoveryAreaId } from "@/data/discovery/types";
 
@@ -51,4 +52,10 @@ export interface ProductOverview {
   keyReferences: readonly string[];
   /** Technical notes from product facts — format, identity, storage class. */
   technicalNotes: readonly CopyBlock[];
+  /**
+   * What this compound is studied for, as research functions. Each tag points
+   * at the id of a statement in THIS overview's `mechanismNotes` or
+   * `researchContext`, and is public only while that statement is.
+   */
+  functions: readonly { id: ResearchFunctionId; statement: string }[];
 }
