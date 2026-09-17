@@ -24,5 +24,9 @@ export const BATCH_1_FLAGSHIP_PROFILES: ContentStatus = "approved";
  * Batch 2 — the incretin compounds: tirzepatide and semaglutide. Drafted
  * 2026-09-17, same method: every reference's metadata and every quoted figure
  * read from the source's own abstract via Europe PMC.
+ *
+ * APPROVED BY THE OWNER, 2026-09-17. SURPASS-2 is now cited from both
+ * profiles — tirzepatide as the trial arm, semaglutide as the comparator — so
+ * the Research Hub shows one record read from both ends.
  */
-export const BATCH_2_INCRETIN_PROFILES: ContentStatus = "owner-review";
+export const BATCH_2_INCRETIN_PROFILES: ContentStatus = "approved";
