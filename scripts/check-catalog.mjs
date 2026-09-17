@@ -40,7 +40,6 @@ import {
   featuredInArea,
   relatedAreas,
 } from "../src/domain/discovery/index.ts";
-import { areaComposition } from "../src/domain/discovery/composition.ts";
 import {
   activeFilterCount,
   applyFilters,
@@ -382,84 +381,6 @@ for (const area of AREAS) {
   const check = (condition, what, detail = "") => {
     if (!condition) fail(what, detail);
   };
-
-  /* ---- areaComposition: counted, and countable wrongly --------------------
-   *
-   * The figures this puts on an area page are the only thing there that is not
-   * owner-written copy, so every rule gets a fixture and the whole thing gets
-   * a negative control. A miscount here is a false statement about the
-   * catalogue on a public page.
-   */
-  {
-    const v = (kind, vials) => ({ strength: { kind }, vials });
-    const fixture = [
-      { slug: "a", world: "reta", variants: [v("solid", 10), v("solid", 10)] },
-      { slug: "b", world: null, variants: [v("solid", 10), v("iu", null)] },
-      { slug: "c", world: null, variants: [v("volume", 1)] },
-      { slug: "d", world: null, variants: [] },
-    ];
-    /* "b" and "c" are filed in two areas; "a" and "d" in one. */
-    const alsoIn = (slug) => (slug === "b" || slug === "c" ? 2 : 1);
-    const got = areaComposition(fixture, alsoIn);
-
-    check(got.compounds === 4, "areaComposition counts compounds", String(got.compounds));
-    check(got.presentations === 5, "areaComposition sums presentations", String(got.presentations));
-    /* solid, iu, volume — a SET, so the repeated solid counts once. */
-    check(got.forms === 3, "areaComposition counts distinct forms", String(got.forms));
-    check(got.flagships === 1, "areaComposition counts worlds", String(got.flagships));
-    check(got.shared === 2, "areaComposition counts shared compounds", String(got.shared));
-    /*
-     * "a" and "c" only: "b" has a variant with no stated presentation, and "d"
-     * has no variants at all, so neither is sellable. This is STRICTER than
-     * isPublishable, which needs only one priced variant — the label says "with
-     * a confirmed presentation", so every variant must state one.
-     */
-    check(got.sellable === 2, "areaComposition requires every variant to state a pack", String(got.sellable));
-
-    /* Negative control: the assertions above must be capable of failing. */
-    const wrong = areaComposition(
-      [...fixture, { slug: "e", world: "glow", variants: [v("solid", 10)] }],
-      alsoIn,
-    );
-    check(
-      wrong.compounds === 5 && wrong.flagships === 2 && got.compounds === 4,
-      "areaComposition negative control — a changed input changes the count",
-      `${got.compounds}/${wrong.compounds}`,
-    );
-  }
-
-  /* areaComposition against the real registry: figures a page can print. */
-  for (const area of publicAreas()) {
-    const items = productsInAreaForCheck(area.id);
-    const composition = areaComposition(items, (slug) => publicAreasFor(slug).length);
-    check(
-      composition.compounds === items.length,
-      "area composition matches the area's own product count",
-      area.id,
-    );
-    check(
-      composition.presentations === items.flatMap((p) => p.variants).length,
-      "area composition sums the area's real presentations",
-      area.id,
-    );
-    check(
-      composition.forms >= 1 && composition.forms <= 5,
-      "area composition reports between one and five dosing forms",
-      `${area.id} → ${composition.forms}`,
-    );
-    for (const [key, value] of Object.entries(composition)) {
-      check(
-        Number.isInteger(value) && value >= 0,
-        "every area composition figure is a non-negative integer",
-        `${area.id} ${key}=${value}`,
-      );
-      check(
-        key === "presentations" || value <= items.length,
-        "no area composition figure exceeds the area's compound count",
-        `${area.id} ${key}=${value} of ${items.length}`,
-      );
-    }
-  }
 
   /* featuredCount: the thresholds, including the floor. */
   for (const [total, expected] of [

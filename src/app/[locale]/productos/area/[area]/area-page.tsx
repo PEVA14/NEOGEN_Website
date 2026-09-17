@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 
 import { CatalogBrowser } from "@/components/catalog";
 import {
-  AreaComposition,
   AreaContext,
   AreaEvidence,
   AreaResearch,
@@ -24,7 +23,6 @@ import { formatStrength, presentationRange, publishedProducts, type Product } fr
 import { formatPrice, getPrices } from "@/data/commerce";
 import { areaBySlug, productsInArea, publicAreas, publicAreasFor } from "@/data/discovery";
 import { continuePlan, entryOrder, featuredInArea, relatedAreas } from "@/domain/discovery";
-import { areaComposition } from "@/domain/discovery/composition";
 import { evidenceCoverage, publicEvidenceIndex, resolveEvidence } from "@/domain/quality";
 import { localeTags, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/getDictionary";
@@ -248,18 +246,7 @@ export async function renderAreaPage({
 
   /* ---- the spine, numbered from what renders ----------------------------- */
 
-  /*
-   * WHAT THE AREA HOLDS — counted from the registry, always present.
-   *
-   * Unconditional on purpose: every area has a composition, and an area that
-   * is small or unshared has a real shape worth stating rather than a section
-   * worth hiding. It carries no sourced claim, so it has nothing to gate on —
-   * unlike `context` below it, which stays absent until references exist.
-   */
-  const composition = areaComposition(items, (slug) => publicAreasFor(slug).length);
-
   const sections = [
-    "composition",
     ...(leadProduct ? ["entry"] : []),
     ...(context ? ["context"] : []),
     "compounds",
@@ -299,23 +286,6 @@ export async function renderAreaPage({
         facts={facts}
         titleId="area-title"
       />
-
-      <Section
-        mode="quiet"
-        id="area-composition"
-        className={surface("composition")}
-        aria-labelledby="area-composition-title"
-      >
-        <Container width="full">
-          <SectionHeader
-            index={index("composition")}
-            label={label(page.composition.label, page.composition.qualifier)}
-            title={page.composition.title}
-            id="area-composition-title"
-          />
-          <AreaComposition composition={composition} areaId={area.id} copy={page.composition} />
-        </Container>
-      </Section>
 
       {leadProduct ? (
         <Section

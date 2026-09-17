@@ -576,53 +576,30 @@ dev-only handle that published the R3F state on `window`; **it was removed
 before committing.** Re-add it the same way if this ever needs measuring again
 — screenshots cannot show rotation over time.
 
-## 8g. What an area holds — the composition section
+## 8g. Area information — built, rejected, removed
 
-Owner request (2026-09-16), pointing at an area page above the entry section:
-"add some info about each category… explanations and descriptions about what
-each section is, make the investigation yourself." The reference supplied was a
-competitor page printing purity percentages, published-COA counts and
-mechanism lines ("GLP-1 / GIP co-agonists… glycaemic regulation, lipolysis,
-insulin sensitivity and weight loss").
+Owner request (2026-09-16): "add some info about each category… make the
+investigation yourself", with a competitor page as the example of the info
+(purity %, published-COA counts, mechanism lines incl. weight loss).
 
-**None of that could be written**, and the owner agreed to the narrower scope
-("write the safe registry-based copy, skip the pharmacology"). The reasons are
-worth keeping, because the request will recur:
+- **What cannot be written, and was not:** purity figures and COA counts are
+  fabricated evidence, not a sourcing gap. Mechanism/pathway claims about
+  regulated products are exactly what `content/areas` gates — `AreaOverview`
+  themes and pathways are `SourcedStatement`s needing approved reference ids.
+  `AREA_OVERVIEWS` stays `{}` and the `context` section stays absent until real
+  sources exist. The owner agreed ("skip the pharmacology").
+- **What was built instead** (`c22cea3`): a "What this area holds" section
+  above the entry compounds — six registry-counted figures (compounds,
+  presentations, dosing forms, flagships, shared, sellable) with fixtures and
+  a negative control in `check:catalog`.
+- **The owner disliked it on sight and it was reverted** ("I don't like this,
+  remove it"). The revert is a separate commit, so the implementation is
+  recoverable from `c22cea3` if a different presentation is ever wanted.
 
-- Purity figures and certificate counts are not sourcing problems, they are
-  **fabricated evidence**. The registry holds no such numbers.
-- Mechanism and pathway claims about regulated products are exactly what
-  `content/areas` exists to gate: an `AreaOverview`'s `themes` and `pathways`
-  are `SourcedStatement`s and cannot render without approved reference ids.
-- `AREA_OVERVIEWS` is `{}` **on purpose**, and the page's `context` section is
-  already wired to appear the day a sourced overview exists.
-
-**So the new section is deliberately NOT in that slot.** Filling `context`
-with counts would quietly defeat the gate that protects it. `composition` is
-its own section, unconditional, sitting above `entry`, and carrying only
-figures counted at build time by `domain/discovery/composition`:
-
-- compounds, presentations, distinct dosing forms, compounds with a world,
-  compounds also filed in another area, compounds whose EVERY variant states a
-  presentation.
-- `forms` is a set cardinality, never a span: `Strength` is a union of five
-  incompatible forms and IU is explicitly not convertible to mg, so a single
-  range across kinds would misstate a dose. It is `presentationRange`'s own
-  rule lifted from a product to an area.
-- `sellable` is stricter than `isPublishable` (which needs only one priced
-  variant), because the label says "with a confirmed presentation".
-- Zeros are printed, not hidden. Materiales reads 03 / 06 / 01 / **00** / **00**
-  / 03 — no flagship, no overlap — and that sparseness is the area's real
-  shape. Metabólica reads 16 / 46 / 03 / 01 / 02 / 16.
-
-`check:catalog` carries fixtures for every rule, a negative control, and a
-real-registry sweep of all eight areas asserting the figures match the
-catalogue and that none except `presentations` can exceed the compound count.
-
-**A layout trap:** the figures pin to the cell floor (`margin-block-start:
-auto`). Letting each value follow its own label dropped the wrapped cell's
-number half a line below its neighbours, and a row of figures that do not
-align stops reading as a row.
+**Takeaway for next time:** a register of counted figures is not what the owner
+means by "info about each category" — the reference shows editorial,
+explanatory content. That content needs approved sources first; propose the
+sourcing route rather than a figures substitute.
 
 ## 9. Recommendation for Phase 13 (not approved)
 

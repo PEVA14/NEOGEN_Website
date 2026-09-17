@@ -1351,27 +1351,6 @@ const es = {
         records: "{n} registros públicos",
         record: "1 registro público",
       },
-      /*
-       * LA COMPOSICIÓN DEL ÁREA — cifras contadas del registro, sin prosa.
-       *
-       * Deliberadamente NO dice qué hace un compuesto, ni menciona pureza,
-       * análisis, certificados, mecanismos ni vías. Eso es contenido con
-       * fuentes y vive en `content/areas`, vacío a propósito. Aquí sólo hay
-       * lo que el catálogo ya afirma: cuántos, en cuántas presentaciones, en
-       * cuántas formas, cuántos insignia, cuántos compartidos y cuántos
-       * vendibles.
-       */
-      composition: {
-        label: "Composición",
-        qualifier: "Contado del catálogo",
-        title: "Qué contiene esta área",
-        compounds: "Compuestos",
-        presentations: "Presentaciones",
-        forms: "Formas de presentación",
-        flagships: "Con entorno propio",
-        shared: "También en otra área",
-        sellable: "Con presentación confirmada",
-      },
       context: {
         label: "Contexto",
         qualifier: "Con fuentes publicadas",
