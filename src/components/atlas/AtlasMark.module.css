@@ -1,0 +1,67 @@
+.mark {
+  display: block;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+}
+
+.mark [data-part] {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* The generation state: the links trace in, the nodes answer in turn. */
+.mark[data-animated] [data-part="link"] {
+  stroke-dasharray: 16;
+  stroke-dashoffset: 16;
+  animation: atlas-mark-trace 2.4s var(--ease-standard) infinite;
+}
+
+.mark[data-animated] [data-part="link"]:nth-of-type(2) {
+  animation-delay: 0.3s;
+}
+
+.mark[data-animated] [data-part="link"]:nth-of-type(3) {
+  animation-delay: 0.6s;
+}
+
+.mark[data-animated] [data-part="node"] {
+  animation: atlas-mark-node 2.4s var(--ease-standard) infinite;
+}
+
+.mark[data-animated] [data-part="node"]:nth-of-type(5) {
+  animation-delay: 0.3s;
+}
+
+.mark[data-animated] [data-part="node"]:nth-of-type(6) {
+  animation-delay: 0.6s;
+}
+
+@keyframes atlas-mark-trace {
+  0% {
+    stroke-dashoffset: 16;
+  }
+  45%,
+  70% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -16;
+  }
+}
+
+@keyframes atlas-mark-node {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.45);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mark[data-animated] [data-part] {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}

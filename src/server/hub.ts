@@ -61,6 +61,7 @@ export interface HubData {
     researchQuality: string;
     /** Null until a public document exists. */
     explorer: string | null;
+    atlas: string;
   };
 }
 
@@ -136,6 +137,7 @@ export async function hubData(locale: Locale, dict: Dictionary): Promise<HubData
       researchIndex: `${path(routes.research)}#indice`,
       researchQuality: `${path(routes.research)}#calidad`,
       explorer: publicEvidenceIndex(published).length > 0 ? path(routes.qualityExplorer) : null,
+      atlas: path(routes.atlas),
     },
   };
 }

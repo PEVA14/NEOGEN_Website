@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 
+import { AtlasMark } from "@/components/atlas/AtlasMark";
 import { Container, Section } from "@/components/primitives";
 import { SpecimenPlate } from "@/components/ui/SpecimenPlate";
 
@@ -34,6 +35,8 @@ export interface NeogenHubCopy {
   quality: { points: readonly string[]; explorer: string };
   /** Visually hidden instruction for the keyboard. */
   keys: string;
+  /** The Atlas band between the head and the board. */
+  atlas: { label: string; title: string; body: string; steps: readonly string[]; action: string };
 }
 
 const ORDER: readonly HubId[] = ["catalog", "areas", "worlds", "research", "quality"];
@@ -117,6 +120,38 @@ export function NeogenHub({ data, copy }: { data: HubData; copy: NeogenHubCopy }
               ))}
             </ul>
           </header>
+
+          {/*
+           * ATLAS — the one destination that is a tool rather than a place, so
+           * it is not a sixth row: it spans the board as its own band, the
+           * first thing under the counters. Its mark is the only one drawn at
+           * rest; hovering traces the links in.
+           */}
+          <Link href={data.links.atlas} className={styles.atlas}>
+            <span className={styles.atlasMark}>
+              <AtlasMark />
+            </span>
+            <span className={styles.atlasText}>
+              <span className={styles.atlasLabel}>
+                NEOGEN Atlas <span className={styles.atlasBadge}>{copy.atlas.label}</span>
+              </span>
+              <span className={styles.atlasTitle}>{copy.atlas.title}</span>
+              <span className={styles.atlasBody}>{copy.atlas.body}</span>
+            </span>
+            <span className={styles.atlasSteps} aria-hidden="true">
+              {copy.atlas.steps.map((step, index) => (
+                <span key={step} className={styles.atlasStep}>
+                  <span className={styles.atlasStepIndex}>
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  {step}
+                </span>
+              ))}
+            </span>
+            <span className={styles.atlasAction}>
+              {copy.atlas.action} <span aria-hidden="true">→</span>
+            </span>
+          </Link>
 
           <div className={styles.board}>
             <p className={styles.srOnly} id="hub-keys">

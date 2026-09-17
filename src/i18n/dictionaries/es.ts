@@ -38,6 +38,265 @@ const es = {
     },
   },
 
+  /**
+   * NEOGEN ATLAS — el mapa personal de investigación.
+   *
+   * Explora el catálogo; no evalúa salud ni cuerpos y no indica cantidades,
+   * formas de uso ni horarios. El texto de `compose` pasa por el mismo validador
+   * que la salida del modelo, así que evita vocabulario de efectos o resultados.
+   */
+  atlas: {
+    name: "Atlas",
+    eyebrow: "NEOGEN Atlas",
+    title: "Tu mapa de investigación",
+    lede: "Tres preguntas sobre lo que investigas. Atlas recorre el catálogo real — áreas, compuestos, presentaciones y precios — y escribe un mapa personal de por dónde empezar.",
+    metaDescription:
+      "NEOGEN Atlas: un mapa personal del catálogo de compuestos de investigación, generado a partir de tus áreas de interés, tu enfoque y tu presupuesto.",
+    intro: {
+      points: [
+        {
+          index: "01",
+          title: "Áreas",
+          body: "Elige hasta tres áreas del catálogo, en orden de importancia.",
+        },
+        {
+          index: "02",
+          title: "Perfil",
+          body: "Qué tan a fondo conoces el catálogo y qué quieres priorizar.",
+        },
+        {
+          index: "03",
+          title: "Presupuesto",
+          body: "Un tope contra precios reales y, si quieres, una nota sobre tu investigación.",
+        },
+      ],
+      start: "Empezar mi mapa",
+      duration: "Alrededor de un minuto",
+      boundary:
+        "Atlas explora el catálogo. No evalúa salud ni cuerpos, y no indica cantidades, formas de uso ni horarios.",
+      sources:
+        "Nombres, presentaciones, precios y documentación salen del registro del catálogo. Sólo el texto se genera.",
+    },
+    progress: "Paso {n} de {total}",
+    steps: { areas: "Áreas", profile: "Perfil", budget: "Presupuesto" },
+    controls: {
+      back: "Anterior",
+      next: "Siguiente",
+      generate: "Generar mi mapa",
+      restart: "Crear otro mapa",
+      edit: "Ajustar respuestas",
+    },
+    areas: {
+      title: "¿En qué áreas investigas?",
+      lede: "Elige hasta tres. El orden en que las eliges define tu área principal.",
+      ranks: ["Principal", "Segunda", "Tercera"],
+      count: "{n} compuestos",
+      from: "Desde",
+      selected: "{n} de {max} elegidas",
+      limit: "Ya elegiste tres áreas. Quita una para cambiarla.",
+    },
+    profile: {
+      title: "Tu perfil de exploración",
+      lede: "Sin datos personales: sólo cómo quieres recorrer el catálogo.",
+      depth: {
+        label: "¿Qué tan a fondo conoces el catálogo?",
+        options: {
+          orientation: { label: "Estoy orientándome", hint: "Explícame cómo se organiza." },
+          detail: { label: "Lo conozco bien", hint: "Ve directo a las comparaciones." },
+        },
+      },
+      focus: {
+        label: "¿Qué debe priorizar tu mapa?",
+        hint: "Hasta dos.",
+        options: {
+          documentation: {
+            label: "Documentación pública",
+            hint: "Compuestos con registros publicados primero.",
+          },
+          flagships: {
+            label: "Compuestos insignia",
+            hint: "RETA, GLOW y GHK-Cu, con entorno propio.",
+          },
+          bridges: {
+            label: "Puentes entre áreas",
+            hint: "Compuestos archivados en varias de tus áreas.",
+          },
+          value: { label: "Precio de entrada", hint: "Presentaciones de entrada más accesibles." },
+        },
+      },
+      forms: {
+        label: "Formas de presentación",
+        hint: "Opcional. Déjalo vacío para incluir todas.",
+        options: {
+          solid: "Liofilizado",
+          solution: "Solución",
+          volume: "Por volumen",
+          iu: "Unidades internacionales",
+          blend: "Mezcla",
+        },
+      },
+      materials: {
+        label: "Incluir materiales de laboratorio",
+        hint: "Disolventes y consumibles del catálogo, junto a los compuestos.",
+      },
+    },
+    budget: {
+      title: "Presupuesto y contexto",
+      lede: "El tope se compara con precios reales del catálogo, en la presentación de entrada de cada compuesto.",
+      label: "Tope de presupuesto",
+      options: {
+        open: { label: "Sin tope", hint: "Sólo quiero explorar." },
+        "8k": { label: "Hasta $8,000 MXN", hint: "Un punto de entrada." },
+        "20k": { label: "Hasta $20,000 MXN", hint: "Un recorrido por varias áreas." },
+        "40k": { label: "Hasta $40,000 MXN", hint: "Un mapa amplio." },
+      },
+      context: {
+        label: "Nota sobre tu investigación",
+        optional: "Opcional",
+        placeholder:
+          "Por ejemplo: comparo compuestos de dos áreas para un proyecto de laboratorio.",
+        hint: "No incluyas datos personales ni de salud. Si Atlas los detecta, descarta la nota completa antes de generar y no la envía al modelo.",
+        counter: "{n} / {max}",
+      },
+    },
+    generating: {
+      title: "Construyendo tu mapa",
+      stages: [
+        "Leyendo tus áreas y tu enfoque",
+        "Recuperando compuestos del catálogo",
+        "Cruzando presentaciones, precios y documentación",
+        "Escribiendo tu mapa",
+      ],
+      note: "Sólo el texto se genera. Nombres, presentaciones, precios y documentación salen del registro del catálogo.",
+    },
+    error: {
+      title: "No pudimos generar tu mapa",
+      body: "Algo falló al construirlo. Tus respuestas siguen aquí.",
+      retry: "Intentar de nuevo",
+      rateLimited: "Generaste varios mapas seguidos. Espera unos minutos e inténtalo de nuevo.",
+      invalid: "Algunas respuestas no son válidas. Revísalas e inténtalo de nuevo.",
+    },
+    result: {
+      eyebrow: "Mapa de investigación",
+      modes: {
+        ai: "Escrito por IA · validado contra el catálogo",
+        development: "Composición de desarrollo · sin modelo configurado",
+        catalogue: "Vista de catálogo · análisis escrito no disponible",
+      },
+      stats: {
+        areas: "Áreas",
+        compounds: "En el mapa",
+        pool: "Coincidencias",
+        bridges: "Puentes",
+      },
+      map: {
+        title: "El mapa",
+        lede: "Tus áreas y los compuestos que las conectan. Cada línea une un compuesto con un área en la que está archivado.",
+        label: "Mapa de tus áreas y de los compuestos que las conectan",
+      },
+      areas: {
+        title: "Tus áreas",
+        count: "{n} compuestos archivados",
+        from: "Entrada desde",
+        open: "Ver área",
+      },
+      compounds: {
+        title: "Compuestos del mapa",
+        lede: "Ordenados por cómo encajan con tus áreas y tu enfoque. Cada dato sale del catálogo.",
+        roles: { core: "Principal", complement: "Complementario", material: "Material" },
+        filed: "Archivado en",
+        presentations: "Presentaciones",
+        entry: "Entrada desde",
+        bridges: "Puente entre tus áreas",
+        flagship: "Insignia",
+        documented: "Documentación pública",
+        undocumented: "Sin documentación pública todavía",
+        budgetFits: "Dentro de tu tope",
+        budgetOver: "Sobre tu tope",
+        open: "Ver compuesto",
+      },
+      materials: {
+        title: "Materiales de laboratorio",
+        lede: "Disolventes y consumibles del catálogo.",
+      },
+      budget: {
+        title: "Presupuesto",
+        open: "Sin tope de presupuesto: el mapa no descarta compuestos por precio.",
+        cap: "Tope",
+        core: "Entrada a los compuestos principales",
+        all: "Entrada a todo el mapa",
+        fits: "Dentro del tope",
+        over: "Sobre el tope",
+        unknown: "Sin precio publicado",
+        method:
+          "Suma de la presentación de entrada de cada compuesto, con precios del catálogo. Es una referencia de precio, no una recomendación de compra.",
+      },
+      path: { title: "Por dónde seguir" },
+      documentation: {
+        title: "Documentación",
+        none: "Todavía no hay documentación pública para los compuestos de este mapa. Cuando exista, aparecerá vinculada a la presentación exacta que examina.",
+        some: "{n} registros públicos vinculados a los compuestos de este mapa.",
+        model: "Ver el modelo de evidencia",
+        explorer: "Explorar la documentación",
+        references: "Referencias públicas",
+      },
+      notes: { title: "Notas para leer este mapa" },
+      inputs: {
+        title: "Tus respuestas",
+        depth: "Conocimiento",
+        focus: "Prioridades",
+        forms: "Formas",
+        materials: "Materiales",
+        anyForm: "Todas",
+        noFocus: "Sin prioridad",
+        yes: "Sí",
+        no: "No",
+      },
+      empty: {
+        title: "Ningún compuesto coincide",
+        body: "Con estas formas de presentación no hay compuestos en tus áreas. Quita el filtro de formas o elige otras áreas.",
+      },
+      healthNotice:
+        "Tu nota mencionaba temas personales o de salud. Atlas no evalúa salud, cuerpos ni medicación y no la tomó en cuenta. Cualquier decisión sobre tu salud corresponde a un profesional de la salud.",
+      screenedNotice:
+        "Tu nota contenía datos personales o de salud, así que se descartó antes de generar el mapa y no se envió al modelo.",
+      disclaimer:
+        "Atlas es una herramienta para explorar el catálogo de compuestos de investigación. No es consejo médico, no evalúa si un compuesto es adecuado para una persona y no indica cantidades, formas de uso ni horarios.",
+    },
+    destinations: {
+      catalogue: "Catálogo completo",
+      "research-index": "Índice de compuestos",
+      "quality-model": "Modelo de evidencia",
+      explorer: "Explorador de documentación",
+    },
+    compose: {
+      and: "y",
+      title: "{area}: tu mapa de investigación",
+      summary:
+        "{areas} reúnen {pool} compuestos del catálogo que coinciden con tu selección. Este mapa destaca {count}, ponderados por el orden de tus áreas, el enfoque que elegiste y tu presupuesto.",
+      area: "{count} compuestos archivados en {area}.",
+      areaBridges: "{count} de los compuestos del mapa también aparecen en otra de tus áreas.",
+      compoundFiled: "Archivado en {areas}.",
+      compoundFlagship: "Compuesto insignia, con entorno propio en el sitio.",
+      compoundDocumented: "Tiene documentación pública vinculada.",
+      compoundUndocumented: "Sin documentación pública todavía.",
+      compoundWithinBudget: "Su presentación de entrada cabe en tu tope.",
+      compoundOverBudget: "Su presentación de entrada supera tu tope.",
+      path: {
+        area: "Recorre {label} completa, con todos sus compuestos y presentaciones.",
+        product: "Abre la ficha de {label} para ver sus presentaciones y precios.",
+        catalogue: "Compara contra el catálogo completo y sus filtros.",
+        "research-index": "Consulta el índice de compuestos de NEOGEN Research.",
+        "quality-model": "Revisa cómo se vincula un documento a la presentación que examina.",
+        explorer: "Explora la documentación pública disponible.",
+      },
+      noteDevelopment:
+        "Composición de desarrollo: no hay un modelo configurado, así que este mapa se armó sólo con datos del catálogo.",
+      noteCatalogue:
+        "El análisis escrito no está disponible en este momento; este mapa se armó sólo con datos del catálogo.",
+    },
+  },
+
   a11y: {
     skipToContent: "Saltar al contenido principal",
     mainNavigation: "Navegación principal",
@@ -53,6 +312,7 @@ const es = {
     home: "Inicio",
     products: "Productos",
     research: "Investigación",
+    atlas: "Atlas",
     cart: "Carrito",
     checkout: "Pago",
     /** Etiqueta de marca. SYSTEM STATUS V1: BAG, no Cart. La ruta sigue siendo /carrito. */
@@ -135,6 +395,13 @@ const es = {
         explorer: "Explorar la documentación",
       },
       keys: "Cada destino es un enlace; al enfocarlo se muestra su vista previa.",
+      atlas: {
+        label: "Nuevo",
+        title: "Traza tu mapa del catálogo",
+        body: "Tres preguntas sobre lo que investigas. Atlas cruza el catálogo real y te devuelve los compuestos que conectan tus áreas, dentro de tu presupuesto.",
+        steps: ["Áreas", "Perfil", "Presupuesto", "Mapa"],
+        action: "Trazar mi mapa",
+      },
     },
 
     evolution: {

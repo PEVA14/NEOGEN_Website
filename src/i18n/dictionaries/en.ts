@@ -35,6 +35,254 @@ const en: Dictionary = {
     },
   },
 
+  atlas: {
+    name: "Atlas",
+    eyebrow: "NEOGEN Atlas",
+    title: "Your research map",
+    lede: "Three questions about what you research. Atlas reads the real catalogue — areas, compounds, presentations and prices — and writes a personal map of where to begin.",
+    metaDescription:
+      "NEOGEN Atlas: a personal map of the research-compound catalogue, generated from your areas of interest, your focus and your budget.",
+    intro: {
+      points: [
+        {
+          index: "01",
+          title: "Areas",
+          body: "Choose up to three catalogue areas, in order of importance.",
+        },
+        {
+          index: "02",
+          title: "Profile",
+          body: "How well you know the catalogue, and what to prioritise.",
+        },
+        {
+          index: "03",
+          title: "Budget",
+          body: "A cap against real prices and, if you like, a note on your research.",
+        },
+      ],
+      start: "Start my map",
+      duration: "About a minute",
+      boundary:
+        "Atlas explores the catalogue. It does not assess health or bodies, and it does not give quantities, methods of use or timing.",
+      sources:
+        "Names, presentations, prices and documentation come from the catalogue registry. Only the text is generated.",
+    },
+    progress: "Step {n} of {total}",
+    steps: { areas: "Areas", profile: "Profile", budget: "Budget" },
+    controls: {
+      back: "Back",
+      next: "Next",
+      generate: "Generate my map",
+      restart: "Create another map",
+      edit: "Adjust answers",
+    },
+    areas: {
+      title: "Which areas are you researching?",
+      lede: "Choose up to three. The order you choose them in sets your primary area.",
+      ranks: ["Primary", "Second", "Third"],
+      count: "{n} compounds",
+      from: "From",
+      selected: "{n} of {max} chosen",
+      limit: "You have chosen three areas. Remove one to change it.",
+    },
+    profile: {
+      title: "Your exploration profile",
+      lede: "No personal details — only how you want to move through the catalogue.",
+      depth: {
+        label: "How well do you know the catalogue?",
+        options: {
+          orientation: { label: "Still finding my way", hint: "Explain how it is organised." },
+          detail: { label: "I know it well", hint: "Go straight to comparisons." },
+        },
+      },
+      focus: {
+        label: "What should your map favour?",
+        hint: "Up to two.",
+        options: {
+          documentation: {
+            label: "Public documentation",
+            hint: "Compounds with published records first.",
+          },
+          flagships: {
+            label: "Flagship compounds",
+            hint: "RETA, GLOW and GHK-Cu, each with its own environment.",
+          },
+          bridges: {
+            label: "Bridges between areas",
+            hint: "Compounds filed under several of your areas.",
+          },
+          value: { label: "Entry price", hint: "More accessible entry presentations." },
+        },
+      },
+      forms: {
+        label: "Presentation forms",
+        hint: "Optional. Leave empty to include all.",
+        options: {
+          solid: "Lyophilised",
+          solution: "Solution",
+          volume: "By volume",
+          iu: "International units",
+          blend: "Blend",
+        },
+      },
+      materials: {
+        label: "Include laboratory materials",
+        hint: "Catalogue solvents and consumables, alongside the compounds.",
+      },
+    },
+    budget: {
+      title: "Budget and context",
+      lede: "The cap is compared with real catalogue prices, at each compound's entry presentation.",
+      label: "Budget cap",
+      options: {
+        open: { label: "No cap", hint: "I only want to explore." },
+        "8k": { label: "Up to $8,000 MXN", hint: "A starting point." },
+        "20k": { label: "Up to $20,000 MXN", hint: "A route through several areas." },
+        "40k": { label: "Up to $40,000 MXN", hint: "A wide map." },
+      },
+      context: {
+        label: "Note on your research",
+        optional: "Optional",
+        placeholder: "For example: comparing compounds across two areas for a laboratory project.",
+        hint: "Do not include personal or health details. If Atlas detects them, it discards the whole note before generating and does not send it to the model.",
+        counter: "{n} / {max}",
+      },
+    },
+    generating: {
+      title: "Building your map",
+      stages: [
+        "Reading your areas and focus",
+        "Retrieving compounds from the catalogue",
+        "Cross-referencing presentations, prices and documentation",
+        "Writing your map",
+      ],
+      note: "Only the text is generated. Names, presentations, prices and documentation come from the catalogue registry.",
+    },
+    error: {
+      title: "We could not generate your map",
+      body: "Something failed while building it. Your answers are still here.",
+      retry: "Try again",
+      rateLimited: "You generated several maps in a row. Wait a few minutes and try again.",
+      invalid: "Some answers are not valid. Check them and try again.",
+    },
+    result: {
+      eyebrow: "Research map",
+      modes: {
+        ai: "Written by AI · validated against the catalogue",
+        development: "Development composition · no model configured",
+        catalogue: "Catalogue view · written analysis unavailable",
+      },
+      stats: {
+        areas: "Areas",
+        compounds: "On the map",
+        pool: "Matches",
+        bridges: "Bridges",
+      },
+      map: {
+        title: "The map",
+        lede: "Your areas and the compounds that connect them. Each line joins a compound to an area it is filed under.",
+        label: "Map of your areas and the compounds that connect them",
+      },
+      areas: {
+        title: "Your areas",
+        count: "{n} compounds filed",
+        from: "Entry from",
+        open: "View area",
+      },
+      compounds: {
+        title: "Compounds on the map",
+        lede: "Ordered by how they fit your areas and focus. Every fact comes from the catalogue.",
+        roles: { core: "Core", complement: "Complement", material: "Material" },
+        filed: "Filed under",
+        presentations: "Presentations",
+        entry: "Entry from",
+        bridges: "Bridges your areas",
+        flagship: "Flagship",
+        documented: "Public documentation",
+        undocumented: "No public documentation yet",
+        budgetFits: "Within your cap",
+        budgetOver: "Above your cap",
+        open: "View compound",
+      },
+      materials: { title: "Laboratory materials", lede: "Catalogue solvents and consumables." },
+      budget: {
+        title: "Budget",
+        open: "No budget cap: the map does not exclude compounds on price.",
+        cap: "Cap",
+        core: "Entry to the core compounds",
+        all: "Entry to the whole map",
+        fits: "Within the cap",
+        over: "Above the cap",
+        unknown: "No published price",
+        method:
+          "The sum of each compound's entry presentation, at catalogue prices. A price reference, not a purchase recommendation.",
+      },
+      path: { title: "Where to go next" },
+      documentation: {
+        title: "Documentation",
+        none: "There is no public documentation for the compounds on this map yet. When there is, it will appear tied to the exact presentation it examines.",
+        some: "{n} public records linked to the compounds on this map.",
+        model: "See the evidence model",
+        explorer: "Explore the documentation",
+        references: "Public references",
+      },
+      notes: { title: "Notes on reading this map" },
+      inputs: {
+        title: "Your answers",
+        depth: "Familiarity",
+        focus: "Priorities",
+        forms: "Forms",
+        materials: "Materials",
+        anyForm: "All",
+        noFocus: "No priority",
+        yes: "Yes",
+        no: "No",
+      },
+      empty: {
+        title: "No compounds match",
+        body: "With these presentation forms there are no compounds in your areas. Remove the form filter or choose other areas.",
+      },
+      healthNotice:
+        "Your note mentioned personal or health matters. Atlas does not assess health, bodies or medication and did not take it into account. Any decision about your health belongs with a health professional.",
+      screenedNotice:
+        "Your note contained personal or health details, so it was discarded before the map was generated and was not sent to the model.",
+      disclaimer:
+        "Atlas is a tool for exploring the research-compound catalogue. It is not medical advice, it does not assess whether a compound is suitable for a person, and it does not give quantities, methods of use or timing.",
+    },
+    destinations: {
+      catalogue: "Full catalogue",
+      "research-index": "Compound index",
+      "quality-model": "Evidence model",
+      explorer: "Documentation explorer",
+    },
+    compose: {
+      and: "and",
+      title: "{area}: your research map",
+      summary:
+        "{areas} hold {pool} catalogue compounds that match your selection. This map leads with {count}, weighed by your area ranking, the focus you chose and your budget.",
+      area: "{count} compounds filed under {area}.",
+      areaBridges: "{count} compounds on this map also sit in another of your areas.",
+      compoundFiled: "Filed under {areas}.",
+      compoundFlagship: "A flagship compound, with its own environment on the site.",
+      compoundDocumented: "Has linked public documentation.",
+      compoundUndocumented: "No public documentation yet.",
+      compoundWithinBudget: "Its entry presentation fits your cap.",
+      compoundOverBudget: "Its entry presentation is above your cap.",
+      path: {
+        area: "Walk the whole {label} area, with every compound and presentation.",
+        product: "Open {label} to see its presentations and prices.",
+        catalogue: "Compare against the full catalogue and its filters.",
+        "research-index": "Look up the NEOGEN Research compound index.",
+        "quality-model": "See how a document is tied to the presentation it examines.",
+        explorer: "Explore the public documentation available.",
+      },
+      noteDevelopment:
+        "Development composition: no model is configured, so this map was assembled from catalogue data alone.",
+      noteCatalogue:
+        "The written analysis is unavailable right now; this map was assembled from catalogue data alone.",
+    },
+  },
+
   a11y: {
     skipToContent: "Skip to main content",
     mainNavigation: "Main navigation",
@@ -50,6 +298,7 @@ const en: Dictionary = {
     home: "Home",
     products: "Products",
     research: "NEOGEN Research",
+    atlas: "Atlas",
     cart: "Cart",
     checkout: "Checkout",
     /** Brand label. SYSTEM STATUS V1: BAG, not Cart. The route stays /carrito. */
@@ -127,6 +376,13 @@ const en: Dictionary = {
         explorer: "Explore the documentation",
       },
       keys: "Each destination is a link; focusing one shows its preview.",
+      atlas: {
+        label: "New",
+        title: "Draw your map of the catalogue",
+        body: "Three questions about what you research. Atlas reads the real catalogue and returns the compounds that connect your areas, within your budget.",
+        steps: ["Areas", "Profile", "Budget", "Map"],
+        action: "Draw my map",
+      },
     },
 
     evolution: {

@@ -31,6 +31,7 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 | `2b80dc7`   | Owner review of §8d: register becomes the presentation matrix; homepage trimmed                                                 |
 | `3fe1f7e`   | Flagship shop moved onto the flagship product pages                                                                             |
 | _this_      | Homepage hub: the gateway section under the hero (§8e)                                                                          |
+| _this_      | NEOGEN Atlas: questionnaire → retrieval → AI adapter → validated map (§8h)                                                      |
 
 **Phase 12.1 is complete. Phase 13 has not been started or approved.** Do not
 begin it without a brief from the owner.
@@ -480,12 +481,12 @@ without being a grid of nav cards or a mega-menu. Nothing else removed.
   Verified by measuring TEXT ink (a Range), not element boxes: a `.rowName`
   box spans its whole column and reports a false overlap at every width.
 - **Two bugs the owner caught in the enlarged marks, both fixed.**
-  - *Áreas clipped.* The dots swell to 1.55 on hover and the STROKE scales with
+  - _Áreas clipped._ The dots swell to 1.55 on hover and the STROKE scales with
     them, so a dot centred at 29 reached 32.95 against a 32-unit viewBox and
     was cut against the edge. The grid is now inset to cx 7/13.5/20/26.5,
     peaking at 30.45. The other four marks were checked the same way and clear
     it: catalog 29.35, worlds 31.75, research 30.55, quality 29.11.
-  - *The research action collided with its mark.* "Ir a NEOGEN Research →" was
+  - _The research action collided with its mark._ "Ir a NEOGEN Research →" was
     182px of ink where every other label is 95–127px; with the row's padding it
     ended 198px in, and at 1280 the row is 240px wide. No mark above ~26px fits
     beside it, and no corner escapes it either — a 56px mark occupies half of a
@@ -600,6 +601,70 @@ investigation yourself", with a competitor page as the example of the info
 means by "info about each category" — the reference shows editorial,
 explanatory content. That content needs approved sources first; propose the
 sourcing route rather than a figures substitute.
+
+## 8h. NEOGEN Atlas — the catalogue advisor
+
+Owner request (2026-09-16): NEOGEN's version of EXOMA's "Asesor-IA" — same
+flow and depth (objectives → profile → budget + context → AI generation →
+detailed result), a real AI integration behind a provider-agnostic adapter,
+product facts only from existing data, no health/dosing content.
+
+**Routes.** `/[locale]/atlas` (page), `POST /api/atlas` (generation). Linked
+from the primary nav ("Atlas"), the footer's products column, the sitemap, and
+a full-width band in the homepage hub between the counters and the switch
+strip (a band, not a sixth row: it is a tool, not a place, and a sixth column
+would re-open the label-collision problem of §8e).
+
+**Pipeline.**
+
+1. `domain/atlas/answers` — closed-vocabulary questionnaire (≤3 ranked areas,
+   depth, ≤2 focus, forms, materials, budget band, ≤280-char note). A note that
+   mentions health, bodies, medication or personal use is DISCARDED before any
+   model call (`mentionsPersonalHealth`) and the result says so.
+2. `domain/atlas/retrieval` — scores publishable products against the answers
+   (area rank, bridges, flagship world, documentation, entry price, budget)
+   and sends the model at most 14 candidates + 2 materials + a destination
+   list — never the catalogue.
+3. `src/advisor` — server-only adapter registry mirroring `src/payments`: the
+   first configured adapter wins, `none` is terminal. V1 adapter: Anthropic
+   SDK, `claude-opus-5`, adaptive thinking, effort `medium`, structured output
+   (zod schema), server-side fallbacks, cached constant system prompt.
+4. `domain/atlas/validate` — the output may only use candidate slugs, the
+   reader's areas and listed destinations; its prose is screened for claim
+   terms (es/en), strengths/percentages/prices, dosing vocabulary and unlisted
+   product names. One correction retry, then the composed fallback.
+5. `server/atlas/assemble` — every fact on the result page (names,
+   presentations, prices, documentation, references, budget sums, links) is
+   joined from the registries; the model only supplies selection, order and
+   prose.
+
+**Environment.** `ANTHROPIC_API_KEY` enables generation. Optional:
+`NEOGEN_ADVISOR_MODEL` (default `claude-opus-5`), `NEOGEN_ADVISOR_EFFORT`
+(default `medium`). No key: development shows a labelled "development
+composition" built from the registry; production shows the labelled catalogue
+view. Never presented as AI in either case. Neither key nor SDK reaches the
+client bundle (checked against `.next/static`).
+
+**Cost.** ≈1.5–2k input tokens (≈900 cacheable system) and ≈1–3k output incl.
+thinking: roughly US$0.05–0.09 per map at Opus 5 list price; a correction
+retry can double it. `/api/atlas` rate-limits 8 requests / 10 min per IP
+(in-memory — per instance, not a durable limit).
+
+**Gate.** `check:atlas` (in `npm run check`): parsing and health screening,
+four real profiles whose retrievals must differ (pairwise Jaccard < 0.6),
+composed maps valid in es/en with the core inside the cap and every chosen area
+present, validator negative controls, and offline adapter tests against a fake
+`fetch` (request shape, refusal/truncation/invalid output/provider errors).
+`scripts/lib/ts-resolve.mjs` now only claims `.ts` files outside
+`node_modules` (the SDK ships `.mjs` that must not be type-stripped).
+
+**Not verified:** a live generation — no API key exists locally. The adapter is
+proven offline only; the first real run should be read end to end.
+
+**Deliberate differences from EXOMA:** no health intake, body metrics, goals
+framed as outcomes, routes, durations, timing, doses, titration, vial maths or
+"what to expect". Atlas maps the catalogue (areas, bridges, documentation,
+budget fit); it does not advise a person.
 
 ## 9. Recommendation for Phase 13 (not approved)
 

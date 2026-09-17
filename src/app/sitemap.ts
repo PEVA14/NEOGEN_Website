@@ -27,6 +27,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     routes.home,
     routes.products,
     routes.research,
+    routes.atlas,
     routes.cart,
     /*
      * Only areas with something to show. `publicAreas()` counts products whose

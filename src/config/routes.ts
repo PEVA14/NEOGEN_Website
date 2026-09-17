@@ -46,6 +46,11 @@ export const routes = {
    */
   qualityExplorer: "/investigacion/calidad",
   article: (slug: string) => `/investigacion/${slug}`,
+  /**
+   * NEOGEN Atlas — the personal research map. A tool that crosses the
+   * catalogue and research, so it sits at the root rather than under either.
+   */
+  atlas: "/atlas",
   cart: "/carrito",
   checkout: "/checkout",
   /**
@@ -86,6 +91,12 @@ export const routes = {
 export const primaryNav = [
   { key: "products", href: routes.products },
   { key: "research", href: routes.research },
+  /*
+   * Atlas earns a header slot: it is the one place a first-time reader can
+   * ask "where do I start" and get an answer built from the catalogue, and it
+   * belongs to neither Products nor Research alone.
+   */
+  { key: "atlas", href: routes.atlas },
 ] as const;
 
 /** Reference nav order, including routes not yet built. Documentation only. */

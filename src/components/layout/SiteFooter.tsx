@@ -46,6 +46,7 @@ export function SiteFooter({ locale, dict }: SiteFooterProps) {
       links: [
         { label: dict.nav.products, href: routes.products },
         { label: dict.footer.links.allCompounds, href: routes.products },
+        { label: `${dict.atlas.eyebrow}`, href: routes.atlas },
       ],
     },
     {

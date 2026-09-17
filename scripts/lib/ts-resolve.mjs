@@ -32,7 +32,13 @@ export async function resolve(specifier, context, next) {
   const file = base && firstFile(base);
   // `module-typescript` is stated rather than inferred: without it Node parses
   // the file as CommonJS, fails, and reparses — a warning per module.
-  if (file) {
+  //
+  // Only the project's own TypeScript. A relative import INSIDE a package
+  // (the Anthropic SDK's `client.mjs` importing its siblings) also resolves to
+  // an existing file, and claiming it as TypeScript makes Node refuse to load
+  // it: type stripping is unsupported under node_modules. Those stay with
+  // Node's default resolution.
+  if (file && /\.tsx?$/.test(file) && !file.split(path.sep).includes("node_modules")) {
     return { url: pathToFileURL(file).href, format: "module-typescript", shortCircuit: true };
   }
 
