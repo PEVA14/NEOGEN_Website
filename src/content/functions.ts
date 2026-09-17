@@ -17,8 +17,16 @@ import type { LocalizedText } from "@/content/lifecycle";
  */
 export type ResearchFunctionId =
   | "incretin-glucagon-receptors"
+  | "amylin-signalling"
   | "energy-balance"
   | "glycemic-control"
+  | "hepatic-fat"
+  | "visceral-adipose-tissue"
+  | "lipolysis"
+  | "growth-hormone-axis"
+  | "nnmt-nad-metabolism"
+  | "mitochondrial-fatty-acid-oxidation"
+  | "adipose-vasculature"
   | "extracellular-matrix"
   | "cell-migration-angiogenesis"
   | "wound-healing"
@@ -42,6 +50,14 @@ export const RESEARCH_FUNCTIONS: readonly ResearchFunction[] = [
     },
   },
   {
+    id: "amylin-signalling",
+    label: { es: "Señalización de amilina", en: "Amylin signalling" },
+    hint: {
+      es: "Análogos de amilina y los circuitos de saciedad que describen las fuentes.",
+      en: "Amylin analogues and the satiety circuits the sources describe.",
+    },
+  },
+  {
     id: "energy-balance",
     label: { es: "Balance energético", en: "Energy balance" },
     hint: {
@@ -55,6 +71,65 @@ export const RESEARCH_FUNCTIONS: readonly ResearchFunction[] = [
     hint: {
       es: "HbA1c y metabolismo de la glucosa en ensayos clínicos.",
       en: "HbA1c and glucose metabolism in clinical trials.",
+    },
+  },
+  {
+    id: "hepatic-fat",
+    label: { es: "Grasa hepática", en: "Liver fat" },
+    hint: {
+      es: "Esteatosis y fibrosis hepática medidas en ensayos clínicos.",
+      en: "Hepatic steatosis and fibrosis measured in clinical trials.",
+    },
+  },
+  {
+    id: "visceral-adipose-tissue",
+    label: { es: "Tejido adiposo visceral", en: "Visceral adipose tissue" },
+    hint: {
+      es: "Medición de grasa visceral en estudios clínicos.",
+      en: "Visceral fat as measured in clinical studies.",
+    },
+  },
+  {
+    id: "lipolysis",
+    label: { es: "Lipólisis", en: "Lipolysis" },
+    hint: {
+      es: "Movilización de lípidos en tejido adiposo, en modelos celulares y animales.",
+      en: "Lipid mobilisation in adipose tissue, in cell and animal models.",
+    },
+  },
+  {
+    id: "growth-hormone-axis",
+    label: { es: "Eje GHRH y hormona de crecimiento", en: "GHRH and growth hormone axis" },
+    hint: {
+      es: "Liberación de hormona de crecimiento e IGF-I descrita en la literatura.",
+      en: "Growth hormone release and IGF-I as the literature describes them.",
+    },
+  },
+  {
+    id: "nnmt-nad-metabolism",
+    label: { es: "NNMT y metabolismo del NAD+", en: "NNMT and NAD+ metabolism" },
+    hint: {
+      es: "Metilación de nicotinamida y las vías de NAD+ en el adipocito.",
+      en: "Nicotinamide methylation and NAD+ pathways in the adipocyte.",
+    },
+  },
+  {
+    id: "mitochondrial-fatty-acid-oxidation",
+    label: {
+      es: "Mitocondria y oxidación de ácidos grasos",
+      en: "Mitochondria and fatty-acid oxidation",
+    },
+    hint: {
+      es: "Transporte de ácidos grasos, β-oxidación y función mitocondrial.",
+      en: "Fatty-acid transport, β-oxidation and mitochondrial function.",
+    },
+  },
+  {
+    id: "adipose-vasculature",
+    label: { es: "Vasculatura del tejido adiposo", en: "Adipose tissue vasculature" },
+    hint: {
+      es: "Vasos sanguíneos del tejido adiposo blanco como diana de estudio.",
+      en: "White adipose tissue blood vessels as a study target.",
     },
   },
   {

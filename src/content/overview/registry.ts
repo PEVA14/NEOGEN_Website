@@ -1,6 +1,7 @@
 import {
   BATCH_1_FLAGSHIP_PROFILES as BATCH_1,
   BATCH_2_INCRETIN_PROFILES as BATCH_2,
+  BATCH_3_METABOLIC_PROFILES as BATCH_3,
 } from "@/content/review";
 
 import type { ContentStatus } from "@/content/lifecycle";
@@ -48,7 +49,34 @@ const REF = {
   surmount1: "ref-2022-jastreboff-surmount-1",
   lau: "ref-2015-lau-semaglutide-discovery",
   step1: "ref-2021-wilding-step-1",
+  cagrilintide: "ref-2021-lau-cagrilintide-phase2",
+  zimmermann: "ref-2022-zimmermann-bi456906",
+  sanyalMash: "ref-2024-sanyal-survodutide-mash",
+  glory2: "ref-2026-gao-mazdutide-glory-2",
+  mazdutideT2d: "ref-2026-zhu-mazdutide-t2d",
+  falutz: "ref-2007-falutz-tesamorelin",
+  cox: "ref-2015-cox-aod9604",
+  ngZucker: "ref-2000-ng-aod9604-zucker",
+  heffernan: "ref-2001-heffernan-aod9604-mice",
+  neelakantan: "ref-2018-neelakantan-nnmt-inhibitors",
+  roberti: "ref-2021-roberti-nnmt",
+  billon: "ref-2023-billon-slu-pp-332",
+  kolonin: "ref-2004-kolonin-adipose-ablation",
+  barnhart: "ref-2011-barnhart-adipotide-monkeys",
+  longo: "ref-2016-longo-carnitine-transport",
+  carnitineMeta: "ref-2016-pooyandjoo-carnitine-meta",
 } as const;
+
+/** A technical note: what the citations on a page actually studied. */
+const note = (id: string, es: string, en: string, status: ContentStatus) => ({
+  id,
+  text: { es, en },
+  provenance: {
+    class: "derived-copy" as const,
+    status,
+    derivedFrom: ["scientific-source" as const],
+  },
+});
 
 /* A limit that applies to BPC-157, TB-500 and GHK-Cu alike. */
 const tewariLimit = (id: string) =>
@@ -217,6 +245,410 @@ export const OVERVIEWS: Readonly<Record<string, ProductOverview>> = {
       { id: "incretin-glucagon-receptors", statement: "semaglutide-mechanism-molecule" },
       { id: "energy-balance", statement: "semaglutide-research-step-1" },
       { id: "glycemic-control", statement: "semaglutide-research-surpass-2" },
+    ],
+  },
+
+  /* ---- Cagrilintide ------------------------------------------------------- */
+  cagrilintide: {
+    slug: "cagrilintide",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "cagrilintide-mechanism-amylin",
+        "La cagrilintida es un análogo de amilina de acción prolongada. La amilina natural es una hormona pancreática que induce saciedad.",
+        "Cagrilintide is a long-acting amylin analogue. Natural amylin is a pancreatic hormone that induces satiety.",
+        [REF.cagrilintide],
+        BATCH_3,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "cagrilintide-research-phase2",
+        "Ensayo de fase 2 de búsqueda de intervalo en 906 adultos sin diabetes, con IMC de 30 o más —o de 27 o más con hipertensión o dislipidemia—, en diez países: a 26 semanas la reducción media de peso fue de 6.0 % a 10.8 % según el grupo, frente a 3.0 % con placebo; en el grupo más alto fue de 10.8 % frente a 9.0 % con liraglutida.",
+        "Range-finding phase 2 trial in 906 adults without diabetes, with a BMI of 30 or more — or 27 or more with hypertension or dyslipidaemia — across ten countries: at 26 weeks mean weight reduction ranged from 6.0% to 10.8% across groups, versus 3.0% with placebo; in the highest group it was 10.8% versus 9.0% with liraglutide.",
+        [REF.cagrilintide],
+        BATCH_3,
+      ),
+      sci(
+        "cagrilintide-research-adverse-events",
+        "Eventos adversos reportados: gastrointestinales (náusea, estreñimiento, diarrea) y reacciones en el sitio de aplicación. Los eventos gastrointestinales fueron más frecuentes que con placebo (41–63 % frente a 32 %), principalmente náusea (20–47 % frente a 18 %). El 10 % suspendió el tratamiento, de forma similar entre grupos.",
+        "Reported adverse events were gastrointestinal (nausea, constipation, diarrhoea) and application-site reactions. Gastrointestinal events were more common than with placebo (41–63% versus 32%), mainly nausea (20–47% versus 18%). Ten per cent discontinued treatment, similarly across groups.",
+        [REF.cagrilintide],
+        BATCH_3,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.cagrilintide],
+    technicalNotes: [],
+    functions: [
+      { id: "amylin-signalling", statement: "cagrilintide-mechanism-amylin" },
+      { id: "energy-balance", statement: "cagrilintide-research-phase2" },
+    ],
+  },
+
+  /* ---- Survodutide -------------------------------------------------------- */
+  survodutide: {
+    slug: "survodutide",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "survodutide-mechanism-dual",
+        "La survodutida (BI 456906) es un péptido acilado con agonismo dual en el receptor de glucagón (GCGR) y el del GLP-1. Su diseño parte de la oxintomodulina, un péptido intestinal que activa ambos receptores.",
+        "Survodutide (BI 456906) is an acylated peptide with dual agonism at the glucagon receptor (GCGR) and the GLP-1 receptor. Its design starts from oxyntomodulin, a gut peptide that activates both receptors.",
+        [REF.zimmermann],
+        BATCH_3,
+      ),
+      sci(
+        "survodutide-mechanism-preclinical",
+        "En ratones redujo el peso corporal más que un agonista de GLP-1 solo; los autores atribuyen la diferencia a un mayor gasto energético sumado a una menor ingesta de alimento, y verificaron la activación de ambos receptores con pruebas de tolerancia a la glucosa, ingesta y vaciamiento gástrico.",
+        "In mice it reduced body weight more than a GLP-1 receptor agonist alone; the authors attribute the difference to increased energy expenditure alongside reduced food intake, and confirmed engagement of both receptors with glucose tolerance, food intake and gastric emptying tests.",
+        [REF.zimmermann],
+        BATCH_3,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "survodutide-research-mash",
+        "Ensayo de fase 2 de 48 semanas en 293 adultos con esteatohepatitis metabólica (MASH) confirmada por biopsia y fibrosis F1–F3: la mejoría histológica de MASH sin empeoramiento de la fibrosis ocurrió en 47 %, 62 % y 43 % de los grupos con survodutida, frente a 14 % con placebo; la grasa hepática bajó al menos 30 % en 63 % de los participantes.",
+        "48-week phase 2 trial in 293 adults with biopsy-confirmed metabolic dysfunction-associated steatohepatitis (MASH) and F1–F3 fibrosis: histological improvement in MASH without worsening of fibrosis occurred in 47%, 62% and 43% of the survodutide groups, versus 14% with placebo; liver fat fell by at least 30% in 63% of participants.",
+        [REF.sanyalMash],
+        BATCH_3,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.zimmermann, REF.sanyalMash],
+    technicalNotes: [],
+    functions: [
+      { id: "incretin-glucagon-receptors", statement: "survodutide-mechanism-dual" },
+      { id: "energy-balance", statement: "survodutide-mechanism-preclinical" },
+      { id: "hepatic-fat", statement: "survodutide-research-mash" },
+    ],
+  },
+
+  /* ---- Mazdutide ---------------------------------------------------------- */
+  mazdutide: {
+    slug: "mazdutide",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "mazdutide-mechanism-dual",
+        "La mazdutida es un agonista dual del receptor de glucagón (GCGR) y del receptor de GLP-1.",
+        "Mazdutide is a dual agonist of the glucagon receptor (GCGR) and the GLP-1 receptor.",
+        [REF.mazdutideT2d],
+        BATCH_3,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "mazdutide-research-glory-2",
+        "Ensayo aleatorizado (GLORY-2) en 461 adultos chinos con obesidad moderada a grave: a 60 semanas el cambio medio de peso fue de −16.65 % frente a −1.50 % con placebo, y 84.3 % alcanzó una reducción de 5 % o más, frente a 33.1 %.",
+        "Randomised trial (GLORY-2) in 461 Chinese adults with moderate to severe obesity: at 60 weeks the mean weight change was −16.65% versus −1.50% with placebo, and 84.3% reached a reduction of 5% or more, versus 33.1%.",
+        [REF.glory2],
+        BATCH_3,
+      ),
+      sci(
+        "mazdutide-research-t2d",
+        "Ensayo de fase 3 en 320 adultos chinos con diabetes tipo 2 no controlada con dieta y ejercicio: a 24 semanas la HbA1c bajó 1.57 y 2.15 puntos porcentuales según el grupo, frente a 0.14 con placebo, y el peso bajó 5.61 % y 7.81 %, frente a 1.26 %.",
+        "Phase 3 trial in 320 Chinese adults with type 2 diabetes inadequately controlled by diet and exercise: at 24 weeks HbA1c fell by 1.57 and 2.15 percentage points across groups, versus 0.14 with placebo, and weight fell by 5.61% and 7.81%, versus 1.26%.",
+        [REF.mazdutideT2d],
+        BATCH_3,
+      ),
+      sci(
+        "mazdutide-research-adverse-events",
+        "Eventos adversos en GLORY-2: vómito (53.1 % frente a 1.3 % con placebo), náusea (46.9 % frente a 3.2 %) y diarrea (39.4 % frente a 6.5 %), en su mayoría leves a moderados; 2.9 % suspendió el tratamiento por eventos adversos, frente a 0 % con placebo.",
+        "Adverse events in GLORY-2: vomiting (53.1% versus 1.3% with placebo), nausea (46.9% versus 3.2%) and diarrhoea (39.4% versus 6.5%), mostly mild to moderate; 2.9% discontinued because of adverse events, versus 0% with placebo.",
+        [REF.glory2],
+        BATCH_3,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.glory2, REF.mazdutideT2d],
+    technicalNotes: [],
+    functions: [
+      { id: "incretin-glucagon-receptors", statement: "mazdutide-mechanism-dual" },
+      { id: "energy-balance", statement: "mazdutide-research-glory-2" },
+      { id: "glycemic-control", statement: "mazdutide-research-t2d" },
+    ],
+  },
+
+  /* ---- Tesamorelin -------------------------------------------------------- */
+  tesamorelin: {
+    slug: "tesamorelin",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "tesamorelin-mechanism-ghrh",
+        "La tesamorelina es un análogo del factor liberador de hormona de crecimiento (GHRH). En el ensayo citado el IGF-I aumentó 81 % respecto al inicio, el marcador que refleja la activación de ese eje.",
+        "Tesamorelin is a growth hormone-releasing factor (GHRH) analogue. In the trial cited, IGF-I rose 81% from baseline, the marker that reflects activation of that axis.",
+        [REF.falutz],
+        BATCH_3,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "tesamorelin-research-visceral",
+        "Ensayo aleatorizado en 412 personas con VIH y acumulación de grasa abdominal: a 26 semanas el tejido adiposo visceral medido por tomografía bajó 15.2 % con tesamorelina y subió 5.0 % con placebo; los triglicéridos bajaron 50 mg/dL y subieron 9 mg/dL, respectivamente.",
+        "Randomised trial in 412 people with HIV and abdominal fat accumulation: at 26 weeks visceral adipose tissue measured by computed tomography fell 15.2% with tesamorelin and rose 5.0% with placebo; triglycerides fell by 50 mg/dL and rose by 9 mg/dL respectively.",
+        [REF.falutz],
+        BATCH_3,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.falutz],
+    technicalNotes: [
+      note(
+        "tesamorelin-note-population",
+        "La literatura citada estudia una población específica: personas con VIH y lipodistrofia en tratamiento antirretroviral.",
+        "The literature cited studies one specific population: people with HIV and lipodystrophy on antiretroviral therapy.",
+        BATCH_3,
+      ),
+    ],
+    functions: [
+      { id: "growth-hormone-axis", statement: "tesamorelin-mechanism-ghrh" },
+      { id: "visceral-adipose-tissue", statement: "tesamorelin-research-visceral" },
+    ],
+  },
+
+  /* ---- AOD9604 ------------------------------------------------------------ */
+  aod9604: {
+    slug: "aod9604",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "aod9604-mechanism-identity",
+        "AOD9604 es un péptido formado por el fragmento C-terminal de la hormona de crecimiento humana (aminoácidos 177–191) con una tirosina añadida en el extremo N. Se describe como un imitador de las propiedades lipolíticas de la hormona de crecimiento; la Agencia Mundial Antidopaje lo tiene prohibido.",
+        "AOD9604 is a peptide made of the C-terminal fragment of human growth hormone (amino acids 177–191) with a tyrosine added at the N-terminus. It is described as mimicking growth hormone's lipolytic properties; the World Anti-Doping Agency bans it.",
+        [REF.cox],
+        BATCH_3,
+      ),
+      sci(
+        "aod9604-mechanism-beta3",
+        "En ratones obesos, tanto la hormona de crecimiento humana como AOD9604 redujeron peso y grasa corporal en 14 días, con un aumento de la expresión de ARN del receptor β3-adrenérgico —el principal receptor lipolítico del adipocito— hasta niveles comparables a los de ratones delgados. En ratones sin ese receptor el efecto sobre el peso no se produjo.",
+        "In obese mice, both human growth hormone and AOD9604 reduced body weight and fat over 14 days, with β3-adrenergic receptor RNA expression — the adipocyte's main lipolytic receptor — rising to levels comparable to lean mice. In mice lacking that receptor the weight effect did not occur.",
+        [REF.heffernan],
+        BATCH_3,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "aod9604-research-zucker",
+        "En ratas Zucker obesas, un tratamiento oral durante 19 días redujo en más de 50 % el aumento de peso corporal frente al control (15.8 g contra 35.6 g), con mayor actividad lipolítica en el tejido adiposo y, a diferencia de la hormona de crecimiento completa, sin efecto adverso sobre la sensibilidad a la insulina medida con pinza euglucémica.",
+        "In obese Zucker rats, oral treatment over 19 days reduced body-weight gain by more than 50% versus control (15.8 g against 35.6 g), with increased lipolytic activity in adipose tissue and, unlike intact growth hormone, no adverse effect on insulin sensitivity measured by euglycaemic clamp.",
+        [REF.ngZucker],
+        BATCH_3,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.cox, REF.ngZucker, REF.heffernan],
+    technicalNotes: [
+      note(
+        "aod9604-note-models",
+        "Toda la evidencia citada es preclínica: ratas Zucker obesas y ratones, incluidos ratones sin el receptor β3-adrenérgico.",
+        "Every finding cited is preclinical: obese Zucker rats and mice, including mice lacking the β3-adrenergic receptor.",
+        BATCH_3,
+      ),
+    ],
+    functions: [
+      { id: "lipolysis", statement: "aod9604-mechanism-beta3" },
+      { id: "growth-hormone-axis", statement: "aod9604-mechanism-identity" },
+    ],
+  },
+
+  /* ---- hGH fragment 176-191 ----------------------------------------------- */
+  "hgh-fragment-176-191": {
+    slug: "hgh-fragment-176-191",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "hgh-fragment-mechanism-domain",
+        "El dominio lipolítico de la hormona de crecimiento humana está en su extremo C-terminal. El análogo sintético estudiado en la literatura, AOD9604, consiste en los aminoácidos 177–191 con una tirosina añadida en el extremo N.",
+        "The lipolytic domain of human growth hormone sits at its C-terminus. The synthetic analogue studied in the literature, AOD9604, consists of amino acids 177–191 with a tyrosine added at the N-terminus.",
+        [REF.cox],
+        BATCH_3,
+      ),
+      sci(
+        "hgh-fragment-mechanism-lipolysis",
+        "En modelos animales, ese dominio sintético redujo el aumento de peso y aumentó la actividad lipolítica del tejido adiposo, con un efecto que depende del receptor β3-adrenérgico del adipocito.",
+        "In animal models, that synthetic domain reduced weight gain and increased adipose tissue lipolytic activity, with an effect that depends on the adipocyte's β3-adrenergic receptor.",
+        [REF.ngZucker, REF.heffernan],
+        BATCH_3,
+      ),
+    ],
+    researchContext: [],
+    areasOfInvestigation: [],
+    keyReferences: [REF.cox, REF.ngZucker, REF.heffernan],
+    technicalNotes: [
+      note(
+        "hgh-fragment-note-analogue",
+        "Las fuentes citadas estudian AOD9604, el análogo sintético de este dominio, no el fragmento 176–191 por separado.",
+        "The sources cited study AOD9604, the synthetic analogue of this domain, rather than the 176–191 fragment on its own.",
+        BATCH_3,
+      ),
+    ],
+    functions: [{ id: "lipolysis", statement: "hgh-fragment-mechanism-lipolysis" }],
+  },
+
+  /* ---- 5-amino-1MQ -------------------------------------------------------- */
+  "5-amino-1mq": {
+    slug: "5-amino-1mq",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "5-amino-1mq-mechanism-nnmt",
+        "5-amino-1MQ es un inhibidor de la nicotinamida N-metiltransferasa (NNMT), una enzima citosólica que metila la nicotinamida y que se sitúa entre el metabolismo celular y la regulación epigenética.",
+        "5-amino-1MQ is an inhibitor of nicotinamide N-methyltransferase (NNMT), a cytosolic enzyme that methylates nicotinamide and sits between cellular metabolism and epigenetic regulation.",
+        [REF.neelakantan, REF.roberti],
+        BATCH_3,
+      ),
+      sci(
+        "5-amino-1mq-mechanism-selectivity",
+        "Los análogos de metilquinolinio con una amina primaria mostraron alta permeabilidad de membrana y selectividad: no inhibieron otras metiltransferasas dependientes de SAM ni las enzimas de la vía de recuperación del NAD+. En adipocitos cultivados redujeron el 1-metilnicotinamida intracelular, el producto de la reacción de NNMT.",
+        "Methylquinolinium analogues with a primary amine showed high membrane permeability and selectivity: they did not inhibit other SAM-dependent methyltransferases or the enzymes of the NAD+ salvage pathway. In cultured adipocytes they reduced intracellular 1-methylnicotinamide, the product of the NNMT reaction.",
+        [REF.neelakantan],
+        BATCH_3,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "5-amino-1mq-research-mice",
+        "En ratones con obesidad inducida por una dieta alta en grasa, un inhibidor potente de NNMT revirtió medidas de obesidad y lípidos plasmáticos; es el estudio que propuso NNMT como diana contra la obesidad.",
+        "In mice with high-fat-diet-induced obesity, a potent NNMT inhibitor reversed obesity measures and plasma lipids; this is the study that proposed NNMT as an anti-obesity target.",
+        [REF.neelakantan],
+        BATCH_3,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.neelakantan, REF.roberti],
+    technicalNotes: [
+      note(
+        "5-amino-1mq-note-models",
+        "La evidencia citada es de adipocitos cultivados y ratones; no se cita ningún ensayo en humanos.",
+        "The evidence cited is from cultured adipocytes and mice; no human trial is cited.",
+        BATCH_3,
+      ),
+    ],
+    functions: [
+      { id: "nnmt-nad-metabolism", statement: "5-amino-1mq-mechanism-nnmt" },
+      { id: "energy-balance", statement: "5-amino-1mq-research-mice" },
+    ],
+  },
+
+  /* ---- SLU-PP-332 --------------------------------------------------------- */
+  "slu-pp-332": {
+    slug: "slu-pp-332",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "slu-pp-332-mechanism-err",
+        "SLU-PP-332 es un agonista sintético de los tres receptores relacionados con el receptor de estrógeno (ERRα, β y γ), con la mayor potencia en ERRα. Estos receptores nucleares huérfanos participan en la capacidad de ejercicio del músculo esquelético.",
+        "SLU-PP-332 is a synthetic agonist of all three estrogen-related receptors (ERRα, β and γ), with the highest potency at ERRα. These orphan nuclear receptors take part in skeletal muscle exercise capacity.",
+        [REF.billon],
+        BATCH_3,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "slu-pp-332-research-muscle",
+        "En una línea celular de músculo esquelético aumentó la función mitocondrial y la respiración celular. En ratones aumentó las fibras oxidativas de tipo IIa y la resistencia al ejercicio, e indujo un programa genético de ejercicio aeróbico dependiente de ERRα; sin ERRα el efecto sobre la resistencia no se produjo.",
+        "In a skeletal muscle cell line it increased mitochondrial function and cellular respiration. In mice it increased type IIa oxidative fibres and exercise endurance, and induced an ERRα-dependent acute aerobic exercise gene programme; without ERRα the endurance effect did not occur.",
+        [REF.billon],
+        BATCH_3,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.billon],
+    technicalNotes: [
+      note(
+        "slu-pp-332-note-models",
+        "La evidencia citada es de una línea celular y de ratones; no se cita ningún ensayo en humanos.",
+        "The evidence cited is from a cell line and mice; no human trial is cited.",
+        BATCH_3,
+      ),
+    ],
+    functions: [
+      { id: "mitochondrial-fatty-acid-oxidation", statement: "slu-pp-332-research-muscle" },
+    ],
+  },
+
+  /* ---- Adipotide / FTTP --------------------------------------------------- */
+  "adipotide-fttp": {
+    slug: "adipotide-fttp",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "adipotide-mechanism-prohibitin",
+        "Adipotide es un peptidomimético dirigido: un motivo peptídico (secuencia CKGGRAKDC) que se une a la prohibitina —una proteína de membrana que los autores establecen como marcador vascular del tejido adiposo— acoplado a un péptido proapoptótico. Dirigirlo a la vasculatura del tejido adiposo blanco provoca la ablación de ese tejido.",
+        "Adipotide is a ligand-directed peptidomimetic: a peptide motif (sequence CKGGRAKDC) that binds prohibitin — a membrane protein the authors establish as a vascular marker of adipose tissue — coupled to a pro-apoptotic peptide. Directing it at white adipose tissue vasculature causes ablation of that tissue.",
+        [REF.kolonin],
+        BATCH_3,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "adipotide-research-mice",
+        "En ratones, la inducción dirigida de apoptosis en la vasculatura del tejido adiposo produjo resorción del tejido adiposo blanco establecido y normalización del metabolismo, con reversión de la obesidad y sin efectos adversos detectados en ese estudio.",
+        "In mice, targeted induction of apoptosis in adipose tissue vasculature produced resorption of established white adipose tissue and normalisation of metabolism, reversing obesity with no adverse effects detected in that study.",
+        [REF.kolonin],
+        BATCH_3,
+      ),
+      sci(
+        "adipotide-research-monkeys",
+        "En monos obesos del Viejo Mundo produjo apoptosis dirigida en los vasos del tejido adiposo blanco, pérdida de peso y mejor resistencia a la insulina, confirmadas por resonancia magnética y absorciometría. En los valores evaluados como óptimos, los monos de tres especies mostraron cambios predecibles y reversibles en la función del túbulo proximal renal.",
+        "In obese Old World monkeys it produced targeted apoptosis in white adipose tissue vessels, weight loss and improved insulin resistance, confirmed by magnetic resonance imaging and absorptiometry. At the levels assessed as optimal, monkeys from three species showed predictable and reversible changes in renal proximal tubule function.",
+        [REF.barnhart],
+        BATCH_3,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.kolonin, REF.barnhart],
+    technicalNotes: [
+      note(
+        "adipotide-note-models",
+        "La evidencia citada es de ratones y de primates no humanos; no se cita ningún ensayo en humanos.",
+        "The evidence cited is from mice and non-human primates; no human trial is cited.",
+        BATCH_3,
+      ),
+    ],
+    functions: [{ id: "adipose-vasculature", statement: "adipotide-mechanism-prohibitin" }],
+  },
+
+  /* ---- L-carnitine -------------------------------------------------------- */
+  "l-carnitine": {
+    slug: "l-carnitine",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "l-carnitine-mechanism-transport",
+        "La carnitina es esencial para transferir ácidos grasos de cadena larga a través de la membrana mitocondrial interna, el paso previo a su β-oxidación. Se obtiene de la dieta —carne y lácteos— o la sintetiza el organismo, y las células la acumulan mediante OCTN2, un transportador de cationes orgánicos de alta afinidad específico para carnitina.",
+        "Carnitine is essential for transferring long-chain fatty acids across the inner mitochondrial membrane, the step before their β-oxidation. It comes from the diet — meat and dairy — or is synthesised by the body, and cells accumulate it through OCTN2, a high-affinity organic cation transporter specific to carnitine.",
+        [REF.longo],
+        BATCH_3,
+      ),
+      sci(
+        "l-carnitine-mechanism-deficiency",
+        "Los defectos del transportador OCTN2 causan deficiencia primaria de carnitina, con menor acumulación intracelular, mayores pérdidas urinarias y niveles séricos bajos; es la condición que define el papel fisiológico de la molécula.",
+        "Defects in the OCTN2 transporter cause primary carnitine deficiency, with reduced intracellular accumulation, increased urinary losses and low serum levels; this is the condition that defines the molecule's physiological role.",
+        [REF.longo],
+        BATCH_3,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "l-carnitine-research-meta",
+        "Un metaanálisis de nueve ensayos aleatorizados (911 participantes en total) encontró que quienes recibieron carnitina perdieron más peso que el grupo control: diferencia media de 1.33 kg (IC 95 %: 0.57–2.09) y de 0.47 kg/m² de índice de masa corporal. La magnitud disminuyó al prolongarse el consumo.",
+        "A meta-analysis of nine randomised trials (911 participants in total) found that those who received carnitine lost more weight than controls: mean difference 1.33 kg (95% CI 0.57–2.09) and 0.47 kg/m² of body-mass index. The magnitude decreased as consumption continued over time.",
+        [REF.carnitineMeta],
+        BATCH_3,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.longo, REF.carnitineMeta],
+    technicalNotes: [],
+    functions: [
+      {
+        id: "mitochondrial-fatty-acid-oxidation",
+        statement: "l-carnitine-mechanism-transport",
+      },
     ],
   },
 

@@ -30,3 +30,15 @@ export const BATCH_1_FLAGSHIP_PROFILES: ContentStatus = "approved";
  * the Research Hub shows one record read from both ends.
  */
 export const BATCH_2_INCRETIN_PROFILES: ContentStatus = "approved";
+
+/**
+ * Batch 3 — the rest of the metabolic line: cagrilintide, survodutide,
+ * mazdutide, tesamorelin, AOD9604, the hGH lipolytic fragment, 5-amino-1MQ,
+ * SLU-PP-332, adipotide and L-carnitine. Drafted 2026-09-17, same method.
+ *
+ * NOT covered, for lack of literature rather than for lack of trying: Lemon
+ * Bottle and the two Lipo-C blends. A search returned no primary study of
+ * either preparation, and a profile assembled from its components would be
+ * NEOGEN's inference rather than a published finding.
+ */
+export const BATCH_3_METABOLIC_PROFILES: ContentStatus = "owner-review";
