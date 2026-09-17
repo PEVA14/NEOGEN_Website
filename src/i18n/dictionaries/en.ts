@@ -1188,6 +1188,25 @@ const en: Dictionary = {
         records: "{n} public records",
         record: "1 public record",
       },
+      /*
+       * THE AREA'S COMPOSITION — figures counted from the registry, no prose.
+       *
+       * Deliberately says nothing about what a compound does, and carries no
+       * purity, testing, certificate, mechanism or pathway. That is sourced
+       * content and lives in `content/areas`, which is empty by design. This
+       * is only what the catalogue already asserts.
+       */
+      composition: {
+        label: "Composition",
+        qualifier: "Counted from the catalogue",
+        title: "What this area holds",
+        compounds: "Compounds",
+        presentations: "Presentations",
+        forms: "Presentation forms",
+        flagships: "With an environment",
+        shared: "Also in another area",
+        sellable: "With a confirmed presentation",
+      },
       context: {
         label: "Context",
         qualifier: "With published sources",

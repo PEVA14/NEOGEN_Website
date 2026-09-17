@@ -1,0 +1,66 @@
+/*
+ * The area's composition — a register of counted figures.
+ *
+ * Instrument, not infographic: hairline cells, tabular figures at display
+ * scale, mono labels. No bars, no rings, no percentages — a bar implies a
+ * proportion of something, and several of these figures have no denominator.
+ */
+
+.grid {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--border-subtle);
+  border: 1px solid var(--border-subtle);
+}
+
+@media (min-width: 48rem) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 64rem) {
+  .grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  padding: var(--space-md);
+  /* The area's own wash, so the register belongs to this department. */
+  background: color-mix(in oklab, var(--area-wash, var(--surface-base)) 55%, var(--surface-base));
+}
+
+.label {
+  margin: 0;
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  text-wrap: pretty;
+}
+
+/*
+ * THE FIGURES SIT ON THE CELL'S FLOOR, not under their own label.
+ *
+ * Labels are one or two lines depending on the phrase ("Compuestos" against
+ * "Con presentación confirmada"), and letting each value follow its own label
+ * dropped the wrapped cell's figure half a line below its neighbours — a row
+ * of numbers that no longer reads as a row. `auto` pushes every value to the
+ * bottom, so they align across the register whatever the labels do.
+ */
+.value {
+  margin: 0;
+  margin-block-start: auto;
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-3xl);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-primary);
+}

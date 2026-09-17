@@ -1,3 +1,4 @@
+export { AreaComposition, type AreaCompositionCopy } from "./AreaComposition";
 export { AreaContext, AreaResearch } from "./AreaSources";
 export { AreaEvidence, type AreaEvidenceRow } from "./AreaEvidence";
 export { ContinueExploring, type ContinueDestination } from "./ContinueExploring";
