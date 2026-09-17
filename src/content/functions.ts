@@ -32,7 +32,12 @@ export type ResearchFunctionId =
   | "wound-healing"
   | "musculoskeletal-repair"
   | "gene-expression"
-  | "dermal-structure";
+  | "dermal-structure"
+  | "immune-modulation"
+  | "inflammatory-signalling"
+  | "innate-repair-receptor"
+  | "antimicrobial-activity"
+  | "hair-follicle";
 
 export interface ResearchFunction {
   id: ResearchFunctionId;
@@ -170,6 +175,46 @@ export const RESEARCH_FUNCTIONS: readonly ResearchFunction[] = [
     hint: {
       es: "Regulación de la expresión de genes humanos.",
       en: "Regulation of human gene expression.",
+    },
+  },
+  {
+    id: "immune-modulation",
+    label: { es: "Modulación inmunitaria", en: "Immune modulation" },
+    hint: {
+      es: "Diferenciación de linfocitos T y actividad de células dendríticas y macrófagos.",
+      en: "T-cell differentiation and dendritic cell and macrophage activity.",
+    },
+  },
+  {
+    id: "inflammatory-signalling",
+    label: { es: "Señalización inflamatoria", en: "Inflammatory signalling" },
+    hint: {
+      es: "Vías como NF-κB y las citocinas que describen las fuentes.",
+      en: "Pathways such as NF-κB and the cytokines the sources describe.",
+    },
+  },
+  {
+    id: "innate-repair-receptor",
+    label: { es: "Receptor de reparación innata", en: "Innate repair receptor" },
+    hint: {
+      es: "Protección de tejidos por la vía del receptor de EPO con CD131.",
+      en: "Tissue protection through the EPO receptor–CD131 pathway.",
+    },
+  },
+  {
+    id: "antimicrobial-activity",
+    label: { es: "Actividad antimicrobiana", en: "Antimicrobial activity" },
+    hint: {
+      es: "Péptidos de defensa del huésped y su acción sobre microorganismos.",
+      en: "Host defence peptides and their action on microorganisms.",
+    },
+  },
+  {
+    id: "hair-follicle",
+    label: { es: "Folículo piloso", en: "Hair follicle" },
+    hint: {
+      es: "Células de la papila dérmica y crecimiento del folículo en estudios ex vivo.",
+      en: "Dermal papilla cells and follicle growth in ex vivo studies.",
     },
   },
   {

@@ -2,6 +2,7 @@ import {
   BATCH_1_FLAGSHIP_PROFILES as BATCH_1,
   BATCH_2_INCRETIN_PROFILES as BATCH_2,
   BATCH_3_METABOLIC_PROFILES as BATCH_3,
+  BATCH_4_RECOVERY_PROFILES as BATCH_4,
 } from "@/content/review";
 
 import type { ContentStatus } from "@/content/lifecycle";
@@ -65,6 +66,15 @@ const REF = {
   barnhart: "ref-2011-barnhart-adipotide-monkeys",
   longo: "ref-2016-longo-carnitine-transport",
   carnitineMeta: "ref-2016-pooyandjoo-carnitine-meta",
+  simonova: "ref-2025-simonova-thymosin-alpha-1",
+  etass: "ref-2013-wu-etass",
+  dalmasso: "ref-2008-dalmasso-kpv-pept1",
+  kannengiesser: "ref-2008-kannengiesser-kpv-ibd",
+  brines: "ref-2008-brines-helix-b-peptides",
+  dahan: "ref-2013-dahan-ara290-sarcoidosis",
+  heilborn: "ref-2003-heilborn-ll37-reepithelialisation",
+  pyo: "ref-2007-pyo-ahk-cu-hair",
+  linkova: "ref-2023-linkova-thymalin-dipeptides",
 } as const;
 
 /** A technical note: what the citations on a page actually studied. */
@@ -87,6 +97,48 @@ const tewariLimit = (id: string) =>
     [REF.tewari],
     BATCH_1,
   );
+
+/**
+ * The BPC-157 + TB-500 blends: same two components, different strengths, and
+ * one shared literature. Written once so the two products cannot drift apart.
+ */
+const bpcTbBlend = (slug: string): ProductOverview => ({
+  slug,
+  summary: null,
+  mechanismNotes: [
+    sci(
+      `${slug}-mechanism-components`,
+      "Esta presentación combina dos compuestos con literatura propia: BPC-157, descrito como un péptido gástrico que favorece la integridad de la mucosa y que en estudios revisados aumenta vías de crecimiento celular y angiogénesis, y TB-500, descrito como una forma sintética de la timosina β4, que se une a la actina y promueve la migración celular.",
+      "This presentation combines two compounds with their own literature: BPC-157, described as a gastric peptide that promotes mucosal integrity and which, in the studies reviewed, increases cell-growth and angiogenesis pathways, and TB-500, described as a synthetic form of thymosin β4, which binds actin and promotes cell migration.",
+      [REF.vasireddi, REF.goldstein, REF.bicer],
+      BATCH_4,
+    ),
+  ],
+  researchContext: [
+    sci(
+      `${slug}-research-combination`,
+      "El estudio que combina ambos compuestos —exploratorio, en ratas con reparación del tendón de Aquiles— encontró que la combinación no aportó beneficios adicionales frente a cada compuesto por separado. Los autores plantean como hipótesis que ambos converjan en vías comunes, y señalan que requiere confirmación experimental.",
+      "The study that combines both compounds — exploratory, in rats with Achilles tendon repair — found that the combination conferred no additional benefit over either compound alone. The authors hypothesise that both converge on shared pathways, and note that this requires experimental confirmation.",
+      [REF.bicer],
+      BATCH_4,
+    ),
+    tewariLimit(`${slug}-research-evidence-limit`),
+  ],
+  areasOfInvestigation: [],
+  keyReferences: [REF.vasireddi, REF.goldstein, REF.bicer, REF.tewari],
+  technicalNotes: [
+    note(
+      `${slug}-note-blend`,
+      "No se cita literatura sobre esta presentación combinada: las fuentes estudian cada componente, y una de ellas los estudia juntos en un modelo animal.",
+      "No literature about this combined presentation is cited: the sources study each component, and one of them studies them together in an animal model.",
+      BATCH_4,
+    ),
+  ],
+  functions: [
+    { id: "musculoskeletal-repair", statement: `${slug}-research-combination` },
+    { id: "cell-migration-angiogenesis", statement: `${slug}-mechanism-components` },
+  ],
+});
 
 export const OVERVIEWS: Readonly<Record<string, ProductOverview>> = {
   /* ---- RETA — retatrutide ------------------------------------------------- */
@@ -651,6 +703,269 @@ export const OVERVIEWS: Readonly<Record<string, ProductOverview>> = {
       },
     ],
   },
+
+  /* ---- Thymosin alpha-1 --------------------------------------------------- */
+  "thymosin-alpha-1": {
+    slug: "thymosin-alpha-1",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "thymosin-alpha-1-mechanism-identity",
+        "La timosina alfa-1 (Tα1) es una hormona peptídica producida por el timo. La revisión citada le atribuye propiedades inmunomoduladoras, antiinflamatorias y antioxidantes, y describe su acción estimulando la diferenciación de linfocitos T y modulando la actividad de células dendríticas y macrófagos.",
+        "Thymosin alpha-1 (Tα1) is a peptide hormone produced by the thymus. The review cited attributes immunomodulatory, anti-inflammatory and antioxidant properties to it, and describes its action as stimulating T-cell differentiation and modulating dendritic cell and macrophage activity.",
+        [REF.simonova],
+        BATCH_4,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "thymosin-alpha-1-research-etass",
+        "Ensayo aleatorizado y controlado (ETASS) en 361 pacientes con sepsis grave en seis hospitales: la mortalidad por cualquier causa a 28 días fue de 26.0 % con Tα1 y 35.0 % en el grupo control (riesgo relativo 0.74; IC 95 %: 0.54–1.02; log rank p = 0.049). El marcador inmunitario mHLA-DR mejoró más en el grupo con Tα1 a los días 3 y 7.",
+        "Randomised controlled trial (ETASS) in 361 patients with severe sepsis across six hospitals: all-cause mortality at 28 days was 26.0% with Tα1 and 35.0% in the control group (relative risk 0.74; 95% CI 0.54–1.02; log rank p = 0.049). The immune marker mHLA-DR improved more in the Tα1 group at days 3 and 7.",
+        [REF.etass],
+        BATCH_4,
+      ),
+      sci(
+        "thymosin-alpha-1-research-safety",
+        "En ese ensayo no se registró ningún evento adverso grave relacionado con el fármaco. El intervalo de confianza del riesgo relativo cruza 1, y los autores describen el efecto como posible en una población específica de sepsis grave, no como establecido.",
+        "In that trial no serious drug-related adverse event was recorded. The confidence interval for the relative risk crosses 1, and the authors describe the effect as possible in a specific severe-sepsis population rather than as established.",
+        [REF.etass],
+        BATCH_4,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.simonova, REF.etass],
+    technicalNotes: [],
+    functions: [{ id: "immune-modulation", statement: "thymosin-alpha-1-mechanism-identity" }],
+  },
+
+  /* ---- KPV ---------------------------------------------------------------- */
+  kpv: {
+    slug: "kpv",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "kpv-mechanism-pept1",
+        "KPV es un tripéptido (Lys-Pro-Val) que corresponde al extremo C-terminal de la hormona α-MSH (α-MSH 11-13) y al que se atribuyen propiedades antiinflamatorias. Su captación por células epiteliales intestinales e inmunes ocurre a través de PepT1, un transportador de di- y tripéptidos que normalmente se expresa en el intestino delgado y que se induce en el colon durante la enfermedad inflamatoria intestinal.",
+        "KPV is a tripeptide (Lys-Pro-Val) corresponding to the C-terminus of the α-MSH hormone (α-MSH 11-13), with anti-inflammatory properties attributed to it. Its uptake by intestinal epithelial and immune cells occurs through PepT1, a di- and tripeptide transporter normally expressed in the small intestine and induced in the colon during inflammatory bowel disease.",
+        [REF.dalmasso, REF.kannengiesser],
+        BATCH_4,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "kpv-research-cells",
+        "En células epiteliales intestinales humanas y linfocitos T estimulados con citocinas proinflamatorias, KPV redujo la actividad del factor NF-κB; los experimentos de captación con competidor indican que el efecto es mediado por PepT1.",
+        "In human intestinal epithelial cells and T cells stimulated with pro-inflammatory cytokines, KPV reduced NF-κB activity; competitor uptake experiments indicate the effect is PepT1-mediated.",
+        [REF.dalmasso],
+        BATCH_4,
+      ),
+      sci(
+        "kpv-research-colitis",
+        "Se estudió en dos modelos murinos de colitis (inducida por sulfato de dextrano y por transferencia de CD45RB alto). En ratones con un receptor de melanocortina-1 no funcional la actividad antiinflamatoria se mantuvo, lo que los autores interpretan como un mecanismo independiente de ese receptor.",
+        "It was studied in two murine colitis models (dextran sulfate-induced and CD45RB-high transfer). In mice with a non-functional melanocortin-1 receptor the anti-inflammatory activity persisted, which the authors read as a mechanism independent of that receptor.",
+        [REF.kannengiesser],
+        BATCH_4,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.dalmasso, REF.kannengiesser],
+    technicalNotes: [
+      note(
+        "kpv-note-models",
+        "La evidencia citada es de cultivos celulares humanos y de modelos murinos de colitis; no se cita ningún ensayo en humanos.",
+        "The evidence cited is from human cell cultures and murine colitis models; no human trial is cited.",
+        BATCH_4,
+      ),
+    ],
+    functions: [
+      { id: "inflammatory-signalling", statement: "kpv-research-cells" },
+      { id: "immune-modulation", statement: "kpv-mechanism-pept1" },
+    ],
+  },
+
+  /* ---- ARA-290 ------------------------------------------------------------ */
+  "ara-290": {
+    slug: "ara-290",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "ara-290-mechanism-helix-b",
+        "ARA 290 es un péptido de 11 aminoácidos derivado de la cara acuosa de la hélice B de la eritropoyetina (EPO). La EPO regula la producción de eritrocitos por el homodímero de su receptor, y protege tejidos por una vía distinta: un heterocomplejo del receptor de EPO con CD131, el receptor β común. ARA 290 activa esa segunda vía sin la acción eritropoyética.",
+        "ARA 290 is an 11-amino-acid peptide derived from the aqueous face of helix B of erythropoietin (EPO). EPO regulates erythrocyte production through its receptor homodimer, and protects tissues through a different route: a heterocomplex of the EPO receptor with CD131, the beta common receptor. ARA 290 activates that second route without the erythropoietic action.",
+        [REF.brines],
+        BATCH_4,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "ara-290-research-preclinical",
+        "El péptido de la hélice B fue neuroprotector in vitro y protector de tejidos in vivo en varios modelos: ictus isquémico, edema retiniano inducido por diabetes y traumatismo de nervio periférico.",
+        "The helix B peptide was neuroprotective in vitro and tissue-protective in vivo across several models: ischaemic stroke, diabetes-induced retinal oedema and peripheral nerve trauma.",
+        [REF.brines],
+        BATCH_4,
+      ),
+      sci(
+        "ara-290-research-sarcoidosis",
+        "Ensayo ciego y controlado con placebo de 28 días en pacientes con pérdida documentada de fibras nerviosas pequeñas asociada a sarcoidosis: mejoraron los síntomas neuropáticos reportados por los pacientes y aumentó la densidad de fibras nerviosas pequeñas en la córnea.",
+        "Blinded, placebo-controlled 28-day trial in patients with documented sarcoidosis-associated small nerve fibre loss: patient-reported neuropathic symptoms improved and corneal small nerve fibre density increased.",
+        [REF.dahan],
+        BATCH_4,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.brines, REF.dahan],
+    technicalNotes: [],
+    functions: [{ id: "innate-repair-receptor", statement: "ara-290-mechanism-helix-b" }],
+  },
+
+  /* ---- LL-37 -------------------------------------------------------------- */
+  "ll-37": {
+    slug: "ll-37",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "ll-37-mechanism-identity",
+        "LL-37 es el fragmento C-terminal de hCAP18, la proteína catelicidina antimicrobiana humana y componente del sistema inmunitario innato; ese fragmento le confiere una actividad antimicrobiana amplia. hCAP18 se produce de forma constitutiva en los leucocitos y se induce en órganos de barrera ante inflamación e infección.",
+        "LL-37 is the C-terminal fragment of hCAP18, the human cathelicidin antimicrobial protein and a component of the innate immune system; that fragment confers its broad antimicrobial activity. hCAP18 is produced constitutively in leukocytes and induced in barrier organs upon inflammation and infection.",
+        [REF.heilborn],
+        BATCH_4,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "ll-37-research-reepithelialisation",
+        "En piel humana, los niveles de hCAP18 aumentan al producirse una herida, alcanzan su máximo a las 48 horas y vuelven a los valores previos al cerrarse; se detecta en el infiltrado inflamatorio y en el epitelio que migra sobre el lecho de la herida. En úlceras crónicas los niveles son bajos y no hay inmunorreactividad en el epitelio del borde.",
+        "In human skin, hCAP18 levels rise when a wound occurs, peak at 48 hours and return to pre-injury levels as the wound closes; it is detected in the inflammatory infiltrate and in the epithelium migrating over the wound bed. In chronic ulcers levels are low and there is no immunoreactivity in the ulcer-edge epithelium.",
+        [REF.heilborn],
+        BATCH_4,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.heilborn],
+    technicalNotes: [],
+    functions: [
+      { id: "antimicrobial-activity", statement: "ll-37-mechanism-identity" },
+      { id: "wound-healing", statement: "ll-37-research-reepithelialisation" },
+    ],
+  },
+
+  /* ---- AHK-Cu ------------------------------------------------------------- */
+  "ahk-cu": {
+    slug: "ahk-cu",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "ahk-cu-mechanism-tripeptide-copper",
+        "AHK-Cu es el complejo del tripéptido L-alanil-L-histidil-L-lisina con cobre (Cu²⁺). Los complejos tripéptido-cobre se describen como factores de crecimiento para distintos tipos de células diferenciadas: estimulan la proliferación de fibroblastos dérmicos y elevan la producción de factor de crecimiento endotelial vascular (VEGF), a la vez que reducen la secreción de TGF-β1 por esos fibroblastos.",
+        "AHK-Cu is the complex of the tripeptide L-alanyl-L-histidyl-L-lysine with copper (Cu²⁺). Tripeptide-copper complexes are described as growth factors for various differentiated cell types: they stimulate dermal fibroblast proliferation and raise vascular endothelial growth factor (VEGF) production, while reducing those fibroblasts' TGF-β1 secretion.",
+        [REF.pyo],
+        BATCH_4,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "ahk-cu-research-hair-follicle",
+        "En folículos pilosos humanos ex vivo, AHK-Cu estimuló su elongación, y en cultivo estimuló la proliferación de células de la papila dérmica —fibroblastos especializados con un papel en la morfogénesis y el crecimiento del folículo—. La relación Bcl-2/Bax aumentó y bajaron las formas escindidas de caspasa-3 y PARP; la reducción de células apoptóticas no alcanzó significancia estadística.",
+        "In human hair follicles ex vivo, AHK-Cu stimulated their elongation, and in culture it stimulated the proliferation of dermal papilla cells — specialised fibroblasts with a role in follicle morphogenesis and growth. The Bcl-2/Bax ratio rose and the cleaved forms of caspase-3 and PARP fell; the reduction in apoptotic cells did not reach statistical significance.",
+        [REF.pyo],
+        BATCH_4,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.pyo],
+    technicalNotes: [
+      note(
+        "ahk-cu-note-models",
+        "La evidencia citada es de folículos humanos ex vivo y de células en cultivo; no se cita ningún ensayo en humanos.",
+        "The evidence cited is from human follicles ex vivo and cultured cells; no human trial is cited.",
+        BATCH_4,
+      ),
+    ],
+    functions: [
+      { id: "hair-follicle", statement: "ahk-cu-research-hair-follicle" },
+      { id: "dermal-structure", statement: "ahk-cu-mechanism-tripeptide-copper" },
+    ],
+  },
+
+  /* ---- Thymalin ----------------------------------------------------------- */
+  thymalin: {
+    slug: "thymalin",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "thymalin-mechanism-dipeptides",
+        "Thymalin es una preparación inmunomoduladora que contiene un extracto polipeptídico de timo; sus sustancias activas son los dipéptidos KE y EW. Según la literatura que citan los autores, KE estimula la inmunidad celular y la resistencia no específica actuando sobre macrófagos, linfocitos, timocitos y neutrófilos, mientras EW reduce la vasoconstricción inducida por angiotensina.",
+        "Thymalin is an immunomodulatory preparation containing a polypeptide extract of thymus; its active substances are the dipeptides KE and EW. According to the literature the authors cite, KE stimulates cellular immunity and non-specific resistance by acting on macrophages, lymphocytes, thymocytes and neutrophils, while EW reduces angiotensin-induced vasoconstriction.",
+        [REF.linkova],
+        BATCH_4,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "thymalin-research-mechanism-study",
+        "El estudio citado es de modelado molecular y expresión génica: evaluó la interacción de los dipéptidos EW y KE con ADN de doble cadena para identificar un posible mecanismo de la actividad inmunomoduladora de Thymalin en el contexto de la respuesta inflamatoria del COVID-19.",
+        "The study cited is molecular modelling and gene expression work: it assessed how the EW and KE dipeptides interact with double-stranded DNA, to identify a possible mechanism for Thymalin's immunomodulatory activity in the context of the COVID-19 inflammatory response.",
+        [REF.linkova],
+        BATCH_4,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.linkova],
+    technicalNotes: [
+      note(
+        "thymalin-note-evidence",
+        "La literatura localizada procede en su mayoría de un mismo grupo de investigación y es de modelado y expresión génica. Los ensayos clínicos que los autores mencionan no se citan aquí porque no se revisaron en su fuente original.",
+        "The literature located comes mostly from a single research group and is modelling and gene-expression work. The clinical trials the authors mention are not cited here because they were not read in their original source.",
+        BATCH_4,
+      ),
+    ],
+    functions: [{ id: "immune-modulation", statement: "thymalin-mechanism-dipeptides" }],
+  },
+
+  /* ---- KLOW --------------------------------------------------------------- */
+  klow: {
+    slug: "klow",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "klow-mechanism-components",
+        "KLOW reúne cuatro compuestos con literatura propia: BPC-157, estudiado en modelos preclínicos de lesión musculoesquelética; GHK-Cu, estudiado en síntesis de colágeno y reparación de la piel; TB-500, descrito como forma sintética de la timosina β4, que se une a la actina y promueve la migración celular; y KPV, el tripéptido derivado de α-MSH cuya captación por PepT1 reduce la señalización inflamatoria en modelos celulares y murinos.",
+        "KLOW brings together four compounds with their own literature: BPC-157, studied in preclinical models of musculoskeletal injury; GHK-Cu, studied in collagen synthesis and skin repair; TB-500, described as a synthetic form of thymosin β4, which binds actin and promotes cell migration; and KPV, the α-MSH-derived tripeptide whose PepT1-mediated uptake reduces inflammatory signalling in cell and murine models.",
+        [REF.vasireddi, REF.pickart2015, REF.goldstein, REF.dalmasso],
+        BATCH_4,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "klow-research-combination",
+        "El único estudio citado que combina dos de sus componentes —BPC-157 y TB-500, en ratas con reparación del tendón de Aquiles— encontró que la combinación no aportó beneficios adicionales frente a cada compuesto por separado. Ese estudio no incluyó GHK-Cu ni KPV.",
+        "The only study cited that combines two of its components — BPC-157 and TB-500, in rats with Achilles tendon repair — found that the combination conferred no additional benefit over either compound alone. That study included neither GHK-Cu nor KPV.",
+        [REF.bicer],
+        BATCH_4,
+      ),
+      tewariLimit("klow-research-evidence-limit"),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.vasireddi, REF.pickart2015, REF.goldstein, REF.dalmasso, REF.bicer],
+    technicalNotes: [
+      note(
+        "klow-note-blend",
+        "No se cita literatura sobre esta combinación de cuatro componentes: las fuentes estudian cada uno por separado, y una de ellas estudia dos de ellos juntos en un modelo animal.",
+        "No literature about this four-component combination is cited: the sources study each one separately, and one of them studies two of them together in an animal model.",
+        BATCH_4,
+      ),
+    ],
+    functions: [
+      { id: "extracellular-matrix", statement: "klow-mechanism-components" },
+      { id: "inflammatory-signalling", statement: "klow-mechanism-components" },
+      { id: "musculoskeletal-repair", statement: "klow-research-combination" },
+    ],
+  },
+
+  /* ---- BPC + TB blends ---------------------------------------------------- */
+  "bpc-5mg-tb-5mg": bpcTbBlend("bpc-5mg-tb-5mg"),
+  "bpc-10mg-tb-10mg": bpcTbBlend("bpc-10mg-tb-10mg"),
 
   /* ---- GHK-Cu ------------------------------------------------------------- */
   "ghk-cu": {

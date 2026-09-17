@@ -439,6 +439,49 @@ eq(
   "cited ids come only from what renders",
 );
 
+/* ---- the vocabulary guard: catches dosing, spares science --------------- */
+{
+  for (const text of [
+    "Una dosis de 5 mg",
+    "dose-finding phase 2 trial",
+    "increase the dose gradually",
+    "two doses per week",
+    "dosage form",
+    "inyección semanal",
+    "inyectar el contenido",
+    "injection site",
+    "reconstituir con agua bacteriostática",
+    "uso diario",
+    "por día",
+    "per day",
+    "10 mg/kg",
+    "protocolo de uso",
+    "vía subcutánea",
+    "ciclo de 8 semanas",
+    "frecuencia de uso",
+    "dosificación sugerida",
+    "administración recomendada",
+  ]) {
+    ok(forbiddenTermIn(text) !== null, "the guard catches dosing vocabulary", text);
+  }
+  /* Real scientific and commercial language that merely CONTAINS those letters. */
+  for (const text of [
+    "sarcoidosis",
+    "pérdida de fibras nerviosas asociada a sarcoidosis",
+    "edema retiniano inducido por diabetes",
+    "Al día siguiente",
+    "ciclosporina",
+    "bicycle",
+    "endocrinología",
+  ]) {
+    ok(
+      forbiddenTermIn(text) === null,
+      "the guard spares vocabulary that only contains a forbidden word",
+      `${text} → ${forbiddenTermIn(text)}`,
+    );
+  }
+}
+
 /* ---- the Atlas questionnaire is content, held to the same vocabulary ----- */
 {
   const source = readFileSync("src/content/atlas/questionnaire.ts", "utf8")

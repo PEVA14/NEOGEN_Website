@@ -46,3 +46,15 @@ export const BATCH_2_INCRETIN_PROFILES: ContentStatus = "approved";
  * a profile on 13 of its 16 products.
  */
 export const BATCH_3_METABOLIC_PROFILES: ContentStatus = "approved";
+
+/**
+ * Batch 4 — the recovery area: thymosin alpha-1, KPV, ARA-290, LL-37, AHK-Cu,
+ * Thymalin, KLOW and the two BPC+TB blends. Drafted 2026-09-17, same method.
+ *
+ * NOT covered: Vesugen (KED) and Cartalax (AED). The only literature a search
+ * returns is review and transport work from a single research group, none of
+ * it establishing a finding for these two tripeptides specifically. Citing a
+ * review about short peptides in general as if it were about these would be
+ * the kind of borrowed authority this content model exists to prevent.
+ */
+export const BATCH_4_RECOVERY_PROFILES: ContentStatus = "owner-review";

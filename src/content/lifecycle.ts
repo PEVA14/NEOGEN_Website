@@ -67,21 +67,25 @@ export type LocalizedText = Readonly<Record<Locale, string>>;
  * idea into free text is refused at render time and fails
  * `npm run check:content`.
  *
- * Matched on word STEMS, case- and accent-insensitively, in both locales.
+ * Matched case- and accent-insensitively, in both locales, in two ways.
  * Deliberately broad: a false positive costs an editor a rewrite; a false
  * negative publishes a dosing instruction.
+ *
+ * STEMS match anywhere in a word, because the dangerous forms are inflected:
+ * "inyec" has to catch inyectar AND inyección.
+ *
+ * WORDS match only as whole words, because a stem search for them hits real
+ * scientific vocabulary: "dosis" is inside sarcoidosis and "por dia" is inside
+ * "por diabetes". Word matching still catches every dosing form that matters,
+ * hyphenated ones included — a boundary sits at the hyphen in "dose-finding".
  */
-export const FORBIDDEN_PUBLIC_TERMS: readonly string[] = [
-  "dose",
-  "dosage",
-  "dosing",
-  "dosis",
+const FORBIDDEN_PUBLIC_STEMS: readonly string[] = [
   "posologia",
   "administer",
   "administration",
   "administrar",
   "administracion",
-  "inject",
+  "dosific",
   /* "inyec", not "inyect": inyección is spelled with a double c, and the
      longer stem matched inyectar but silently missed the noun. */
   "inyec",
@@ -89,21 +93,39 @@ export const FORBIDDEN_PUBLIC_TERMS: readonly string[] = [
   "intramuscular",
   "intravenous",
   "intravenos",
-  "cycle",
-  "ciclo",
   "protocol",
   "protocolo",
-  "frequency",
-  "frecuencia",
   "reconstitut",
   "reconstitu",
   "mg/kg",
+];
+
+const FORBIDDEN_PUBLIC_WORDS: readonly string[] = [
+  "dose",
+  "doses",
+  "dosage",
+  "dosing",
+  "dosis",
+  "inject",
+  "injection",
+  "cycle",
+  "cycles",
+  "ciclo",
+  "ciclos",
+  "frequency",
+  "frecuencia",
   "per day",
   "por dia",
-  /* NOT "al dia": it matches "al día siguiente", the owner-confirmed delivery
-     promise. The specific dosing forms above are kept instead. */
+  /* NOT "al dia", even as a whole word: it IS the owner-confirmed delivery
+     promise "al día siguiente". The specific dosing forms cover the risk. */
   "daily use",
   "uso diario",
+];
+
+/** Every term the guard knows, for reporting and for the checks. */
+export const FORBIDDEN_PUBLIC_TERMS: readonly string[] = [
+  ...FORBIDDEN_PUBLIC_STEMS,
+  ...FORBIDDEN_PUBLIC_WORDS,
 ];
 
 function fold(text: string): string {
@@ -113,10 +135,18 @@ function fold(text: string): string {
     .replace(/\p{Diacritic}/gu, "");
 }
 
-/** The first forbidden stem the text contains, or null. */
+/** Non-word characters bound a word; the folded text has no diacritics left. */
+const bounded = (term: string) =>
+  new RegExp(`(?:^|[^a-z0-9])${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:$|[^a-z0-9])`);
+
+/** The first forbidden term the text contains, or null. */
 export function forbiddenTermIn(text: string): string | null {
   const folded = fold(text);
-  return FORBIDDEN_PUBLIC_TERMS.find((term) => folded.includes(term)) ?? null;
+  return (
+    FORBIDDEN_PUBLIC_STEMS.find((term) => folded.includes(term)) ??
+    FORBIDDEN_PUBLIC_WORDS.find((term) => bounded(term).test(folded)) ??
+    null
+  );
 }
 
 /**
