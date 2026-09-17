@@ -1,4 +1,7 @@
-import { BATCH_1_FLAGSHIP_PROFILES as BATCH_1 } from "@/content/review";
+import {
+  BATCH_1_FLAGSHIP_PROFILES as BATCH_1,
+  BATCH_2_INCRETIN_PROFILES as BATCH_2,
+} from "@/content/review";
 
 import type { ContentStatus } from "@/content/lifecycle";
 import type { ProductOverview, SourcedStatement } from "./types";
@@ -40,6 +43,11 @@ const REF = {
   malinda: "ref-1999-malinda-thymosin-b4-wound",
   bicer: "ref-2026-bicer-bpc157-tb500-achilles",
   tewari: "ref-2026-tewari-peptide-supplements",
+  coskun2018: "ref-2018-coskun-ly3298176",
+  surpass2: "ref-2021-frias-surpass-2",
+  surmount1: "ref-2022-jastreboff-surmount-1",
+  lau: "ref-2015-lau-semaglutide-discovery",
+  step1: "ref-2021-wilding-step-1",
 } as const;
 
 /* A limit that applies to BPC-157, TB-500 and GHK-Cu alike. */
@@ -103,6 +111,112 @@ export const OVERVIEWS: Readonly<Record<string, ProductOverview>> = {
       { id: "incretin-glucagon-receptors", statement: "reta-mechanism-receptors" },
       { id: "energy-balance", statement: "reta-mechanism-energy" },
       { id: "glycemic-control", statement: "reta-research-t2d-phase2" },
+    ],
+  },
+
+  /* ---- Tirzepatide -------------------------------------------------------- */
+  tirzepatide: {
+    slug: "tirzepatide",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "tirzepatide-mechanism-receptors",
+        "La tirzepatida (LY3298176) es un péptido modificado con un ácido graso, con actividad agonista dual en los receptores del polipéptido insulinotrópico dependiente de glucosa (GIP) y del péptido similar al glucagón tipo 1 (GLP-1). In vitro activó la señalización de ambos receptores.",
+        "Tirzepatide (LY3298176) is a fatty-acid-modified peptide with dual agonist activity at the glucose-dependent insulinotropic polypeptide (GIP) and glucagon-like peptide-1 (GLP-1) receptors. In vitro it activated signalling at both receptors.",
+        [REF.coskun2018],
+        BATCH_2,
+      ),
+      sci(
+        "tirzepatide-mechanism-mice",
+        "En ratones produjo secreción de insulina dependiente de glucosa y mejor tolerancia a la glucosa actuando sobre ambos receptores; de forma prolongada redujo el peso corporal y la ingesta de alimento, con un efecto mayor que el de un agonista sólo de GLP-1.",
+        "In mice it produced glucose-dependent insulin secretion and improved glucose tolerance by acting at both receptors; over time it reduced body weight and food intake, with a greater effect than a GLP-1 receptor agonist alone.",
+        [REF.coskun2018],
+        BATCH_2,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "tirzepatide-research-surmount-1",
+        "Ensayo de fase 3 (SURMOUNT-1) en 2,539 adultos con obesidad, o con IMC de 27 o más y al menos una complicación relacionada con el peso, sin diabetes: a 72 semanas el cambio medio de peso fue de −15.0 %, −19.5 % y −20.9 % según el grupo asignado, frente a −3.1 % con placebo.",
+        "Phase 3 trial (SURMOUNT-1) in 2,539 adults with obesity, or a BMI of 27 or more plus at least one weight-related complication, without diabetes: at 72 weeks the mean weight change was −15.0%, −19.5% and −20.9% across the assigned groups, versus −3.1% with placebo.",
+        [REF.surmount1],
+        BATCH_2,
+      ),
+      sci(
+        "tirzepatide-research-surpass-2",
+        "Ensayo de fase 3 abierto (SURPASS-2) en 1,879 personas con diabetes tipo 2, con semaglutida como comparador activo: a 40 semanas la HbA1c bajó entre 2.01 y 2.30 puntos porcentuales según el grupo, frente a 1.86 con semaglutida, y la reducción de peso fue mayor (diferencia estimada de 1.9 a 5.5 kg).",
+        "Open-label phase 3 trial (SURPASS-2) in 1,879 people with type 2 diabetes, with semaglutide as the active comparator: at 40 weeks HbA1c fell by 2.01 to 2.30 percentage points across groups, versus 1.86 with semaglutide, and weight reduction was greater (estimated difference 1.9 to 5.5 kg).",
+        [REF.surpass2],
+        BATCH_2,
+      ),
+      sci(
+        "tirzepatide-research-adverse-events",
+        "Eventos adversos reportados: principalmente gastrointestinales y en su mayoría leves a moderados, concentrados en el periodo inicial de los ensayos. En SURPASS-2 se reportó náusea en 17–22 %, diarrea en 13–16 % y vómito en 6–10 %, con eventos adversos graves en 5–7 %.",
+        "Reported adverse events were mainly gastrointestinal and mostly mild to moderate, concentrated in the early part of the trials. SURPASS-2 reported nausea in 17–22%, diarrhoea in 13–16% and vomiting in 6–10%, with serious adverse events in 5–7%.",
+        [REF.surpass2, REF.surmount1],
+        BATCH_2,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.coskun2018, REF.surmount1, REF.surpass2],
+    technicalNotes: [],
+    functions: [
+      { id: "incretin-glucagon-receptors", statement: "tirzepatide-mechanism-receptors" },
+      { id: "energy-balance", statement: "tirzepatide-mechanism-mice" },
+      { id: "glycemic-control", statement: "tirzepatide-research-surpass-2" },
+    ],
+  },
+
+  /* ---- Semaglutide -------------------------------------------------------- */
+  semaglutide: {
+    slug: "semaglutide",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "semaglutide-mechanism-molecule",
+        "La semaglutida es un análogo del GLP-1 con dos sustituciones de aminoácidos respecto al GLP-1 humano (Aib8, Arg34) y derivatizado en la lisina 26. La modificación con ácido graso aumenta su afinidad por la albúmina; su afinidad por el receptor de GLP-1 es de 0.38 nM, tres veces menor que la de liraglutida.",
+        "Semaglutide is a GLP-1 analogue with two amino-acid substitutions relative to human GLP-1 (Aib8, Arg34), derivatised at lysine 26. The fatty-acid modification raises its albumin affinity; its GLP-1 receptor affinity is 0.38 nM, three-fold lower than liraglutide's.",
+        [REF.lau],
+        BATCH_2,
+      ),
+      sci(
+        "semaglutide-mechanism-pk",
+        "En minicerdos la vida media en plasma fue de 46.1 horas y el tiempo medio de residencia de 63.6 horas.",
+        "In mini-pigs the plasma half-life was 46.1 hours, with a mean residence time of 63.6 hours.",
+        [REF.lau],
+        BATCH_2,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "semaglutide-research-step-1",
+        "Ensayo de fase 3 (STEP 1) en 1,961 adultos con sobrepeso u obesidad, sin diabetes: a 68 semanas el cambio medio de peso fue de −14.9 % frente a −2.4 % con placebo; 86.4 % alcanzó una reducción de 5 % o más y 50.5 % de 15 % o más.",
+        "Phase 3 trial (STEP 1) in 1,961 adults with overweight or obesity, without diabetes: at 68 weeks the mean weight change was −14.9% versus −2.4% with placebo; 86.4% reached a reduction of 5% or more and 50.5% of 15% or more.",
+        [REF.step1],
+        BATCH_2,
+      ),
+      sci(
+        "semaglutide-research-surpass-2",
+        "Como comparador activo en diabetes tipo 2 (SURPASS-2, 1,879 personas), la HbA1c bajó 1.86 puntos porcentuales a 40 semanas.",
+        "As the active comparator in type 2 diabetes (SURPASS-2, 1,879 people), HbA1c fell by 1.86 percentage points at 40 weeks.",
+        [REF.surpass2],
+        BATCH_2,
+      ),
+      sci(
+        "semaglutide-research-adverse-events",
+        "Eventos adversos reportados en STEP 1: náusea y diarrea fueron los más comunes, típicamente transitorios y de intensidad leve a moderada; 4.5 % suspendió por eventos gastrointestinales, frente a 0.8 % con placebo.",
+        "Adverse events reported in STEP 1: nausea and diarrhoea were the most common, typically transient and mild to moderate; 4.5% discontinued because of gastrointestinal events, versus 0.8% with placebo.",
+        [REF.step1],
+        BATCH_2,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.lau, REF.step1, REF.surpass2],
+    technicalNotes: [],
+    functions: [
+      { id: "incretin-glucagon-receptors", statement: "semaglutide-mechanism-molecule" },
+      { id: "energy-balance", statement: "semaglutide-research-step-1" },
+      { id: "glycemic-control", statement: "semaglutide-research-surpass-2" },
     ],
   },
 

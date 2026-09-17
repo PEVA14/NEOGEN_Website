@@ -35,10 +35,10 @@ export interface ResearchFunction {
 export const RESEARCH_FUNCTIONS: readonly ResearchFunction[] = [
   {
     id: "incretin-glucagon-receptors",
-    label: { es: "Receptores GLP-1, GIP y glucagón", en: "GLP-1, GIP and glucagon receptors" },
+    label: { es: "Receptores de incretinas y glucagón", en: "Incretin and glucagon receptors" },
     hint: {
-      es: "Agonismo de receptores de incretinas y de glucagón.",
-      en: "Agonism at incretin and glucagon receptors.",
+      es: "Agonismo en receptores GLP-1, GIP o glucagón; la ficha de cada compuesto dice en cuáles.",
+      en: "Agonism at GLP-1, GIP or glucagon receptors; each compound's profile says which.",
     },
   },
   {

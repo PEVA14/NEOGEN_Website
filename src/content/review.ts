@@ -19,3 +19,10 @@ import type { ContentStatus } from "@/content/lifecycle";
  * index, the Atlas result cards, and the research-function question.
  */
 export const BATCH_1_FLAGSHIP_PROFILES: ContentStatus = "approved";
+
+/**
+ * Batch 2 — the incretin compounds: tirzepatide and semaglutide. Drafted
+ * 2026-09-17, same method: every reference's metadata and every quoted figure
+ * read from the source's own abstract via Europe PMC.
+ */
+export const BATCH_2_INCRETIN_PROFILES: ContentStatus = "owner-review";
