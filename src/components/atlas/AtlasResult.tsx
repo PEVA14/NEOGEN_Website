@@ -4,29 +4,28 @@ import Link from "next/link";
 import { useState, type RefObject } from "react";
 
 import { Container } from "@/components/primitives";
+import { useBag } from "@/domain/bag";
 
 import { AtlasMap } from "./AtlasMap";
 import { AtlasMark } from "./AtlasMark";
 import styles from "./AtlasResult.module.css";
 
 import type { AtlasCopy } from "./types";
-import type { AtlasResultCompound, AtlasResultView } from "@/domain/atlas/result";
+import type { AtlasResultProduct, AtlasResultSum, AtlasResultView } from "@/domain/atlas/result";
 
 /**
- * THE RESULT DOSSIER — the reader's map, written and counted.
+ * THE RESULT — the visitor's selection, written and counted.
  *
- * Two kinds of content, kept visibly distinct throughout:
+ * It renders `AtlasResultView` and decides nothing: which products lead, which
+ * presentation is suggested, what fits the budget and how each answer was used
+ * all arrive already decided on the server.
  *
- *   WRITTEN   the title, summary, each area and compound rationale, each path
- *             note and each reading note. Set as prose, with a thin rule, and
- *             the header's mode label says who wrote it — a model, or (when no
- *             model ran) the registry-only composer. It is never presented as
- *             AI when it was not.
- *   COUNTED   every name, presentation range, entry price, documentation state,
- *             budget sum and link — joined on the server from the registry.
- *
- * The page is honest about absence: documentation that does not exist yet is
- * said not to exist, and a budget with no cap is said to exclude nothing.
+ *   WRITTEN   headline, summary, "about you", every why, topic note, next-step
+ *             note and tip. Set as prose, and the header says who wrote it — a
+ *             model, or the registry-only composer. Never presented as AI when
+ *             it was not.
+ *   COUNTED   every name, presentation, price, documentation state, budget sum
+ *             and link — joined on the server from the registry.
  */
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -50,17 +49,22 @@ export function AtlasResult({
 }) {
   const r = copy.result;
   const [active, setActive] = useState<string | null>(null);
-  const empty = result.compounds.length === 0;
-  const bridges = result.compounds.filter((c) => c.bridges).length;
+  const [detail, setDetail] = useState(result.style === "detailed");
+  const empty = result.start.length === 0;
+  const mapped = [...result.start, ...result.more];
 
   const blocks = [
-    ...(empty ? [] : ["map", "areas", "compounds"]),
-    ...(result.materials.length > 0 ? ["materials"] : []),
-    ...(empty ? [] : ["budget", "path"]),
+    ...(empty ? [] : ["about", "start"]),
+    ...(result.more.length > 0 ? ["more"] : []),
+    ...(result.supplies.length > 0 ? ["supplies"] : []),
+    ...(empty ? [] : ["budget"]),
+    ...(empty || !detail ? [] : ["map", "topics"]),
+    ...(empty ? [] : ["next"]),
+    ...(result.tips.length > 0 ? ["tips"] : []),
     "documentation",
-    ...(result.notes.length > 0 ? ["notes"] : []),
   ];
   const index = (id: string) => pad(blocks.indexOf(id) + 1);
+  const answer = (field: string) => result.ledger.find((e) => e.field === field)?.answer ?? null;
 
   return (
     <div className={styles.result}>
@@ -71,7 +75,8 @@ export function AtlasResult({
             <div className={styles.dossierTop}>
               <p className={styles.eyebrow}>
                 <AtlasMark className={styles.eyebrowMark} />
-                {r.eyebrow}
+                {result.firstName ? fill(r.for, { name: result.firstName }) : r.eyebrow}
+                {result.returning ? <span className={styles.muted}> · {r.welcomeBack}</span> : null}
               </p>
               <p className={styles.mode} data-mode={result.mode}>
                 {r.modes[result.mode]}
@@ -79,32 +84,35 @@ export function AtlasResult({
             </div>
 
             <h2 ref={headingRef} tabIndex={-1} id="atlas-result-title" className={styles.title}>
-              {empty ? r.empty.title : result.title}
+              {empty ? r.empty.title : result.headline}
             </h2>
             <p className={styles.summary}>{empty ? r.empty.body : result.summary}</p>
 
             {empty ? null : (
               <dl className={styles.stats}>
                 <div className={styles.stat}>
-                  <dt>{r.stats.areas}</dt>
-                  <dd>{pad(result.areas.length)}</dd>
+                  <dt>{r.stats.start}</dt>
+                  <dd>{pad(result.start.length)}</dd>
                 </div>
                 <div className={styles.stat}>
-                  <dt>{r.stats.compounds}</dt>
-                  <dd>{pad(result.compounds.length)}</dd>
+                  <dt>{r.stats.more}</dt>
+                  <dd>{pad(result.more.length)}</dd>
+                </div>
+                <div className={styles.stat}>
+                  <dt>{r.stats.topics}</dt>
+                  <dd>{pad(result.topics.length)}</dd>
                 </div>
                 <div className={styles.stat}>
                   <dt>{r.stats.pool}</dt>
                   <dd>{pad(result.poolSize)}</dd>
                 </div>
-                <div className={styles.stat}>
-                  <dt>{r.stats.bridges}</dt>
-                  <dd>{pad(bridges)}</dd>
-                </div>
               </dl>
             )}
 
             <div className={styles.actions}>
+              {empty ? null : (
+                <AddAll products={result.start} result={result} copy={copy} tone="dark" />
+              )}
               <button type="button" className={styles.ghost} onClick={onEdit}>
                 {copy.controls.edit}
               </button>
@@ -118,85 +126,50 @@ export function AtlasResult({
 
       <div className={styles.body}>
         <Container width="full">
-          {result.contextScreened ? (
+          {result.notices.noteDiscarded ? (
             <p className={styles.notice} role="note">
               {r.screenedNotice}
             </p>
           ) : null}
-          {result.healthNotice ? (
+          {result.notices.healthMentioned ? (
             <p className={styles.notice} role="note">
               {r.healthNotice}
             </p>
           ) : null}
 
           {empty ? null : (
-            <section className={styles.block} aria-labelledby="atlas-map-title">
-              <BlockHead
-                index={index("map")}
-                id="atlas-map-title"
-                title={r.map.title}
-                lede={r.map.lede}
-              />
-              <AtlasMap
-                areas={result.areas}
-                compounds={result.compounds}
-                label={r.map.label}
-                columnLabel={r.compounds.title}
-                legend={{
-                  core: r.compounds.roles.core,
-                  complement: r.compounds.roles.complement,
-                  bridges: r.compounds.bridges,
-                }}
-                active={active}
-                onActive={setActive}
-              />
-            </section>
-          )}
-
-          {empty ? null : (
-            <section className={styles.block} aria-labelledby="atlas-areas-title">
-              <BlockHead index={index("areas")} id="atlas-areas-title" title={r.areas.title} />
-              <ul className={styles.areaCards}>
-                {result.areas.map((area) => (
-                  <li key={area.id} className={styles.areaCard} data-area={area.id}>
-                    <p className={styles.areaRank}>
-                      {pad(area.rank + 1)} · {copy.areas.ranks[area.rank]}
-                    </p>
-                    <h4 className={styles.areaName}>{area.label}</h4>
-                    <p className={styles.areaFraming}>{area.framing}</p>
-                    {area.rationale ? <p className={styles.written}>{area.rationale}</p> : null}
-                    <p className={styles.areaMeta}>
-                      <span>{fill(r.areas.count, { n: area.compounds })}</span>
-                      {area.entryPrice ? (
-                        <span>
-                          {r.areas.from} {area.entryPrice}
-                        </span>
-                      ) : null}
-                    </p>
-                    <Link href={area.href} className={styles.textLink}>
-                      {r.areas.open} <span aria-hidden="true">→</span>
-                    </Link>
-                  </li>
-                ))}
+            <section className={styles.block} aria-labelledby="atlas-about-title">
+              <BlockHead index={index("about")} id="atlas-about-title" title={r.about.title} />
+              <p className={styles.aboutText}>{result.aboutYou}</p>
+              <ul className={styles.answerChips}>
+                {(["topics", "intent", "experience", "budget", "inMind"] as const).map((field) => {
+                  const text = answer(field);
+                  return text ? (
+                    <li key={field} className={styles.answerChip}>
+                      <span className={styles.muted}>{r.ledger.fields[field]}</span> {text}
+                    </li>
+                  ) : null;
+                })}
               </ul>
             </section>
           )}
 
           {empty ? null : (
-            <section className={styles.block} aria-labelledby="atlas-compounds-title">
+            <section className={styles.block} aria-labelledby="atlas-start-title">
               <BlockHead
-                index={index("compounds")}
-                id="atlas-compounds-title"
-                title={r.compounds.title}
-                lede={r.compounds.lede}
+                index={index("start")}
+                id="atlas-start-title"
+                title={r.start.title}
+                lede={r.start.lede}
               />
-              <ul className={styles.compoundGrid}>
-                {result.compounds.map((compound) => (
-                  <li key={compound.slug} className={styles.compoundItem} data-role={compound.role}>
-                    <CompoundCard
-                      compound={compound}
+              <ul className={styles.compoundGrid} data-lead="">
+                {result.start.map((product) => (
+                  <li key={product.slug} className={styles.compoundItem}>
+                    <ProductCard
+                      product={product}
+                      result={result}
                       copy={copy}
-                      active={active === compound.slug}
+                      active={active === product.slug}
                       onActive={setActive}
                     />
                   </li>
@@ -205,19 +178,44 @@ export function AtlasResult({
             </section>
           )}
 
-          {result.materials.length > 0 ? (
-            <section className={styles.block} aria-labelledby="atlas-materials-title">
+          {result.more.length > 0 ? (
+            <section className={styles.block} aria-labelledby="atlas-more-title">
               <BlockHead
-                index={index("materials")}
-                id="atlas-materials-title"
-                title={r.materials.title}
-                lede={r.materials.lede}
+                index={index("more")}
+                id="atlas-more-title"
+                title={r.more.title}
+                lede={r.more.lede}
               />
               <ul className={styles.compoundGrid}>
-                {result.materials.map((material) => (
-                  <li key={material.slug} className={styles.compoundItem} data-role="material">
-                    <CompoundCard
-                      compound={material}
+                {result.more.map((product) => (
+                  <li key={product.slug} className={styles.compoundItem}>
+                    <ProductCard
+                      product={product}
+                      result={result}
+                      copy={copy}
+                      active={active === product.slug}
+                      onActive={setActive}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
+          {result.supplies.length > 0 ? (
+            <section className={styles.block} aria-labelledby="atlas-supplies-title">
+              <BlockHead
+                index={index("supplies")}
+                id="atlas-supplies-title"
+                title={r.supplies.title}
+                lede={r.supplies.lede}
+              />
+              <ul className={styles.compoundGrid}>
+                {result.supplies.map((product) => (
+                  <li key={product.slug} className={styles.compoundItem}>
+                    <ProductCard
+                      product={product}
+                      result={result}
                       copy={copy}
                       active={false}
                       onActive={() => {}}
@@ -236,21 +234,15 @@ export function AtlasResult({
               ) : null}
               <div className={styles.meters}>
                 <Meter
-                  label={r.budget.core}
-                  count={result.budget.coreCount}
-                  formatted={result.budget.coreEntry}
-                  amount={result.budget.coreEntryAmount}
+                  label={r.budget.start}
+                  sum={result.budget.start}
                   cap={result.budget.capAmount}
-                  fits={result.budget.fitsCore}
                   copy={r.budget}
                 />
                 <Meter
                   label={r.budget.all}
-                  count={result.budget.allCount}
-                  formatted={result.budget.allEntry}
-                  amount={result.budget.allEntryAmount}
+                  sum={result.budget.all}
                   cap={result.budget.capAmount}
-                  fits={result.budget.fitsAll}
                   copy={r.budget}
                 />
               </div>
@@ -261,14 +253,77 @@ export function AtlasResult({
                 </p>
               ) : null}
               <p className={styles.method}>{r.budget.method}</p>
+              <div className={styles.budgetActions}>
+                <AddAll products={result.start} result={result} copy={copy} tone="light" />
+              </div>
             </section>
           )}
 
           {empty ? null : (
-            <section className={styles.block} aria-labelledby="atlas-path-title">
-              <BlockHead index={index("path")} id="atlas-path-title" title={r.path.title} />
+            <div className={styles.detailToggle}>
+              <button
+                type="button"
+                className={styles.ghost}
+                aria-expanded={detail}
+                onClick={() => setDetail((d) => !d)}
+              >
+                {detail ? r.detail.hide : r.detail.show}
+              </button>
+            </div>
+          )}
+
+          {!empty && detail ? (
+            <section className={styles.block} aria-labelledby="atlas-map-title">
+              <BlockHead
+                index={index("map")}
+                id="atlas-map-title"
+                title={r.map.title}
+                lede={r.map.lede}
+              />
+              <AtlasMap
+                areas={result.topics}
+                compounds={mapped}
+                label={r.map.label}
+                columnLabel={r.map.column}
+                legend={r.map.legend}
+                active={active}
+                onActive={setActive}
+              />
+            </section>
+          ) : null}
+
+          {!empty && detail ? (
+            <section className={styles.block} aria-labelledby="atlas-topics-title">
+              <BlockHead index={index("topics")} id="atlas-topics-title" title={r.topics.title} />
+              <ul className={styles.areaCards}>
+                {result.topics.map((topic) => (
+                  <li key={topic.id} className={styles.areaCard} data-area={topic.id}>
+                    <p className={styles.areaRank}>{copy.goals.topics.ranks[topic.rank]}</p>
+                    <h4 className={styles.areaName}>{topic.label}</h4>
+                    <p className={styles.areaFraming}>{topic.framing}</p>
+                    {topic.note ? <p className={styles.written}>{topic.note}</p> : null}
+                    <p className={styles.areaMeta}>
+                      <span>{fill(r.topics.count, { n: topic.compounds })}</span>
+                      {topic.entryPrice ? (
+                        <span>
+                          {r.topics.from} {topic.entryPrice}
+                        </span>
+                      ) : null}
+                    </p>
+                    <Link href={topic.href} className={styles.textLink}>
+                      {r.topics.open} <span aria-hidden="true">→</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
+          {empty ? null : (
+            <section className={styles.block} aria-labelledby="atlas-next-title">
+              <BlockHead index={index("next")} id="atlas-next-title" title={r.next.title} />
               <ol className={styles.path}>
-                {result.path.map((step, i) => (
+                {result.nextSteps.map((step, i) => (
                   <li key={step.id} className={styles.step}>
                     <span className={styles.stepIndex} aria-hidden="true">
                       {pad(i + 1)}
@@ -284,6 +339,19 @@ export function AtlasResult({
               </ol>
             </section>
           )}
+
+          {result.tips.length > 0 ? (
+            <section className={styles.block} aria-labelledby="atlas-tips-title">
+              <BlockHead index={index("tips")} id="atlas-tips-title" title={r.tips.title} />
+              <ul className={styles.notes}>
+                {result.tips.map((tip) => (
+                  <li key={tip} className={styles.written}>
+                    {tip}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
 
           <section className={styles.block} aria-labelledby="atlas-docs-title">
             <BlockHead
@@ -331,55 +399,35 @@ export function AtlasResult({
             </div>
           </section>
 
-          {result.notes.length > 0 ? (
-            <section className={styles.block} aria-labelledby="atlas-notes-title">
-              <BlockHead index={index("notes")} id="atlas-notes-title" title={r.notes.title} />
-              <ul className={styles.notes}>
-                {result.notes.map((note) => (
-                  <li key={note} className={styles.written}>
-                    {note}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
-          <section className={styles.recap} aria-labelledby="atlas-inputs-title">
+          <section className={styles.recap} aria-labelledby="atlas-ledger-title">
             <div>
-              <h3 id="atlas-inputs-title" className={styles.miniLabel}>
-                {r.inputs.title}
+              <h3 id="atlas-ledger-title" className={styles.miniLabel}>
+                {r.ledger.title}
               </h3>
-              <dl className={styles.recapList}>
-                <div>
-                  <dt>{r.inputs.depth}</dt>
-                  <dd>{copy.profile.depth.options[result.inputs.depth].label}</dd>
-                </div>
-                <div>
-                  <dt>{r.inputs.focus}</dt>
-                  <dd>
-                    {result.inputs.focus.length > 0
-                      ? result.inputs.focus
-                          .map((f) => copy.profile.focus.options[f].label)
-                          .join(" · ")
-                      : r.inputs.noFocus}
-                  </dd>
-                </div>
-                <div>
-                  <dt>{r.inputs.forms}</dt>
-                  <dd>
-                    {result.inputs.forms.length > 0
-                      ? result.inputs.forms.map((f) => copy.profile.forms.options[f]).join(" · ")
-                      : r.inputs.anyForm}
-                  </dd>
-                </div>
-                <div>
-                  <dt>{r.inputs.materials}</dt>
-                  <dd>{result.inputs.includeMaterials ? r.inputs.yes : r.inputs.no}</dd>
-                </div>
-                <div>
-                  <dt>{r.budget.title}</dt>
-                  <dd>{copy.budget.options[result.budget.budget].label}</dd>
-                </div>
+              <p className={styles.method}>{r.ledger.lede}</p>
+              <dl className={styles.ledger}>
+                {result.ledger.map((entry) => (
+                  <div key={entry.field} data-answered={entry.answer !== null ? "" : undefined}>
+                    <dt>{r.ledger.fields[entry.field]}</dt>
+                    <dd>
+                      <span className={styles.ledgerAnswer}>
+                        {entry.answer ?? r.ledger.skipped}
+                      </span>
+                      {entry.answer !== null ? (
+                        <span className={styles.ledgerUses}>
+                          {entry.uses.length > 0
+                            ? entry.uses.map((use) => r.ledger.uses[use]).join(" · ")
+                            : r.ledger.notUsed}
+                        </span>
+                      ) : null}
+                      {entry.withheld ? (
+                        <span className={styles.ledgerWithheld}>
+                          {r.ledger.withheld[entry.withheld]}
+                        </span>
+                      ) : null}
+                    </dd>
+                  </div>
+                ))}
               </dl>
             </div>
             <p className={styles.disclaimer}>{r.disclaimer}</p>
@@ -412,116 +460,207 @@ function BlockHead({
   );
 }
 
-function CompoundCard({
-  compound,
+function ProductCard({
+  product,
+  result,
   copy,
   active,
   onActive,
 }: {
-  compound: AtlasResultCompound;
+  product: AtlasResultProduct;
+  result: AtlasResultView;
   copy: AtlasCopy;
   active: boolean;
   onActive: (slug: string | null) => void;
 }) {
-  const r = copy.result.compounds;
+  const p = copy.result.product;
+  const role =
+    product.list === "start" ? "core" : product.list === "supply" ? "material" : "complement";
+  const label =
+    product.list === "start"
+      ? copy.result.start.title
+      : product.list === "supply"
+        ? copy.result.supplies.title
+        : copy.result.more.title;
+
   return (
     <article
       className={styles.compound}
-      data-role={compound.role}
-      data-area={compound.areas[0]?.id}
+      data-role={role}
+      data-area={product.areas[0]?.id}
       data-active={active ? "" : undefined}
-      onMouseEnter={() => onActive(compound.slug)}
+      onMouseEnter={() => onActive(product.slug)}
       onMouseLeave={() => onActive(null)}
     >
       <header className={styles.compoundHead}>
-        <span className={styles.role}>{r.roles[compound.role]}</span>
-        {compound.worldLabel ? (
-          <span className={styles.world} data-world={compound.world ?? undefined}>
-            {r.flagship} · {compound.worldLabel}
+        <span className={styles.role}>{label}</span>
+        {product.inMind ? <span className={styles.world}>{p.inMind}</span> : null}
+        {product.worldLabel ? (
+          <span className={styles.world} data-world={product.world ?? undefined}>
+            {p.signature} · {product.worldLabel}
           </span>
         ) : null}
       </header>
 
-      <h4 className={styles.compoundName}>{compound.name}</h4>
-      <p className={styles.classification}>{compound.classification}</p>
+      <h4 className={styles.compoundName}>{product.name}</h4>
+      <p className={styles.classification}>{product.classification}</p>
 
-      {compound.rationale ? <p className={styles.written}>{compound.rationale}</p> : null}
+      {product.why ? (
+        <div className={styles.why}>
+          <p className={styles.miniLabel}>{p.why}</p>
+          <p className={styles.written}>{product.why}</p>
+        </div>
+      ) : null}
 
-      <ul className={styles.chips} aria-label={r.filed}>
-        {compound.areas.map((area) => (
-          <li key={area.id} className={styles.chip} data-area={area.id}>
-            {area.label}
-          </li>
-        ))}
-        {compound.bridges ? <li className={styles.chipBridge}>{r.bridges}</li> : null}
-      </ul>
+      {product.areas.length > 0 ? (
+        <ul className={styles.chips} aria-label={p.topics}>
+          {product.areas.map((area) => (
+            <li key={area.id} className={styles.chip} data-area={area.id}>
+              {area.label}
+            </li>
+          ))}
+          {product.bridges ? <li className={styles.chipBridge}>{p.overlap}</li> : null}
+        </ul>
+      ) : null}
 
       <dl className={styles.facts}>
+        {product.suggestion ? (
+          <div className={styles.suggestion}>
+            <dt>{p.suggested}</dt>
+            <dd>
+              {product.suggestion.presentation}
+              <strong className={styles.suggestionPrice}>{product.suggestion.priceLabel}</strong>
+            </dd>
+          </div>
+        ) : null}
         <div>
-          <dt>{r.presentations}</dt>
+          <dt>{p.presentations}</dt>
           <dd>
-            {compound.presentationRange}
-            <span className={styles.muted}> · {pad(compound.presentations)}</span>
+            {product.presentationRange}
+            <span className={styles.muted}> · {pad(product.presentations)}</span>
           </dd>
-        </div>
-        <div>
-          <dt>{r.entry}</dt>
-          <dd>{compound.entryPrice ?? copy.result.budget.unknown}</dd>
         </div>
         <div>
           <dt>{copy.result.documentation.title}</dt>
-          <dd data-state={compound.documented ? "yes" : "no"}>
-            {compound.documented ? r.documented : r.undocumented}
+          <dd data-state={product.documented ? "yes" : "no"}>
+            {product.documented ? p.documented : p.undocumented}
           </dd>
         </div>
-        {compound.withinBudget !== null ? (
+        {product.withinBudget !== null ? (
           <div>
             <dt>{copy.result.budget.title}</dt>
-            <dd data-state={compound.withinBudget ? "yes" : "over"}>
-              {compound.withinBudget ? r.budgetFits : r.budgetOver}
+            <dd data-state={product.withinBudget ? "yes" : "over"}>
+              {product.withinBudget ? p.fits : p.over}
             </dd>
           </div>
         ) : null}
       </dl>
 
-      <Link
-        href={compound.href}
-        className={styles.cta}
-        aria-label={`${r.open} — ${compound.name}`}
-        onFocus={() => onActive(compound.slug)}
-        onBlur={() => onActive(null)}
-      >
-        {r.open} <span aria-hidden="true">→</span>
-      </Link>
+      <div className={styles.cardActions}>
+        {result.commerce.bagEnabled && product.suggestion ? (
+          <AddOne product={product} copy={copy} />
+        ) : null}
+        <Link
+          href={product.href}
+          className={styles.cta}
+          aria-label={`${p.open} — ${product.name}`}
+          onFocus={() => onActive(product.slug)}
+          onBlur={() => onActive(null)}
+        >
+          {p.open} <span aria-hidden="true">→</span>
+        </Link>
+      </div>
     </article>
+  );
+}
+
+/** The suggested presentation, into the bag — the price is the registry's. */
+function AddOne({ product, copy }: { product: AtlasResultProduct; copy: AtlasCopy }) {
+  const { add } = useBag();
+  const [added, setAdded] = useState(false);
+  const suggestion = product.suggestion!;
+  return (
+    <button
+      type="button"
+      className={styles.add}
+      onClick={() => {
+        add({
+          variantId: suggestion.variantId,
+          slug: product.slug,
+          name: product.name,
+          presentation: suggestion.presentation,
+          unitPrice: suggestion.price,
+        });
+        setAdded(true);
+        window.setTimeout(() => setAdded(false), 2000);
+      }}
+    >
+      {added ? copy.commerce.added : `${copy.commerce.add} · ${suggestion.presentation}`}
+    </button>
+  );
+}
+
+function AddAll({
+  products,
+  result,
+  copy,
+  tone,
+}: {
+  products: readonly AtlasResultProduct[];
+  result: AtlasResultView;
+  copy: AtlasCopy;
+  tone: "dark" | "light";
+}) {
+  const { add } = useBag();
+  const [added, setAdded] = useState(false);
+  const addable = products.filter((p) => p.suggestion !== null);
+  if (addable.length === 0) return null;
+  if (!result.commerce.bagEnabled) {
+    return tone === "light" ? <p className={styles.method}>{copy.commerce.unavailable}</p> : null;
+  }
+  return (
+    <button
+      type="button"
+      className={styles.addAll}
+      data-tone={tone}
+      onClick={() => {
+        for (const product of addable) {
+          add({
+            variantId: product.suggestion!.variantId,
+            slug: product.slug,
+            name: product.name,
+            presentation: product.suggestion!.presentation,
+            unitPrice: product.suggestion!.price,
+          });
+        }
+        setAdded(true);
+        window.setTimeout(() => setAdded(false), 2000);
+      }}
+    >
+      {added ? copy.result.product.addedAll : copy.result.product.addAll}
+    </button>
   );
 }
 
 function Meter({
   label,
-  count,
-  formatted,
-  amount,
+  sum,
   cap,
-  fits,
   copy,
 }: {
   label: string;
-  count: number;
-  formatted: string | null;
-  amount: number | null;
+  sum: AtlasResultSum;
   cap: number | null;
-  fits: boolean | null;
   copy: AtlasCopy["result"]["budget"];
 }) {
-  const ratio = cap && amount !== null ? amount / cap : null;
+  const ratio = cap && sum.amount !== null ? sum.amount / cap : null;
   return (
-    <div className={styles.meter} data-over={fits === false ? "" : undefined}>
+    <div className={styles.meter} data-over={sum.fits === false ? "" : undefined}>
       <div className={styles.meterHead}>
         <span className={styles.meterLabel}>
-          {label} <span className={styles.muted}>· {pad(count)}</span>
+          {label} <span className={styles.muted}>· {pad(sum.count)}</span>
         </span>
-        <span className={styles.meterValue}>{formatted ?? copy.unknown}</span>
+        <span className={styles.meterValue}>{sum.label ?? copy.unknown}</span>
       </div>
       {ratio !== null ? (
         <>
@@ -531,7 +670,7 @@ function Meter({
               style={{ inlineSize: `${Math.min(ratio, 1) * 100}%` }}
             />
           </div>
-          <p className={styles.meterState}>{fits ? copy.fits : copy.over}</p>
+          <p className={styles.meterState}>{sum.fits ? copy.fits : copy.over}</p>
         </>
       ) : null}
     </div>

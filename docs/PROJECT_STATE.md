@@ -31,7 +31,7 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 | `2b80dc7`   | Owner review of §8d: register becomes the presentation matrix; homepage trimmed                                                 |
 | `3fe1f7e`   | Flagship shop moved onto the flagship product pages                                                                             |
 | _this_      | Homepage hub: the gateway section under the hero (§8e)                                                                          |
-| _this_      | NEOGEN Atlas: questionnaire → retrieval → AI adapter → validated map (§8h)                                                      |
+| `d1300b1`   | NEOGEN Atlas: questionnaire → retrieval → AI adapter → validated map (§8h)                                                      |
 
 **Phase 12.1 is complete. Phase 13 has not been started or approved.** Do not
 begin it without a brief from the owner.
@@ -602,69 +602,66 @@ means by "info about each category" — the reference shows editorial,
 explanatory content. That content needs approved sources first; propose the
 sourcing route rather than a figures substitute.
 
-## 8h. NEOGEN Atlas — the catalogue advisor
+## 8h. NEOGEN Atlas — the personal advisor
 
-Owner request (2026-09-16): NEOGEN's version of EXOMA's "Asesor-IA" — same
-flow and depth (objectives → profile → budget + context → AI generation →
-detailed result), a real AI integration behind a provider-agnostic adapter,
-product facts only from existing data, no health/dosing content.
+Owner request (2026-09-16): NEOGEN's version of EXOMA's "Asesor-IA". First
+version committed at `d1300b1`. Second pass the same day, on owner feedback:
+a personal, consumer-facing questionnaire and result, with the recommendation
+policy isolated from the rest of the system (uncommitted at time of writing).
 
-**Routes.** `/[locale]/atlas` (page), `POST /api/atlas` (generation). Linked
-from the primary nav ("Atlas"), the footer's products column, the sitemap, and
-a full-width band in the homepage hub between the counters and the switch
-strip (a band, not a sixth row: it is a tool, not a place, and a sixth column
-would re-open the label-collision problem of §8e).
+**Routes.** `/[locale]/atlas`, `POST /api/atlas`. Linked from the primary nav,
+the footer, the sitemap and a band in the homepage hub.
 
-**Pipeline.**
+**Architecture.**
 
-1. `domain/atlas/answers` — closed-vocabulary questionnaire (≤3 ranked areas,
-   depth, ≤2 focus, forms, materials, budget band, ≤280-char note). A note that
-   mentions health, bodies, medication or personal use is DISCARDED before any
-   model call (`mentionsPersonalHealth`) and the result says so.
-2. `domain/atlas/retrieval` — scores publishable products against the answers
-   (area rank, bridges, flagship world, documentation, entry price, budget)
-   and sends the model at most 14 candidates + 2 materials + a destination
-   list — never the catalogue.
-3. `src/advisor` — server-only adapter registry mirroring `src/payments`: the
-   first configured adapter wins, `none` is terminal. V1 adapter: Anthropic
-   SDK, `claude-opus-5`, adaptive thinking, effort `medium`, structured output
-   (zod schema), server-side fallbacks, cached constant system prompt.
-4. `domain/atlas/validate` — the output may only use candidate slugs, the
-   reader's areas and listed destinations; its prose is screened for claim
-   terms (es/en), strengths/percentages/prices, dosing vocabulary and unlisted
-   product names. One correction retry, then the composed fallback.
-5. `server/atlas/assemble` — every fact on the result page (names,
-   presentations, prices, documentation, references, budget sums, links) is
-   joined from the registries; the model only supplies selection, order and
-   prose.
+    questionnaire → AtlasProfile → applyAtlasPolicy → selection signals,
+    constraints, narrative signals, presentation signals, ledger → retrieval →
+    (model | deterministic plan) → validation against the constraints →
+    AtlasResultView → UI
 
-**Environment.** `ANTHROPIC_API_KEY` enables generation. Optional:
-`NEOGEN_ADVISOR_MODEL` (default `claude-opus-5`), `NEOGEN_ADVISOR_EFFORT`
-(default `medium`). No key: development shows a labelled "development
-composition" built from the registry; production shows the labelled catalogue
-view. Never presented as AI in either case. Neither key nor SDK reaches the
-client bundle (checked against `.next/static`).
+- `domain/atlas/profile.ts` — parses 15 answers in four steps: goals (ranked
+  topics, what they want to get done, up to three products in mind), about
+  you (name, experience, NEOGEN history, priorities, explanation style),
+  preferences (format, presentation size, supplies), budget and context
+  (budget, one order or over time, timing, free note). Validation only.
+- `domain/atlas/policy.ts` — THE ONLY PLACE that decides what an answer may
+  influence (`ATLAS_POLICY`: selection / ranking / explanation / presentation)
+  and turns answers into weights, sizes and rules. `check:atlas` fails if
+  retrieval, plan, composer, validator, prompt, assembly or the result UI read
+  the profile, or if the UI imports a recommendation module.
+- `retrieval.ts` reads selection signals; `plan.ts` is the no-model plan and
+  the budget-feasibility rule; `validate.ts` enforces the constraints (start
+  count, start set inside the cap when feasible, named products present, topics
+  covered, supplies only in "more") plus the content screens; `compose.ts`
+  writes the fallback from narrative signals.
+- Result: personal header (name, returning customer), "what we understood
+  about you", Start here / Also for you / Supplies with the suggested
+  presentation and add-to-bag (behind `bagEnabled()`), budget meters, map and
+  topics (open by default for "detailed"), next steps, tips, documentation, and
+  a ledger showing every answer and what Atlas did with it.
 
-**Cost.** ≈1.5–2k input tokens (≈900 cacheable system) and ≈1–3k output incl.
-thinking: roughly US$0.05–0.09 per map at Opus 5 list price; a correction
-retry can double it. `/api/atlas` rate-limits 8 requests / 10 min per IP
-(in-memory — per instance, not a durable limit).
+**The boundary (policy.ts).** Health, body, medication and dosing are not
+asked. The free note invites goals in the visitor's words; if it carries
+health detail it is discarded whole before retrieval or any model call, the
+ledger says so, and every other answer keeps its full influence (asserted in
+`check:atlas`). The name is presentation-only and never sent to the model. No
+answer selects a product by what it does to a body; selection uses registry
+facts only (areas, overlap, signature line, documentation, presentations,
+prices, availability). The model cannot state effects, suitability to a
+person, figures or dosing; the validator refuses them.
 
-**Gate.** `check:atlas` (in `npm run check`): parsing and health screening,
-four real profiles whose retrievals must differ (pairwise Jaccard < 0.6),
-composed maps valid in es/en with the core inside the cap and every chosen area
-present, validator negative controls, and offline adapter tests against a fake
-`fetch` (request shape, refusal/truncation/invalid output/provider errors).
-`scripts/lib/ts-resolve.mjs` now only claims `.ts` files outside
-`node_modules` (the SDK ships `.mjs` that must not be type-stripped).
+**Environment.** `ANTHROPIC_API_KEY` enables generation; optional
+`NEOGEN_ADVISOR_MODEL` (default `claude-opus-5`) and `NEOGEN_ADVISOR_EFFORT`
+(default `medium`). No key: labelled development composition in development,
+labelled catalogue selection in production.
 
-**Not verified:** a live generation — no API key exists locally. The adapter is
-proven offline only; the first real run should be read end to end.
+**Cost.** ≈2–2.5k input tokens (≈1.1k cacheable system) and ≈1.5–3.5k output
+including thinking — roughly US$0.06–0.10 per selection at Opus 5 list price; a
+correction retry can double it. Rate limit 8 / 10 min per IP, in memory.
 
-**Deliberate differences from EXOMA:** no health intake, body metrics, goals
-framed as outcomes, routes, durations, timing, doses, titration, vial maths or
-"what to expect". Atlas maps the catalogue (areas, bridges, documentation,
-budget fit); it does not advise a person.
+**Not verified:** a live generation — no key exists locally. The adapter is
+proven offline only. Availability data is empty (`AVAILABILITY = {}`), so the
+timing answer has no effect on ranking until the owner records stock.
 
 ## 9. Recommendation for Phase 13 (not approved)
 

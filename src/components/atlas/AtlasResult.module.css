@@ -466,7 +466,13 @@
   font-size: var(--text-2xs);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: var(--ink-primary);
+  /* Not --ink-primary: `data-world` remaps it for the world's dark environment,
+     which left the label pale on this card's paper. */
+  color: color-mix(
+    in oklab,
+    var(--world-accent, var(--neogen-charcoal)) 55%,
+    var(--neogen-charcoal)
+  );
   background: color-mix(in oklab, var(--world-accent, transparent) 10%, transparent);
 }
 
@@ -791,6 +797,156 @@
 
 /* --- Wider --------------------------------------------------------------- */
 
+/* --- Personal layer ------------------------------------------------------ */
+
+.aboutText {
+  margin: 0 0 var(--space-md);
+  max-inline-size: 60ch;
+  font-size: var(--text-xl);
+  line-height: var(--leading-snug);
+  color: var(--ink-primary);
+  text-wrap: pretty;
+}
+
+.answerChips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+}
+
+.answerChip {
+  padding: var(--space-2xs) var(--space-sm);
+  border: 1px solid var(--border-default);
+  font-size: var(--text-sm);
+}
+
+.why {
+  display: grid;
+  gap: var(--space-2xs);
+}
+
+.why .miniLabel {
+  margin: 0;
+}
+
+.suggestion {
+  grid-column: 1 / -1;
+}
+
+.suggestion dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2xs) var(--space-sm);
+}
+
+.suggestionPrice {
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.cardActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2xs) var(--space-md);
+}
+
+.add,
+.addAll {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 2.75rem;
+  padding-inline: var(--space-md);
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--surface-base);
+  background: var(--ink-primary);
+  border: 1px solid var(--ink-primary);
+  cursor: pointer;
+  transition: opacity var(--motion-duration-fast) var(--ease-standard);
+}
+
+.add:hover,
+.addAll:hover {
+  opacity: 0.86;
+}
+
+.add:focus-visible,
+.addAll:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.budgetActions {
+  margin-block-start: var(--space-md);
+}
+
+.detailToggle {
+  margin-block-end: var(--space-2xl);
+}
+
+/* The ledger: every answer, and what it was allowed to do. */
+.ledger {
+  margin: var(--space-sm) 0 0;
+}
+
+.ledger > div {
+  display: grid;
+  grid-template-columns: minmax(7rem, 11rem) minmax(0, 1fr);
+  gap: var(--space-sm);
+  padding-block: var(--space-xs);
+  border-block-end: 1px solid var(--border-subtle);
+}
+
+.ledger dt {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.ledger dd {
+  margin: 0;
+  display: grid;
+  gap: var(--space-3xs);
+}
+
+.ledgerAnswer {
+  font-size: var(--text-sm);
+}
+
+.ledger > div:not([data-answered]) .ledgerAnswer {
+  color: var(--ink-muted);
+}
+
+.ledgerUses {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.ledgerWithheld {
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  color: var(--ink-secondary);
+}
+
 @media (min-width: 48rem) {
   .stats {
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -811,6 +967,10 @@
 }
 
 @media (min-width: 64rem) {
+  .compoundGrid[data-lead] {
+    grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  }
+
   .blockHead {
     grid-template-columns: 4rem minmax(0, 1fr);
     column-gap: var(--space-md);

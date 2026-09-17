@@ -1,46 +1,37 @@
-import {
-  ATLAS_BUDGET_CAPS,
-  type AtlasAnswers,
-  type AtlasAreaStat,
-  type AtlasCandidate,
-  type AtlasDestination,
-  type AtlasForm,
-  type AtlasRetrieval,
-  type AtlasSubject,
+import type {
+  AtlasAreaStat,
+  AtlasCandidate,
+  AtlasDestination,
+  AtlasForm,
+  AtlasRetrieval,
+  AtlasSelectionSignals,
+  AtlasSubject,
+  AtlasSubjectVariant,
 } from "./types";
-
 import type { DiscoveryAreaId } from "@/data/discovery";
 
 /**
  * RETRIEVAL — which slice of the catalogue a model is allowed to see.
  *
- * TOKENS FOLLOW RELEVANCE. The whole registry is ~85 compounds; sending all of
- * them to every generation would cost several times what a map needs and give
- * the model eighty ways to be wrong. Retrieval scores the reader's areas,
- * focus, forms and budget against precomputed registry facts and passes on at
- * most `ATLAS_CANDIDATE_LIMIT` compounds. Those candidates are also the ONLY
- * slugs the model may name — the validator rejects anything else.
+ * IT READS SIGNALS, NOT A PROFILE. Every weight, filter and size here arrives
+ * from `applyAtlasPolicy`; this file only applies them to registry facts. It
+ * has no idea what the visitor said, and no way to be told anything the policy
+ * did not release.
  *
- * PURE. Subjects arrive precomputed (prices, evidence, references already
- * resolved); nothing here reads a registry, a clock or a price service, which
- * is what lets `check:atlas` drive it with fixtures and with the live
- * catalogue, and assert that different readers get different maps.
+ * TOKENS FOLLOW RELEVANCE. At most `ATLAS_CANDIDATE_LIMIT` products (plus the
+ * ones the visitor named) are passed on, and those are the ONLY slugs the
+ * model may name.
  *
- * EVERY SCORE IS A CATALOGUE FACT. Area rank, being filed under more than one
- * chosen area, having an Experience world, having public documentation, entry
- * price against the pool's median. Nothing scores what a compound DOES,
- * because the registry holds no such claim to score.
+ * PURE. Subjects arrive precomputed, so `check:atlas` drives this with the
+ * live catalogue and asserts that different visitors get different results.
  */
 
 export const ATLAS_CANDIDATE_LIMIT = 14;
-export const ATLAS_MATERIALS_LIMIT = 2;
-/** Each chosen area keeps at least this many candidates, if it has them. */
-export const ATLAS_PER_AREA_FLOOR = 2;
-const RANK_WEIGHT = [3, 2, 1] as const;
-const MATERIALS: DiscoveryAreaId = "materials";
+export const ATLAS_SUPPLIES_LIMIT = 2;
+const SUPPLIES: DiscoveryAreaId = "materials";
 
 export interface AtlasRetrievalDeps {
-  /** Public areas sharing compounds with the given area, strongest first. */
+  /** Public areas sharing products with the given area, strongest first. */
   relatedAreas: (area: DiscoveryAreaId) => readonly DiscoveryAreaId[];
   /** Whether the documentation explorer renders at all. */
   publicEvidence: boolean;
@@ -48,66 +39,105 @@ export interface AtlasRetrievalDeps {
 
 const round = (value: number) => Math.round(value * 100) / 100;
 
+/** The presentation to put forward: the entry one, or the largest the cap allows. */
+export function suggestVariant(
+  variants: readonly AtlasSubjectVariant[],
+  mode: AtlasSelectionSignals["variant"],
+  cap: number | null,
+): AtlasSubjectVariant | null {
+  const priced = variants
+    .filter((v): v is AtlasSubjectVariant & { price: number } => v.price !== null)
+    .sort((a, b) => a.price - b.price);
+  if (priced.length === 0) return null;
+  if (mode === "entry") return priced[0];
+  const fitting = cap === null ? priced : priced.filter((v) => v.price <= cap);
+  return fitting.length > 0 ? fitting[fitting.length - 1] : priced[0];
+}
+
 export function retrieveAtlas(
-  answers: AtlasAnswers,
+  signals: AtlasSelectionSignals,
   subjects: readonly AtlasSubject[],
   deps: AtlasRetrievalDeps,
 ): AtlasRetrieval {
-  const cap = ATLAS_BUDGET_CAPS[answers.budget];
-  const rankOf = new Map(answers.areas.map((id, index) => [id, index]));
+  const { weights } = signals;
+  const cap = signals.budgetCap;
+  const rankOf = new Map(signals.topics.map((id, index) => [id, index]));
+  const inMind = new Set(signals.inMind);
 
-  const pool = subjects.filter((subject) => {
-    if (!subject.areas.some((area) => rankOf.has(area))) return false;
-    if (answers.forms.length === 0) return true;
-    return subject.forms.some((form) => answers.forms.includes(form as AtlasForm));
-  });
+  const matchesForm = (subject: AtlasSubject) =>
+    signals.forms.length === 0 ||
+    subject.forms.some((form) => signals.forms.includes(form as AtlasForm));
 
-  const prices = pool
+  /* A product the visitor named is always considered, whatever its area or form. */
+  const pool = subjects.filter(
+    (subject) =>
+      inMind.has(subject.slug) ||
+      (subject.areas.some((area) => rankOf.has(area)) && matchesForm(subject)),
+  );
+
+  const entries = pool
     .map((s) => s.entryPrice)
     .filter((n): n is number => n !== null)
     .sort((a, b) => a - b);
-  const median = prices.length > 0 ? prices[Math.floor((prices.length - 1) / 2)] : null;
+  const median = entries.length > 0 ? entries[Math.floor((entries.length - 1) / 2)] : null;
 
   const toCandidate = (subject: AtlasSubject): AtlasCandidate => {
     const matchedAreas = subject.areas
       .filter((area) => rankOf.has(area))
       .sort((a, b) => rankOf.get(a)! - rankOf.get(b)!);
     const bridges = matchedAreas.length > 1;
-    const withinBudget =
-      cap === null ? null : subject.entryPrice !== null && subject.entryPrice <= cap;
+    const suggested = suggestVariant(subject.variants, signals.variant, cap);
+    const suggestedPrice = suggested?.price ?? null;
+    const withinBudget = cap === null ? null : suggestedPrice !== null && suggestedPrice <= cap;
+    const available =
+      suggested?.availability == null ? null : suggested.availability !== "unavailable";
+    const named = inMind.has(subject.slug);
 
-    let score = matchedAreas.reduce((sum, area) => sum + RANK_WEIGHT[rankOf.get(area)!], 0);
-    if (bridges) score += answers.focus.includes("bridges") ? 3 : 1;
-    if (subject.world !== null) score += answers.focus.includes("flagships") ? 3 : 0.5;
-    if (answers.focus.includes("documentation")) {
-      score += (subject.documented ? 3 : 0) + (subject.referenceIds.length > 0 ? 1.5 : 0);
+    let score = matchedAreas.reduce(
+      (sum, area) => sum + (weights.topic[rankOf.get(area)!] ?? 0),
+      0,
+    );
+    if (named) score += weights.inMind;
+    if (bridges) score += weights.overlap;
+    if (subject.world !== null) score += weights.signature;
+    if (subject.documented) score += weights.documented;
+    if (subject.referenceIds.length > 0) score += weights.referenced;
+    if (median !== null && subject.entryPrice !== null && subject.entryPrice <= median) {
+      score += weights.value;
     }
-    if (
-      answers.focus.includes("value") &&
-      median !== null &&
-      subject.entryPrice !== null &&
-      subject.entryPrice <= median
-    ) {
-      score += 2;
+    if (withinBudget === false) score += weights.overBudget;
+    if (subject.forms.length > 0 && subject.forms.every((f) => f === "blend")) {
+      score += weights.blend;
     }
-    if (withinBudget === false) score -= 4;
+    score += weights.range * Math.min(Math.max(subject.presentations - 1, 0), 2);
+    if (available === false) score += weights.unavailable;
 
-    return { ...subject, score: round(score), matchedAreas, bridges, withinBudget };
+    return {
+      ...subject,
+      score: round(score),
+      matchedAreas,
+      bridges,
+      inMind: named,
+      suggestedVariantId: suggested?.id ?? null,
+      suggestedPrice,
+      withinBudget,
+      available,
+    };
   };
 
   const byScore = pool.map(toCandidate).sort((a, b) => b.score - a.score || a.order - b.order);
 
   /*
-   * THE FLOOR. A primary area with many high-scoring compounds must not crowd
-   * a third-ranked area out of the map entirely: the reader chose it. Each area
-   * keeps its best few, then the remainder fills by score.
+   * Named products first, then each topic's floor, then the rest by score —
+   * so a crowded primary topic cannot push a chosen third topic out entirely.
    */
   const chosen = new Map<string, AtlasCandidate>();
-  for (const area of answers.areas) {
+  for (const candidate of byScore) if (candidate.inMind) chosen.set(candidate.slug, candidate);
+  for (const area of signals.topics) {
     for (const candidate of byScore) {
       if (chosen.size >= ATLAS_CANDIDATE_LIMIT) break;
       const held = [...chosen.values()].filter((c) => c.matchedAreas.includes(area)).length;
-      if (held >= ATLAS_PER_AREA_FLOOR) break;
+      if (held >= signals.perTopicFloor) break;
       if (candidate.matchedAreas.includes(area)) chosen.set(candidate.slug, candidate);
     }
   }
@@ -117,22 +147,31 @@ export function retrieveAtlas(
   }
   const candidates = [...chosen.values()].sort((a, b) => b.score - a.score || a.order - b.order);
 
-  const materials =
-    answers.includeMaterials && !rankOf.has(MATERIALS)
+  const supplies =
+    signals.includeSupplies && !rankOf.has(SUPPLIES)
       ? subjects
-          .filter((s) => s.areas.includes(MATERIALS) && !chosen.has(s.slug))
+          .filter((s) => s.areas.includes(SUPPLIES) && !chosen.has(s.slug))
           .sort((a, b) => a.order - b.order)
-          .slice(0, ATLAS_MATERIALS_LIMIT)
-          .map((s) => ({
-            ...s,
-            score: 0,
-            matchedAreas: [],
-            bridges: false,
-            withinBudget: cap === null ? null : s.entryPrice !== null && s.entryPrice <= cap,
-          }))
+          .slice(0, ATLAS_SUPPLIES_LIMIT)
+          .map((s) => {
+            const suggested = suggestVariant(s.variants, "entry", cap);
+            return {
+              ...s,
+              score: 0,
+              matchedAreas: [],
+              bridges: false,
+              inMind: false,
+              suggestedVariantId: suggested?.id ?? null,
+              suggestedPrice: suggested?.price ?? null,
+              withinBudget:
+                cap === null ? null : suggested?.price != null && suggested.price <= cap,
+              available:
+                suggested?.availability == null ? null : suggested.availability !== "unavailable",
+            };
+          })
       : [];
 
-  const areas: AtlasAreaStat[] = answers.areas.map((id, rank) => {
+  const areas: AtlasAreaStat[] = signals.topics.map((id, rank) => {
     const inArea = subjects.filter((s) => s.areas.includes(id));
     const entry = inArea
       .map((s) => s.entryPrice)
@@ -141,16 +180,21 @@ export function retrieveAtlas(
     return { id, rank, compounds: inArea.length, entryPrice: entry ?? null };
   });
 
-  const destinations: AtlasDestination[] = answers.areas.map((id) => ({
+  const destinations: AtlasDestination[] = signals.topics.map((id) => ({
     id: `area:${id}`,
     kind: "area",
     ref: id,
   }));
-  for (const related of deps.relatedAreas(answers.areas[0]).slice(0, 2)) {
-    if (!rankOf.has(related))
+  for (const related of deps.relatedAreas(signals.topics[0]).slice(0, 2)) {
+    if (!rankOf.has(related)) {
       destinations.push({ id: `area:${related}`, kind: "area", ref: related });
+    }
   }
-  const productRefs = [...candidates.slice(0, 4), ...candidates.filter((c) => c.world !== null)];
+  const productRefs = [
+    ...candidates.filter((c) => c.inMind),
+    ...candidates.slice(0, 4),
+    ...candidates.filter((c) => c.world !== null),
+  ];
   for (const candidate of productRefs) {
     if (destinations.filter((d) => d.kind === "product").length >= 5) break;
     if (!destinations.some((d) => d.ref === candidate.slug)) {
@@ -167,7 +211,7 @@ export function retrieveAtlas(
   return {
     areas,
     candidates,
-    materials,
+    supplies,
     destinations,
     referenceIds: [...new Set(candidates.flatMap((c) => c.referenceIds))],
     budgetCap: cap,

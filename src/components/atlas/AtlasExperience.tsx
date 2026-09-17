@@ -1,20 +1,25 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Container } from "@/components/primitives";
 import {
-  ATLAS_CONTEXT_MAX,
-  ATLAS_MAX_AREAS,
-  ATLAS_MAX_FOCUS,
+  ATLAS_MAX_IN_MIND,
+  ATLAS_MAX_PRIORITIES,
+  ATLAS_MAX_TOPICS,
+  ATLAS_NAME_MAX,
+  ATLAS_NOTE_MAX,
   atlasBudgets,
-  atlasDepths,
-  atlasFocuses,
+  atlasExperienceLevels,
   atlasForms,
-  type AtlasBudget,
-  type AtlasDepth,
-  type AtlasFocus,
-  type AtlasForm,
+  atlasHistories,
+  atlasHorizons,
+  atlasIntents,
+  atlasPriorities,
+  atlasSizes,
+  atlasStyles,
+  atlasTimings,
+  type AtlasProfile,
 } from "@/domain/atlas/types";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
@@ -22,56 +27,65 @@ import { AtlasMark } from "./AtlasMark";
 import { AtlasResult } from "./AtlasResult";
 import styles from "./AtlasExperience.module.css";
 
-import type { AtlasAreaOption, AtlasCopy } from "./types";
+import type { AtlasAreaOption, AtlasCopy, AtlasProductOption } from "./types";
 import type { DiscoveryAreaId } from "@/data/discovery";
 import type { AtlasResultView } from "@/domain/atlas/result";
 import type { Locale } from "@/i18n/config";
 
 /**
- * NEOGEN ATLAS — the questionnaire, the generation, the map.
+ * NEOGEN ATLAS — the questionnaire, the generation, the result.
  *
- * One client island. Everything the reader chooses is a closed vocabulary; the
- * one free-text field is optional, short, and warned about. Generation is a
- * single POST to `/api/atlas` carrying answers and a locale — never a prompt,
- * a model or a product list — and the response is an assembled result.
+ * One client island. It collects a profile and renders a result; it holds no
+ * recommendation rule. Generation is a single POST to `/api/atlas` carrying
+ * the profile and a locale — never a prompt, a model or a product list — and
+ * the response is an assembled result.
  *
- * PERSISTENCE is a per-viewer convenience only: answers and the last map sit
- * in `sessionStorage` so a reload keeps them. Every read and write is guarded,
- * and the experience works without it.
+ * PERSISTENCE is a per-viewer convenience only: the draft and the last result
+ * sit in `sessionStorage` so a reload keeps them. Every read and write is
+ * guarded, and the experience works without it.
  */
 
-type Phase = "intro" | "areas" | "profile" | "budget" | "generating" | "result" | "error";
+type Phase = "intro" | Step | "generating" | "result" | "error";
 type ErrorKind = "rate_limited" | "invalid" | "failed";
-
-interface Draft {
-  areas: DiscoveryAreaId[];
-  depth: AtlasDepth;
-  focus: AtlasFocus[];
-  forms: AtlasForm[];
-  includeMaterials: boolean;
-  budget: AtlasBudget;
-  context: string;
-}
-
-const EMPTY: Draft = {
-  areas: [],
-  depth: "orientation",
-  focus: [],
-  forms: [],
-  includeMaterials: false,
-  budget: "open",
-  context: "",
+type Draft = {
+  -readonly [K in keyof AtlasProfile]: AtlasProfile[K] extends readonly (infer U)[]
+    ? U[]
+    : AtlasProfile[K];
 };
 
-const STORAGE_KEY = "neogen.atlas.v1";
-const STEPS = ["areas", "profile", "budget"] as const;
+const EMPTY: Draft = {
+  topics: [],
+  intent: "first-order",
+  inMind: [],
+  firstName: "",
+  experience: "new",
+  history: "first-time",
+  priorities: [],
+  style: "direct",
+  forms: [],
+  size: "no-preference",
+  includeSupplies: false,
+  budget: "open",
+  horizon: "one-order",
+  timing: "no-rush",
+  note: "",
+};
+
+const STORAGE_KEY = "neogen.atlas.v2";
+const STEPS = ["goals", "you", "preferences", "budget"] as const;
 type Step = (typeof STEPS)[number];
+const PRODUCT_LIST_LIMIT = 18;
 
 const pad = (n: number) => String(n).padStart(2, "0");
 const fill = (template: string, values: Record<string, string | number>) =>
   template.replace(/\{(\w+)\}/g, (match, key: string) =>
     key in values ? String(values[key]) : match,
   );
+const fold = (text: string) =>
+  text
+    .toLocaleLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "");
 
 function isStep(value: unknown): value is Step {
   return typeof value === "string" && (STEPS as readonly string[]).includes(value);
@@ -80,10 +94,12 @@ function isStep(value: unknown): value is Step {
 export function AtlasExperience({
   locale,
   areas,
+  products,
   copy,
 }: {
   locale: Locale;
   areas: readonly AtlasAreaOption[];
+  products: readonly AtlasProductOption[];
   copy: AtlasCopy;
 }) {
   const reduced = useReducedMotion();
@@ -93,6 +109,7 @@ export function AtlasExperience({
   const [error, setError] = useState<ErrorKind | null>(null);
   const [stage, setStage] = useState(0);
   const [limitHit, setLimitHit] = useState(false);
+  const [query, setQuery] = useState("");
 
   const rootRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLHeadingElement | null>(null);
@@ -103,7 +120,8 @@ export function AtlasExperience({
   useEffect(() => {
     if (restored.current) return;
     restored.current = true;
-    const known = new Set(areas.map((a) => a.id));
+    const knownAreas = new Set(areas.map((a) => a.id));
+    const knownProducts = new Set(products.map((p) => p.slug));
     queueMicrotask(() => {
       try {
         const raw = window.sessionStorage.getItem(STORAGE_KEY);
@@ -117,7 +135,8 @@ export function AtlasExperience({
           setDraft({
             ...EMPTY,
             ...saved.draft,
-            areas: (saved.draft.areas ?? []).filter((id) => known.has(id)),
+            topics: (saved.draft.topics ?? []).filter((id) => knownAreas.has(id)),
+            inMind: (saved.draft.inMind ?? []).filter((slug) => knownProducts.has(slug)),
           });
         }
         if (saved.phase === "result" && saved.result) {
@@ -130,7 +149,7 @@ export function AtlasExperience({
         /* Storage unavailable or malformed: start fresh. */
       }
     });
-  }, [areas]);
+  }, [areas, products]);
 
   useEffect(() => {
     try {
@@ -148,7 +167,7 @@ export function AtlasExperience({
     }
   }, [draft, phase, result]);
 
-  /* A phase change is a new screen: take the reader to it and put focus on its heading. */
+  /* A phase change is a new screen: take the visitor to it and put focus on its heading. */
   useEffect(() => {
     if (!settled.current) {
       settled.current = true;
@@ -171,18 +190,18 @@ export function AtlasExperience({
 
   const update = (patch: Partial<Draft>) => setDraft((current) => ({ ...current, ...patch }));
 
-  const toggleArea = (id: DiscoveryAreaId) => {
+  const toggleTopic = (id: DiscoveryAreaId) => {
     setDraft((current) => {
-      if (current.areas.includes(id)) {
+      if (current.topics.includes(id)) {
         setLimitHit(false);
-        return { ...current, areas: current.areas.filter((a) => a !== id) };
+        return { ...current, topics: current.topics.filter((a) => a !== id) };
       }
-      if (current.areas.length >= ATLAS_MAX_AREAS) {
+      if (current.topics.length >= ATLAS_MAX_TOPICS) {
         setLimitHit(true);
         return current;
       }
       setLimitHit(false);
-      return { ...current, areas: [...current.areas, id] };
+      return { ...current, topics: [...current.topics, id] };
     });
   };
 
@@ -192,6 +211,16 @@ export function AtlasExperience({
       : max !== undefined && list.length >= max
         ? [...list]
         : [...list, value];
+
+  /* Products in the chosen topics first; a search reaches the whole catalogue. */
+  const productMatches = useMemo(() => {
+    const q = fold(query.trim());
+    const pool = q
+      ? products.filter((p) => fold(p.name).includes(q))
+      : products.filter((p) => p.areas.some((a) => draft.topics.includes(a)));
+    return pool.filter((p) => !draft.inMind.includes(p.slug)).slice(0, PRODUCT_LIST_LIMIT);
+  }, [products, query, draft.topics, draft.inMind]);
+  const productName = (slug: string) => products.find((p) => p.slug === slug)?.name ?? slug;
 
   const generate = useCallback(async () => {
     setStage(0);
@@ -205,7 +234,7 @@ export function AtlasExperience({
       const response = await fetch("/api/atlas", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ locale, answers: draft }),
+        body: JSON.stringify({ locale, profile: draft }),
       });
       status = response.status;
       payload = await response.json().catch(() => null);
@@ -237,11 +266,21 @@ export function AtlasExperience({
     setDraft(EMPTY);
     setResult(null);
     setLimitHit(false);
-    setPhase("areas");
+    setQuery("");
+    setPhase("goals");
   };
 
   const stepIndex = isStep(phase) ? STEPS.indexOf(phase) : -1;
-  const canAdvance = phase !== "areas" || draft.areas.length > 0;
+  const canAdvance = phase !== "goals" || draft.topics.length > 0;
+
+  const heading = (text: string, lede: string) => (
+    <header className={styles.stepHead}>
+      <h2 ref={headingRef} tabIndex={-1} id="atlas-step-title" className={styles.stepTitle}>
+        {text}
+      </h2>
+      <p className={styles.stepLede}>{lede}</p>
+    </header>
+  );
 
   return (
     <div ref={rootRef} className={styles.root}>
@@ -262,7 +301,7 @@ export function AtlasExperience({
                   <p className={styles.lede}>{copy.lede}</p>
                 </div>
                 <div className={styles.startBlock}>
-                  <button type="button" className={styles.start} onClick={() => setPhase("areas")}>
+                  <button type="button" className={styles.start} onClick={() => setPhase("goals")}>
                     {copy.intro.start}
                     <span aria-hidden="true">→</span>
                   </button>
@@ -270,7 +309,7 @@ export function AtlasExperience({
                 </div>
               </div>
 
-              <ol className={styles.points}>
+              <ol className={styles.points} data-count={copy.intro.points.length}>
                 {copy.intro.points.map((point) => (
                   <li key={point.index}>
                     <span className={styles.pointIndex}>{point.index}</span>
@@ -306,6 +345,7 @@ export function AtlasExperience({
           <Container width="full">
             <ol
               className={styles.rail}
+              data-count={STEPS.length}
               aria-label={fill(copy.progress, { n: stepIndex + 1, total: STEPS.length })}
             >
               {STEPS.map((step, i) => (
@@ -316,128 +356,213 @@ export function AtlasExperience({
                 >
                   <span className={styles.railBar} aria-hidden="true" />
                   <span className={styles.railLabel}>
-                    {pad(i + 1)} · {copy.steps[step]}
+                    {pad(i + 1)}
+                    <span className={styles.railName}> · {copy.steps[step]}</span>
                   </span>
                 </li>
               ))}
             </ol>
 
-            {phase === "areas" ? (
+            {phase === "goals" ? (
               <div role="group" aria-labelledby="atlas-step-title">
-                <header className={styles.stepHead}>
-                  <h2
-                    ref={headingRef}
-                    tabIndex={-1}
-                    id="atlas-step-title"
-                    className={styles.stepTitle}
-                  >
-                    {copy.areas.title}
-                  </h2>
-                  <p className={styles.stepLede}>{copy.areas.lede}</p>
+                {heading(copy.goals.title, copy.goals.lede)}
+
+                <fieldset className={styles.field}>
+                  <legend className={styles.legend}>{copy.goals.topics.label}</legend>
+                  <p className={styles.legendHint}>{copy.goals.topics.hint}</p>
                   <p className={styles.selection} aria-live="polite">
-                    {fill(copy.areas.selected, { n: draft.areas.length, max: ATLAS_MAX_AREAS })}
-                    {limitHit ? ` — ${copy.areas.limit}` : ""}
+                    {fill(copy.goals.topics.selected, {
+                      n: draft.topics.length,
+                      max: ATLAS_MAX_TOPICS,
+                    })}
+                    {limitHit ? ` — ${copy.goals.topics.limit}` : ""}
                   </p>
-                </header>
-                <ul className={styles.areaGrid}>
-                  {areas.map((area) => {
-                    const rank = draft.areas.indexOf(area.id);
-                    const selected = rank >= 0;
-                    return (
-                      <li key={area.id}>
-                        <button
-                          type="button"
-                          aria-pressed={selected}
-                          className={styles.areaTile}
-                          data-area={area.id}
-                          data-selected={selected ? "" : undefined}
-                          onClick={() => toggleArea(area.id)}
-                        >
-                          <span className={styles.areaSwatch} aria-hidden="true" />
-                          <span className={styles.areaRank}>
-                            {selected ? `${pad(rank + 1)} · ${copy.areas.ranks[rank]}` : " "}
-                          </span>
-                          <span className={styles.areaLabel}>{area.label}</span>
-                          <span className={styles.areaFraming}>{area.framing}</span>
-                          <span className={styles.areaBody}>{area.body}</span>
-                          <span className={styles.areaFoot}>
-                            <span>{fill(copy.areas.count, { n: area.compounds })}</span>
-                            {area.entryPrice ? (
-                              <span>
-                                {copy.areas.from} {area.entryPrice}
-                              </span>
-                            ) : null}
-                          </span>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
+                  <ul className={styles.areaGrid}>
+                    {areas.map((area) => {
+                      const rank = draft.topics.indexOf(area.id);
+                      const selected = rank >= 0;
+                      return (
+                        <li key={area.id}>
+                          <button
+                            type="button"
+                            aria-pressed={selected}
+                            className={styles.areaTile}
+                            data-area={area.id}
+                            data-selected={selected ? "" : undefined}
+                            onClick={() => toggleTopic(area.id)}
+                          >
+                            <span className={styles.areaSwatch} aria-hidden="true" />
+                            <span className={styles.areaRank}>
+                              {selected ? copy.goals.topics.ranks[rank] : " "}
+                            </span>
+                            <span className={styles.areaLabel}>{area.label}</span>
+                            <span className={styles.areaFraming}>{area.framing}</span>
+                            <span className={styles.areaBody}>{area.body}</span>
+                            <span className={styles.areaFoot}>
+                              <span>{fill(copy.goals.topics.count, { n: area.compounds })}</span>
+                              {area.entryPrice ? (
+                                <span>
+                                  {copy.goals.topics.from} {area.entryPrice}
+                                </span>
+                              ) : null}
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </fieldset>
+
+                <Choice
+                  name="atlas-intent"
+                  label={copy.goals.intent.label}
+                  values={atlasIntents}
+                  value={draft.intent}
+                  options={copy.goals.intent.options}
+                  onChange={(intent) => update({ intent })}
+                  cols={3}
+                />
+
+                <fieldset className={styles.field}>
+                  <legend className={styles.legend}>{copy.goals.inMind.label}</legend>
+                  <p className={styles.legendHint}>{copy.goals.inMind.hint}</p>
+                  {draft.inMind.length > 0 ? (
+                    <ul className={styles.chosen}>
+                      {draft.inMind.map((slug) => (
+                        <li key={slug}>
+                          <button
+                            type="button"
+                            className={styles.chosenItem}
+                            aria-label={fill(copy.goals.inMind.remove, { name: productName(slug) })}
+                            onClick={() =>
+                              update({ inMind: draft.inMind.filter((s) => s !== slug) })
+                            }
+                          >
+                            {productName(slug)} <span aria-hidden="true">×</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  {draft.inMind.length < ATLAS_MAX_IN_MIND ? (
+                    <>
+                      <label className={styles.srOnly} htmlFor="atlas-product-search">
+                        {copy.goals.inMind.search}
+                      </label>
+                      <input
+                        id="atlas-product-search"
+                        type="search"
+                        className={styles.textInput}
+                        placeholder={copy.goals.inMind.search}
+                        value={query}
+                        onChange={(event) => setQuery(event.target.value)}
+                        autoComplete="off"
+                      />
+                      <div className={styles.pills}>
+                        {productMatches.map((product) => (
+                          <button
+                            key={product.slug}
+                            type="button"
+                            className={styles.pill}
+                            onClick={() => {
+                              update({ inMind: [...draft.inMind, product.slug] });
+                              setQuery("");
+                            }}
+                          >
+                            {product.name}
+                          </button>
+                        ))}
+                        {productMatches.length === 0 && query ? (
+                          <p className={styles.legendHint}>{copy.goals.inMind.empty}</p>
+                        ) : null}
+                      </div>
+                    </>
+                  ) : null}
+                </fieldset>
               </div>
             ) : null}
 
-            {phase === "profile" ? (
+            {phase === "you" ? (
               <div role="group" aria-labelledby="atlas-step-title">
-                <header className={styles.stepHead}>
-                  <h2
-                    ref={headingRef}
-                    tabIndex={-1}
-                    id="atlas-step-title"
-                    className={styles.stepTitle}
-                  >
-                    {copy.profile.title}
-                  </h2>
-                  <p className={styles.stepLede}>{copy.profile.lede}</p>
-                </header>
+                {heading(copy.you.title, copy.you.lede)}
+
+                <div className={styles.field}>
+                  <label htmlFor="atlas-name" className={styles.legend}>
+                    {copy.you.firstName.label}
+                  </label>
+                  <p id="atlas-name-hint" className={styles.legendHint}>
+                    {copy.you.firstName.hint}
+                  </p>
+                  <input
+                    id="atlas-name"
+                    type="text"
+                    className={styles.textInput}
+                    value={draft.firstName}
+                    maxLength={ATLAS_NAME_MAX}
+                    placeholder={copy.you.firstName.placeholder}
+                    autoComplete="given-name"
+                    aria-describedby="atlas-name-hint"
+                    onChange={(event) => update({ firstName: event.target.value })}
+                  />
+                </div>
+
+                <Choice
+                  name="atlas-experience"
+                  label={copy.you.experience.label}
+                  values={atlasExperienceLevels}
+                  value={draft.experience}
+                  options={copy.you.experience.options}
+                  onChange={(experience) => update({ experience })}
+                  cols={3}
+                />
 
                 <fieldset className={styles.field}>
-                  <legend className={styles.legend}>{copy.profile.depth.label}</legend>
-                  <div className={styles.options} data-cols="2">
-                    {atlasDepths.map((depth) => (
-                      <label key={depth} className={styles.option}>
+                  <legend className={styles.legend}>{copy.you.history.label}</legend>
+                  <div className={styles.pills}>
+                    {atlasHistories.map((history) => (
+                      <label key={history} className={styles.pill}>
                         <input
                           type="radio"
-                          name="atlas-depth"
-                          value={depth}
-                          checked={draft.depth === depth}
-                          onChange={() => update({ depth })}
+                          name="atlas-history"
+                          checked={draft.history === history}
+                          onChange={() => update({ history })}
                           className={styles.input}
                         />
-                        <span className={styles.indicator} data-shape="radio" aria-hidden="true" />
-                        <span className={styles.optionLabel}>
-                          {copy.profile.depth.options[depth].label}
-                        </span>
-                        <span className={styles.optionHint}>
-                          {copy.profile.depth.options[depth].hint}
-                        </span>
+                        {copy.you.history.options[history]}
                       </label>
                     ))}
                   </div>
                 </fieldset>
 
                 <fieldset className={styles.field}>
-                  <legend className={styles.legend}>{copy.profile.focus.label}</legend>
-                  <p className={styles.legendHint}>{copy.profile.focus.hint}</p>
+                  <legend className={styles.legend}>{copy.you.priorities.label}</legend>
+                  <p className={styles.legendHint}>{copy.you.priorities.hint}</p>
                   <div className={styles.options} data-cols="4">
-                    {atlasFocuses.map((focus) => {
-                      const checked = draft.focus.includes(focus);
+                    {atlasPriorities.map((priority) => {
+                      const checked = draft.priorities.includes(priority);
                       return (
-                        <label key={focus} className={styles.option}>
+                        <label key={priority} className={styles.option}>
                           <input
                             type="checkbox"
                             checked={checked}
-                            disabled={!checked && draft.focus.length >= ATLAS_MAX_FOCUS}
+                            disabled={!checked && draft.priorities.length >= ATLAS_MAX_PRIORITIES}
                             onChange={() =>
-                              update({ focus: toggle(draft.focus, focus, ATLAS_MAX_FOCUS) })
+                              update({
+                                priorities: toggle(
+                                  draft.priorities,
+                                  priority,
+                                  ATLAS_MAX_PRIORITIES,
+                                ),
+                              })
                             }
                             className={styles.input}
                           />
                           <span className={styles.indicator} aria-hidden="true" />
                           <span className={styles.optionLabel}>
-                            {copy.profile.focus.options[focus].label}
+                            {copy.you.priorities.options[priority].label}
                           </span>
                           <span className={styles.optionHint}>
-                            {copy.profile.focus.options[focus].hint}
+                            {copy.you.priorities.options[priority].hint}
                           </span>
                         </label>
                       );
@@ -445,9 +570,25 @@ export function AtlasExperience({
                   </div>
                 </fieldset>
 
+                <Choice
+                  name="atlas-style"
+                  label={copy.you.style.label}
+                  values={atlasStyles}
+                  value={draft.style}
+                  options={copy.you.style.options}
+                  onChange={(style) => update({ style })}
+                  cols={2}
+                />
+              </div>
+            ) : null}
+
+            {phase === "preferences" ? (
+              <div role="group" aria-labelledby="atlas-step-title">
+                {heading(copy.preferences.title, copy.preferences.lede)}
+
                 <fieldset className={styles.field}>
-                  <legend className={styles.legend}>{copy.profile.forms.label}</legend>
-                  <p className={styles.legendHint}>{copy.profile.forms.hint}</p>
+                  <legend className={styles.legend}>{copy.preferences.forms.label}</legend>
+                  <p className={styles.legendHint}>{copy.preferences.forms.hint}</p>
                   <div className={styles.pills}>
                     {atlasForms.map((form) => (
                       <label key={form} className={styles.pill}>
@@ -457,22 +598,32 @@ export function AtlasExperience({
                           onChange={() => update({ forms: toggle(draft.forms, form) })}
                           className={styles.input}
                         />
-                        {copy.profile.forms.options[form]}
+                        {copy.preferences.forms.options[form]}
                       </label>
                     ))}
                   </div>
                 </fieldset>
 
+                <Choice
+                  name="atlas-size"
+                  label={copy.preferences.size.label}
+                  values={atlasSizes}
+                  value={draft.size}
+                  options={copy.preferences.size.options}
+                  onChange={(size) => update({ size })}
+                  cols={3}
+                />
+
                 <label className={styles.switch}>
                   <span className={styles.switchText}>
-                    <span className={styles.optionLabel}>{copy.profile.materials.label}</span>
-                    <span className={styles.optionHint}>{copy.profile.materials.hint}</span>
+                    <span className={styles.optionLabel}>{copy.preferences.supplies.label}</span>
+                    <span className={styles.optionHint}>{copy.preferences.supplies.hint}</span>
                   </span>
                   <input
                     type="checkbox"
                     role="switch"
-                    checked={draft.includeMaterials}
-                    onChange={() => update({ includeMaterials: !draft.includeMaterials })}
+                    checked={draft.includeSupplies}
+                    onChange={() => update({ includeSupplies: !draft.includeSupplies })}
                     className={styles.input}
                   />
                   <span className={styles.switchTrack} aria-hidden="true" />
@@ -482,65 +633,60 @@ export function AtlasExperience({
 
             {phase === "budget" ? (
               <div role="group" aria-labelledby="atlas-step-title">
-                <header className={styles.stepHead}>
-                  <h2
-                    ref={headingRef}
-                    tabIndex={-1}
-                    id="atlas-step-title"
-                    className={styles.stepTitle}
-                  >
-                    {copy.budget.title}
-                  </h2>
-                  <p className={styles.stepLede}>{copy.budget.lede}</p>
-                </header>
+                {heading(copy.budget.title, copy.budget.lede)}
 
-                <fieldset className={styles.field}>
-                  <legend className={styles.legend}>{copy.budget.label}</legend>
-                  <div className={styles.options} data-cols="4">
-                    {atlasBudgets.map((budget) => (
-                      <label key={budget} className={styles.option}>
-                        <input
-                          type="radio"
-                          name="atlas-budget"
-                          value={budget}
-                          checked={draft.budget === budget}
-                          onChange={() => update({ budget })}
-                          className={styles.input}
-                        />
-                        <span className={styles.indicator} data-shape="radio" aria-hidden="true" />
-                        <span className={styles.optionLabel}>
-                          {copy.budget.options[budget].label}
-                        </span>
-                        <span className={styles.optionHint}>
-                          {copy.budget.options[budget].hint}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </fieldset>
+                <Choice
+                  name="atlas-budget"
+                  label={copy.budget.label}
+                  values={atlasBudgets}
+                  value={draft.budget}
+                  options={copy.budget.options}
+                  onChange={(budget) => update({ budget })}
+                  cols={4}
+                />
+
+                <Choice
+                  name="atlas-horizon"
+                  label={copy.budget.horizon.label}
+                  values={atlasHorizons}
+                  value={draft.horizon}
+                  options={copy.budget.horizon.options}
+                  onChange={(horizon) => update({ horizon })}
+                  cols={2}
+                />
+
+                <Choice
+                  name="atlas-timing"
+                  label={copy.budget.timing.label}
+                  values={atlasTimings}
+                  value={draft.timing}
+                  options={copy.budget.timing.options}
+                  onChange={(timing) => update({ timing })}
+                  cols={2}
+                />
 
                 <div className={styles.field}>
-                  <label htmlFor="atlas-context" className={styles.legend}>
-                    {copy.budget.context.label}{" "}
-                    <span className={styles.optional}>· {copy.budget.context.optional}</span>
+                  <label htmlFor="atlas-note" className={styles.legend}>
+                    {copy.budget.note.label}{" "}
+                    <span className={styles.optional}>· {copy.budget.note.optional}</span>
                   </label>
                   <textarea
-                    id="atlas-context"
+                    id="atlas-note"
                     className={styles.textarea}
-                    value={draft.context}
-                    maxLength={ATLAS_CONTEXT_MAX}
-                    placeholder={copy.budget.context.placeholder}
-                    aria-describedby="atlas-context-hint"
-                    onChange={(event) => update({ context: event.target.value })}
+                    value={draft.note}
+                    maxLength={ATLAS_NOTE_MAX}
+                    placeholder={copy.budget.note.placeholder}
+                    aria-describedby="atlas-note-hint"
+                    onChange={(event) => update({ note: event.target.value })}
                   />
                   <div className={styles.textareaMeta}>
-                    <p id="atlas-context-hint" className={styles.contextHint}>
-                      {copy.budget.context.hint}
+                    <p id="atlas-note-hint" className={styles.contextHint}>
+                      {copy.budget.note.hint}
                     </p>
                     <p className={styles.charCount} aria-live="polite">
-                      {fill(copy.budget.context.counter, {
-                        n: draft.context.length,
-                        max: ATLAS_CONTEXT_MAX,
+                      {fill(copy.budget.note.counter, {
+                        n: draft.note.length,
+                        max: ATLAS_NOTE_MAX,
                       })}
                     </p>
                   </div>
@@ -663,10 +809,52 @@ export function AtlasExperience({
           result={result}
           copy={copy}
           headingRef={headingRef}
-          onEdit={() => setPhase("areas")}
+          onEdit={() => setPhase("goals")}
           onRestart={restart}
         />
       ) : null}
     </div>
+  );
+}
+
+/** One radio question, as the option cards the questionnaire already uses. */
+function Choice<T extends string>({
+  name,
+  label,
+  values,
+  value,
+  options,
+  onChange,
+  cols,
+}: {
+  name: string;
+  label: string;
+  values: readonly T[];
+  value: T;
+  options: Readonly<Record<T, { label: string; hint: string }>>;
+  onChange: (value: T) => void;
+  cols: 2 | 3 | 4;
+}) {
+  return (
+    <fieldset className={styles.field}>
+      <legend className={styles.legend}>{label}</legend>
+      <div className={styles.options} data-cols={cols}>
+        {values.map((option) => (
+          <label key={option} className={styles.option}>
+            <input
+              type="radio"
+              name={name}
+              value={option}
+              checked={value === option}
+              onChange={() => onChange(option)}
+              className={styles.input}
+            />
+            <span className={styles.indicator} data-shape="radio" aria-hidden="true" />
+            <span className={styles.optionLabel}>{options[option].label}</span>
+            <span className={styles.optionHint}>{options[option].hint}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
   );
 }

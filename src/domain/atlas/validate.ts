@@ -1,7 +1,9 @@
 import { forbiddenTermIn } from "@/content/lifecycle";
 
+import { effectiveStart, moreAllowance } from "./plan";
+
 import type { AtlasGeneration } from "./schema";
-import type { AtlasAnswers, AtlasRetrieval } from "./types";
+import type { AtlasConstraints, AtlasRetrieval } from "./types";
 
 /**
  * VALIDATION — the output is checked against the catalogue, not trusted.
@@ -15,16 +17,16 @@ import type { AtlasAnswers, AtlasRetrieval } from "./types";
  */
 
 export const ATLAS_LIMITS = {
-  title: 90,
-  summary: 720,
-  rationale: 300,
-  pathNote: 200,
-  note: 240,
-  compoundsMin: 3,
-  compoundsMax: 8,
-  pathMin: 2,
-  pathMax: 5,
-  notesMax: 4,
+  headline: 90,
+  summary: 600,
+  aboutYou: 420,
+  why: 320,
+  topicNote: 280,
+  stepNote: 200,
+  tip: 240,
+  stepsMin: 2,
+  stepsMax: 5,
+  tipsMax: 4,
 } as const;
 
 /**
@@ -92,6 +94,12 @@ export const ATLAS_CLAIM_TERMS: readonly string[] = [
   "semana",
   "dieta",
   "suplement",
+  // suitability to a person, rather than to a budget or a preference
+  "tu cuerpo",
+  "tu organismo",
+  "tu salud",
+  "adecuado para ti",
+  "adecuada para ti",
   // en
   "weight loss",
   "lose weight",
@@ -135,6 +143,10 @@ export const ATLAS_CLAIM_TERMS: readonly string[] = [
   "week",
   "diet",
   "supplement",
+  "your body",
+  "your health",
+  "suitable for you",
+  "right for your",
 ];
 
 export type AtlasIssueCode =
@@ -145,6 +157,10 @@ export type AtlasIssueCode =
   | "duplicate"
   | "length"
   | "count"
+  | "over_budget"
+  | "missing_in_mind"
+  | "missing_topic"
+  | "misplaced_supply"
   | "forbidden_term"
   | "claim"
   | "invented_figure"
@@ -157,9 +173,13 @@ export interface AtlasIssue {
 }
 
 export interface AtlasValidationContext {
-  answers: Pick<AtlasAnswers, "areas">;
-  retrieval: Pick<AtlasRetrieval, "candidates" | "materials" | "destinations">;
-  /** Every published compound, so a name outside the candidate set is caught. */
+  retrieval: Pick<
+    AtlasRetrieval,
+    "areas" | "candidates" | "supplies" | "destinations" | "budgetCap"
+  >;
+  /** The policy's rules for this visitor. */
+  constraints: AtlasConstraints;
+  /** Every published product, so a name outside the candidate set is caught. */
   catalogue: readonly { slug: string; name: string }[];
   /** Owner-approved area names and framings, in both locales. Never claims. */
   approvedLabels: readonly string[];
@@ -183,14 +203,14 @@ const wholeWord = (word: string) => new RegExp(`(^|[^a-z0-9])${escape(word)}($|[
 const FIGURE_PATTERNS: readonly RegExp[] = [
   /\d+(?:[.,]\d+)?\s*(?:mg|mcg|µg|ug|ml|iu|ui|%)(?![a-z])/i,
   /\$\s*\d/,
-  /\d[\d.,]*\s*(?:mxn|pesos|usd|dolares|dollars)(?![a-z])/i,
+  /\d[\d.,]*\s*(?:mxn|pesos|usd|dolares|dollars|mil)(?![a-z])/i,
 ];
 
 /**
  * Screen one string. Allowed names are removed first — longest first, so a
- * compound whose name contains another's is stripped whole — and only then is
+ * product whose name contains another's is stripped whole — and only then is
  * the remainder checked for forbidden terms, claims, figures and names of
- * compounds the model was never given.
+ * products the model was never given.
  */
 export function screenAtlasText(
   text: string,
@@ -198,15 +218,9 @@ export function screenAtlasText(
   context: AtlasValidationContext,
 ): AtlasIssue[] {
   const issues: AtlasIssue[] = [];
-  const allowedSlugs = new Set([
-    ...context.retrieval.candidates.map((c) => c.slug),
-    ...context.retrieval.materials.map((c) => c.slug),
-  ]);
-  const allowedNames = [
-    ...context.retrieval.candidates.map((c) => c.name),
-    ...context.retrieval.materials.map((c) => c.name),
-    ...context.approvedLabels,
-  ]
+  const offered = [...context.retrieval.candidates, ...context.retrieval.supplies];
+  const allowedSlugs = new Set(offered.map((c) => c.slug));
+  const allowedNames = [...offered.map((c) => c.name), ...context.approvedLabels]
     .map(fold)
     .filter((name) => name.length > 0)
     .sort((a, b) => b.length - a.length);
@@ -240,74 +254,112 @@ export function validateAtlasGeneration(
   context: AtlasValidationContext,
 ): AtlasIssue[] {
   const issues: AtlasIssue[] = [];
-  const { answers, retrieval } = context;
+  const { retrieval, constraints } = context;
   const text = (value: string, path: string, max: number) => {
     if (value.trim().length === 0 || value.length > max) {
       issues.push({ path, code: "length", detail: `1–${max} characters` });
     }
     issues.push(...screenAtlasText(value, path, context));
   };
+  const count = (path: string, n: number, min: number, max: number) => {
+    if (n < min || n > max) issues.push({ path, code: "count", detail: `${min}–${max}, got ${n}` });
+  };
 
-  text(generation.title, "title", ATLAS_LIMITS.title);
+  text(generation.headline, "headline", ATLAS_LIMITS.headline);
   text(generation.summary, "summary", ATLAS_LIMITS.summary);
+  text(generation.aboutYou, "aboutYou", ATLAS_LIMITS.aboutYou);
 
-  /* Areas: exactly the reader's, each once. */
-  const seenAreas = new Set<string>();
-  generation.areas.forEach((area, i) => {
-    const path = `areas[${i}]`;
-    if (!answers.areas.includes(area.areaId as never)) {
-      issues.push({ path, code: "unknown_area", detail: area.areaId });
+  /* Topics: exactly the visitor's, each once. */
+  const topicIds = retrieval.areas.map((a) => a.id as string);
+  const seenTopics = new Set<string>();
+  generation.topics.forEach((topic, i) => {
+    const path = `topics[${i}]`;
+    if (!topicIds.includes(topic.areaId)) {
+      issues.push({ path, code: "unknown_area", detail: topic.areaId });
     }
-    if (seenAreas.has(area.areaId)) issues.push({ path, code: "duplicate", detail: area.areaId });
-    seenAreas.add(area.areaId);
-    text(area.rationale, `${path}.rationale`, ATLAS_LIMITS.rationale);
+    if (seenTopics.has(topic.areaId)) {
+      issues.push({ path, code: "duplicate", detail: topic.areaId });
+    }
+    seenTopics.add(topic.areaId);
+    text(topic.note, `${path}.note`, ATLAS_LIMITS.topicNote);
   });
-  for (const id of answers.areas) {
-    if (!seenAreas.has(id)) issues.push({ path: "areas", code: "missing_area", detail: id });
+  for (const id of topicIds) {
+    if (!seenTopics.has(id)) issues.push({ path: "topics", code: "missing_area", detail: id });
   }
 
-  /* Compounds: candidates and offered materials only. */
-  const allowed = new Set([
-    ...retrieval.candidates.map((c) => c.slug),
-    ...retrieval.materials.map((c) => c.slug),
-  ]);
-  const min = Math.min(ATLAS_LIMITS.compoundsMin, retrieval.candidates.length);
-  if (
-    generation.compounds.length < min ||
-    generation.compounds.length > ATLAS_LIMITS.compoundsMax
-  ) {
-    issues.push({
-      path: "compounds",
-      code: "count",
-      detail: `${min}–${ATLAS_LIMITS.compoundsMax}, got ${generation.compounds.length}`,
-    });
-  }
-  const seenSlugs = new Set<string>();
-  generation.compounds.forEach((compound, i) => {
-    const path = `compounds[${i}]`;
-    if (!allowed.has(compound.slug))
-      issues.push({ path, code: "unknown_slug", detail: compound.slug });
-    if (seenSlugs.has(compound.slug))
-      issues.push({ path, code: "duplicate", detail: compound.slug });
-    seenSlugs.add(compound.slug);
-    text(compound.rationale, `${path}.rationale`, ATLAS_LIMITS.rationale);
-  });
+  /* Picks: candidates only in "start"; candidates or supplies in "more"; each once. */
+  const candidates = new Map(retrieval.candidates.map((c) => [c.slug, c]));
+  const supplies = new Set(retrieval.supplies.map((c) => c.slug));
+  const seen = new Set<string>();
+  const checkPick =
+    (list: "start" | "more") => (entry: { slug: string; why: string }, i: number) => {
+      const path = `${list}[${i}]`;
+      if (supplies.has(entry.slug)) {
+        if (list === "start") issues.push({ path, code: "misplaced_supply", detail: entry.slug });
+      } else if (!candidates.has(entry.slug)) {
+        issues.push({ path, code: "unknown_slug", detail: entry.slug });
+      }
+      if (seen.has(entry.slug)) issues.push({ path, code: "duplicate", detail: entry.slug });
+      seen.add(entry.slug);
+      text(entry.why, `${path}.why`, ATLAS_LIMITS.why);
+    };
+  generation.start.forEach(checkPick("start"));
+  generation.more.forEach(checkPick("more"));
 
-  /* Path: routes that exist, each once. */
+  const available = retrieval.candidates.length;
+  const start = effectiveStart(retrieval, constraints);
+  count("start", generation.start.length, start.min, constraints.start.max);
+  const products = [...generation.start, ...generation.more].filter((p) => !supplies.has(p.slug));
+  count(
+    "more",
+    generation.more.length,
+    0,
+    moreAllowance(retrieval, constraints) + retrieval.supplies.length,
+  );
+  count(
+    "total",
+    products.length,
+    Math.min(constraints.total.min, available),
+    constraints.total.max,
+  );
+
+  /* The start set stays inside the cap, whenever the catalogue allows it. */
+  if (retrieval.budgetCap !== null && start.enforceBudget) {
+    const sum = generation.start.reduce(
+      (total, p) => total + (candidates.get(p.slug)?.suggestedPrice ?? Infinity),
+      0,
+    );
+    if (sum > retrieval.budgetCap) {
+      issues.push({
+        path: "start",
+        code: "over_budget",
+        detail: "start picks exceed the cap together",
+      });
+    }
+  }
+
+  if (constraints.includeInMind) {
+    for (const c of retrieval.candidates.filter((c) => c.inMind)) {
+      if (!seen.has(c.slug))
+        issues.push({ path: "start", code: "missing_in_mind", detail: c.slug });
+    }
+  }
+  if (constraints.coverTopics) {
+    for (const topic of retrieval.areas) {
+      const hasCandidate = retrieval.candidates.some((c) => c.matchedAreas.includes(topic.id));
+      const covered = products.some((p) => candidates.get(p.slug)?.matchedAreas.includes(topic.id));
+      if (hasCandidate && !covered) {
+        issues.push({ path: "more", code: "missing_topic", detail: topic.id });
+      }
+    }
+  }
+
+  /* Next steps: routes that exist, each once. */
   const destinations = new Set(retrieval.destinations.map((d) => d.id));
-  if (
-    generation.path.length < ATLAS_LIMITS.pathMin ||
-    generation.path.length > ATLAS_LIMITS.pathMax
-  ) {
-    issues.push({
-      path: "path",
-      code: "count",
-      detail: `${ATLAS_LIMITS.pathMin}–${ATLAS_LIMITS.pathMax}, got ${generation.path.length}`,
-    });
-  }
+  count("nextSteps", generation.nextSteps.length, ATLAS_LIMITS.stepsMin, ATLAS_LIMITS.stepsMax);
   const seenSteps = new Set<string>();
-  generation.path.forEach((step, i) => {
-    const path = `path[${i}]`;
+  generation.nextSteps.forEach((step, i) => {
+    const path = `nextSteps[${i}]`;
     if (!destinations.has(step.destinationId)) {
       issues.push({ path, code: "unknown_destination", detail: step.destinationId });
     }
@@ -315,13 +367,11 @@ export function validateAtlasGeneration(
       issues.push({ path, code: "duplicate", detail: step.destinationId });
     }
     seenSteps.add(step.destinationId);
-    text(step.note, `${path}.note`, ATLAS_LIMITS.pathNote);
+    text(step.note, `${path}.note`, ATLAS_LIMITS.stepNote);
   });
 
-  if (generation.notes.length > ATLAS_LIMITS.notesMax) {
-    issues.push({ path: "notes", code: "count", detail: `at most ${ATLAS_LIMITS.notesMax}` });
-  }
-  generation.notes.forEach((note, i) => text(note, `notes[${i}]`, ATLAS_LIMITS.note));
+  count("tips", generation.tips.length, 0, ATLAS_LIMITS.tipsMax);
+  generation.tips.forEach((tip, i) => text(tip, `tips[${i}]`, ATLAS_LIMITS.tip));
 
   return issues;
 }

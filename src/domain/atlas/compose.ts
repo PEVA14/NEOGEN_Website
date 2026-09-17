@@ -1,47 +1,84 @@
+import type { AtlasPlan } from "./plan";
 import type { AtlasGeneration } from "./schema";
-import type { AtlasAnswers, AtlasCandidate, AtlasDestination, AtlasRetrieval } from "./types";
+import type {
+  AtlasCandidate,
+  AtlasDestination,
+  AtlasExperienceLevel,
+  AtlasHorizon,
+  AtlasIntent,
+  AtlasNarrativeSignals,
+  AtlasPriority,
+  AtlasRetrieval,
+  AtlasSize,
+} from "./types";
 
 /**
- * A MAP WITHOUT A MODEL — composed from the registry alone.
+ * A RESULT WITHOUT A MODEL — composed from the plan and the registry.
  *
- * Two jobs, both honest about what they are:
- *
- *   development — no API key on a local machine. The whole experience still
- *                 renders end to end, and the result is LABELLED as a
- *                 development composition wherever it appears.
+ *   development — no API key on a local machine. The whole experience renders
+ *                 end to end, LABELLED as a development composition.
  *   catalogue   — production with no key, or a model whose output failed
- *                 validation twice. The reader still gets a real map from real
- *                 data, labelled as the catalogue view, never dressed up as AI.
+ *                 validation twice. Labelled as the catalogue view, never
+ *                 dressed up as AI.
  *
- * It produces the same `AtlasGeneration` the model does and passes through the
- * same validator, so the result page has exactly one shape to render and
- * `check:atlas` can prove the fallback is itself valid.
+ * It reads the same narrative signals the model is given (so it can say why a
+ * product connects to the visitor's answers) and renders the deterministic
+ * plan, producing the same `AtlasGeneration` the model does. It passes through
+ * the same validator, which `check:atlas` proves for every test profile.
  */
 
 export interface AtlasComposeCopy {
   and: string;
-  title: string;
+  headline: Readonly<Record<AtlasIntent, string>>;
   summary: string;
-  area: string;
-  areaBridges: string;
-  compoundFiled: string;
-  compoundFlagship: string;
-  compoundDocumented: string;
-  compoundUndocumented: string;
-  compoundWithinBudget: string;
-  compoundOverBudget: string;
+  summaryNoMore: string;
+  reasons: {
+    topics: string;
+    inMind: string;
+    budget: string;
+    priorities: Readonly<Record<AtlasPriority, string>>;
+  };
+  aboutYou: string;
+  experience: Readonly<Record<AtlasExperienceLevel, string>>;
+  intent: Readonly<Record<AtlasIntent, string>>;
+  budgetOpen: string;
+  budgetSet: string;
+  horizon: Readonly<Record<AtlasHorizon, string>>;
+  why: {
+    inMind: string;
+    primary: string;
+    secondary: string;
+    outside: string;
+    overlap: string;
+    signature: string;
+    documented: string;
+    undocumented: string;
+    value: string;
+    fits: string;
+    over: string;
+    size: Readonly<Record<Exclude<AtlasSize, "no-preference">, string>>;
+    supply: string;
+  };
+  topic: string;
+  topicPicked: string;
   path: Readonly<Record<AtlasDestination["kind"], string>>;
-  noteDevelopment: string;
-  noteCatalogue: string;
+  tips: {
+    new: string;
+    compare: string;
+    overTime: string;
+    soon: string;
+    documentation: string;
+    price: string;
+  };
 }
 
 export interface AtlasComposeInput {
-  answers: AtlasAnswers;
+  narrative: AtlasNarrativeSignals;
   retrieval: AtlasRetrieval;
-  areaLabel: (id: string) => string;
+  plan: AtlasPlan;
+  topicLabel: (id: string) => string;
   destinationLabel: (destination: AtlasDestination) => string;
   copy: AtlasComposeCopy;
-  mode: "development" | "catalogue";
 }
 
 const fill = (template: string, values: Record<string, string | number>) =>
@@ -54,96 +91,77 @@ function list(items: readonly string[], and: string): string {
   return `${items.slice(0, -1).join(", ")} ${and} ${items[items.length - 1]}`;
 }
 
-const MAP_SIZE = 6;
-const CORE_SIZE = 3;
-
-/**
- * Which compounds the composed map leads with.
- *
- * WITHIN THE READER'S CAP. With a budget set, the core is filled in score order
- * only while the running total of entry presentations stays inside it — a map
- * whose three core compounds cost more than the reader said they would spend
- * is not a budget-aware map, even if each one fits on its own. If nothing fits,
- * the best-scoring compounds lead anyway and the budget block says so.
- *
- * EVERY CHOSEN AREA APPEARS. Score order can crowd a third-ranked area out of
- * six places; each area the reader chose keeps at least one compound when it
- * has a candidate.
- */
-function selectMap(retrieval: AtlasRetrieval, areas: readonly string[]) {
-  const ordered = retrieval.candidates;
-  const cap = retrieval.budgetCap;
-
-  const core: AtlasCandidate[] = [];
-  if (cap === null) {
-    core.push(...ordered.slice(0, CORE_SIZE));
-  } else {
-    let total = 0;
-    for (const candidate of ordered) {
-      if (core.length >= CORE_SIZE) break;
-      if (candidate.entryPrice !== null && total + candidate.entryPrice <= cap) {
-        core.push(candidate);
-        total += candidate.entryPrice;
-      }
-    }
-    if (core.length === 0) core.push(...ordered.slice(0, Math.min(CORE_SIZE, ordered.length)));
-  }
-
-  const rest = ordered.filter((c) => !core.includes(c));
-  const chosen = [...core, ...rest.slice(0, MAP_SIZE - core.length)];
-
-  const covers = (c: AtlasCandidate, area: string) => c.matchedAreas.includes(area as never);
-  for (const area of areas) {
-    if (chosen.some((c) => covers(c, area))) continue;
-    const best = rest.find((c) => covers(c, area) && !chosen.includes(c));
-    if (!best) continue;
-    // Give up the lowest-placed complement that is not some other chosen
-    // area's only compound on the map; with none to give up, the map grows.
-    let swapAt = -1;
-    for (let i = chosen.length - 1; i >= core.length; i--) {
-      const sole = areas.some(
-        (other) => covers(chosen[i], other) && chosen.filter((c) => covers(c, other)).length === 1,
-      );
-      if (!sole) {
-        swapAt = i;
-        break;
-      }
-    }
-    if (swapAt >= 0) chosen[swapAt] = best;
-    else chosen.push(best);
-  }
-
-  return { chosen, coreCount: core.length };
-}
+const sentence = (text: string) =>
+  text.length > 0 ? text[0].toLocaleUpperCase() + text.slice(1) : text;
 
 export function composeAtlasGeneration(input: AtlasComposeInput): AtlasGeneration {
-  const { answers, retrieval, copy, areaLabel, destinationLabel } = input;
-  const areaNames = answers.areas.map(areaLabel);
-  const { chosen, coreCount } = selectMap(retrieval, answers.areas);
+  const { narrative, retrieval, plan, copy, topicLabel, destinationLabel } = input;
+  const topicNames = narrative.topics.map(topicLabel);
+  const picked = [...plan.start, ...plan.more];
+  const listOf = (items: readonly string[]) => list(items, copy.and);
 
-  const compoundRationale = (candidate: AtlasCandidate) =>
-    [
-      fill(copy.compoundFiled, { areas: list(candidate.matchedAreas.map(areaLabel), copy.and) }),
-      candidate.world !== null ? copy.compoundFlagship : null,
-      candidate.documented ? copy.compoundDocumented : copy.compoundUndocumented,
-      candidate.withinBudget === true
-        ? copy.compoundWithinBudget
-        : candidate.withinBudget === false
-          ? copy.compoundOverBudget
-          : null,
-    ]
-      .filter((part): part is string => part !== null)
-      .join(" ");
+  const entries = retrieval.candidates
+    .map((c) => c.entryPrice)
+    .filter((n): n is number => n !== null)
+    .sort((a, b) => a - b);
+  const median = entries.length > 0 ? entries[Math.floor((entries.length - 1) / 2)] : null;
+
+  const why = (candidate: AtlasCandidate, list: "start" | "more") => {
+    const primary = candidate.matchedAreas[0];
+    const parts = [
+      candidate.inMind ? copy.why.inMind : null,
+      primary === undefined
+        ? copy.why.outside
+        : fill(primary === narrative.topics[0] ? copy.why.primary : copy.why.secondary, {
+            topic: topicLabel(primary),
+          }),
+      candidate.bridges
+        ? fill(copy.why.overlap, {
+            topics: listOf(candidate.matchedAreas.map(topicLabel)),
+          })
+        : null,
+      candidate.world !== null ? copy.why.signature : null,
+      narrative.priorities.includes("documentation")
+        ? candidate.documented
+          ? copy.why.documented
+          : copy.why.undocumented
+        : null,
+      narrative.priorities.includes("price") &&
+      median !== null &&
+      candidate.entryPrice !== null &&
+      candidate.entryPrice <= median
+        ? copy.why.value
+        : null,
+      candidate.withinBudget === true && list === "start" ? copy.why.fits : null,
+      candidate.withinBudget === false ? copy.why.over : null,
+      narrative.size !== "no-preference" && candidate.presentations > 1
+        ? copy.why.size[narrative.size]
+        : null,
+    ];
+    return parts.filter((p): p is string => p !== null).join(" ");
+  };
+  const reasons = [
+    copy.reasons.topics,
+    ...(narrative.inMind.length > 0 ? [copy.reasons.inMind] : []),
+    ...narrative.priorities.map((p) => copy.reasons.priorities[p]),
+    ...(narrative.budget !== "open" ? [copy.reasons.budget] : []),
+  ];
 
   const pathOrder: AtlasDestination["kind"][] = [
-    "area",
     "product",
-    "research-index",
+    "area",
     "quality-model",
     "catalogue",
+    "research-index",
   ];
-  const path = pathOrder
-    .map((kind) => retrieval.destinations.find((d) => d.kind === kind))
+  const leadSlug = plan.start[0]?.slug;
+  const nextSteps = pathOrder
+    .map((kind) =>
+      kind === "product"
+        ? (retrieval.destinations.find((d) => d.kind === "product" && d.ref === leadSlug) ??
+          retrieval.destinations.find((d) => d.kind === "product"))
+        : retrieval.destinations.find((d) => d.kind === kind),
+    )
     .filter((d): d is AtlasDestination => d !== undefined)
     .slice(0, 4)
     .map((destination) => ({
@@ -151,34 +169,57 @@ export function composeAtlasGeneration(input: AtlasComposeInput): AtlasGeneratio
       note: fill(copy.path[destination.kind], { label: destinationLabel(destination) }),
     }));
 
+  const tips = [
+    narrative.experience === "new" ? copy.tips.new : null,
+    narrative.intent === "compare" ? copy.tips.compare : null,
+    narrative.horizon === "over-time" ? copy.tips.overTime : null,
+    narrative.priorities.includes("documentation") ? copy.tips.documentation : null,
+    narrative.priorities.includes("price") ? copy.tips.price : null,
+    narrative.timing === "soon" ? copy.tips.soon : null,
+  ]
+    .filter((t): t is string => t !== null)
+    .slice(0, 3);
+
+  const names = (items: readonly AtlasCandidate[]) => listOf(items.map((c) => c.name));
+
   return {
-    title: fill(copy.title, { area: areaNames[0] ?? "" }),
-    summary: fill(copy.summary, {
-      areas: list(areaNames, copy.and),
-      pool: retrieval.poolSize,
-      count: chosen.length,
+    headline: fill(copy.headline[narrative.intent], {
+      topic: topicNames[0] ?? "",
+      topics: listOf(topicNames),
     }),
-    areas: retrieval.areas.map((stat) => {
-      const bridging = retrieval.candidates.filter(
-        (c) => c.bridges && c.matchedAreas.includes(stat.id),
-      ).length;
+    summary: fill(plan.more.length > 0 ? copy.summary : copy.summaryNoMore, {
+      start: names(plan.start),
+      more: plan.more.length,
+      reasons: listOf(reasons),
+    }),
+    aboutYou: sentence(
+      fill(copy.aboutYou, {
+        experience: copy.experience[narrative.experience],
+        intent: copy.intent[narrative.intent],
+        topics: listOf(topicNames),
+        budget: narrative.budget === "open" ? copy.budgetOpen : copy.budgetSet,
+        horizon: copy.horizon[narrative.horizon],
+      }),
+    ),
+    start: plan.start.map((c) => ({ slug: c.slug, why: why(c, "start") })),
+    more: [
+      ...plan.more.map((c) => ({ slug: c.slug, why: why(c, "more") })),
+      ...retrieval.supplies.map((c) => ({ slug: c.slug, why: copy.why.supply })),
+    ],
+    topics: retrieval.areas.map((stat) => {
+      const inResult = picked.filter((c) => c.matchedAreas.includes(stat.id)).length;
       return {
         areaId: stat.id,
-        rationale: [
-          fill(copy.area, { count: stat.compounds, area: areaLabel(stat.id) }),
-          bridging > 0 ? fill(copy.areaBridges, { count: bridging }) : null,
+        note: [
+          fill(copy.topic, { count: stat.compounds, topic: topicLabel(stat.id) }),
+          inResult > 0 ? fill(copy.topicPicked, { count: inResult }) : null,
         ]
-          .filter((part): part is string => part !== null)
+          .filter((p): p is string => p !== null)
           .join(" "),
       };
     }),
-    compounds: chosen.map((candidate, index) => ({
-      slug: candidate.slug,
-      role: index < coreCount ? ("core" as const) : ("complement" as const),
-      rationale: compoundRationale(candidate),
-    })),
-    path,
-    notes: [input.mode === "development" ? copy.noteDevelopment : copy.noteCatalogue],
+    nextSteps,
+    tips,
     contextMentionsHealth: false,
   };
 }

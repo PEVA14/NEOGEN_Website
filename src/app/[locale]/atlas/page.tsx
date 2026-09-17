@@ -1,10 +1,15 @@
 import { notFound } from "next/navigation";
 
-import { AtlasExperience, type AtlasAreaOption, type AtlasCopy } from "@/components/atlas";
+import {
+  AtlasExperience,
+  type AtlasAreaOption,
+  type AtlasCopy,
+  type AtlasProductOption,
+} from "@/components/atlas";
 import { routes } from "@/config/routes";
-import { isPublishable } from "@/data/catalog";
+import { isPublishable, publishedProducts } from "@/data/catalog";
 import { formatPrice, getPrices } from "@/data/commerce";
-import { productsInArea, publicAreas } from "@/data/discovery";
+import { productsInArea, publicAreas, publicAreasFor } from "@/data/discovery";
 import { isLocale, localeTags } from "@/i18n/config";
 import { getDictionary } from "@/i18n/getDictionary";
 import { alternates } from "@/lib/alternates";
@@ -31,11 +36,12 @@ export async function generateMetadata({
 }
 
 /**
- * NEOGEN ATLAS — a personal research map of the catalogue.
+ * NEOGEN ATLAS — the personal advisor.
  *
- * The page resolves only what the first step needs — each public area's name,
- * framing, compound count and entry price — and hands it to one client island
- * with the copy. Retrieval, generation and assembly all happen behind
+ * The page resolves only what the questionnaire needs — each public area's
+ * name, framing, product count and entry price, and the published product
+ * names for "products in mind" — and hands it to one client island with the
+ * copy. Retrieval, generation and assembly all happen behind
  * `POST /api/atlas`, so no catalogue, price map or model detail reaches the
  * browser here.
  */
@@ -72,10 +78,19 @@ export default async function AtlasPage({ params }: { params: Promise<{ locale: 
     };
   });
 
-  /* The composer's templates are server-side only; the browser never needs them. */
-  const copy = Object.fromEntries(
-    Object.entries(dict.atlas).filter(([key]) => key !== "compose"),
-  ) as AtlasCopy;
+  const productOptions: AtlasProductOption[] = publishedProducts
+    .map((product) => ({
+      slug: product.slug,
+      name: product.name,
+      areas: publicAreasFor(product.slug).map((area) => area.id),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, locale));
 
-  return <AtlasExperience locale={locale} areas={options} copy={copy} />;
+  /* The composer's templates are server-side only; the browser never needs them. */
+  const copy = {
+    ...Object.fromEntries(Object.entries(dict.atlas).filter(([key]) => key !== "compose")),
+    commerce: dict.commerceUi,
+  } as AtlasCopy;
+
+  return <AtlasExperience locale={locale} areas={options} products={productOptions} copy={copy} />;
 }

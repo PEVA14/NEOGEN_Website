@@ -2,7 +2,7 @@ import "server-only";
 
 import { referencesForProduct } from "@/content/research";
 import { publishedProducts } from "@/data/catalog";
-import { getPrices } from "@/data/commerce";
+import { getAvailability, getPrices } from "@/data/commerce";
 import { publicAreasFor } from "@/data/discovery";
 import { atlasSubjectsFrom, type AtlasSubject } from "@/domain/atlas";
 import { publicEvidenceIndex } from "@/domain/quality";
@@ -18,10 +18,15 @@ import { publicEvidenceIndex } from "@/domain/quality";
  * registries.
  */
 export async function atlasSubjects(): Promise<readonly AtlasSubject[]> {
-  const prices = await getPrices(publishedProducts.flatMap((p) => p.variants.map((v) => v.id)));
+  const variantIds = publishedProducts.flatMap((p) => p.variants.map((v) => v.id));
+  const [prices, availability] = await Promise.all([
+    getPrices(variantIds),
+    getAvailability(variantIds),
+  ]);
 
   return atlasSubjectsFrom(publishedProducts, {
     price: (variantId) => prices.get(variantId)?.amount ?? null,
+    availability: (variantId) => availability.get(variantId) ?? null,
     areas: (slug) => publicAreasFor(slug).map((area) => area.id),
     documented: (product) => publicEvidenceIndex([product]).length > 0,
     references: (slug) => referencesForProduct(slug).map((reference) => reference.id),

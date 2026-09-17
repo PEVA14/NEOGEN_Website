@@ -4,22 +4,25 @@ import { activeAdvisor } from "@/advisor";
 import { publishedProducts } from "@/data/catalog";
 import { publicAreas } from "@/data/discovery";
 import {
+  applyAtlasPolicy,
   atlasGenerationSchema,
   composeAtlasGeneration,
+  planAtlas,
   retrieveAtlas,
   validateAtlasGeneration,
-  type AtlasAnswers,
   type AtlasGeneration,
   type AtlasMode,
+  type AtlasProfile,
   type AtlasResultView,
   type AtlasValidationContext,
 } from "@/domain/atlas";
 import { relatedAreas } from "@/domain/discovery";
 import { publicEvidenceIndex } from "@/domain/quality";
 import { getDictionary } from "@/i18n/getDictionary";
+import { bagEnabled } from "@/payments";
 
 import { assembleAtlasView } from "./assemble";
-import { buildAtlasInput, ATLAS_SYSTEM } from "./prompt";
+import { ATLAS_SYSTEM, buildAtlasInput } from "./prompt";
 import { atlasSubjects } from "./subjects";
 
 import type { Locale } from "@/i18n/config";
@@ -27,20 +30,19 @@ import type { Locale } from "@/i18n/config";
 /**
  * ONE ATLAS REQUEST, END TO END.
  *
- *   answers  →  subjects (registries)  →  retrieval  →  generation
- *            →  validation (one correction, then fall back)  →  assembly
+ *   profile → POLICY → selection signals → retrieval → (model | plan)
+ *           → validation against the policy's constraints → assembly
  *
- * The retry budget is time-boxed: a second attempt is made only if the first
- * finished quickly enough for another to fit inside the route's limit, so a
- * slow provider degrades to the catalogue view rather than timing out.
+ * The profile is handed to the policy and to nothing else. The retry budget is
+ * time-boxed: a correction is attempted only if the first answer came back
+ * quickly enough for another to fit inside the route's limit.
  */
 
 const MAX_TOKENS = 16_000;
-/** Only retry after validation failed if the first attempt took less than this. */
 const RETRY_WITHIN_MS = 22_000;
 
 export async function generateAtlas(
-  answers: AtlasAnswers,
+  profile: AtlasProfile,
   locale: Locale,
 ): Promise<AtlasResultView> {
   const [dict, es, en, subjects] = await Promise.all([
@@ -50,20 +52,21 @@ export async function generateAtlas(
     atlasSubjects(),
   ]);
 
+  const decision = applyAtlasPolicy(profile);
   const publicEvidence = publicEvidenceIndex(publishedProducts).length > 0;
-  const retrieval = retrieveAtlas(answers, subjects, {
+  const retrieval = retrieveAtlas(decision.selection, subjects, {
     relatedAreas: (id) => relatedAreas(id).map((related) => related.area.id),
     publicEvidence,
   });
 
   const nameBySlug = new Map(publishedProducts.map((p) => [p.slug, p.name]));
   const productName = (slug: string) => nameBySlug.get(slug) ?? slug;
-  const areaLabel = (id: string) =>
+  const topicLabel = (id: string) =>
     dict.discovery.areas[id as keyof typeof dict.discovery.areas]?.short ?? id;
 
   const context: AtlasValidationContext = {
-    answers,
     retrieval,
+    constraints: decision.constraints,
     catalogue: publishedProducts.map((p) => ({ slug: p.slug, name: p.name })),
     approvedLabels: publicAreas().flatMap((area) => [
       es.discovery.areas[area.id].short,
@@ -73,19 +76,19 @@ export async function generateAtlas(
     ]),
   };
 
-  const compose = (mode: "development" | "catalogue") =>
+  const compose = () =>
     composeAtlasGeneration({
-      answers,
+      narrative: decision.narrative,
       retrieval,
-      areaLabel,
+      plan: planAtlas(retrieval, decision.constraints),
+      topicLabel,
       destinationLabel: (d) =>
         d.kind === "area"
-          ? areaLabel(d.ref)
+          ? topicLabel(d.ref)
           : d.kind === "product"
             ? productName(d.ref)
             : dict.atlas.destinations[d.kind],
       copy: dict.atlas.compose,
-      mode,
     });
 
   let generation: AtlasGeneration | null = null;
@@ -93,14 +96,19 @@ export async function generateAtlas(
 
   const advisor = activeAdvisor();
   if (retrieval.candidates.length === 0) {
-    /* Nothing matched — there is nothing to write about, and nothing to spend. */
     mode = "catalogue";
   } else if (advisor.isConfigured()) {
     const started = Date.now();
-    const input = buildAtlasInput({ answers, retrieval, locale, dict, productName });
     const request = {
       system: ATLAS_SYSTEM,
-      input,
+      input: buildAtlasInput({
+        narrative: decision.narrative,
+        constraints: decision.constraints,
+        retrieval,
+        locale,
+        dict,
+        productName,
+      }),
       schema: atlasGenerationSchema,
       maxTokens: MAX_TOKENS,
     };
@@ -128,7 +136,7 @@ export async function generateAtlas(
         advisor.id,
         second.ok ? second.usage : null,
         attempts,
-        issues.map((i) => i.code),
+        second.ok ? issues.map((i) => i.code) : [second.error.code],
       );
     }
     if (attempts === 1) {
@@ -148,23 +156,34 @@ export async function generateAtlas(
     generation =
       retrieval.candidates.length === 0
         ? {
-            title: "",
+            headline: "",
             summary: "",
-            areas: [],
-            compounds: [],
-            path: [],
-            notes: [],
+            aboutYou: "",
+            start: [],
+            more: [],
+            topics: [],
+            nextSteps: [],
+            tips: [],
             contextMentionsHealth: false,
           }
-        : compose(mode === "development" ? "development" : "catalogue");
+        : compose();
   }
 
-  return assembleAtlasView({ generation, mode, answers, retrieval, locale, dict, publicEvidence });
+  return assembleAtlasView({
+    generation,
+    mode,
+    decision,
+    retrieval,
+    locale,
+    dict,
+    publicEvidence,
+    bagEnabled: bagEnabled(),
+  });
 }
 
 /**
  * Cost and quality telemetry — token counts and issue CODES only. Never the
- * reader's note, never the model's text.
+ * visitor's answers, never the model's text.
  */
 function log(
   provider: string,

@@ -278,7 +278,7 @@
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-2xs);
 }
 
@@ -479,6 +479,62 @@
 
 /* --- Choices ------------------------------------------------------------- */
 
+.textInput {
+  display: block;
+  inline-size: 100%;
+  max-inline-size: 32rem;
+  min-block-size: 2.75rem;
+  margin-block-end: var(--space-sm);
+  padding: var(--space-xs) var(--space-md);
+  font: inherit;
+  font-size: var(--text-base);
+  color: var(--ink-primary);
+  background: var(--surface-base);
+  border: 1px solid var(--border-default);
+  border-radius: 0;
+}
+
+.textInput:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Products already chosen: filled chips that remove themselves. */
+.chosen {
+  list-style: none;
+  margin: 0 0 var(--space-sm);
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+}
+
+.chosenItem {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-block-size: 2.75rem;
+  padding-inline: var(--space-md);
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--surface-base);
+  background: var(--ink-primary);
+  border: 1px solid var(--ink-primary);
+  cursor: pointer;
+}
+
+.chosenItem:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.field .selection {
+  margin-block-end: var(--space-sm);
+}
+
 .field {
   margin: 0 0 var(--space-xl);
   padding: 0;
@@ -486,15 +542,20 @@
   min-inline-size: 0;
 }
 
+/*
+ * A QUESTION READS AS A QUESTION. Plain sentence case at reading size, so the
+ * questionnaire is answerable at a glance; the mono label register is kept for
+ * counts, hints and the progress rail.
+ */
 .legend {
   display: block;
   padding: 0;
   margin-block-end: var(--space-sm);
-  font-family: var(--font-mono);
-  font-size: var(--text-2xs);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  color: var(--ink-muted);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  line-height: var(--leading-snug);
+  color: var(--ink-primary);
+  text-wrap: balance;
 }
 
 .legendHint {
@@ -966,6 +1027,7 @@
   }
 
   .options[data-cols="2"],
+  .options[data-cols="3"],
   .options[data-cols="4"] {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -973,7 +1035,7 @@
 
 @media (min-width: 48rem) {
   .points {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .points li {
@@ -996,6 +1058,10 @@
   .areaGrid,
   .options[data-cols="4"] {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .options[data-cols="3"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .generatingGrid {
@@ -1025,6 +1091,15 @@
   .areaTile {
     min-block-size: 0;
     padding: var(--space-sm) var(--space-sm) var(--space-xs);
+  }
+
+  .legend {
+    font-size: var(--text-lg);
+  }
+
+  /* Four steps across a phone: only the current step keeps its name. */
+  .rail li:not([aria-current]) .railName {
+    display: none;
   }
 
   .areaRank {

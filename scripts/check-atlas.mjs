@@ -3,31 +3,35 @@
  *
  * What this gate guarantees, each with a negative control so it can fail:
  *
- *   ANSWERS     the questionnaire parser rejects out-of-vocabulary input, and
- *               drops a note carrying personal or health detail before it can
- *               reach a model — without dropping ordinary text like "pesos".
- *   RETRIEVAL   every candidate belongs to the reader's areas and respects the
- *               form filter, each chosen area keeps its floor, and four
- *               substantially different real profiles retrieve DIFFERENT maps.
- *   FALLBACK    the no-model composition passes the validator, in both locales,
- *               for every profile — so the degraded result is itself valid.
- *   VALIDATION  invented slugs, claims, strengths, prices, dosing vocabulary,
- *               compounds outside the candidate set and unknown destinations
- *               are all refused; owner-approved area names are not.
+ *   PROFILE       the questionnaire parser rejects out-of-vocabulary input.
+ *   POLICY        is granular: a health note is withheld without weakening any
+ *                 other answer; the name never reaches the model; presentation-
+ *                 only answers cannot move selection, and selection answers do.
+ *   ISOLATION     nothing downstream of the policy reads the profile.
+ *   RETRIEVAL     candidates follow the signals (topics, forms, named products,
+ *                 floors) and four substantially different real profiles
+ *                 retrieve DIFFERENT products.
+ *   PLAN          the no-model result validates in both locales, keeps "start
+ *                 here" inside the budget, includes named products and covers
+ *                 topics when the policy asks.
+ *   VALIDATION    invented slugs, broken constraints, claims, suitability to a
+ *                 person, figures, dosing vocabulary, unlisted products and
+ *                 unknown destinations are refused; approved names are not.
+ *   ADAPTER       the Anthropic request shape and every failure mode, offline.
  */
 
-import { parseAtlasAnswers } from "../src/domain/atlas/answers.ts";
-import {
-  ATLAS_CANDIDATE_LIMIT,
-  ATLAS_PER_AREA_FLOOR,
-  retrieveAtlas,
-} from "../src/domain/atlas/retrieval.ts";
+import { readFileSync } from "node:fs";
+
+import { parseAtlasProfile } from "../src/domain/atlas/profile.ts";
+import { applyAtlasPolicy } from "../src/domain/atlas/policy.ts";
+import { ATLAS_CANDIDATE_LIMIT, retrieveAtlas } from "../src/domain/atlas/retrieval.ts";
+import { effectiveStart, planAtlas } from "../src/domain/atlas/plan.ts";
 import { atlasSubjectsFrom } from "../src/domain/atlas/subjects.ts";
 import { composeAtlasGeneration } from "../src/domain/atlas/compose.ts";
 import { validateAtlasGeneration } from "../src/domain/atlas/validate.ts";
 import { referencesForProduct } from "../src/content/research.ts";
 import { publishedProducts } from "../src/data/catalog/index.ts";
-import { getPrices } from "../src/data/commerce/index.ts";
+import { getAvailability, getPrices } from "../src/data/commerce/index.ts";
 import { publicAreas, publicAreasFor } from "../src/data/discovery/index.ts";
 import { relatedAreas } from "../src/domain/discovery/index.ts";
 import { publicEvidenceIndex } from "../src/domain/quality/index.ts";
@@ -38,38 +42,63 @@ const failures = [];
 const check = (condition, what, detail = "") => {
   if (!condition) failures.push(`${what}${detail ? `: ${detail}` : ""}`);
 };
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
-const areaIds = publicAreas().map((a) => a.id);
+const vocabulary = {
+  topics: publicAreas().map((a) => a.id),
+  products: publishedProducts.map((p) => p.slug),
+};
 const raw = (overrides) => ({
-  areas: ["metabolic"],
-  depth: "orientation",
-  focus: [],
+  topics: ["metabolic"],
+  intent: "first-order",
+  inMind: [],
+  firstName: "",
+  experience: "some",
+  history: "first-time",
+  priorities: [],
+  style: "direct",
   forms: [],
-  includeMaterials: false,
+  size: "no-preference",
+  includeSupplies: false,
   budget: "open",
-  context: "",
+  horizon: "one-order",
+  timing: "no-rush",
+  note: "",
   ...overrides,
 });
+const profileOf = (overrides) => {
+  const parsed = parseAtlasProfile(raw(overrides), vocabulary);
+  if (!parsed.ok) throw new Error(`fixture does not parse: ${parsed.issues.join("; ")}`);
+  return parsed.profile;
+};
 
-/* ---- answers ------------------------------------------------------------ */
+/* ---- profile ------------------------------------------------------------- */
 {
-  const ok = parseAtlasAnswers(raw({}), areaIds);
-  check(ok.ok, "a valid questionnaire parses");
-
+  check(parseAtlasProfile(raw({}), vocabulary).ok, "a valid questionnaire parses");
   for (const [label, input] of [
-    ["unknown area", raw({ areas: ["astrology"] })],
-    ["four areas", raw({ areas: areaIds.slice(0, 4) })],
-    ["repeated area", raw({ areas: ["metabolic", "metabolic"] })],
-    ["no area", raw({ areas: [] })],
-    ["unknown focus", raw({ focus: ["popularity"] })],
-    ["three focus values", raw({ focus: ["documentation", "flagships", "value"] })],
+    ["unknown topic", raw({ topics: ["astrology"] })],
+    ["four topics", raw({ topics: vocabulary.topics.slice(0, 4) })],
+    ["repeated topic", raw({ topics: ["metabolic", "metabolic"] })],
+    ["no topic", raw({ topics: [] })],
+    ["unknown intent", raw({ intent: "dose" })],
+    ["unknown product in mind", raw({ inMind: ["invented-compound"] })],
+    ["four products in mind", raw({ inMind: vocabulary.products.slice(0, 4) })],
+    ["three priorities", raw({ priorities: ["documentation", "price", "signature"] })],
     ["unknown form", raw({ forms: ["capsule"] })],
+    ["unknown size", raw({ size: "huge" })],
     ["unknown budget", raw({ budget: "unlimited" })],
-    ["non-boolean materials", raw({ includeMaterials: "yes" })],
+    ["non-boolean supplies", raw({ includeSupplies: "yes" })],
+    ["a non-string name", raw({ firstName: 42 })],
     ["body not an object", null],
   ]) {
-    check(!parseAtlasAnswers(input, areaIds).ok, `the parser rejects ${label}`);
+    check(!parseAtlasProfile(input, vocabulary).ok, `the parser rejects ${label}`);
   }
+}
+
+/* ---- policy: granular, and the name stays on the page --------------------- */
+{
+  const base = profileOf({ topics: ["skin"], budget: "20k", priorities: ["price"] });
+  const baseDecision = applyAtlasPolicy(base);
 
   for (const note of [
     "Tengo diabetes y tomo metformina",
@@ -78,31 +107,127 @@ const raw = (overrides) => ({
     "Peso 92 kg y quiero bajar de peso",
     "for personal use before the gym",
   ]) {
-    const parsed = parseAtlasAnswers(raw({ context: note }), areaIds);
+    const decision = applyAtlasPolicy({ ...base, note });
+    const entry = decision.ledger.find((e) => e.field === "note");
     check(
-      parsed.ok && parsed.answers.context === "" && parsed.answers.contextScreened,
-      "a note with personal or health detail is dropped before generation",
+      decision.noteDiscarded && decision.narrative.note === null,
+      "a note with health detail is withheld from the model",
+      note,
+    );
+    check(
+      entry?.withheld === "health-note" && entry.uses.length === 0,
+      "the ledger records the withheld note",
+      note,
+    );
+    check(
+      same(decision.selection, baseDecision.selection) &&
+        same(decision.constraints, baseDecision.constraints) &&
+        same({ ...decision.narrative, note: null }, { ...baseDecision.narrative, note: null }),
+      "withholding a note weakens nothing else (granular, not global)",
       note,
     );
   }
   for (const note of [
-    "Comparo compuestos de dos áreas para un proyecto de laboratorio",
+    "Quiero empezar con algo de la línea insignia y seguir después",
+    "Quiero empezar con la línea insignia y dejar lo demás para mi siguiente pedido.",
+    "Me interesa comparar precios antes de mi primera compra",
     "Tengo un presupuesto de 20 mil pesos para el trimestre",
-    "Building a reference shelf for our lab",
+    "I'd like to build a set across two topics over a few orders",
   ]) {
-    const parsed = parseAtlasAnswers(raw({ context: note }), areaIds);
+    const decision = applyAtlasPolicy({ ...base, note });
     check(
-      parsed.ok && parsed.answers.context === note && !parsed.answers.contextScreened,
-      "an ordinary research note is kept (negative control)",
+      !decision.noteDiscarded && decision.narrative.note === note,
+      "an ordinary note reaches the model (negative control)",
       note,
+    );
+  }
+
+  const named = applyAtlasPolicy({ ...base, firstName: "Mariana" });
+  check(
+    !JSON.stringify(named.narrative).includes("Mariana") &&
+      !JSON.stringify(named.selection).includes("Mariana"),
+    "the name never reaches the model or selection",
+  );
+  check(named.presentation.firstName === "Mariana", "the name personalises the page");
+  check(
+    named.ledger.find((e) => e.field === "firstName")?.withheld === "name-private",
+    "the ledger says the name stays private",
+  );
+
+  /* Presentation-only answers cannot move selection… */
+  for (const [label, patch] of [
+    ["name", { firstName: "Mariana" }],
+    ["history", { history: "returning" }],
+    ["style", { style: "detailed" }],
+  ]) {
+    const decision = applyAtlasPolicy({ ...base, ...patch });
+    check(
+      same(decision.selection, baseDecision.selection) &&
+        same(decision.constraints, baseDecision.constraints),
+      "a presentation-only answer does not change selection",
+      label,
+    );
+  }
+  /* …and selection answers do. */
+  for (const [label, patch] of [
+    ["intent", { intent: "compare" }],
+    ["experience", { experience: "new" }],
+    ["priorities", { priorities: ["documentation"] }],
+    ["size", { size: "largest" }],
+    ["budget", { budget: "8k" }],
+    ["horizon", { horizon: "over-time" }],
+    ["timing", { timing: "soon" }],
+    ["products in mind", { inMind: [vocabulary.products[0]] }],
+  ]) {
+    const decision = applyAtlasPolicy({ ...base, ...patch });
+    check(
+      !same(decision.selection, baseDecision.selection) ||
+        !same(decision.constraints, baseDecision.constraints),
+      "a selection answer changes selection or constraints",
+      label,
     );
   }
 }
 
-/* ---- retrieval, against the live catalogue ------------------------------- */
-const prices = await getPrices(publishedProducts.flatMap((p) => p.variants.map((v) => v.id)));
+/* ---- isolation: nothing downstream reads the profile ---------------------- */
+for (const file of [
+  "src/domain/atlas/retrieval.ts",
+  "src/domain/atlas/plan.ts",
+  "src/domain/atlas/compose.ts",
+  "src/domain/atlas/validate.ts",
+  "src/server/atlas/prompt.ts",
+  "src/server/atlas/assemble.ts",
+  "src/components/atlas/AtlasResult.tsx",
+  "src/components/atlas/AtlasMap.tsx",
+]) {
+  const source = readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
+  check(
+    !/\bAtlasProfile\b|parseAtlasProfile|from "\.\/profile"/.test(source),
+    "only the policy (and the request entry points) read the profile",
+    file,
+  );
+}
+for (const file of [
+  "src/components/atlas/AtlasExperience.tsx",
+  "src/components/atlas/AtlasResult.tsx",
+]) {
+  const source = readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
+  check(
+    !/domain\/atlas\/(policy|retrieval|plan|validate|compose)/.test(source),
+    "the UI contains no recommendation rule",
+    file,
+  );
+}
+
+/* ---- retrieval, against the live catalogue -------------------------------- */
+const variantIds = publishedProducts.flatMap((p) => p.variants.map((v) => v.id));
+const [prices, availability] = await Promise.all([
+  getPrices(variantIds),
+  getAvailability(variantIds),
+]);
 const subjects = atlasSubjectsFrom(publishedProducts, {
   price: (id) => prices.get(id)?.amount ?? null,
+  availability: (id) => availability.get(id) ?? null,
   areas: (slug) => publicAreasFor(slug).map((a) => a.id),
   documented: (product) => publicEvidenceIndex([product]).length > 0,
   references: (slug) => referencesForProduct(slug).map((r) => r.id),
@@ -110,79 +235,106 @@ const subjects = atlasSubjectsFrom(publishedProducts, {
 const publicEvidence = publicEvidenceIndex(publishedProducts).length > 0;
 const deps = { relatedAreas: (id) => relatedAreas(id).map((r) => r.area.id), publicEvidence };
 
+const outsideSkin = subjects.find(
+  (s) => !s.areas.includes("longevity") && !s.areas.includes("metabolic") && s.entryPrice !== null,
+);
+
 const PROFILES = {
-  metabolicFlagships: raw({ areas: ["metabolic"], depth: "detail", focus: ["flagships"] }),
-  skinNeuroValue: raw({
-    areas: ["skin", "neuro"],
-    focus: ["bridges", "value"],
-    forms: ["solid"],
+  firstOrderNewcomer: profileOf({
+    topics: ["metabolic"],
+    intent: "first-order",
+    experience: "new",
+    priorities: ["signature"],
+    size: "smallest",
     budget: "8k",
   }),
-  recoveryGrowthHormonal: raw({
-    areas: ["recovery", "growth", "hormonal"],
-    focus: ["documentation"],
-    includeMaterials: true,
-    budget: "40k",
-  }),
-  longevityMetabolicValue: raw({
-    areas: ["longevity", "metabolic"],
-    depth: "detail",
-    focus: ["value"],
+  compareSkinValue: profileOf({
+    topics: ["skin", "neuro"],
+    intent: "compare",
+    priorities: ["price"],
     forms: ["solid"],
     budget: "20k",
   }),
+  coverTopicsExperienced: profileOf({
+    topics: ["recovery", "growth", "hormonal"],
+    intent: "cover-topics",
+    experience: "experienced",
+    priorities: ["documentation", "overlap"],
+    size: "largest",
+    includeSupplies: true,
+    budget: "40k",
+    horizon: "over-time",
+  }),
+  deepenWithProductInMind: profileOf({
+    topics: ["longevity", "metabolic"],
+    intent: "deepen",
+    inMind: outsideSkin ? [outsideSkin.slug] : [],
+    timing: "soon",
+    style: "detailed",
+  }),
 };
 
-const maps = {};
-for (const [name, input] of Object.entries(PROFILES)) {
-  const parsed = parseAtlasAnswers(input, areaIds);
-  check(parsed.ok, "every test profile parses", name);
-  if (!parsed.ok) continue;
-  const answers = parsed.answers;
-  const retrieval = retrieveAtlas(answers, subjects, deps);
-  maps[name] = { answers, retrieval };
+const runs = {};
+for (const [name, profile] of Object.entries(PROFILES)) {
+  const decision = applyAtlasPolicy(profile);
+  const retrieval = retrieveAtlas(decision.selection, subjects, deps);
+  const plan = planAtlas(retrieval, decision.constraints);
+  runs[name] = { profile, decision, retrieval, plan };
+  const { selection } = decision;
 
   check(retrieval.candidates.length > 0, "a real profile retrieves candidates", name);
   check(
-    retrieval.candidates.length <= ATLAS_CANDIDATE_LIMIT,
+    retrieval.candidates.length <= ATLAS_CANDIDATE_LIMIT + selection.inMind.length,
     "retrieval respects the candidate limit",
     `${name}: ${retrieval.candidates.length}`,
   );
   for (const c of retrieval.candidates) {
     check(
-      c.matchedAreas.length > 0 && c.matchedAreas.every((a) => answers.areas.includes(a)),
-      "every candidate is filed under a chosen area",
+      c.inMind ||
+        (c.matchedAreas.length > 0 && c.matchedAreas.every((a) => selection.topics.includes(a))),
+      "every candidate is in a chosen topic or was named",
       `${name}: ${c.slug}`,
     );
-    if (answers.forms.length > 0) {
+    if (selection.forms.length > 0 && !c.inMind) {
       check(
-        c.forms.some((f) => answers.forms.includes(f)),
-        "every candidate respects the form filter",
+        c.forms.some((f) => selection.forms.includes(f)),
+        "candidates respect the format filter",
         `${name}: ${c.slug}`,
       );
     }
+    if (
+      selection.budgetCap !== null &&
+      c.suggestedPrice !== null &&
+      selection.variant === "largest-within-budget"
+    ) {
+      const entry = c.entryPrice ?? 0;
+      check(
+        c.suggestedPrice >= entry &&
+          (c.suggestedPrice <= selection.budgetCap || c.suggestedPrice === entry),
+        "the largest-within-budget presentation is chosen",
+        `${name}: ${c.slug}`,
+      );
+    }
+    if (selection.variant === "entry") {
+      check(
+        c.suggestedPrice === c.entryPrice,
+        "the entry presentation is suggested by default",
+        `${name}: ${c.slug}`,
+      );
+    }
+  }
+  for (const slug of selection.inMind) {
     check(
-      answers.budget === "open" ? c.withinBudget === null : typeof c.withinBudget === "boolean",
-      "budget fit is null with no cap and boolean with one",
-      `${name}: ${c.slug}`,
+      retrieval.candidates.some((c) => c.slug === slug),
+      "a named product is always retrieved",
+      `${name}: ${slug}`,
     );
   }
-  for (const area of answers.areas) {
-    const available = subjects.filter(
-      (s) =>
-        s.areas.includes(area) &&
-        (answers.forms.length === 0 || s.forms.some((f) => answers.forms.includes(f))),
-    ).length;
-    const held = retrieval.candidates.filter((c) => c.matchedAreas.includes(area)).length;
+  for (const topic of selection.topics) {
     check(
-      held >= Math.min(ATLAS_PER_AREA_FLOOR, available),
-      "each chosen area keeps its floor of candidates",
-      `${name}: ${area} ${held}/${available}`,
-    );
-    check(
-      retrieval.destinations.some((d) => d.id === `area:${area}`),
-      "each chosen area is a path destination",
-      `${name}: ${area}`,
+      retrieval.destinations.some((d) => d.id === `area:${topic}`),
+      "each topic is a destination",
+      `${name}: ${topic}`,
     );
   }
   check(
@@ -192,39 +344,20 @@ for (const [name, input] of Object.entries(PROFILES)) {
   );
 }
 
-/* Flagship focus leads with a flagship when the pool has one. */
-{
-  const { retrieval } = maps.metabolicFlagships;
-  const poolHasFlagship = subjects.some((s) => s.world !== null && s.areas.includes("metabolic"));
-  check(
-    !poolHasFlagship || retrieval.candidates[0]?.world !== null,
-    "flagship focus puts a flagship first",
-    retrieval.candidates[0]?.slug,
-  );
-}
+check(
+  runs.coverTopicsExperienced.retrieval.supplies.length > 0 &&
+    runs.firstOrderNewcomer.retrieval.supplies.length === 0,
+  "supplies appear only when requested",
+);
+check(
+  runs.coverTopicsExperienced.retrieval.candidates.some((c) => c.suggestedPrice !== c.entryPrice),
+  "a largest-size preference changes a suggested presentation",
+);
 
-/* Materials are offered separately, and only when asked for. */
+/* DIFFERENT VISITORS, DIFFERENT PRODUCTS — the property the feature exists for. */
 {
-  const materialsExist = subjects.some((s) => s.areas.includes("materials"));
-  const { retrieval } = maps.recoveryGrowthHormonal;
-  check(
-    !materialsExist || retrieval.materials.length > 0,
-    "requested laboratory materials are offered",
-  );
-  check(
-    retrieval.materials.every((m) => !retrieval.candidates.some((c) => c.slug === m.slug)),
-    "materials never duplicate a candidate",
-  );
-  check(
-    maps.metabolicFlagships.retrieval.materials.length === 0,
-    "materials are absent unless requested",
-  );
-}
-
-/* DIFFERENT READERS, DIFFERENT MAPS — the property the feature exists for. */
-{
-  const names = Object.keys(maps);
-  const slugs = (name) => new Set(maps[name].retrieval.candidates.map((c) => c.slug));
+  const names = Object.keys(runs);
+  const slugs = (name) => new Set(runs[name].retrieval.candidates.map((c) => c.slug));
   for (let i = 0; i < names.length; i += 1) {
     for (let j = i + 1; j < names.length; j += 1) {
       const a = slugs(names[i]);
@@ -233,14 +366,39 @@ for (const [name, input] of Object.entries(PROFILES)) {
       const jaccard = shared / new Set([...a, ...b]).size;
       check(
         jaccard < 0.6,
-        "substantially different profiles retrieve substantially different compounds",
+        "substantially different profiles retrieve different products",
         `${names[i]} × ${names[j]}: ${jaccard.toFixed(2)}`,
       );
     }
   }
 }
 
-/* ---- the no-model composition is valid, everywhere ----------------------- */
+/* Same topics, different goal → a different plan. */
+{
+  const topics = ["metabolic", "skin"];
+  const planFor = (overrides) => {
+    const decision = applyAtlasPolicy(profileOf({ topics, budget: "20k", ...overrides }));
+    const retrieval = retrieveAtlas(decision.selection, subjects, deps);
+    const plan = planAtlas(retrieval, decision.constraints);
+    return [plan.start.map((c) => c.slug), plan.more.map((c) => c.slug)];
+  };
+  const first = planFor({ intent: "first-order", experience: "new" });
+  const compare = planFor({ intent: "compare", experience: "experienced" });
+  const documented = planFor({
+    intent: "first-order",
+    experience: "new",
+    priorities: ["documentation"],
+    size: "largest",
+  });
+  check(!same(first, compare), "the same topics with a different goal give a different plan");
+  check(first[0].length <= 2, "a newcomer's first order starts small", first[0].join(","));
+  check(
+    !same(first, documented) || publicEvidence === false,
+    "priorities change the plan when documentation exists",
+  );
+}
+
+/* ---- the no-model result is valid, everywhere ------------------------------ */
 const approvedLabels = publicAreas().flatMap((a) => [
   es.discovery.areas[a.id].short,
   es.discovery.areas[a.id].title,
@@ -250,12 +408,13 @@ const approvedLabels = publicAreas().flatMap((a) => [
 const catalogue = publishedProducts.map((p) => ({ slug: p.slug, name: p.name }));
 const nameOf = new Map(publishedProducts.map((p) => [p.slug, p.name]));
 
-function composeFor(name, dict, mode = "development") {
-  const { answers, retrieval } = maps[name];
+function composeFor(name, dict) {
+  const { decision, retrieval, plan } = runs[name];
   return composeAtlasGeneration({
-    answers,
+    narrative: decision.narrative,
     retrieval,
-    areaLabel: (id) => dict.discovery.areas[id].short,
+    plan,
+    topicLabel: (id) => dict.discovery.areas[id].short,
     destinationLabel: (d) =>
       d.kind === "area"
         ? dict.discovery.areas[d.ref].short
@@ -263,84 +422,78 @@ function composeFor(name, dict, mode = "development") {
           ? nameOf.get(d.ref)
           : dict.atlas.destinations[d.kind],
     copy: dict.atlas.compose,
-    mode,
   });
 }
-const contextFor = (name) => ({ ...maps[name], catalogue, approvedLabels });
+const contextFor = (name) => ({
+  retrieval: runs[name].retrieval,
+  constraints: runs[name].decision.constraints,
+  catalogue,
+  approvedLabels,
+});
 
-const composedCompounds = {};
-for (const name of Object.keys(maps)) {
+const composedStarts = {};
+for (const name of Object.keys(runs)) {
   for (const [locale, dict] of [
     ["es", es],
     ["en", en],
   ]) {
-    for (const mode of ["development", "catalogue"]) {
-      const generation = composeFor(name, dict, mode);
-      const issues = validateAtlasGeneration(generation, contextFor(name));
-      check(
-        issues.length === 0,
-        "the composed map passes the validator",
-        `${name}/${locale}/${mode}: ${issues.map((i) => `${i.path} ${i.code} ${i.detail}`).join("; ")}`,
+    const generation = composeFor(name, dict);
+    const issues = validateAtlasGeneration(generation, contextFor(name));
+    check(
+      issues.length === 0,
+      "the composed result passes the validator",
+      `${name}/${locale}: ${issues.map((i) => `${i.path} ${i.code} ${i.detail}`).join("; ")}`,
+    );
+    if (locale === "es")
+      composedStarts[name] = JSON.stringify(
+        [generation.start, generation.more].map((l) => l.map((p) => p.slug)),
       );
-      if (locale === "es" && mode === "development") {
-        composedCompounds[name] = generation.compounds.map((c) => c.slug).join(",");
-      }
-    }
+  }
+
+  const { retrieval, decision, plan } = runs[name];
+  const cap = retrieval.budgetCap;
+  const { enforceBudget } = effectiveStart(retrieval, decision.constraints);
+  if (cap !== null && enforceBudget) {
+    const total = plan.start.reduce((sum, c) => sum + (c.suggestedPrice ?? 0), 0);
+    check(total <= cap, "the plan's start set fits the cap together", `${name}: ${total} > ${cap}`);
+  }
+  for (const c of retrieval.candidates.filter((c) => c.inMind)) {
+    check(
+      [...plan.start, ...plan.more].includes(c),
+      "the plan includes named products",
+      `${name}: ${c.slug}`,
+    );
   }
 }
 check(
-  new Set(Object.values(composedCompounds)).size === Object.keys(composedCompounds).length,
-  "different profiles produce different composed maps",
+  new Set(Object.values(composedStarts)).size === Object.keys(composedStarts).length,
+  "different profiles produce different results",
 );
 
-/* A composed map keeps its core inside the reader's cap, and gives every area a place. */
-for (const name of Object.keys(maps)) {
-  const { answers, retrieval } = maps[name];
-  const generation = composeFor(name, es);
-  const bySlug = new Map(retrieval.candidates.map((c) => [c.slug, c]));
-  const core = generation.compounds.filter((c) => c.role === "core").map((c) => bySlug.get(c.slug));
-  const cap = retrieval.budgetCap;
-  const anyFits =
-    cap !== null && retrieval.candidates.some((c) => c.entryPrice !== null && c.entryPrice <= cap);
-  if (cap !== null && anyFits) {
-    const total = core.reduce((sum, c) => sum + (c?.entryPrice ?? 0), 0);
-    check(
-      total <= cap,
-      "the composed core fits inside the reader's cap together",
-      `${name}: ${total} > ${cap}`,
-    );
-  }
-  for (const area of answers.areas) {
-    const hasCandidate = retrieval.candidates.some((c) => c.matchedAreas.includes(area));
-    const onMap = generation.compounds.some((c) => bySlug.get(c.slug)?.matchedAreas.includes(area));
-    check(
-      !hasCandidate || onMap,
-      "every chosen area with a candidate appears on the composed map",
-      `${name}: ${area}`,
-    );
-  }
-}
-
-/* ---- validation refuses what a model must not write ---------------------- */
+/* ---- validation refuses what a model must not write ------------------------ */
+const exercised = new Set();
 {
-  const name = "metabolicFlagships";
+  const name = "coverTopicsExperienced";
   const base = composeFor(name, es);
   const ctx = contextFor(name);
+  const { retrieval } = runs[name];
   const outside = publishedProducts.find(
     (p) =>
-      !maps[name].retrieval.candidates.some((c) => c.slug === p.slug) &&
+      !retrieval.candidates.some((c) => c.slug === p.slug) &&
+      !retrieval.supplies.some((c) => c.slug === p.slug) &&
       p.name.length >= 5 &&
       !/\d/.test(p.name),
   );
 
   const clone = () => JSON.parse(JSON.stringify(base));
-  const withRationale = (text) => {
+  const withWhy = (text) => {
     const g = clone();
-    g.compounds[0].rationale = text;
+    g.start[0].why = text;
     return g;
   };
-  const expect = (generation, code, label) => {
-    const issues = validateAtlasGeneration(generation, ctx);
+  const expect = (generation, code, label, context = ctx) => {
+    exercised.add(code);
+    const issues = validateAtlasGeneration(generation, context);
     check(
       issues.some((i) => i.code === code),
       `the validator refuses ${label}`,
@@ -350,68 +503,123 @@ for (const name of Object.keys(maps)) {
 
   {
     const g = clone();
-    g.compounds[0].slug = "invented-compound";
+    g.start[0].slug = "invented-compound";
     expect(g, "unknown_slug", "a slug outside the candidates");
   }
   {
     const g = clone();
-    g.compounds[1].slug = g.compounds[0].slug;
-    expect(g, "duplicate", "a repeated compound");
+    g.more.push({ slug: g.start[0].slug, why: "Otra vez." });
+    expect(g, "duplicate", "a repeated product");
   }
   {
     const g = clone();
-    g.compounds = g.compounds.slice(0, 1);
-    expect(g, "count", "too few compounds");
-  }
-  expect(withRationale("Ayuda a reducir el apetito."), "claim", "an effect claim (es)");
-  expect(withRationale("Known to boost recovery."), "claim", "an effect claim (en)");
-  expect(
-    withRationale("La presentación de 10 mg es la más común."),
-    "invented_figure",
-    "a strength",
-  );
-  expect(
-    withRationale("Cuesta $4,000 en su presentación de entrada."),
-    "invented_figure",
-    "a price",
-  );
-  expect(withRationale("Pureza del 99% verificada."), "invented_figure", "a percentage");
-  expect(
-    withRationale("Revisa la dosis semanal recomendada."),
-    "forbidden_term",
-    "dosing vocabulary",
-  );
-  if (outside) {
-    expect(
-      withRationale(`Se compara con ${outside.name}.`),
-      "unlisted_product",
-      "a compound outside the candidates",
+    const extra = retrieval.candidates.filter(
+      (c) => ![...g.start, ...g.more].some((p) => p.slug === c.slug),
     );
+    g.start = [
+      ...g.start,
+      ...extra.slice(0, 4).map((c) => ({ slug: c.slug, why: "Está en tus temas." })),
+    ];
+    expect(g, "count", "too many start products");
   }
   {
     const g = clone();
-    g.path[0].destinationId = "area:astrology";
+    const supply = retrieval.supplies[0];
+    if (supply) {
+      g.start.push({ slug: supply.slug, why: "Insumo." });
+      expect(g, "misplaced_supply", "a supply in start");
+    }
+  }
+  {
+    const g = clone();
+    g.start = [...retrieval.candidates]
+      .sort((a, b) => (b.suggestedPrice ?? 0) - (a.suggestedPrice ?? 0))
+      .slice(0, 3)
+      .map((c) => ({ slug: c.slug, why: "Está en tus temas." }));
+    g.more = g.more.filter((p) => !g.start.some((s) => s.slug === p.slug));
+    const sum = g.start.reduce(
+      (t, p) => t + (retrieval.candidates.find((c) => c.slug === p.slug)?.suggestedPrice ?? 0),
+      0,
+    );
+    if (sum > retrieval.budgetCap) expect(g, "over_budget", "a start set over the cap");
+  }
+  {
+    const inMindName = "deepenWithProductInMind";
+    const named = runs[inMindName].retrieval.candidates.find((c) => c.inMind);
+    if (named) {
+      const g = composeFor(inMindName, es);
+      g.start = g.start.filter((p) => p.slug !== named.slug);
+      g.more = g.more.filter((p) => p.slug !== named.slug);
+      expect(g, "missing_in_mind", "a result that drops a named product", contextFor(inMindName));
+    }
+  }
+  {
+    const g = clone();
+    const topic = retrieval.areas[2].id;
+    const keep = (p) =>
+      !retrieval.candidates.find((c) => c.slug === p.slug)?.matchedAreas.includes(topic);
+    g.start = g.start.filter(keep);
+    g.more = g.more.filter(keep);
+    if (g.start.length > 0) expect(g, "missing_topic", "a result that drops a chosen topic");
+  }
+  expect(withWhy("Ayuda a reducir el apetito."), "claim", "an effect claim (es)");
+  expect(withWhy("Known to boost recovery."), "claim", "an effect claim (en)");
+  expect(withWhy("Es ideal para tu cuerpo y tu salud."), "claim", "suitability to a person (es)");
+  expect(withWhy("A good match for your body."), "claim", "suitability to a person (en)");
+  expect(withWhy("La presentación de 10 mg es la más común."), "invented_figure", "a strength");
+  expect(withWhy("Cuesta $4,000 en su presentación de entrada."), "invented_figure", "a price");
+  expect(withWhy("Entra en tus 20 mil de presupuesto."), "invented_figure", "a budget figure");
+  expect(withWhy("Pureza del 99% verificada."), "invented_figure", "a percentage");
+  expect(withWhy("Revisa la dosis semanal recomendada."), "forbidden_term", "dosing vocabulary");
+  if (outside)
+    expect(
+      withWhy(`Se compara con ${outside.name}.`),
+      "unlisted_product",
+      "a product outside the candidates",
+    );
+  {
+    const g = clone();
+    g.nextSteps[0].destinationId = "area:astrology";
     expect(g, "unknown_destination", "a destination that does not exist");
   }
   {
     const g = clone();
-    g.areas = [];
-    expect(g, "missing_area", "a map that drops a chosen area");
+    g.topics = [];
+    expect(g, "missing_area", "a result that drops a topic note");
   }
   {
     const g = clone();
-    g.title = "x".repeat(200);
-    expect(g, "length", "an overlong title");
+    g.headline = "x".repeat(200);
+    expect(g, "length", "an overlong headline");
   }
 
-  /* Negative control: approved area names are not claims. */
-  const approved = withRationale(
-    "Archivado en Desarrollo y rendimiento, junto a Growth & Performance y Longevidad y función celular.",
+  /* Every conditional control must actually have run against these fixtures. */
+  for (const code of [
+    "unknown_slug",
+    "duplicate",
+    "count",
+    "misplaced_supply",
+    "over_budget",
+    "missing_in_mind",
+    "missing_topic",
+    "claim",
+    "invented_figure",
+    "forbidden_term",
+    "unlisted_product",
+    "unknown_destination",
+    "missing_area",
+    "length",
+  ]) {
+    check(exercised.has(code), "every validator control is exercised by the fixtures", code);
+  }
+
+  const approved = withWhy(
+    "Está en Desarrollo y rendimiento, junto a Growth & Performance y Longevidad y función celular.",
   );
   const approvedIssues = validateAtlasGeneration(approved, ctx);
   check(
     approvedIssues.length === 0,
-    "owner-approved area names are not treated as claims (negative control)",
+    "owner-approved topic names are not treated as claims (negative control)",
     approvedIssues.map((i) => `${i.code} ${i.detail}`).join("; "),
   );
 }
@@ -429,7 +637,7 @@ for (const name of Object.keys(maps)) {
   const { atlasGenerationSchema } = await import("../src/domain/atlas/schema.ts");
   const { betaZodOutputFormat } = await import("@anthropic-ai/sdk/helpers/beta/zod");
 
-  const generation = composeFor("metabolicFlagships", es);
+  const generation = composeFor("firstOrderNewcomer", es);
   const apiResponse = (overrides) => ({
     id: "msg_test",
     type: "message",
@@ -608,8 +816,11 @@ for (const name of Object.keys(maps)) {
 }
 
 /* ---- report --------------------------------------------------------------- */
-const summary = Object.entries(maps)
-  .map(([name, { retrieval }]) => `${name}=${retrieval.candidates.length}/${retrieval.poolSize}`)
+const summary = Object.entries(runs)
+  .map(
+    ([name, { retrieval, plan }]) =>
+      `${name}=${plan.start.length}+${plan.more.length}/${retrieval.candidates.length}/${retrieval.poolSize}`,
+  )
   .join(" ");
 
 if (failures.length) {

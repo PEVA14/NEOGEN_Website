@@ -1,4 +1,5 @@
 import type { AtlasSubject } from "./types";
+import type { Availability } from "@/data/commerce";
 import type { Product } from "@/data/catalog";
 import type { DiscoveryAreaId } from "@/data/discovery";
 
@@ -10,6 +11,8 @@ import type { DiscoveryAreaId } from "@/data/discovery";
 export interface AtlasSubjectDeps {
   /** Price of a variant in MXN, or null when it has none. */
   price: (variantId: string) => number | null;
+  /** Owner-maintained stock state of a variant, or null when not determined. */
+  availability: (variantId: string) => Availability | null;
   areas: (slug: string) => readonly DiscoveryAreaId[];
   documented: (product: Product) => boolean;
   references: (slug: string) => readonly string[];
@@ -20,8 +23,13 @@ export function atlasSubjectsFrom(
   deps: AtlasSubjectDeps,
 ): AtlasSubject[] {
   return products.map((product, order) => {
-    const amounts = product.variants
-      .map((variant) => deps.price(variant.id))
+    const variants = product.variants.map((variant) => ({
+      id: variant.id,
+      price: deps.price(variant.id),
+      availability: deps.availability(variant.id),
+    }));
+    const amounts = variants
+      .map((variant) => variant.price)
       .filter((amount): amount is number => amount !== null);
 
     return {
@@ -31,6 +39,7 @@ export function atlasSubjectsFrom(
       areas: deps.areas(product.slug),
       forms: [...new Set(product.variants.map((variant) => variant.strength.kind))],
       presentations: product.variants.length,
+      variants,
       entryPrice: amounts.length > 0 ? Math.min(...amounts) : null,
       documented: deps.documented(product),
       referenceIds: deps.references(product.slug),

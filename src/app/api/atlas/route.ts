@@ -1,28 +1,30 @@
+import { publishedProducts } from "@/data/catalog";
 import { publicAreas } from "@/data/discovery";
-import { parseAtlasAnswers } from "@/domain/atlas";
+import { parseAtlasProfile } from "@/domain/atlas";
 import { isLocale } from "@/i18n/config";
 import { generateAtlas } from "@/server/atlas/generate";
 
 /**
  * ATLAS GENERATION — one POST, provider-independent.
  *
- * The browser sends answers and a locale; it never sends a prompt, a model
+ * The browser sends a profile and a locale; it never sends a prompt, a model
  * name, a product list or a price, and it never receives the model's raw text
  * or usage. What comes back is an assembled result whose facts were read from
  * the registries on this server.
  *
  * GUARDS, because this endpoint spends money on every call:
  *
- *   size       — the body is a handful of ids and a short note; anything over
- *                4 KB is not a questionnaire.
+ *   size       — the body is a handful of ids, a name and a short note;
+ *                anything over 4 KB is not a questionnaire.
  *   origin     — a cross-site POST is refused, so another page cannot drive
  *                generations from a visitor's browser.
  *   rate       — a best-effort per-address window. In-memory, so per instance:
  *                it blunts a loop, it is not a quota. A shared store is the
  *                upgrade if the endpoint is ever abused at scale.
- *   input      — `parseAtlasAnswers` rejects anything outside the closed
- *                vocabularies and drops a note carrying health detail before
- *                it can reach a model.
+ *   input      — `parseAtlasProfile` rejects anything outside the closed
+ *                vocabularies. What each answer may then influence — and
+ *                whether the note may be read at all — is the policy's call,
+ *                made inside `generateAtlas`.
  */
 
 export const maxDuration = 60;
@@ -79,14 +81,14 @@ export async function POST(request: Request): Promise<Response> {
     return json({ ok: false, error: "invalid_answers" }, 400);
   }
 
-  const parsed = parseAtlasAnswers(
-    body.answers,
-    publicAreas().map((area) => area.id),
-  );
+  const parsed = parseAtlasProfile(body.profile, {
+    topics: publicAreas().map((area) => area.id),
+    products: publishedProducts.map((product) => product.slug),
+  });
   if (!parsed.ok) return json({ ok: false, error: "invalid_answers" }, 400);
 
   try {
-    const result = await generateAtlas(parsed.answers, body.locale);
+    const result = await generateAtlas(parsed.profile, body.locale);
     return json({ ok: true, result });
   } catch (error) {
     console.error(

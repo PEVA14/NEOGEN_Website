@@ -9,42 +9,35 @@ import { z } from "zod";
  * the registry after generation. A model cannot invent a fact that has nowhere
  * to go.
  *
- * Lengths and membership are NOT expressed here: structured outputs do not
- * support string-length constraints, and "is this slug one of the fourteen I
- * was given" is not something a schema can know. `validateAtlasGeneration`
- * enforces both, after parsing.
+ * Lengths, counts, membership and budget fit are NOT expressed here —
+ * structured outputs cannot express them, and they depend on the policy's
+ * constraints for this visitor. `validateAtlasGeneration` enforces them.
  */
+const pick = z.object({
+  slug: z.string(),
+  /** Why this product, connected to what the visitor said. */
+  why: z.string(),
+});
+
 export const atlasGenerationSchema = z.object({
-  /** A short title for this reader's map. */
-  title: z.string(),
-  /** Two to four sentences framing the map in catalogue terms. */
+  /** A short, personal headline for the result. */
+  headline: z.string(),
+  /** Two or three direct sentences: what Atlas suggests, and the reasoning in brief. */
   summary: z.string(),
-  /** One entry per selected area, in the reader's order. */
-  areas: z.array(
-    z.object({
-      areaId: z.string(),
-      rationale: z.string(),
-    }),
-  ),
-  /** The compounds this map leads with — slugs from the candidate list only. */
-  compounds: z.array(
-    z.object({
-      slug: z.string(),
-      role: z.enum(["core", "complement"]),
-      rationale: z.string(),
-    }),
-  ),
-  /** Where to go next — destination ids from the provided list only. */
-  path: z.array(
-    z.object({
-      destinationId: z.string(),
-      note: z.string(),
-    }),
-  ),
-  /** Short considerations about reading the map. Never health guidance. */
-  notes: z.array(z.string()),
+  /** What Atlas understood about the visitor, in plain words. */
+  aboutYou: z.string(),
+  /** Where to start — slugs from the candidate list only. */
+  start: z.array(pick),
+  /** Worth adding or considering next — candidates or offered supplies. */
+  more: z.array(pick),
+  /** One entry per topic the visitor chose, in their order. */
+  topics: z.array(z.object({ areaId: z.string(), note: z.string() })),
+  /** What to look at next — destination ids from the provided list only. */
+  nextSteps: z.array(z.object({ destinationId: z.string(), note: z.string() })),
+  /** Short practical pointers about choosing and buying. Never health guidance. */
+  tips: z.array(z.string()),
   /**
-   * The reader's note touched personal or health matters. The page answers
+   * The visitor's note touched personal or health matters. The page answers
    * with fixed, owner-approved copy — the model never writes that notice.
    */
   contextMentionsHealth: z.boolean(),

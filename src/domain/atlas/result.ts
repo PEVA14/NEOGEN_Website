@@ -1,13 +1,22 @@
-import type { AtlasBudget, AtlasDepth, AtlasDestination, AtlasFocus, AtlasForm } from "./types";
+import type {
+  AtlasBudget,
+  AtlasDestination,
+  AtlasField,
+  AtlasStyle,
+  AtlasUse,
+  AtlasWithheld,
+} from "./types";
+import type { Money } from "@/data/commerce";
 import type { DiscoveryAreaId } from "@/data/discovery";
 
 /**
- * THE RESULT A READER SEES — assembled on the server, rendered in the browser.
+ * THE ADVISOR RESULT — assembled on the server, rendered in the browser.
  *
- * Two sources meet here and are kept visibly apart: every `rationale`, `note`,
- * `title` and `summary` is WRITTEN (by a model, or by the composer), and every
- * other field is READ from a registry at request time. The browser receives
- * both already joined and has no way to ask for anything else.
+ * Two sources meet here and are kept visibly apart: every `why`, `note`,
+ * `tip`, `headline`, `summary` and `aboutYou` is WRITTEN (by a model, or by
+ * the composer), and every other field is READ from a registry at request
+ * time. The browser receives both already joined, and the UI contains no
+ * recommendation rule: it renders what this structure says.
  */
 
 export type AtlasMode =
@@ -18,7 +27,9 @@ export type AtlasMode =
   /** Composed from the registry because generation was unavailable or failed. */
   | "catalogue";
 
-export interface AtlasResultArea {
+export type AtlasPickList = "start" | "more" | "supply";
+
+export interface AtlasResultTopic {
   id: DiscoveryAreaId;
   rank: number;
   label: string;
@@ -26,15 +37,25 @@ export interface AtlasResultArea {
   href: string;
   compounds: number;
   entryPrice: string | null;
-  rationale: string | null;
+  note: string | null;
 }
 
-export interface AtlasResultCompound {
+export interface AtlasResultSuggestion {
+  variantId: string;
+  /** Formatted from the registry — "10 mg". */
+  presentation: string;
+  price: Money;
+  priceLabel: string;
+}
+
+export interface AtlasResultProduct {
   slug: string;
   name: string;
   href: string;
-  role: "core" | "complement" | "material";
-  rationale: string | null;
+  list: AtlasPickList;
+  why: string | null;
+  /** The visitor named this product. */
+  inMind: boolean;
   world: string | null;
   worldLabel: string | null;
   areas: readonly { id: DiscoveryAreaId; label: string }[];
@@ -43,7 +64,8 @@ export interface AtlasResultCompound {
   presentationRange: string;
   presentations: number;
   entryPrice: string | null;
-  entryAmount: number | null;
+  /** The presentation Atlas puts forward, by the size preference. */
+  suggestion: AtlasResultSuggestion | null;
   withinBudget: boolean | null;
   documented: boolean;
 }
@@ -56,45 +78,58 @@ export interface AtlasResultStep {
   note: string | null;
 }
 
+export interface AtlasResultSum {
+  count: number;
+  amount: number | null;
+  label: string | null;
+  fits: boolean | null;
+}
+
 export interface AtlasResultBudget {
   budget: AtlasBudget;
   cap: string | null;
   capAmount: number | null;
-  /** Sum of each core compound's entry presentation, from the registry. */
-  coreEntry: string | null;
-  coreEntryAmount: number | null;
-  coreCount: number;
-  /** Sum across every compound on the map. */
-  allEntry: string | null;
-  allEntryAmount: number | null;
-  allCount: number;
-  fitsCore: boolean | null;
-  fitsAll: boolean | null;
+  /** The "start here" presentations together. */
+  start: AtlasResultSum;
+  /** Every product in the result. */
+  all: AtlasResultSum;
+}
+
+/** One question: what the visitor answered and what Atlas did with it. */
+export interface AtlasResultLedgerEntry {
+  field: AtlasField;
+  /** Display text of the answer, or null when skipped. */
+  answer: string | null;
+  uses: readonly AtlasUse[];
+  withheld: AtlasWithheld | null;
 }
 
 export interface AtlasResultView {
   mode: AtlasMode;
-  title: string;
+  /** For the page only — never sent to a model. */
+  firstName: string | null;
+  style: AtlasStyle;
+  returning: boolean;
+  headline: string;
   summary: string;
-  areas: readonly AtlasResultArea[];
-  compounds: readonly AtlasResultCompound[];
-  materials: readonly AtlasResultCompound[];
-  path: readonly AtlasResultStep[];
-  notes: readonly string[];
+  aboutYou: string;
+  start: readonly AtlasResultProduct[];
+  more: readonly AtlasResultProduct[];
+  supplies: readonly AtlasResultProduct[];
+  topics: readonly AtlasResultTopic[];
+  nextSteps: readonly AtlasResultStep[];
+  tips: readonly string[];
   budget: AtlasResultBudget;
-  /** How many compounds matched, and how many the model was shown. */
   poolSize: number;
   candidateCount: number;
-  /** Show the fixed health notice — the note mentioned personal or health detail. */
-  healthNotice: boolean;
-  /** The reader's note was dropped before generation. */
-  contextScreened: boolean;
+  notices: {
+    /** The note was discarded before generation. */
+    noteDiscarded: boolean;
+    /** The model flagged health content that the screen did not catch. */
+    healthMentioned: boolean;
+  };
+  ledger: readonly AtlasResultLedgerEntry[];
   references: readonly { id: string; title: string; href: string | null }[];
   documentation: { publicRecords: number; modelHref: string; explorerHref: string | null };
-  inputs: {
-    depth: AtlasDepth;
-    focus: readonly AtlasFocus[];
-    forms: readonly AtlasForm[];
-    includeMaterials: boolean;
-  };
+  commerce: { bagEnabled: boolean; localeTag: string };
 }

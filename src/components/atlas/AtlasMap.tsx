@@ -3,10 +3,10 @@
 import styles from "./AtlasMap.module.css";
 
 import type { CSSProperties } from "react";
-import type { AtlasResultArea, AtlasResultCompound } from "@/domain/atlas/result";
+import type { AtlasResultProduct, AtlasResultTopic } from "@/domain/atlas/result";
 
 /**
- * THE MAP — the reader's areas, and the compounds that connect them.
+ * THE MAP — the visitor's topics, and the products that connect them.
  *
  * Two renderings of the same facts, exactly one in the accessibility tree at a
  * time (the other is `display: none`):
@@ -43,11 +43,11 @@ export function AtlasMap({
   active,
   onActive,
 }: {
-  areas: readonly AtlasResultArea[];
-  compounds: readonly AtlasResultCompound[];
+  areas: readonly AtlasResultTopic[];
+  compounds: readonly AtlasResultProduct[];
   label: string;
   columnLabel: string;
-  legend: { core: string; complement: string; bridges: string };
+  legend: { start: string; more: string; bridges: string };
   active: string | null;
   onActive: (slug: string | null) => void;
 }) {
@@ -66,7 +66,7 @@ export function AtlasMap({
           : (areas.length - 1) / 2;
       return { compound, indices, mean };
     })
-    .sort((a, b) => a.mean - b.mean || (a.compound.role === "core" ? -1 : 1));
+    .sort((a, b) => a.mean - b.mean || (a.compound.list === "start" ? -1 : 1));
 
   const stagger = placed.length > 5;
   const nodeX = (j: number) => PAD + ((W - 2 * PAD) * (j + 0.5)) / Math.max(placed.length, 1);
@@ -145,8 +145,8 @@ export function AtlasMap({
               {compound.bridges ? <circle className={styles.bridgeRing} r={19} /> : null}
               <circle
                 className={styles.node}
-                r={compound.role === "core" ? 12 : 8}
-                data-role={compound.role}
+                r={compound.list === "start" ? 12 : 8}
+                data-role={compound.list === "start" ? "core" : "complement"}
               />
               <text className={styles.nodeLabel} y={38}>
                 {truncate(compound.name, stagger ? 20 : 24)}
@@ -205,11 +205,11 @@ export function AtlasMap({
       <figcaption className={styles.legend}>
         <span className={styles.legendItem}>
           <span className={styles.legendNode} data-role="core" aria-hidden="true" />
-          {legend.core}
+          {legend.start}
         </span>
         <span className={styles.legendItem}>
           <span className={styles.legendNode} data-role="complement" aria-hidden="true" />
-          {legend.complement}
+          {legend.more}
         </span>
         <span className={styles.legendItem}>
           <span className={styles.legendBridge} aria-hidden="true" />
