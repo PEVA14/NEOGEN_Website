@@ -1,6 +1,6 @@
 import "server-only";
 
-import { RESEARCH_FUNCTIONS } from "@/content/functions";
+import { RESEARCH_FUNCTIONS, RESEARCH_FUNCTION_GROUPS } from "@/content/functions";
 import { ATLAS_QUESTIONNAIRE } from "@/content/atlas/questionnaire";
 import { isPublishable, publishedProducts } from "@/data/catalog";
 import { formatPrice, getPrices } from "@/data/commerce";
@@ -96,15 +96,26 @@ export async function atlasQuestionnaireView(locale: Locale): Promise<AtlasQuest
     }))
     .sort((a, b) => a.label.localeCompare(b.label, locale));
 
-  const functionOptions = offeredResearchFunctions().map((fn) => {
-    const vocabulary = RESEARCH_FUNCTIONS.find((f) => f.id === fn.id)!;
-    return {
-      id: fn.id,
-      label: vocabulary.label[locale],
-      hint: vocabulary.hint[locale],
-      meta: { compounds: fn.compounds },
-    };
-  });
+  /* In group order, so the renderer's sections follow the vocabulary's own. */
+  const offered = offeredResearchFunctions();
+  const functionOptions = RESEARCH_FUNCTION_GROUPS.flatMap((group) =>
+    RESEARCH_FUNCTIONS.filter((fn) => fn.group === group.id).flatMap((fn) => {
+      const row = offered.find((o) => o.id === fn.id);
+      if (!row) return [];
+      return [
+        {
+          id: fn.id,
+          label: fn.label[locale],
+          hint: fn.hint[locale],
+          meta: {
+            compounds: row.compounds,
+            group: group.id,
+            groupLabel: group.label[locale],
+          },
+        },
+      ];
+    }),
+  );
 
   const resolve: AtlasOptionResolver = (registry) =>
     registry === "discovery-areas"

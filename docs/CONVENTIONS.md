@@ -678,7 +678,9 @@ and can move nothing.
 
 **Facts are never copied into questionnaire content.** Areas, products and
 research functions are `{ kind: "registry" }` option sources resolved at render
-time in `server/atlas/questionnaire.ts`.
+time in `server/atlas/questionnaire.ts`. A long list may arrive grouped — the
+research-function vocabulary declares its own groups and the renderer sections
+the cards on them, in arrival order, without re-sorting or filtering.
 
 **The result UI reads structured data.** `recap` and `ledger` entries carry
 their own label, answer, permitted uses and withholding, so the result page has

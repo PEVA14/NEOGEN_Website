@@ -40,7 +40,7 @@ import {
   publicFunctions,
   publicOverview,
 } from "../src/content/overview/index.ts";
-import { RESEARCH_FUNCTIONS } from "../src/content/functions.ts";
+import { RESEARCH_FUNCTIONS, RESEARCH_FUNCTION_GROUPS } from "../src/content/functions.ts";
 import {
   isPublicReference,
   publicReferencesById,
@@ -500,6 +500,24 @@ eq(
   ]) {
     ok(!banned.test(source), "the questionnaire offers no personal-outcome option", String(banned));
   }
+}
+
+/* ---- the research-function vocabulary is grouped, wholly ---------------- */
+{
+  const groupIds = new Set(RESEARCH_FUNCTION_GROUPS.map((g) => g.id));
+  for (const fn of RESEARCH_FUNCTIONS) {
+    ok(groupIds.has(fn.group), `research function ${fn.id} names a declared group`, fn.group);
+  }
+  for (const group of RESEARCH_FUNCTION_GROUPS) {
+    ok(
+      RESEARCH_FUNCTIONS.some((fn) => fn.group === group.id),
+      `group ${group.id} has at least one function`,
+    );
+    const term = [group.label.es, group.label.en].map(forbiddenTermIn).find(Boolean);
+    ok(!term, `group ${group.id} carries no forbidden vocabulary`, term ?? "");
+  }
+  const ids = RESEARCH_FUNCTIONS.map((fn) => fn.id);
+  eq(new Set(ids).size, ids.length, "research function ids are unique");
 }
 
 /* ---- research functions: a tag never outlives its source ---------------- */

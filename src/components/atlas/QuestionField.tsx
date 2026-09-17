@@ -252,36 +252,63 @@ export function QuestionField({
       );
     }
 
+    const card = (option: (typeof question.options)[number]) => {
+      const checked = selected.includes(option.id);
+      return (
+        <label key={option.id} className={styles.option}>
+          <input
+            type="checkbox"
+            checked={checked}
+            disabled={!checked && full}
+            onChange={() => pick(option.id)}
+            className={styles.input}
+          />
+          <span className={styles.indicator} aria-hidden="true" />
+          <span className={styles.optionLabel}>{option.label}</span>
+          {option.hint || option.meta?.compounds !== undefined ? (
+            <span className={styles.optionHint}>
+              {option.hint}
+              {option.meta?.compounds !== undefined
+                ? ` ${metaCount(question, option.meta.compounds, copy)}`
+                : ""}
+            </span>
+          ) : null}
+        </label>
+      );
+    };
+
+    /*
+     * A long registry list arrives already ordered by group, so sections are
+     * a partition of the options in the order they came — never a re-sort, and
+     * never a filter. Options with no group render as one plain grid.
+     */
+    const groups: { id: string; label: string; options: typeof question.options }[] = [];
+    for (const option of question.options) {
+      const id = option.meta?.group;
+      if (id === undefined) continue;
+      const last = groups[groups.length - 1];
+      if (last?.id === id) last.options = [...last.options, option];
+      else groups.push({ id, label: option.meta?.groupLabel ?? id, options: [option] });
+    }
+
     return (
       <fieldset className={styles.field}>
         {legend}
         {counter}
-        <div className={styles.options} data-cols={question.columns}>
-          {question.options.map((option) => {
-            const checked = selected.includes(option.id);
-            return (
-              <label key={option.id} className={styles.option}>
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  disabled={!checked && full}
-                  onChange={() => pick(option.id)}
-                  className={styles.input}
-                />
-                <span className={styles.indicator} aria-hidden="true" />
-                <span className={styles.optionLabel}>{option.label}</span>
-                {option.hint || option.meta?.compounds !== undefined ? (
-                  <span className={styles.optionHint}>
-                    {option.hint}
-                    {option.meta?.compounds !== undefined
-                      ? ` ${metaCount(question, option.meta.compounds, copy)}`
-                      : ""}
-                  </span>
-                ) : null}
-              </label>
-            );
-          })}
-        </div>
+        {groups.length > 0 ? (
+          groups.map((group) => (
+            <section key={group.id} className={styles.optionGroup}>
+              <h3 className={styles.optionGroupLabel}>{group.label}</h3>
+              <div className={styles.options} data-cols={question.columns}>
+                {group.options.map(card)}
+              </div>
+            </section>
+          ))
+        ) : (
+          <div className={styles.options} data-cols={question.columns}>
+            {question.options.map(card)}
+          </div>
+        )}
       </fieldset>
     );
   }

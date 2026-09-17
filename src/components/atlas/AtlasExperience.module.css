@@ -794,6 +794,24 @@
   color: var(--ink-muted);
 }
 
+/* A long option list, sectioned. The heading is a label, not a title: the
+   question above it is what the visitor is answering. */
+.optionGroup {
+  margin-block-start: var(--space-md);
+}
+
+.optionGroupLabel {
+  margin: 0 0 var(--space-xs);
+  padding-block-end: var(--space-2xs);
+  border-block-end: 1px solid var(--border-subtle);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: 400;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
 /* --- Number and range ----------------------------------------------------
    Two kinds the schema supports; the questionnaire may or may not use them
    today. Same hairline register as the text inputs: no pill, no shadow. */

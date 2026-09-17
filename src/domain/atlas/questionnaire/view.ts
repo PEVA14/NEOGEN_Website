@@ -37,6 +37,13 @@ export interface AtlasOptionMeta {
   entryPrice?: string;
   /** The areas a product belongs to, for the search field's default pool. */
   areas?: readonly string[];
+  /**
+   * A heading this option sits under. Set by the resolver when a registry's
+   * list is long enough to need sections; the renderer groups on it, in the
+   * order the options arrive, and ignores it otherwise.
+   */
+  group?: string;
+  groupLabel?: string;
 }
 
 export interface AtlasQuestionView {

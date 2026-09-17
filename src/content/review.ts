@@ -58,3 +58,24 @@ export const BATCH_3_METABOLIC_PROFILES: ContentStatus = "approved";
  * the kind of borrowed authority this content model exists to prevent.
  */
 export const BATCH_4_RECOVERY_PROFILES: ContentStatus = "owner-review";
+
+/**
+ * Batch 5 — the remainder: the growth line, the hormonal line, longevity,
+ * neuro, skin, and the two unfiled products. Drafted 2026-09-17, same method.
+ *
+ * NOT COVERED, and the reason in each case:
+ *
+ *   Follistatin 344, Gonadorelin, HMG — no source found that states what the
+ *     product is and reports a finding for it specifically.
+ *   Epithalon's neighbours (Cardiogen, Cortagen, Crystagen, Pinealon,
+ *     Vesugen, Cartalax) — the literature is reviews from one research group
+ *     that do not establish a finding for the individual tripeptide.
+ *   DSIP, PE 22-28, SNAP-8, Adamax (both) — nothing on-point. PE 22-28's
+ *     literature is about spadin, a longer peptide, and the relationship
+ *     between them needs its own source before it can be stated.
+ *   Relaxation PM, SUPER Human Blend, Healthy Hair Skin Nails Blend, Lipo-C
+ *     (both), Lemon Bottle — blends with no published study, and for most of
+ *     them no declared composition to work from.
+ *   Sterile, bacteriostatic and amino-acid water — supplies, not compounds.
+ */
+export const BATCH_5_REMAINDER_PROFILES: ContentStatus = "owner-review";

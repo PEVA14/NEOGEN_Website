@@ -114,7 +114,12 @@ const productOptions = publishedProducts.map((product) => ({
 }));
 const FIXTURE_FUNCTIONS = ["wound-healing", "extracellular-matrix", "gene-expression"];
 const functionOptions = RESEARCH_FUNCTIONS.filter((fn) => FIXTURE_FUNCTIONS.includes(fn.id)).map(
-  (fn) => ({ id: fn.id, label: fn.label.es, hint: fn.hint.es, meta: { compounds: 1 } }),
+  (fn) => ({
+    id: fn.id,
+    label: fn.label.es,
+    hint: fn.hint.es,
+    meta: { compounds: 1, group: fn.group, groupLabel: fn.group },
+  }),
 );
 const resolver = (functions) => (registry) =>
   registry === "discovery-areas"
@@ -278,6 +283,22 @@ const ledgerOf = (overrides = {}, v = view) => {
     ),
     "…and appears as soon as the registry has options",
   );
+  /* A long registry list carries its own sections; the renderer partitions on
+     them in arrival order, so the resolver's order is the visitor's order. */
+  const functions = viewWithFunctions.groups
+    .flatMap((g) => g.questions)
+    .find((question) => question.role === "research-functions");
+  check(
+    functions.options.every((o) => o.meta?.group && o.meta?.groupLabel),
+    "every research-function option arrives with its group",
+  );
+  const order = functions.options.map((o) => o.meta.group);
+  check(
+    order.every((g, i) => i === 0 || order.indexOf(g) >= order.lastIndexOf(order[i - 1]) - 1),
+    "options of one group arrive together, never interleaved",
+    order.join(","),
+  );
+
   const budget = viewWithFunctions.groups
     .flatMap((g) => g.questions)
     .find((question) => question.role === "budget-cap");

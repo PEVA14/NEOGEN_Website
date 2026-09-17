@@ -746,6 +746,60 @@ CONTENT separate and editable by the owner, without touching Atlas components.
 - **Not verified:** a live model generation (no key locally), and the `number`
   and `range` kinds are proven by fixtures rather than by a shipped question.
 
+## 8j. Sourced profiles across the catalogue (batches 1-5)
+
+The owner asked for compound profiles area by area. Five batches, each drafted
+the same way — every reference's metadata and every quoted figure read from the
+source's own abstract via Europe PMC — and each gated by one switch in
+`src/content/review.ts`:
+
+| Batch | Scope                                                            | Status           |
+| ----- | ---------------------------------------------------------------- | ---------------- |
+| 1     | RETA, GHK-Cu, BPC-157, TB-500, GLOW                              | approved         |
+| 2     | tirzepatide, semaglutide                                         | approved         |
+| 3     | the rest of the metabolic line (10 compounds)                    | approved         |
+| 4     | the recovery area (9 compounds)                                  | **owner-review** |
+| 5     | growth, hormonal, longevity, neuro, skin, unfiled (36 compounds) | **owner-review** |
+
+**62 of 85 products** have a profile written; **74 references** in the
+registry; **35 research functions**, each one grouped.
+
+**What has no profile, and why** — the list is deliberate, not unfinished:
+
+- **No source that names the product and reports a finding for it**: HMG,
+  Follistatin 344, Gonadorelin, DSIP, SNAP-8, Adamax (both), PE 22-28 (its
+  literature is about spadin, a longer peptide, and the relationship needs its
+  own source).
+- **Single-group review literature only**, nothing establishing a finding for
+  the individual tripeptide: Vesugen, Cartalax, Cardiogen, Cortagen, Crystagen,
+  Pinealon. Epithalon is the one exception, and its profile says in as many
+  words that its only source is a narrative review.
+- **Blends with no published study**, and mostly no declared composition:
+  Relaxation PM, SUPER Human Blend, Healthy Hair Skin Nails Blend, Lipo-C
+  (both), Lemon Bottle.
+- **Supplies, not compounds**: the three waters.
+
+**House style for a profile.** Mechanism, then what the source found, then the
+model it came from, then the limits the source itself states. Four of the
+metabolic compounds and most of the neuro line are preclinical only and each
+says so in a technical note. Unflattering findings stay in: ETASS's confidence
+interval crosses 1; adipotide's monkey study reports reversible kidney tubule
+changes; AHK-Cu's apoptosis result missed significance; Melanotan II's only
+source is a case report of an adverse finding.
+
+**The vocabulary guard gained a second mode** while writing batch 4: stems that
+match inside a word (so "inyec" catches inyectar and inyección) and words that
+match only whole (so sarcoidosis, ciclosporina and "al día siguiente" pass).
+`check:content` proves both directions. It still refuses real dosing language,
+and three batch-5 sentences were reworded rather than the guard loosened —
+"frecuencia de pulsos" became "número de pulsos por hora", "ciclo día-noche"
+became "ritmo día-noche".
+
+**The Atlas function question is grouped** (metabolism, tissue and repair,
+nervous and endocrine, immunity, cell biology) because 35 flat checkboxes had
+stopped being readable. Content declares the groups; the renderer partitions on
+them in arrival order.
+
 ## 9. Recommendation for Phase 13 (not approved)
 
 Photography and first evidence together, for RETA, GLOW and GHK-Cu: shoot the

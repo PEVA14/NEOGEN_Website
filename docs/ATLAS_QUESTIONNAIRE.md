@@ -92,6 +92,12 @@ many compounds carry an approved sourced tag).
 registry instead — resolution happens in
 [`src/server/atlas/questionnaire.ts`](../src/server/atlas/questionnaire.ts).
 
+A registry may also hand its options a **group**: the research-function list
+arrives ordered by group, each option carrying a heading, and the renderer
+partitions a card list on those headings in arrival order. Nothing in
+questionnaire content sets this — `src/content/functions.ts` declares the
+groups and `server/atlas/questionnaire.ts` passes them through.
+
 `hideWithoutOptions: true` drops a registry question whose list is currently
 empty (this is how the research-function question stays hidden until the first
 sourced overview is approved). A group left with no questions disappears from

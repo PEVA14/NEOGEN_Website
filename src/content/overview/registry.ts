@@ -3,6 +3,7 @@ import {
   BATCH_2_INCRETIN_PROFILES as BATCH_2,
   BATCH_3_METABOLIC_PROFILES as BATCH_3,
   BATCH_4_RECOVERY_PROFILES as BATCH_4,
+  BATCH_5_REMAINDER_PROFILES as BATCH_5,
 } from "@/content/review";
 
 import type { ContentStatus } from "@/content/lifecycle";
@@ -75,7 +76,54 @@ const REF = {
   heilborn: "ref-2003-heilborn-ll37-reepithelialisation",
   pyo: "ref-2007-pyo-ahk-cu-hair",
   linkova: "ref-2023-linkova-thymalin-dipeptides",
+  ghAxis: "ref-2026-dominikowski-gh-igf1-peptides",
+  raun: "ref-1998-raun-ipamorelin",
+  teichman: "ref-2006-teichman-cjc-1295",
+  timms: "ref-2019-timms-cjc-1295-detection",
+  ohara: "ref-2017-ohara-ghrp-2-test",
+  wangGhrp6: "ref-2026-wang-ghrp-6-infarct",
+  liuMgf: "ref-2023-liu-mechano-growth-factor",
+  levolger: "ref-2019-levolger-alk4-5-cachexia",
+  mcpherron: "ref-1997-mcpherron-gdf-8",
+  cadena: "ref-2026-cadena-ace-031-marmoset",
+  george: "ref-2011-george-kisspeptin-10",
+  kingsberg: "ref-2019-kingsberg-bremelanotide",
+  mc4r: "ref-2026-feng-mc4r-modulators",
+  jurek: "ref-2018-jurek-oxytocin-receptor",
+  shoaib: "ref-2025-shoaib-hcg-male-infertility",
+  dawlaty: "ref-2026-dawlaty-vip-pacap-sepsis",
+  covarrubias: "ref-2021-covarrubias-nad-ageing",
+  motsC: "ref-2015-lee-mots-c",
+  chaiHumanin: "ref-2014-chai-humanin-alzheimer",
+  szeto: "ref-2014-szeto-cardiolipin",
+  baar: "ref-2017-baar-foxo4-senescence",
+  forman: "ref-2009-forman-glutathione",
+  mavrych: "ref-2026-mavrych-gerontology-peptides",
+  melatonin: "ref-2018-cipolla-neto-melatonin",
+  kolbaev: "ref-2025-kolbaev-semax-calcium",
+  radchenko: "ref-2025-radchenko-semax-review",
+  selank: "ref-2022-konstantinopolsky-selank",
+  cerebrolysin: "ref-2026-staszewski-cerebrolysin-evt",
+  wellsDihexa: "ref-2024-wells-dihexa-huntington",
+  mottolese: "ref-2024-mottolese-p021-cntf-mimetic",
+  afamelanotide: "ref-2015-langendonk-afamelanotide",
+  bonchev: "ref-2026-bonchev-melanotan-ii",
+  greenB12: "ref-2017-green-b12-deficiency",
+  dermorphin: "ref-2026-zhuang-dermorphin-fentanyl",
 } as const;
+
+/**
+ * The GH-IGF-1 line shares one limits statement, because one 2026 review
+ * covers the whole family and says the same thing about all of it.
+ */
+const ghAxisLimit = (id: string) =>
+  sci(
+    id,
+    "Una revisión narrativa de 2026 agrupa estos péptidos como compuestos no regulados vendidos como «research compounds», sin aprobación regulatoria para indicaciones de físico o rendimiento, y con incertidumbre sobre la composición real de los productos. Los efectos adversos que enumera incluyen alteraciones endocrinas y metabólicas (elevaciones de prolactina y cortisol, cambios de apetito, disglucemia), retención de líquidos, síntomas musculoesqueléticos y reacciones en el sitio de aplicación.",
+    'A 2026 narrative review groups these peptides as unregulated compounds sold as "research compounds", without regulatory approval for physique- or performance-related indications, and with uncertainty about what the products actually contain. The adverse effects it lists include endocrine and metabolic disturbances (prolactin and cortisol elevations, appetite changes, dysglycaemia), fluid retention, musculoskeletal symptoms and application-site reactions.',
+    [REF.ghAxis],
+    BATCH_5,
+  );
 
 /** A technical note: what the citations on a page actually studied. */
 const note = (id: string, es: string, en: string, status: ContentStatus) => ({
@@ -702,6 +750,1097 @@ export const OVERVIEWS: Readonly<Record<string, ProductOverview>> = {
         statement: "l-carnitine-mechanism-transport",
       },
     ],
+  },
+
+  /* ---- Sermorelin --------------------------------------------------------- */
+  sermorelin: {
+    slug: "sermorelin",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "sermorelin-mechanism-ghrh",
+        "La sermorelina es un análogo de la hormona liberadora de hormona de crecimiento (GHRH). La revisión citada la agrupa con la tesamorelina y las dos formas de CJC-1295 como análogos de GHRH, frente a los secretagogos que actúan por el receptor de ghrelina.",
+        "Sermorelin is an analogue of growth hormone-releasing hormone (GHRH). The review cited groups it with tesamorelin and the two forms of CJC-1295 as GHRH analogues, as distinct from the secretagogues that act through the ghrelin receptor.",
+        [REF.ghAxis],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [ghAxisLimit("sermorelin-research-limits")],
+    areasOfInvestigation: [],
+    keyReferences: [REF.ghAxis],
+    technicalNotes: [],
+    functions: [{ id: "growth-hormone-axis", statement: "sermorelin-mechanism-ghrh" }],
+  },
+
+  /* ---- CJC-1295 with DAC -------------------------------------------------- */
+  "cjc-1295-with-dac": {
+    slug: "cjc-1295-with-dac",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "cjc-1295-dac-mechanism-albumin",
+        "CJC-1295 es un análogo de acción prolongada de la GHRH. Incorpora un grupo maleimido en el extremo C que le permite unirse de forma covalente a proteínas del plasma como la albúmina; esos conjugados tienen una vida media mucho mayor que el péptido libre y, según la fuente, estimulan la producción de hormona de crecimiento durante más de seis días en humanos.",
+        "CJC-1295 is a long-acting GHRH analogue. It carries a maleimido group at its C-terminus that lets it bind covalently to plasma proteins such as albumin; those conjugates have a much longer half-life than the free peptide and, per the source, stimulate growth hormone production for more than six days in humans.",
+        [REF.timms],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "cjc-1295-dac-research-healthy-adults",
+        "Dos ensayos aleatorizados, doble ciego y controlados con placebo, de 28 y 49 días, en adultos sanos de 21 a 61 años, evaluaron su perfil farmacocinético, sus efectos farmacodinámicos y su seguridad: se observó estimulación prolongada de la secreción de hormona de crecimiento y de IGF-I.",
+        "Two randomised, double-blind, placebo-controlled trials of 28 and 49 days in healthy adults aged 21 to 61 assessed its pharmacokinetic profile, pharmacodynamic effects and safety: prolonged stimulation of growth hormone and IGF-I secretion was observed.",
+        [REF.teichman],
+        BATCH_5,
+      ),
+      ghAxisLimit("cjc-1295-dac-research-limits"),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.teichman, REF.timms, REF.ghAxis],
+    technicalNotes: [],
+    functions: [{ id: "growth-hormone-axis", statement: "cjc-1295-dac-mechanism-albumin" }],
+  },
+
+  /* ---- CJC-1295 without DAC ---------------------------------------------- */
+  "cjc-1295-without-dac": {
+    slug: "cjc-1295-without-dac",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "cjc-1295-nodac-mechanism-ghrh",
+        "La revisión citada distingue CJC-1295 con complejo de afinidad por fármaco (DAC) de CJC-1295 sin DAC, y agrupa ambas como análogos de GHRH. Es la unión covalente a la albúmina la que prolonga la acción de la forma con DAC.",
+        "The review cited distinguishes CJC-1295 with a Drug Affinity Complex (DAC) from CJC-1295 without DAC, and groups both as GHRH analogues. It is covalent binding to albumin that prolongs the action of the DAC form.",
+        [REF.ghAxis, REF.timms],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [ghAxisLimit("cjc-1295-nodac-research-limits")],
+    areasOfInvestigation: [],
+    keyReferences: [REF.ghAxis, REF.timms],
+    technicalNotes: [
+      note(
+        "cjc-1295-nodac-note-literature",
+        "El ensayo en adultos sanos que se cita en la ficha de CJC-1295 con DAC estudió esa forma. Para la forma sin DAC no se cita un ensayo propio.",
+        "The healthy-adult trial cited on the CJC-1295 with DAC page studied that form. No trial of the form without DAC is cited here.",
+        BATCH_5,
+      ),
+    ],
+    functions: [{ id: "growth-hormone-axis", statement: "cjc-1295-nodac-mechanism-ghrh" }],
+  },
+
+  /* ---- CJC-1295 without DAC + Ipamorelin --------------------------------- */
+  "cjc-1295-without-dac-ipamorelin": {
+    slug: "cjc-1295-without-dac-ipamorelin",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "cjc-ipa-mechanism-two-routes",
+        "Esta presentación combina dos compuestos que actúan por rutas distintas del mismo eje: CJC-1295, análogo de GHRH, y la ipamorelina, un secretagogo selectivo de hormona de crecimiento del grupo que actúa por el receptor de ghrelina.",
+        "This presentation combines two compounds acting through different routes of the same axis: CJC-1295, a GHRH analogue, and ipamorelin, a selective growth hormone secretagogue from the group that acts through the ghrelin receptor.",
+        [REF.ghAxis, REF.raun],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [ghAxisLimit("cjc-ipa-research-limits")],
+    areasOfInvestigation: [],
+    keyReferences: [REF.ghAxis, REF.raun, REF.teichman],
+    technicalNotes: [
+      note(
+        "cjc-ipa-note-blend",
+        "No se cita literatura sobre esta combinación: las fuentes estudian cada componente por separado.",
+        "No literature about this combination is cited: the sources study each component separately.",
+        BATCH_5,
+      ),
+    ],
+    functions: [{ id: "growth-hormone-axis", statement: "cjc-ipa-mechanism-two-routes" }],
+  },
+
+  /* ---- Ipamorelin --------------------------------------------------------- */
+  ipamorelin: {
+    slug: "ipamorelin",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "ipamorelin-mechanism-pentapeptide",
+        "La ipamorelina es un pentapéptido (Aib-His-D-2-Nal-D-Phe-Lys-NH2) identificado en una serie de compuestos que carecen del dipéptido central Ala-Trp del GHRP-1. In vitro liberó hormona de crecimiento de células hipofisarias de rata con potencia y eficacia similares a las del GHRP-6.",
+        "Ipamorelin is a pentapeptide (Aib-His-D-2-Nal-D-Phe-Lys-NH2) identified within a series of compounds lacking the central Ala-Trp dipeptide of GHRP-1. In vitro it released growth hormone from rat pituitary cells with potency and efficacy similar to GHRP-6.",
+        [REF.raun],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [ghAxisLimit("ipamorelin-research-limits")],
+    areasOfInvestigation: [],
+    keyReferences: [REF.raun, REF.ghAxis],
+    technicalNotes: [],
+    functions: [{ id: "growth-hormone-axis", statement: "ipamorelin-mechanism-pentapeptide" }],
+  },
+
+  /* ---- GHRP-2 ------------------------------------------------------------- */
+  "ghrp-2-acetate": {
+    slug: "ghrp-2-acetate",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "ghrp-2-mechanism-secretagogue",
+        "El GHRP-2 es un secretagogo de hormona de crecimiento de la familia de los péptidos liberadores de hormona de crecimiento (GHRP), que actúan por el receptor de ghrelina y no por el de GHRH.",
+        "GHRP-2 is a growth hormone secretagogue from the growth hormone-releasing peptide (GHRP) family, which act through the ghrelin receptor rather than the GHRH receptor.",
+        [REF.ghAxis],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "ghrp-2-research-clinical-test",
+        "En endocrinología clínica se usa como prueba de estímulo: la respuesta de hormona de crecimiento al GHRP-2 se mide para evaluar la función hipofisaria. El estudio citado la aplicó antes y después de una gastrectomía en manga en pacientes con obesidad.",
+        "In clinical endocrinology it is used as a stimulation test: the growth hormone response to GHRP-2 is measured to assess pituitary function. The study cited applied it before and after sleeve gastrectomy in patients with obesity.",
+        [REF.ohara],
+        BATCH_5,
+      ),
+      ghAxisLimit("ghrp-2-research-limits"),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.ghAxis, REF.ohara],
+    technicalNotes: [],
+    functions: [{ id: "growth-hormone-axis", statement: "ghrp-2-mechanism-secretagogue" }],
+  },
+
+  /* ---- GHRP-6 ------------------------------------------------------------- */
+  "ghrp-6-acetate": {
+    slug: "ghrp-6-acetate",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "ghrp-6-mechanism-hexapeptide",
+        "El GHRP-6 es un hexapéptido secretagogo de hormona de crecimiento. Es el compuesto de referencia con el que se comparó la potencia de la ipamorelina in vitro.",
+        "GHRP-6 is a growth hormone secretagogue hexapeptide. It is the reference compound against which ipamorelin's in vitro potency was compared.",
+        [REF.wangGhrp6, REF.raun],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "ghrp-6-research-infarct",
+        "En un modelo de infarto de miocardio sin reperfusión en ratas, con adelgazamiento y dilatación de la pared ventricular izquierda, el tratamiento posquirúrgico con GHRP-6 se estudió frente a ratas infartadas con solución salina y ratas sanas; los autores describen efectos cardioprotectores sobre el remodelado ventricular y la función sistólica.",
+        "In a non-reperfusion myocardial infarction model in rats, with left ventricular wall thinning and ballooning, post-surgical GHRP-6 treatment was studied against saline-treated infarcted rats and healthy rats; the authors describe cardioprotective effects on ventricular remodelling and systolic function.",
+        [REF.wangGhrp6],
+        BATCH_5,
+      ),
+      ghAxisLimit("ghrp-6-research-limits"),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.wangGhrp6, REF.ghAxis],
+    technicalNotes: [],
+    functions: [{ id: "growth-hormone-axis", statement: "ghrp-6-mechanism-hexapeptide" }],
+  },
+
+  /* ---- Hexarelin ---------------------------------------------------------- */
+  "hexarelin-acetate": {
+    slug: "hexarelin-acetate",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "hexarelin-mechanism-secretagogue",
+        "La hexarelina es un secretagogo de hormona de crecimiento; la revisión citada la agrupa con GHRP-2, GHRP-6 e ipamorelina, es decir, con los que actúan por el receptor de ghrelina.",
+        "Hexarelin is a growth hormone secretagogue; the review cited groups it with GHRP-2, GHRP-6 and ipamorelin — those that act through the ghrelin receptor.",
+        [REF.ghAxis],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [ghAxisLimit("hexarelin-research-limits")],
+    areasOfInvestigation: [],
+    keyReferences: [REF.ghAxis],
+    technicalNotes: [],
+    functions: [{ id: "growth-hormone-axis", statement: "hexarelin-mechanism-secretagogue" }],
+  },
+
+  /* ---- MGF ---------------------------------------------------------------- */
+  mgf: {
+    slug: "mgf",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "mgf-mechanism-isoform",
+        "El factor de crecimiento mecánico (MGF) es una isoforma del factor de crecimiento similar a la insulina 1 (IGF-1) y se describe como un factor de crecimiento sensible a estímulos mecánicos, con un papel señalado en el sistema esquelético.",
+        "Mechano growth factor (MGF) is an isoform of insulin-like growth factor 1 (IGF-1), described as a mechanically sensitive growth factor with an indicated role in the skeletal system.",
+        [REF.liuMgf],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "mgf-research-cartilage",
+        "En la cavidad articular el MGF se expresa de forma elevada en los condrocitos, especialmente en cartílago dañado por trauma o por enfermedades degenerativas como la osteoartritis; la revisión citada recoge ese trabajo.",
+        "In the joint cavity MGF is highly expressed in chondrocytes, especially in cartilage damaged by trauma or by degenerative disease such as osteoarthritis; the review cited gathers that work.",
+        [REF.liuMgf],
+        BATCH_5,
+      ),
+      ghAxisLimit("mgf-research-limits"),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.liuMgf, REF.ghAxis],
+    technicalNotes: [],
+    functions: [{ id: "igf-1-signalling", statement: "mgf-mechanism-isoform" }],
+  },
+
+  /* ---- PEG-MGF ------------------------------------------------------------ */
+  "peg-mgf": {
+    slug: "peg-mgf",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "peg-mgf-mechanism-pegylated",
+        "La revisión citada nombra el factor de crecimiento mecánico pegilado (PEG-MGF) entre los análogos de IGF-1 que circulan como compuestos de investigación, junto con IGF-1 Long R3. El MGF del que parte es una isoforma del IGF-1 sensible a estímulos mecánicos.",
+        "The review cited names pegylated mechano growth factor (PEG-MGF) among the IGF-1 analogues circulating as research compounds, alongside IGF-1 Long R3. The MGF it derives from is a mechanically sensitive isoform of IGF-1.",
+        [REF.ghAxis, REF.liuMgf],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [ghAxisLimit("peg-mgf-research-limits")],
+    areasOfInvestigation: [],
+    keyReferences: [REF.ghAxis, REF.liuMgf],
+    technicalNotes: [
+      note(
+        "peg-mgf-note-literature",
+        "No se cita un estudio de la forma pegilada en particular: la fuente que la nombra la clasifica, y el trabajo experimental citado es sobre MGF.",
+        "No study of the pegylated form specifically is cited: the source that names it classifies it, and the experimental work cited is on MGF.",
+        BATCH_5,
+      ),
+    ],
+    functions: [{ id: "igf-1-signalling", statement: "peg-mgf-mechanism-pegylated" }],
+  },
+
+  /* ---- IGF-1 LR3 ---------------------------------------------------------- */
+  "igf-1lr3": {
+    slug: "igf-1lr3",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "igf-1lr3-mechanism-analogue",
+        "IGF-1 Long R3 (LR3) es un análogo del factor de crecimiento similar a la insulina 1; la revisión citada lo agrupa con PEG-MGF entre los análogos de IGF-1 que circulan como compuestos de investigación.",
+        "IGF-1 Long R3 (LR3) is an analogue of insulin-like growth factor 1; the review cited groups it with PEG-MGF among the IGF-1 analogues circulating as research compounds.",
+        [REF.ghAxis],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "igf-1lr3-research-cachexia-model",
+        "En un estudio sobre caquexia asociada a cáncer, LR3 IGF-I se usó en células musculares C2C12 y en un modelo murino para explorar si sumaba efecto a los bloqueadores del receptor ALK4/5 frente a la pérdida de masa muscular.",
+        "In a study of cancer-associated cachexia, LR3 IGF-I was used in C2C12 muscle cells and in a murine model to explore whether it added to ALK4/5 receptor blockers against muscle wasting.",
+        [REF.levolger],
+        BATCH_5,
+      ),
+      ghAxisLimit("igf-1lr3-research-limits"),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.ghAxis, REF.levolger],
+    technicalNotes: [],
+    functions: [{ id: "igf-1-signalling", statement: "igf-1lr3-mechanism-analogue" }],
+  },
+
+  /* ---- GDF-8 (myostatin) -------------------------------------------------- */
+  "gdf-8": {
+    slug: "gdf-8",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "gdf-8-mechanism-identity",
+        "El GDF-8 (factor de crecimiento y diferenciación 8, también llamado miostatina) es un miembro de la superfamilia del TGF-β que se expresa específicamente en músculo esquelético en desarrollo y adulto.",
+        "GDF-8 (growth/differentiation factor 8, also called myostatin) is a member of the TGF-β superfamily expressed specifically in developing and adult skeletal muscle.",
+        [REF.mcpherron],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "gdf-8-research-knockout",
+        "El trabajo que lo identificó mostró que su expresión empieza en el miotomo de los somitas durante la embriogénesis temprana y continúa en muchos músculos del animal adulto; es el estudio que estableció su papel regulador de la masa muscular en el ratón.",
+        "The work that identified it showed expression beginning in the myotome compartment of developing somites in early embryogenesis and continuing in many muscles of the adult animal; it is the study that established its role in regulating muscle mass in the mouse.",
+        [REF.mcpherron],
+        BATCH_5,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.mcpherron],
+    technicalNotes: [
+      note(
+        "gdf-8-note-direction",
+        "La literatura citada estudia la miostatina como regulador endógeno: la masa muscular aumenta cuando su señalización se BLOQUEA, que es lo que persiguen los inhibidores del receptor ActRIIB.",
+        "The literature cited studies myostatin as an endogenous regulator: muscle mass increases when its signalling is BLOCKED, which is what ActRIIB receptor inhibitors pursue.",
+        BATCH_5,
+      ),
+    ],
+    functions: [{ id: "muscle-mass-regulation", statement: "gdf-8-mechanism-identity" }],
+  },
+
+  /* ---- ACE-031 ------------------------------------------------------------ */
+  "ace-031": {
+    slug: "ace-031",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "ace-031-mechanism-actriib",
+        "ACE-031 es una proteína terapéutica formada por el dominio extracelular del receptor de activina tipo IIB (ActRIIB) unido a una fracción Fc. Actúa como receptor soluble que secuestra ligandos de ActRIIB, entre ellos la miostatina y la activina A.",
+        "ACE-031 is a therapeutic protein consisting of the extracellular domain of the activin receptor type IIB (ActRIIB) fused to an Fc portion. It acts as a soluble receptor that sequesters ActRIIB ligands, among them myostatin and activin A.",
+        [REF.cadena, REF.mcpherron],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "ace-031-research-marmoset",
+        "En el tití común, un primate no humano, ACE-031 aumentó la masa y la fuerza muscular; los autores presentan el modelo como un paso intermedio entre los resultados en ratón y una posible aplicación en miopatías crónicas humanas.",
+        "In the common marmoset, a non-human primate, ACE-031 increased muscle mass and strength; the authors present the model as a step between mouse results and possible application in human chronic myopathies.",
+        [REF.cadena],
+        BATCH_5,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.cadena, REF.mcpherron],
+    technicalNotes: [
+      note(
+        "ace-031-note-models",
+        "La evidencia citada es de ratón y de primate no humano; no se cita ningún ensayo en humanos.",
+        "The evidence cited is from mice and a non-human primate; no human trial is cited.",
+        BATCH_5,
+      ),
+    ],
+    functions: [{ id: "muscle-mass-regulation", statement: "ace-031-mechanism-actriib" }],
+  },
+
+  /* ---- Kisspeptin-10 ------------------------------------------------------ */
+  "kisspeptin-10": {
+    slug: "kisspeptin-10",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "kisspeptin-10-mechanism-gnrh",
+        "Las kisspeptinas estimulan la GnRH y con ella la secreción de gonadotropinas. La kisspeptina-10 es la secuencia mínima con actividad intrínseca completa.",
+        "Kisspeptins stimulate GnRH and thereby gonadotropin secretion. Kisspeptin-10 is the minimal sequence with full intrinsic bioactivity.",
+        [REF.george],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "kisspeptin-10-research-men",
+        "En hombres sanos se estudió su efecto sobre la hormona luteinizante: los autores reportan que la kisspeptina-10 es un estimulador potente de la LH y que aumenta el número de pulsos de LH por hora, consistente con un aumento de la pulsatilidad de GnRH.",
+        "In healthy men its effect on luteinising hormone was studied: the authors report kisspeptin-10 is a potent stimulator of LH and increases the number of LH pulses per hour, consistent with increased GnRH pulsatility.",
+        [REF.george],
+        BATCH_5,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.george],
+    technicalNotes: [],
+    functions: [{ id: "reproductive-axis", statement: "kisspeptin-10-mechanism-gnrh" }],
+  },
+
+  /* ---- PT-141 (bremelanotide) -------------------------------------------- */
+  pt141: {
+    slug: "pt141",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "pt141-mechanism-melanocortin",
+        "PT-141 es la bremelanotida, un péptido de la familia de las melanocortinas. Los receptores de esta familia, entre ellos el MC4R, son diana de desarrollo farmacológico documentado.",
+        "PT-141 is bremelanotide, a peptide of the melanocortin family. The receptors of this family, MC4R among them, are a documented target of drug development.",
+        [REF.kingsberg, REF.mc4r],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "pt141-research-reconnect",
+        "Dos ensayos de fase 3 idénticos, aleatorizados, doble ciego y controlados con placebo (RECONNECT) evaluaron su seguridad y eficacia en mujeres premenopáusicas con trastorno del deseo sexual hipoactivo, con 24 semanas de tratamiento y asignación 1:1.",
+        "Two identical randomised, double-blind, placebo-controlled phase 3 trials (RECONNECT) evaluated its safety and efficacy in premenopausal women with hypoactive sexual desire disorder, over 24 weeks of treatment with 1:1 allocation.",
+        [REF.kingsberg],
+        BATCH_5,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.kingsberg, REF.mc4r],
+    technicalNotes: [
+      note(
+        "pt141-note-population",
+        "La literatura citada estudia una indicación y una población clínicas concretas, evaluadas con instrumentos clínicos.",
+        "The literature cited studies one specific clinical indication and population, assessed with clinical instruments.",
+        BATCH_5,
+      ),
+    ],
+    functions: [{ id: "melanocortin-receptors", statement: "pt141-mechanism-melanocortin" }],
+  },
+
+  /* ---- Oxytocin ----------------------------------------------------------- */
+  "oxytocin-acetate": {
+    slug: "oxytocin-acetate",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "oxytocin-mechanism-receptor",
+        "La oxitocina actúa por su receptor (OXTR), expresado en el cerebro y en tejidos periféricos, acoplado a cascadas de señalización intracelular. La revisión citada recorre su expresión, su liberación y esas cascadas.",
+        "Oxytocin acts through its receptor (OXTR), expressed in the brain and in peripheral tissues and coupled to intracellular signalling cascades. The review cited covers its expression, its release and those cascades.",
+        [REF.jurek],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "oxytocin-research-literature",
+        "Es un sistema con una literatura enorme: la revisión citada parte de cerca de 25,000 publicaciones desde 1930 y describe papeles centrales de la oxitocina y su receptor en la reproducción y en conductas sociales y emocionales, en estudios animales y humanos.",
+        "It is a system with an enormous literature: the review cited draws on close to 25,000 publications since 1930 and describes central roles for oxytocin and its receptor in reproduction and in social and emotional behaviours, across animal and human studies.",
+        [REF.jurek],
+        BATCH_5,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.jurek],
+    technicalNotes: [],
+    functions: [{ id: "neuroendocrine-signalling", statement: "oxytocin-mechanism-receptor" }],
+  },
+
+  /* ---- HCG ---------------------------------------------------------------- */
+  hcg: {
+    slug: "hcg",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "hcg-mechanism-gonadotropin",
+        "La gonadotropina coriónica humana (HCG) es una gonadotropina usada clínicamente para estimular la función gonadal; la revisión citada la evalúa sola o combinada en infertilidad masculina.",
+        "Human chorionic gonadotropin (HCG) is a gonadotropin used clinically to stimulate gonadal function; the review cited evaluates it alone or in combination in male infertility.",
+        [REF.shoaib],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "hcg-research-systematic-review",
+        "Una revisión sistemática de bases de datos (Embase, MEDLINE y el registro Cochrane CENTRAL) evaluó su eficacia y seguridad en infertilidad masculina, incluyendo oligospermia, varicocele, testiculopatía grave e hipogonadismo hipogonadotrópico, y parte de que no hay consenso sobre su valor en esa indicación.",
+        "A systematic review of databases (Embase, MEDLINE and the Cochrane CENTRAL register) assessed its efficacy and safety in male infertility, including oligospermia, varicocele, severe testiculopathy and hypogonadotropic hypogonadism, starting from the absence of consensus on its value there.",
+        [REF.shoaib],
+        BATCH_5,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.shoaib],
+    technicalNotes: [],
+    functions: [{ id: "reproductive-axis", statement: "hcg-mechanism-gonadotropin" }],
+  },
+
+  /* ---- VIP ---------------------------------------------------------------- */
+  vip: {
+    slug: "vip",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "vip-mechanism-neuropeptide",
+        "El péptido intestinal vasoactivo (VIP) es un neuropéptido que, junto con el PACAP, se describe como modulador potente de las respuestas inmunitarias.",
+        "Vasoactive intestinal peptide (VIP) is a neuropeptide which, together with PACAP, is described as a potent modulator of immune responses.",
+        [REF.dawlaty],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "vip-research-sepsis-review",
+        "La revisión citada recorre cinco décadas de investigación en sepsis y describe papeles complejos: protectores o permisivos según el momento, el compartimento tisular y el contexto inflamatorio. Los estudios de los años ochenta observaron que los niveles de VIP aumentan durante la endotoxemia.",
+        "The review cited covers five decades of sepsis research and describes complex roles: protective or permissive depending on timing, tissue compartment and inflammatory context. Studies in the 1980s observed that VIP levels rise during endotoxaemia.",
+        [REF.dawlaty],
+        BATCH_5,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.dawlaty],
+    technicalNotes: [],
+    functions: [
+      { id: "neuroendocrine-signalling", statement: "vip-mechanism-neuropeptide" },
+      { id: "immune-modulation", statement: "vip-research-sepsis-review" },
+    ],
+  },
+
+  /* ---- NAD+ --------------------------------------------------------------- */
+  nad: {
+    slug: "nad",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "nad-mechanism-coenzyme",
+        "El NAD+ (dinucleótido de nicotinamida y adenina) es una coenzima de reacciones redox, lo que lo sitúa en el centro del metabolismo energético, y además un cofactor esencial de enzimas no redox como las sirtuinas, CD38 y las poli(ADP-ribosa) polimerasas.",
+        "NAD+ (nicotinamide adenine dinucleotide) is a coenzyme for redox reactions, which places it at the centre of energy metabolism, and also an essential cofactor for non-redox enzymes such as the sirtuins, CD38 and the poly(ADP-ribose) polymerases.",
+        [REF.covarrubias],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "nad-research-ageing",
+        "La revisión citada describe cómo el NAD+ influye directa e indirectamente en vías metabólicas, reparación de ADN, remodelado de cromatina, senescencia celular y función de las células inmunes, y revisa esos procesos en el contexto del envejecimiento.",
+        "The review cited describes how NAD+ directly and indirectly influences metabolic pathways, DNA repair, chromatin remodelling, cellular senescence and immune cell function, and reviews those processes in the context of ageing.",
+        [REF.covarrubias],
+        BATCH_5,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.covarrubias],
+    technicalNotes: [],
+    functions: [
+      { id: "nnmt-nad-metabolism", statement: "nad-mechanism-coenzyme" },
+      { id: "redox-balance", statement: "nad-mechanism-coenzyme" },
+    ],
+  },
+
+  /* ---- MOTS-c ------------------------------------------------------------- */
+  "mots-c": {
+    slug: "mots-c",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "mots-c-mechanism-mitochondrial",
+        "MOTS-c es un péptido de 16 aminoácidos codificado por un marco de lectura corto dentro del ARN ribosomal 12S del ADN mitocondrial. Su identificación partió de la de la humanina, el primer péptido señalizador descrito en el ADN mitocondrial.",
+        "MOTS-c is a 16-amino-acid peptide encoded by a short open reading frame within the 12S ribosomal RNA of mitochondrial DNA. Its identification followed that of humanin, the first signalling peptide described in mitochondrial DNA.",
+        [REF.motsC],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "mots-c-research-metabolic",
+        "El trabajo que lo describió reporta que regula la sensibilidad a la insulina y la homeostasis metabólica, y plantea a la mitocondria como unidad de señalización además de orgánulo funcional.",
+        "The work that described it reports that it regulates insulin sensitivity and metabolic homeostasis, and puts forward the mitochondrion as a signalling unit as well as a functional organelle.",
+        [REF.motsC],
+        BATCH_5,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.motsC],
+    technicalNotes: [],
+    functions: [
+      { id: "mitochondrial-bioenergetics", statement: "mots-c-mechanism-mitochondrial" },
+      { id: "energy-balance", statement: "mots-c-research-metabolic" },
+    ],
+  },
+
+  /* ---- Humanin ------------------------------------------------------------ */
+  humanin: {
+    slug: "humanin",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "humanin-mechanism-mitochondrial",
+        "La humanina es un péptido señalizador codificado por un marco de lectura corto del ADN mitocondrial: el primero descrito, y el que abrió la búsqueda de otros como MOTS-c. Es un péptido secretado que inhibe la neurotoxicidad del péptido amiloide β.",
+        "Humanin is a signalling peptide encoded by a short open reading frame in mitochondrial DNA: the first described, and the one that opened the search for others such as MOTS-c. It is a secreted peptide that inhibits the neurotoxicity of amyloid β peptide.",
+        [REF.motsC, REF.chaiHumanin],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "humanin-research-rat-model",
+        "En ratas, el tratamiento con humanina aumentó el número de ramificaciones dendríticas y la densidad de espinas dendríticas en un modelo de cambios patológicos y déficit cognitivo inducidos por amiloide β.",
+        "In rats, treatment with humanin increased the number of dendritic branches and the density of dendritic spines in a model of amyloid β-induced pathological changes and cognitive deficits.",
+        [REF.chaiHumanin],
+        BATCH_5,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.motsC, REF.chaiHumanin],
+    technicalNotes: [
+      note(
+        "humanin-note-models",
+        "La evidencia citada es de ratas; no se cita ningún ensayo en humanos.",
+        "The evidence cited is from rats; no human trial is cited.",
+        BATCH_5,
+      ),
+    ],
+    functions: [
+      { id: "mitochondrial-bioenergetics", statement: "humanin-mechanism-mitochondrial" },
+      { id: "neuroprotection", statement: "humanin-research-rat-model" },
+    ],
+  },
+
+  /* ---- SS-31 -------------------------------------------------------------- */
+  "ss-31": {
+    slug: "ss-31",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "ss-31-mechanism-cardiolipin",
+        "SS-31 se describe como un compuesto protector de la cardiolipina, el fosfolípido exclusivo de la membrana mitocondrial interna que participa en la formación de crestas y en la organización de los complejos respiratorios en supercomplejos para una fosforilación oxidativa óptima.",
+        "SS-31 is described as a cardiolipin-protective compound. Cardiolipin is the phospholipid found only on the inner mitochondrial membrane, involved in cristae formation and in organising the respiratory complexes into supercomplexes for optimal oxidative phosphorylation.",
+        [REF.szeto],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "ss-31-research-bioenergetics",
+        "La revisión citada plantea la restauración de la bioenergética mitocondrial como enfoque común para enfermedades asociadas a la edad, y sitúa la interacción entre cardiolipina y citocromo c como punto donde ese enfoque actúa.",
+        "The review cited proposes restoring mitochondrial bioenergetics as a common approach for age-associated disease, and places the interaction between cardiolipin and cytochrome c as the point where that approach acts.",
+        [REF.szeto],
+        BATCH_5,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.szeto],
+    technicalNotes: [],
+    functions: [{ id: "mitochondrial-bioenergetics", statement: "ss-31-mechanism-cardiolipin" }],
+  },
+
+  /* ---- FOXO4-DRI ---------------------------------------------------------- */
+  "fox04-dir": {
+    slug: "fox04-dir",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "foxo4-mechanism-p53",
+        "El péptido FOXO4 fue diseñado para perturbar la interacción entre FOXO4 y p53, identificada como el punto del que depende la viabilidad de las células senescentes.",
+        "The FOXO4 peptide was designed to perturb the interaction between FOXO4 and p53, identified as the pivot on which senescent cell viability depends.",
+        [REF.baar],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "foxo4-research-senescence",
+        "El trabajo citado parte de que las células senescentes deterioran la función del tejido y de que su eliminación genética retrasa rasgos del envejecimiento, e investiga si la homeostasis del tejido puede además restaurarse mediante la apoptosis dirigida de esas células tras daño por quimioterapia y en el envejecimiento.",
+        "The work cited starts from senescent cells impairing tissue function and from their genetic clearance delaying features of ageing, and investigates whether tissue homeostasis can also be restored by targeted apoptosis of those cells after chemotoxic damage and in ageing.",
+        [REF.baar],
+        BATCH_5,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.baar],
+    technicalNotes: [
+      note(
+        "foxo4-note-models",
+        "La evidencia citada es de modelos celulares y de ratón; no se cita ningún ensayo en humanos.",
+        "The evidence cited is from cell and mouse models; no human trial is cited.",
+        BATCH_5,
+      ),
+    ],
+    functions: [{ id: "cellular-senescence", statement: "foxo4-mechanism-p53" }],
+  },
+
+  /* ---- Glutathione -------------------------------------------------------- */
+  glutathione: {
+    slug: "glutathione",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "glutathione-mechanism-thiol",
+        "El glutatión (GSH) es el compuesto tiólico de bajo peso molecular más abundante que sintetizan las células. Cumple papeles críticos protegiéndolas del daño oxidativo y de la toxicidad de electrófilos xenobióticos, y manteniendo la homeostasis redox.",
+        "Glutathione (GSH) is the most abundant low-molecular-weight thiol compound synthesised in cells. It plays critical roles protecting them from oxidative damage and from the toxicity of xenobiotic electrophiles, and maintaining redox homeostasis.",
+        [REF.forman],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "glutathione-research-overview",
+        "La revisión citada describe la eliminación de oxidantes por reducción y de electrófilos por conjugación con GSH, los métodos para medir el estado de glutatión en las células, su síntesis y su regulación, y los enfoques propuestos para manipular su contenido.",
+        "The review cited describes the elimination of oxidants by reduction and of electrophiles by conjugation with GSH, the methods for assessing glutathione status in cells, its synthesis and regulation, and the approaches proposed for manipulating its content.",
+        [REF.forman],
+        BATCH_5,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.forman],
+    technicalNotes: [],
+    functions: [{ id: "redox-balance", statement: "glutathione-mechanism-thiol" }],
+  },
+
+  /* ---- Epithalon ---------------------------------------------------------- */
+  epithalon: {
+    slug: "epithalon",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "epithalon-mechanism-telomere",
+        "La revisión citada incluye al epitalón entre nueve péptidos revisados en gerontología y lo sitúa en la biología del telómero, una de las líneas que examina junto con la restauración metabólica, la regeneración dérmica y la neuroprotección.",
+        "The review cited includes epitalon among nine peptides reviewed in gerontology and places it in telomere biology, one of the lines it examines alongside metabolic restoration, dermal regeneration and neuroprotection.",
+        [REF.mavrych],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "epithalon-research-review-limits",
+        "Esa revisión narrativa distingue explícitamente entre los péptidos con aprobación regulatoria, que cuentan con perfiles de seguridad de ensayos grandes, y los no aprobados, de los que dice que muestran resultados prometedores; el epitalón está en el segundo grupo.",
+        "That narrative review explicitly distinguishes peptides with regulatory approval, which have safety profiles from large-scale trials, from non-approved ones, of which it says they show promising results; epitalon is in the second group.",
+        [REF.mavrych],
+        BATCH_5,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.mavrych],
+    technicalNotes: [
+      note(
+        "epithalon-note-evidence",
+        "La única fuente citada es una revisión narrativa. No se cita ningún estudio primario del epitalón, y ese es el estado de la literatura localizada, no un recorte de esta ficha.",
+        "The only source cited is a narrative review. No primary study of epitalon is cited, and that is the state of the literature located rather than a cut made on this page.",
+        BATCH_5,
+      ),
+    ],
+    functions: [{ id: "telomere-biology", statement: "epithalon-mechanism-telomere" }],
+  },
+
+  /* ---- Melatonin ---------------------------------------------------------- */
+  melatonin: {
+    slug: "melatonin",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "melatonin-mechanism-hormone",
+        "La melatonina es una molécula presente en casi todo ser vivo, de bacterias a humanos. En vertebrados se sintetiza centralmente en la glándula pineal, además de producirse en tejidos periféricos donde actúa como señal autocrina y paracrina.",
+        "Melatonin is a molecule present in almost every living being, from bacteria to humans. In vertebrates it is synthesised centrally in the pineal gland, besides being produced in peripheral tissues where it acts as an autocrine and paracrine signal.",
+        [REF.melatonin],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "melatonin-research-circadian",
+        "Independientemente de la especie, la melatonina pineal se produce siempre durante la noche, y la duración de su episodio secretor depende directamente de la longitud de la noche: es la señal que transmite la información temporal del ritmo día-noche.",
+        "Whatever the species, pineal melatonin is always produced during the night, and the duration of its secretory episode depends directly on the length of the night: it is the signal that carries the temporal information of the day-night rhythm.",
+        [REF.melatonin],
+        BATCH_5,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.melatonin],
+    technicalNotes: [],
+    functions: [{ id: "circadian-regulation", statement: "melatonin-research-circadian" }],
+  },
+
+  /* ---- Semax -------------------------------------------------------------- */
+  semax: {
+    slug: "semax",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "semax-mechanism-acth-analogue",
+        "Semax es un análogo del fragmento ACTH(4-10). El estudio citado midió su efecto sobre la dinámica del calcio intracelular en rebanadas de cerebro de rata.",
+        "Semax is an analogue of the ACTH(4-10) fragment. The study cited measured its effect on intracellular calcium dynamics in rat brain slices.",
+        [REF.kolbaev],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "semax-research-review",
+        "Una revisión de 2025 examina el potencial de Semax y de un derivado para corregir alteraciones patológicas en la enfermedad de Alzheimer, en el marco del interés por fármacos peptídicos de perfil de efectos adversos favorable.",
+        "A 2025 review examines the potential of Semax and a derivative for correcting pathological impairments in Alzheimer's disease, in the context of interest in peptide drugs with a favourable adverse-effect profile.",
+        [REF.radchenko],
+        BATCH_5,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.kolbaev, REF.radchenko],
+    technicalNotes: [
+      note(
+        "semax-note-evidence",
+        "La literatura citada es experimental y de revisión, y procede en buena parte de grupos rusos donde el compuesto se estudia desde hace décadas.",
+        "The literature cited is experimental and review work, much of it from Russian groups where the compound has been studied for decades.",
+        BATCH_5,
+      ),
+    ],
+    functions: [{ id: "neuroprotection", statement: "semax-research-review" }],
+  },
+
+  /* ---- Selank ------------------------------------------------------------- */
+  selank: {
+    slug: "selank",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "selank-mechanism-tuftsin",
+        "Selank es un análogo peptídico de la tuftsina, un tetrapéptido de origen inmunológico.",
+        "Selank is a peptide analogue of tuftsin, a tetrapeptide of immunological origin.",
+        [REF.selank],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "selank-research-rats",
+        "En ratas, en un modelo de abstinencia de morfina precipitada con naloxona, Selank redujo el índice total del síndrome de abstinencia en 39.6 %, atenuó de forma significativa las reacciones convulsivas, la ptosis y las alteraciones posturales, y elevó nueve veces el umbral de sensibilidad táctil frente al control activo.",
+        "In rats, in a naloxone-precipitated morphine withdrawal model, Selank reduced the total withdrawal syndrome index by 39.6%, significantly attenuated convulsive reactions, ptosis and postural disorders, and raised the tactile sensitivity threshold nine-fold versus active control.",
+        [REF.selank],
+        BATCH_5,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.selank],
+    technicalNotes: [
+      note(
+        "selank-note-models",
+        "La evidencia citada es de ratas; no se cita ningún ensayo en humanos.",
+        "The evidence cited is from rats; no human trial is cited.",
+        BATCH_5,
+      ),
+    ],
+    functions: [
+      { id: "immune-modulation", statement: "selank-mechanism-tuftsin" },
+      { id: "neuroprotection", statement: "selank-research-rats" },
+    ],
+  },
+
+  /* ---- Selank + Semax ----------------------------------------------------- */
+  "selank-semax": {
+    slug: "selank-semax",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "selank-semax-mechanism-components",
+        "Esta presentación combina dos péptidos con literatura propia: Selank, análogo de la tuftsina, y Semax, análogo del fragmento ACTH(4-10).",
+        "This presentation combines two peptides with their own literature: Selank, a tuftsin analogue, and Semax, an analogue of the ACTH(4-10) fragment.",
+        [REF.selank, REF.kolbaev],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [],
+    areasOfInvestigation: [],
+    keyReferences: [REF.selank, REF.kolbaev, REF.radchenko],
+    technicalNotes: [
+      note(
+        "selank-semax-note-blend",
+        "No se cita literatura sobre la combinación: las fuentes estudian cada péptido por separado.",
+        "No literature about the combination is cited: the sources study each peptide separately.",
+        BATCH_5,
+      ),
+    ],
+    functions: [{ id: "neuroprotection", statement: "selank-semax-mechanism-components" }],
+  },
+
+  /* ---- Cerebrolysin ------------------------------------------------------- */
+  cerebrolysin: {
+    slug: "cerebrolysin",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "cerebrolysin-mechanism-multimodal",
+        "El estudio citado describe la cerebrolisina como un agente neuroprotector multimodal, usado como tratamiento adyuvante.",
+        "The study cited describes Cerebrolysin as a multimodal neuroprotective agent, used as an adjunctive treatment.",
+        [REF.cerebrolysin],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "cerebrolysin-research-thrombectomy",
+        "En una cohorte emparejada por puntaje de propensión de pacientes seleccionados con trombectomía endovascular por ictus, se evaluaron los resultados funcionales a 12 meses con cerebrolisina adyuvante. Los autores describen el análisis como generador de hipótesis, una emulación de ensayo diana y no un ensayo aleatorizado.",
+        "In a propensity score-matched cohort of selected patients undergoing endovascular thrombectomy for stroke, 12-month functional outcomes with adjunctive Cerebrolysin were assessed. The authors describe the analysis as hypothesis-generating, a target-trial emulation rather than a randomised trial.",
+        [REF.cerebrolysin],
+        BATCH_5,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.cerebrolysin],
+    technicalNotes: [],
+    functions: [{ id: "neuroprotection", statement: "cerebrolysin-mechanism-multimodal" }],
+  },
+
+  /* ---- Dihexa ------------------------------------------------------------- */
+  dihexa: {
+    slug: "dihexa",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "dihexa-mechanism-angiotensin-iv",
+        "Dihexa, también identificado como PNB-0408 y como N-hexanoil-Tyr-Ile-(6)-amino hexanoico amida, es un análogo de la angiotensina IV al que se han atribuido propiedades neuroprotectoras y procognitivas.",
+        "Dihexa, also identified as PNB-0408 and as N-hexanoic-Tyr-Ile-(6)-amino hexanoic amide, is an angiotensin IV analogue to which neuroprotective and procognitive properties have been attributed.",
+        [REF.wellsDihexa],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "dihexa-research-huntington-model",
+        "Se estudió en ratas en un modelo que imita la patología de la enfermedad de Huntington mediante ácido 3-nitropropiónico, una toxina mitocondrial que induce síntomas similares a los de la enfermedad.",
+        "It was studied in rats in a model that mimics Huntington's disease pathology using 3-nitropropionic acid, a mitochondrial toxin that induces disease-like symptoms.",
+        [REF.wellsDihexa],
+        BATCH_5,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.wellsDihexa],
+    technicalNotes: [
+      note(
+        "dihexa-note-models",
+        "La evidencia citada es de ratas; no se cita ningún ensayo en humanos.",
+        "The evidence cited is from rats; no human trial is cited.",
+        BATCH_5,
+      ),
+    ],
+    functions: [{ id: "neuroprotection", statement: "dihexa-mechanism-angiotensin-iv" }],
+  },
+
+  /* ---- P21 (P021) --------------------------------------------------------- */
+  "p21-p021": {
+    slug: "p21-p021",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "p021-mechanism-cntf-mimetic",
+        "P021 es un mimético peptídico de molécula pequeña del factor neurotrófico ciliar (CNTF). La línea de trabajo en la que se estudia parte de que aumentar los niveles cerebrales de BDNF produce mejoras estructurales y conductuales en modelos de trastornos del neurodesarrollo.",
+        "P021 is a small-molecule peptide mimetic of ciliary neurotrophic factor (CNTF). The line of work it is studied in starts from the finding that increasing brain BDNF levels produces structural and behavioural improvements in neurodevelopmental disorder models.",
+        [REF.mottolese],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "p021-research-cdkl5",
+        "Se evaluó en modelos in vitro e in vivo del trastorno por deficiencia de CDKL5, una encefalopatía epiléptica grave en la que la ausencia de Cdkl5 afecta la proliferación, la supervivencia y la maduración neuronal.",
+        "It was evaluated in in vitro and in vivo models of CDKL5 deficiency disorder, a severe epileptic encephalopathy in which the absence of Cdkl5 impairs neuronal proliferation, survival and maturation.",
+        [REF.mottolese],
+        BATCH_5,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.mottolese],
+    technicalNotes: [
+      note(
+        "p021-note-models",
+        "La evidencia citada es de cultivos y de ratón; no se cita ningún ensayo en humanos.",
+        "The evidence cited is from cultures and mice; no human trial is cited.",
+        BATCH_5,
+      ),
+    ],
+    functions: [{ id: "neuroprotection", statement: "p021-mechanism-cntf-mimetic" }],
+  },
+
+  /* ---- Melanotan 1 (afamelanotide) --------------------------------------- */
+  "melanotan-1": {
+    slug: "melanotan-1",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "melanotan-1-mechanism-msh-analogue",
+        "La afamelanotida, el nombre con el que este compuesto aparece en la literatura clínica, es un análogo de la hormona estimulante de melanocitos α (α-MSH), de la familia de las melanocortinas.",
+        "Afamelanotide, the name under which this compound appears in the clinical literature, is an analogue of α-melanocyte-stimulating hormone (α-MSH), of the melanocortin family.",
+        [REF.afamelanotide, REF.mc4r],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "melanotan-1-research-epp",
+        "Dos ensayos multicéntricos, aleatorizados, doble ciego y controlados con placebo lo evaluaron en protoporfiria eritropoyética, una fotodermatosis grave con fototoxicidad aguda, midiendo dolor y calidad de vida.",
+        "Two multicentre, randomised, double-blind, placebo-controlled trials evaluated it in erythropoietic protoporphyria, a severe photodermatosis with acute phototoxicity, measuring pain and quality of life.",
+        [REF.afamelanotide],
+        BATCH_5,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.afamelanotide, REF.mc4r],
+    technicalNotes: [
+      note(
+        "melanotan-1-note-population",
+        "La literatura citada estudia una enfermedad rara concreta, no la pigmentación como fin cosmético.",
+        "The literature cited studies one specific rare disease, not pigmentation as a cosmetic end.",
+        BATCH_5,
+      ),
+    ],
+    functions: [{ id: "melanocortin-receptors", statement: "melanotan-1-mechanism-msh-analogue" }],
+  },
+
+  /* ---- Melanotan 2 -------------------------------------------------------- */
+  "melanotan-2": {
+    slug: "melanotan-2",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "melanotan-2-mechanism-mc1r",
+        "El Melanotan II se describe en la literatura como un péptido sintético no autorizado de la familia de las melanocortinas, que actúa principalmente activando receptores MC1R en los melanocitos y estimulando la producción de eumelanina, con pigmentación independiente de la exposición solar.",
+        "Melanotan II is described in the literature as an unlicensed synthetic peptide of the melanocortin family, acting primarily by activating MC1R receptors on melanocytes and stimulating eumelanin production, with pigmentation independent of sun exposure.",
+        [REF.bonchev, REF.mc4r],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "melanotan-2-research-case-report",
+        "La fuente citada es un reporte de caso con seguimiento de tres meses de una persona que se lo aplicó durante 64 días buscando un bronceado más profundo, y documenta cambios en la mucosa oral. Los autores señalan su popularidad a través de promoción en redes sociales.",
+        "The source cited is a case report with three-month follow-up of a person who self-applied it over 64 days seeking a deeper tan, documenting changes in the oral mucosa. The authors note its popularity through social media promotion.",
+        [REF.bonchev],
+        BATCH_5,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.bonchev, REF.mc4r],
+    technicalNotes: [
+      note(
+        "melanotan-2-note-evidence",
+        "La evidencia citada es un reporte de caso, el nivel más bajo de la jerarquía clínica, y describe un hallazgo adverso. No se cita ningún ensayo controlado.",
+        "The evidence cited is a case report, the lowest level of the clinical hierarchy, and it describes an adverse finding. No controlled trial is cited.",
+        BATCH_5,
+      ),
+    ],
+    functions: [{ id: "melanocortin-receptors", statement: "melanotan-2-mechanism-mc1r" }],
+  },
+
+  /* ---- B12 (methylcobalamin) --------------------------------------------- */
+  "b12-methylcobalamin": {
+    slug: "b12-methylcobalamin",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "b12-mechanism-cofactor",
+        "La vitamina B12, también llamada cobalamina, tiene un papel importante en el metabolismo celular, en particular en la síntesis de ADN, la metilación y el metabolismo mitocondrial.",
+        "Vitamin B12, also called cobalamin, has an important role in cellular metabolism, particularly in DNA synthesis, methylation and mitochondrial metabolism.",
+        [REF.greenB12],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "b12-research-deficiency",
+        "La deficiencia clínica de B12, con sus manifestaciones hematológicas y neurológicas clásicas, es relativamente poco común; la deficiencia subclínica afecta entre 2.5 % y 26 % de la población general según la definición usada, y su relevancia clínica no está clara. Puede afectar a personas de todas las edades.",
+        "Clinical B12 deficiency, with its classic haematological and neurological manifestations, is relatively uncommon; subclinical deficiency affects between 2.5% and 26% of the general population depending on the definition used, and its clinical relevance is unclear. It can affect people of all ages.",
+        [REF.greenB12],
+        BATCH_5,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.greenB12],
+    technicalNotes: [],
+    functions: [{ id: "one-carbon-metabolism", statement: "b12-mechanism-cofactor" }],
+  },
+
+  /* ---- Dermorphin --------------------------------------------------------- */
+  dermorphin: {
+    slug: "dermorphin",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "dermorphin-mechanism-mu-opioid",
+        "La dermorfina es un analgésico potente que actúa sobre receptores opioides μ y que promueve su desensibilización rápida. El estudio citado la usa precisamente por esa propiedad, en un modelo de apnea inducida por fentanilo en ratas.",
+        "Dermorphin is a potent analgesic acting on μ-opioid receptors and promoting their rapid desensitisation. The study cited uses it precisely for that property, in a model of fentanyl-induced apnoea in rats.",
+        [REF.dermorphin],
+        BATCH_5,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "dermorphin-research-apnoea-model",
+        "El contexto del estudio es la muerte súbita por opioides: en ratas, una cantidad alta de fentanilo desencadena una apnea sostenida mediada por el receptor μ1, letal si la cantidad es excesiva. Los autores probaron si un pretratamiento con dermorfina bloqueaba esa respuesta.",
+        "The study's context is sudden death from opioid overdose: in rats, a high amount of fentanyl triggers a sustained apnoea mediated by the μ1 receptor, lethal if excessive. The authors tested whether dermorphin pretreatment blocked that response.",
+        [REF.dermorphin],
+        BATCH_5,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [REF.dermorphin],
+    technicalNotes: [
+      note(
+        "dermorphin-note-opioid",
+        "Es un agonista de receptores opioides. La literatura citada es de farmacología en ratas y trata la sobredosis de opioides como problema de estudio.",
+        "It is an opioid receptor agonist. The literature cited is rat pharmacology and treats opioid overdose as the problem under study.",
+        BATCH_5,
+      ),
+    ],
+    functions: [{ id: "opioid-receptors", statement: "dermorphin-mechanism-mu-opioid" }],
   },
 
   /* ---- Thymosin alpha-1 --------------------------------------------------- */
