@@ -40,5 +40,9 @@ export const BATCH_2_INCRETIN_PROFILES: ContentStatus = "approved";
  * Bottle and the two Lipo-C blends. A search returned no primary study of
  * either preparation, and a profile assembled from its components would be
  * NEOGEN's inference rather than a published finding.
+ *
+ * APPROVED BY THE OWNER, 2026-09-17. Four of these compounds are preclinical
+ * only and each says so in its own technical note; the metabolic area now has
+ * a profile on 13 of its 16 products.
  */
-export const BATCH_3_METABOLIC_PROFILES: ContentStatus = "owner-review";
+export const BATCH_3_METABOLIC_PROFILES: ContentStatus = "approved";
