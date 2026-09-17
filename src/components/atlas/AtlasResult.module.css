@@ -529,11 +529,16 @@
 
 /* What it does — sourced statements, read at reading size. */
 .research {
-  margin: 0;
   display: grid;
   gap: var(--space-sm);
   padding-block-start: var(--space-sm);
   border-block-start: 1px solid var(--border-subtle);
+}
+
+.researchList {
+  margin: 0;
+  display: grid;
+  gap: var(--space-sm);
 }
 
 .research dt {

@@ -512,19 +512,22 @@ function ProductCard({
       ) : null}
 
       {product.research ? (
-        <dl className={styles.research}>
-          {product.research.mechanism ? (
-            <div>
-              <dt>{p.research}</dt>
-              <dd>{product.research.mechanism}</dd>
-            </div>
-          ) : null}
-          {product.research.studied ? (
-            <div>
-              <dt>{p.studied}</dt>
-              <dd>{product.research.studied}</dd>
-            </div>
-          ) : null}
+        <div className={styles.research}>
+          <dl className={styles.researchList}>
+            {product.research.mechanism ? (
+              <div>
+                <dt>{p.research}</dt>
+                <dd>{product.research.mechanism}</dd>
+              </div>
+            ) : null}
+            {product.research.studied ? (
+              <div>
+                <dt>{p.studied}</dt>
+                <dd>{product.research.studied}</dd>
+              </div>
+            ) : null}
+          </dl>
+          {/* Outside the list: a `dl` may only contain dt, dd and div. */}
           {sources > 0 ? (
             <Link
               href={product.research.href}
@@ -534,7 +537,7 @@ function ProductCard({
               {sourcesLabel} <span aria-hidden="true">→</span>
             </Link>
           ) : null}
-        </dl>
+        </div>
       ) : null}
 
       {product.areas.length > 0 ? (

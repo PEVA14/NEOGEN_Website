@@ -68,6 +68,9 @@ export function AtlasExperience({
   const [result, setResult] = useState<AtlasResultView | null>(null);
   const [error, setError] = useState<ErrorKind | null>(null);
   const [stage, setStage] = useState(0);
+  /* Nothing is written back until the restore has run, or the first render
+     would overwrite the draft it is about to read. */
+  const [hydrated, setHydrated] = useState(false);
 
   const rootRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLHeadingElement | null>(null);
@@ -91,7 +94,10 @@ export function AtlasExperience({
     queueMicrotask(() => {
       try {
         const raw = window.sessionStorage.getItem(storageKey);
-        if (!raw) return;
+        if (!raw) {
+          setHydrated(true);
+          return;
+        }
         const saved = JSON.parse(raw) as {
           answers?: Record<string, AtlasAnswerValue>;
           step?: unknown;
@@ -120,10 +126,12 @@ export function AtlasExperience({
       } catch {
         /* Storage unavailable or malformed: start fresh. */
       }
+      setHydrated(true);
     });
   }, [questionnaire, questions, storageKey]);
 
   useEffect(() => {
+    if (!hydrated) return;
     try {
       window.sessionStorage.setItem(
         storageKey,
@@ -138,7 +146,7 @@ export function AtlasExperience({
     } catch {
       /* Private mode or blocked storage: nothing to keep, nothing breaks. */
     }
-  }, [answers, phase, result, storageKey]);
+  }, [answers, hydrated, phase, result, storageKey]);
 
   /* A phase change is a new screen: take the visitor to it and put focus on its heading. */
   useEffect(() => {
