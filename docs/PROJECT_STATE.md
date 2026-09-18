@@ -968,11 +968,12 @@ or redesign it.
   Experience-mode moments. The existing RETA 3D vial, the world moments and the
   flagship pages ship as they are.
 
-**V1 consequence (not yet implemented, awaiting approval):** Atlas's public
-entry points — primary nav, footer link, homepage hub card, sitemap entry and
-the `/atlas` route — should be switched off behind one V1 flag, so the code
-stays intact and `check:atlas` keeps passing. Until that is done, Atlas is
-still publicly reachable.
+**Done (2026-09-18):** `src/config/features.ts` holds `atlas: false`. With it
+off, Atlas has no header link, no footer link and no sitemap entry, and its
+page is `noindex`; the homepage hub card was already removed in §8n. `/atlas`
+still renders for anyone who types the URL, so the frozen work can be
+reviewed, and `check:atlas` keeps proving it. Re-enabling it is that one
+line.
 
 ## 8n. V1 commerce and art-direction pass
 

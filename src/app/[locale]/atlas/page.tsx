@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { AtlasExperience, type AtlasCopy } from "@/components/atlas";
+import { features } from "@/config/features";
 import { routes } from "@/config/routes";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/getDictionary";
@@ -25,6 +26,8 @@ export async function generateMetadata({
     description,
     ...socialMetadata({ locale, path: routes.atlas, title, description }),
     alternates: alternates(locale, routes.atlas),
+    /* V2 and unlinked while the flag is off: reachable by URL, never indexed. */
+    ...(features.atlas ? {} : { robots: { index: false, follow: false } }),
   };
 }
 

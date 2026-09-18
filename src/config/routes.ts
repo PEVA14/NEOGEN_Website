@@ -1,3 +1,5 @@
+import { features } from "./features";
+
 import type { CheckoutStepId } from "@/domain/checkout/types";
 
 /**
@@ -89,8 +91,8 @@ export const routes = {
   about: "/nosotros",
 } as const;
 
-/** Keys into `Dictionary["nav"]`, so navigation carries no hard-coded copy. */
-export const primaryNav = [
+/** Every header destination the site knows. `primaryNav` is what a release shows. */
+const navItems = [
   { key: "products", href: routes.products },
   { key: "research", href: routes.research },
   /*
@@ -101,7 +103,13 @@ export const primaryNav = [
   { key: "atlas", href: routes.atlas },
 ] as const;
 
+/**
+ * Keys into `Dictionary["nav"]`, so navigation carries no hard-coded copy.
+ * Filtered by `config/features`: Atlas is V2 and has no header link in V1.
+ */
+export const primaryNav = navItems.filter((item) => item.key !== "atlas" || features.atlas);
+
 /** Reference nav order, including routes not yet built. Documentation only. */
 export const plannedNav = ["products", "research", "about"] as const;
 
-export type NavKey = (typeof primaryNav)[number]["key"];
+export type NavKey = (typeof navItems)[number]["key"];

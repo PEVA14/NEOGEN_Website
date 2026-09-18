@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { Container } from "@/components/primitives";
 import { Body, Mono } from "@/components/typography";
+import { features } from "@/config/features";
 import { routes } from "@/config/routes";
 import { siteConfig } from "@/config/site";
 import type { Locale } from "@/i18n/config";
@@ -46,7 +47,8 @@ export function SiteFooter({ locale, dict }: SiteFooterProps) {
       links: [
         { label: dict.nav.products, href: routes.products },
         { label: dict.footer.links.allCompounds, href: routes.products },
-        { label: `${dict.atlas.eyebrow}`, href: routes.atlas },
+        /* Atlas is V2: no footer link while its flag is off. */
+        ...(features.atlas ? [{ label: `${dict.atlas.eyebrow}`, href: routes.atlas }] : []),
       ],
     },
     {
