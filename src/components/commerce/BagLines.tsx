@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useTransition } from "react";
 
 import { Mono } from "@/components/typography";
-import { VialSilhouette } from "@/components/ui";
+import { SpecimenPlate } from "@/components/ui/SpecimenPlate";
 import { ORDER_LIMITS } from "@/data/commerce/limits";
 import { formatPrice } from "@/data/commerce/format";
 import { useBag } from "@/domain/bag";
@@ -152,15 +152,20 @@ export function BagLines({
         <ul className={styles.list}>
           {bag.lines.map((line) => (
             <li key={line.variantId} className={styles.line}>
-              {/* The same diagrammatic plate the cards use, at thumbnail
-                  scale — a bag line without an image reads as a spreadsheet. */}
+              {/* The same product object the cards show, at thumbnail scale:
+                  what is in the bag looks like what was on the shelf. */}
               <Link
                 href={`${productBase}/${line.slug}`}
                 className={styles.thumb}
                 tabIndex={-1}
                 aria-hidden="true"
               >
-                <VialSilhouette className={styles.thumbArt} />
+                <SpecimenPlate
+                  areaId={null}
+                  world={null}
+                  name={line.name}
+                  annotation={line.presentation}
+                />
               </Link>
 
               <div className={styles.lineMain}>

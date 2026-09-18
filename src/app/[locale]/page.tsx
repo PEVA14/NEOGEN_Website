@@ -7,32 +7,18 @@ import {
   RetaExperience,
   type HeroCopy,
   type RetaExperienceCopy,
-  type WorldMomentCopy,
 } from "@/components/experience";
 import { SectionHeader } from "@/components/layout";
-import { Container, Grid, Section } from "@/components/primitives";
-import {
-  CatalogIndex,
-  CompoundRail,
-  DiscoveryGrid,
-  EditorialSpread,
-  ProductCard,
-  TextLink,
-} from "@/components/ui";
-import { NeogenHub } from "@/components/home";
-import { EvidenceChain } from "@/components/quality";
+import { Container, Section } from "@/components/primitives";
+import { CatalogIndex, CompoundRail, DiscoveryGrid, ProductCard, TextLink } from "@/components/ui";
+import { ScienceBand, ShelfAreas } from "@/components/home";
+import { publicOverview } from "@/content/overview";
+import { researchReferenceIndex } from "@/content/research";
 import { cardDetails, cardDetailsCopy } from "@/server/catalog";
-import { hubData } from "@/server/hub";
 import { routes } from "@/config/routes";
 import { worldIds, type WorldId } from "@/config/worlds";
 import { isLocale, localeTags } from "@/i18n/config";
-import {
-  formatStrength,
-  isPublishable,
-  presentationRange,
-  products,
-  publishedProducts,
-} from "@/data/catalog";
+import { isPublishable, presentationRange, products, publishedProducts } from "@/data/catalog";
 import { formatPrice, getPrices } from "@/data/commerce";
 import { productsInArea, publicAreas, publicAreasFor } from "@/data/discovery";
 import { getDictionary } from "@/i18n/getDictionary";
@@ -152,8 +138,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   /* Every published price, once, for the card reveals on this page. */
   const allPrices = await getPrices(publishedProducts.flatMap((p) => p.variants.map((v) => v.id)));
-  /* The gateway's own data: counts, areas, flagships and the routes that exist. */
-  const hub = await hubData(locale, dict);
   const detailsCopy = cardDetailsCopy(dict);
   const detailsFor = (product: (typeof products)[number]) =>
     cardDetails(product, { locale, dict, prices: allPrices });
@@ -190,33 +174,34 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const relatedPrices = new Map(flagships.map((p) => [p.world as WorldId, fromPrice(p)]));
 
   /*
-   * The Experience rails used to carry three unfillable fields each — purity,
-   * molecular action, lot. Those need a verified source we do not have, and a
-   * labelled empty field makes a finished page look unfinished. They now carry
-   * what the catalogue actually knows.
+   * WHERE EACH EXPERIENCE MOMENT RESOLVES. A moment used to end in three
+   * annotation rows (presentations, category, "from"); it now ends in the
+   * product itself — name, range, price and one action into its page. Every
+   * value is read from the registry.
    */
-  const railFor = (world: WorldId) => {
+  const commerceFor = (world: WorldId, cta: string) => {
     const p = flagships.find((item) => item.world === world);
-    if (!p) return [];
-    const from = relatedPrices.get(world);
-    return [
-      {
-        key: home.reta.specs.presentation,
-        value: p.variants.map((v) => formatStrength(v.strength)).join(" · "),
-      },
-      { key: home.reta.specs.category, value: dict.products.catalog.categoryLabels[p.category] },
-      ...(from ? [{ key: home.reta.specs.from, value: from }] : []),
-    ];
+    if (!p) return null;
+    return {
+      name: p.name,
+      range: presentationRange(p),
+      price: relatedPrices.get(world) ?? null,
+      priceFrom: dict.products.catalog.from,
+      href: path(routes.product(p.slug)),
+      cta,
+    };
   };
+  const retaCommerce = commerceFor("reta", reta.cta);
+  const glowProduct = commerceFor("glow", home.glow.cta);
+  const ghkProduct = commerceFor("ghk-cu", home.ghkcu.cta);
 
   const retaCopy: RetaExperienceCopy = {
     beats: reta.beats.map((beat, index) => ({
       eyebrow: beat.eyebrow,
       statement: beat.statement,
       body: beat.body,
-      // The specification block lands on the final beat, so the sequence
-      // resolves from product statement into technical reference.
-      annotations: index === reta.beats.length - 1 ? railFor("reta") : undefined,
+      // The sequence resolves from product statement into the product itself.
+      commerce: index === reta.beats.length - 1 ? (retaCommerce ?? undefined) : undefined,
     })),
     vialAlt: reta.vialAlt,
     loadingLabel: reta.loadingLabel,
@@ -224,125 +209,92 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     progressLabel: reta.progressLabel,
   };
 
-  const glowCopy: WorldMomentCopy = {
-    eyebrow: home.glow.eyebrow,
-    statement: home.glow.statement,
-    body: home.glow.body,
-    annotations: railFor("glow"),
-    mediaLabel: home.glow.mediaLabel,
-  };
+  /* Evidence, counted from the registries — never typed. */
+  const sourcedProfiles = publishedProducts.filter((p) => publicOverview(p.slug, locale)).length;
+  const publicReferences = researchReferenceIndex().length;
 
-  const ghkCuCopy: WorldMomentCopy = {
-    eyebrow: home.ghkcu.eyebrow,
-    statement: home.ghkcu.statement,
-    body: home.ghkcu.body,
-    annotations: railFor("ghk-cu"),
-    mediaLabel: home.ghkcu.mediaLabel,
-  };
+  const flagshipCard = (product: (typeof flagships)[number], position: number) => (
+    <ProductCard
+      slug={product.slug}
+      world={product.world}
+      worldLabel={product.world ? home.products.worldLabels[product.world] : undefined}
+      areaId={publicAreasFor(product.slug)[0]?.id ?? null}
+      name={product.name}
+      subtitle={product.subtitle}
+      href={path(routes.product(product.slug))}
+      price={fromPrice(product)}
+      priceFrom={dict.products.catalog.from}
+      presentationRange={presentationRange(product)}
+      presentations={product.variants.length}
+      index={String(position + 1).padStart(2, "0")}
+      ctaLabel={home.products.cta}
+      format="flagship"
+      details={detailsFor(product)}
+      detailsCopy={detailsCopy}
+    />
+  );
 
+  /*
+   * V1 COMMERCIAL RHYTHM — the UI stays quiet, the products get loud.
+   *
+   *   Hero                  Impact — the brand, the object, one way in
+   *   01 Flagships          the three products with a world, as products
+   *   02 Catalogue shelf    abundance: an entry compound per area, the count,
+   *                         every area one tap away
+   *   RETA                  Impact → resolves into RETA's price and page
+   *   03 Areas              discovery by area, each with its entry price
+   *   GLOW                  Impact → resolves into GLOW
+   *   04 Evidence           science elevates commerce: counted, brief
+   *   GHK-Cu                Impact → resolves into GHK-Cu
+   *
+   * Removed from V1's homepage: the hub (its Atlas card is V2 and its index
+   * duplicated the shelf), the "creative evolution" spread (a brand note, not
+   * a reason to buy) and the four-row documentation wall (true, but it made
+   * the store look empty — the model lives on the Research Hub).
+   */
   return (
     <>
       <Hero copy={heroCopy} />
 
-      {/*
-       * 01 — THE HUB, on the hero's ground. The index of everything the site
-       * holds, before the page starts explaining anything: five destinations,
-       * one live preview, every figure counted from a registry.
-       */}
-      <NeogenHub data={hub} copy={home.hub} />
-
-      {/* 01 — Quiet. The editorial spread that sets NEOGEN's informational
-          voice: an oversized index numeral against a dense right column. */}
-      <Section mode="quiet" aria-labelledby="evolution-title">
+      <Section mode="quiet" aria-labelledby="products-title">
         <Container width="full">
-          <EditorialSpread
-            index={home.evolution.index}
-            label={home.evolution.label}
-            title={home.evolution.title}
-            titleId="evolution-title"
-            lede={home.evolution.lede}
-            principles={home.evolution.points}
+          <SectionHeader
+            index={home.products.index}
+            label={home.products.label}
+            title={home.products.title}
+            id="products-title"
+            action={<TextLink href={path(routes.products)}>{home.products.action}</TextLink>}
           />
+          {/* Three across on a wide screen; a swiped row on a phone, where three
+              full-width dark cards stacked were 1,600px of scroll. */}
+          <div className="-mx-(--gutter) flex snap-x snap-mandatory [scrollbar-width:none] gap-(--space-sm) overflow-x-auto px-(--gutter) md:mx-0 md:grid md:grid-cols-3 md:gap-(--gutter) md:overflow-visible md:px-0">
+            {flagships.map((product, position) => (
+              <div key={product.id} className="flex shrink-0 basis-[82%] snap-start md:basis-auto">
+                {flagshipCard(product, position)}
+              </div>
+            ))}
+          </div>
         </Container>
       </Section>
 
-      {/* Impact — the object. */}
-      <RetaExperience copy={retaCopy} />
-
-      {/*
-       * 04 — Quiet. A catalogue index, not a feature grid: oversized category
-       * names, hanging indices, rules, and the whole row as the target.
-       *
-       * DATA-DRIVEN FROM THE DISCOVERY AREAS, with a fallback.
-       *
-       * Once areas have approved products this section becomes real product
-       * discovery: each row is an area, each link goes to that area's listing
-       * rather than to the undifferentiated catalogue. While every assignment
-       * is still a draft — which is the state today — it keeps the three
-       * editorial cards it has always shown. Homepage V1 does not change
-       * shape; its content gets better as the taxonomy is confirmed.
-       */}
-      <Section mode="quiet" aria-labelledby="catalog-title">
+      <Section mode="quiet" aria-labelledby="shelf-title" className="pt-0">
         <Container width="full">
           <SectionHeader
-            index={home.catalog.index}
-            label={home.catalog.label}
-            title={home.catalog.title}
-            id="catalog-title"
-            action={<TextLink href={path(routes.products)}>{home.catalog.action}</TextLink>}
+            index={home.shelf.index}
+            label={home.shelf.label}
+            title={home.shelf.title.replace("{n}", String(publishedCount))}
+            id="shelf-title"
+            lede={home.shelf.lede}
+            action={<TextLink href={path(routes.products)}>{home.shelf.action}</TextLink>}
           />
-          {/*
-           * Eight area panels, or the three editorial cards as a fallback.
-           *
-           * The fallback is not dead code: `publicAreas()` counts only areas
-           * with approved products, so an area emptied by a future review
-           * takes itself out of this section, and a review that emptied all of
-           * them would leave the page standing.
-           */}
-          {discoveryEntries.length > 0 ? (
-            <DiscoveryGrid
-              entries={discoveryEntries}
-              copy={{
-                countLabel: dict.discovery.countLabel,
-                from: dict.products.catalog.from,
-                enter: home.catalog.categories[0].link,
-              }}
-            />
-          ) : (
-            <CatalogIndex
-              entries={home.catalog.categories.map((category) => ({
-                index: category.index,
-                title: category.title,
-                body: category.body,
-                href: path(routes.products),
-                linkLabel: category.link,
-              }))}
-            />
-          )}
-        </Container>
-      </Section>
-
-      {/* Impact — light. */}
-      <GlowMoment copy={glowCopy} />
-
-      {/*
-       * 03 — Quiet. THE COMPOUND RAIL.
-       *
-       * This was a three-row register of the flagships whose documentation
-       * column read "—" three times: an 85-compound catalogue introducing
-       * itself with three rows and a blank. It now runs a card per discovery
-       * area off the right edge of the frame, which is how a catalogue says
-       * "there is more of this" without claiming anything.
-       */}
-      <Section mode="quiet" aria-labelledby="research-title">
-        <Container width="full">
-          <SectionHeader
-            index={home.research.index}
-            label={home.research.label}
-            title={home.research.title}
-            id="research-title"
-            lede={home.research.lede}
-            action={<TextLink href={path(routes.research)}>{home.research.action}</TextLink>}
+          <ShelfAreas
+            label={home.shelf.areasLabel}
+            areas={discoveryEntries.map((entry) => ({
+              id: entry.id,
+              name: entry.short,
+              count: entry.count,
+              href: entry.href,
+            }))}
           />
           <CompoundRail
             total={publishedCount}
@@ -373,90 +325,82 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </Container>
       </Section>
 
-      {/*
-       * 07 — Quiet, on warm stone. The evidence model.
-       *
-       * This used to be a ledger of four "pending verification" records whose
-       * copy described a COA database and synthesis documentation that do not
-       * exist. It now shows the rule every quality status on the site follows —
-       * true today, and the same component the product pages and the Research
-       * Hub use, so all three state one policy.
-       */}
-      <Section mode="quiet" aria-labelledby="quality-title" className="bg-(--surface-raised)">
+      {/* Impact — the object, resolving into RETA. */}
+      <RetaExperience copy={retaCopy} />
+
+      <Section mode="quiet" aria-labelledby="catalog-title">
         <Container width="full">
           <SectionHeader
-            index={home.quality.index}
-            label={home.quality.label}
-            title={home.quality.title}
-            id="quality-title"
-            lede={home.quality.lede}
-            action={
-              <TextLink href={`${path(routes.research)}#calidad`}>{home.quality.action}</TextLink>
-            }
+            index={home.catalog.index}
+            label={home.catalog.label}
+            title={home.catalog.title}
+            id="catalog-title"
+            action={<TextLink href={path(routes.products)}>{home.catalog.action}</TextLink>}
           />
-          <EvidenceChain copy={dict.quality.record.chain} />
+          {discoveryEntries.length > 0 ? (
+            <DiscoveryGrid
+              entries={discoveryEntries}
+              copy={{
+                countLabel: dict.discovery.countLabel,
+                from: dict.products.catalog.from,
+                enter: home.catalog.categories[0].link,
+              }}
+            />
+          ) : (
+            <CatalogIndex
+              entries={home.catalog.categories.map((category) => ({
+                index: category.index,
+                title: category.title,
+                body: category.body,
+                href: path(routes.products),
+                linkLabel: category.link,
+              }))}
+            />
+          )}
         </Container>
       </Section>
 
-      {/* Impact — material. */}
-      <MaterialMoment copy={ghkCuCopy} />
+      {/* Impact — light, resolving into GLOW. */}
+      {glowProduct ? (
+        <GlowMoment
+          copy={{
+            eyebrow: home.glow.eyebrow,
+            statement: home.glow.statement,
+            body: home.glow.body,
+            product: glowProduct,
+          }}
+        />
+      ) : null}
 
-      {/* 08 — Quiet. Commerce stays neutral: charcoal CTAs, world colour only
-          in the identifier dot (SYSTEM STATUS V1). */}
-      <Section mode="quiet" aria-labelledby="products-title">
-        <Container width="full">
-          <SectionHeader
-            index={home.products.index}
-            label={home.products.label}
-            title={home.products.title}
-            id="products-title"
-            action={<TextLink href={path(routes.products)}>{home.products.action}</TextLink>}
-          />
-          {/*
-           * Staggered, not a centred row of three, and now in the DARK
-           * register.
-           *
-           * The card architecture is still identical for every flagship —
-           * SYSTEM STATUS V1 is explicit that there are no bespoke card
-           * systems per product — but the three products that own an
-           * Experience world are the only three in the catalogue whose card
-           * may carry it, so the section lands as the page's commercial
-           * climax instead of as three pale rectangles after two dark
-           * Experience beats. The action stays neutral on all three
-           * (CONVENTIONS §11): paper on charcoal, never the world's colour.
-           */}
-          <Grid className="items-start">
-            {flagships.map((product, position) => (
-              <div
-                key={product.id}
-                className={
-                  "col-span-12 md:col-span-4 " +
-                  ["", "md:mt-(--space-2xl)", "md:mt-(--space-4xl)"][position]
-                }
-              >
-                <ProductCard
-                  slug={product.slug}
-                  world={product.world}
-                  worldLabel={product.world ? home.products.worldLabels[product.world] : undefined}
-                  areaId={publicAreasFor(product.slug)[0]?.id ?? null}
-                  name={product.name}
-                  subtitle={product.subtitle}
-                  href={path(routes.product(product.slug))}
-                  price={fromPrice(product)}
-                  priceFrom={dict.products.catalog.from}
-                  presentationRange={presentationRange(product)}
-                  presentations={product.variants.length}
-                  index={String(position + 1).padStart(2, "0")}
-                  ctaLabel={home.products.cta}
-                  format="flagship"
-                  details={detailsFor(product)}
-                  detailsCopy={detailsCopy}
-                />
-              </div>
-            ))}
-          </Grid>
-        </Container>
-      </Section>
+      <ScienceBand
+        index={home.science.index}
+        label={home.science.label}
+        title={home.science.title}
+        lede={home.science.lede}
+        stats={[
+          { value: sourcedProfiles, label: home.science.profiles },
+          { value: publicReferences, label: home.science.references },
+          { value: publicAreas().length, label: home.science.areas },
+        ]}
+        actions={[
+          { href: path(routes.research), label: home.science.action },
+          ...(publicReferences > 0
+            ? [{ href: path(routes.researchReferences), label: home.science.referencesAction }]
+            : []),
+        ]}
+      />
+
+      {/* Impact — material, resolving into GHK-Cu. */}
+      {ghkProduct ? (
+        <MaterialMoment
+          copy={{
+            eyebrow: home.ghkcu.eyebrow,
+            statement: home.ghkcu.statement,
+            body: home.ghkcu.body,
+            product: ghkProduct,
+          }}
+        />
+      ) : null}
     </>
   );
 }

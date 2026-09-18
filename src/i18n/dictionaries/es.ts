@@ -484,6 +484,7 @@ const es = {
     },
 
     reta: {
+      cta: "Ver RETA",
       /*
        * Copia de producto, no comentario sobre el sistema de diseño.
        *
@@ -563,7 +564,7 @@ const es = {
         category: "Categoría",
         from: "Desde",
       },
-      mediaLabel: "Medio pendiente",
+      cta: "Ver GLOW",
     },
 
     /**
@@ -603,7 +604,7 @@ const es = {
         category: "Categoría",
         from: "Desde",
       },
-      mediaLabel: "Muestra pendiente",
+      cta: "Ver GHK-Cu",
     },
 
     /**
@@ -619,9 +620,38 @@ const es = {
       play: "Reanudar el catálogo en movimiento",
     },
 
+    /**
+     * V1 — EL ESTANTE. El catálogo aparece temprano y entero: un compuesto por
+     * área, el total contado y el camino a todos.
+     */
+    shelf: {
+      index: "02",
+      label: "Catálogo",
+      title: "{n} compuestos, un solo catálogo",
+      lede: "Un compuesto de entrada por área, con su escala de presentaciones y su precio.",
+      action: "Ver todo el catálogo",
+      areasLabel: "Comprar por área",
+    },
+
+    /**
+     * V1 — LA CIENCIA RESPALDA LA COMPRA. Una franja breve, contada de los
+     * registros: perfiles con fuentes y referencias públicas.
+     */
+    science: {
+      index: "04",
+      label: "Evidencia",
+      title: "Cada perfil, con su fuente",
+      lede: "Los perfiles de compuesto de NEOGEN citan literatura publicada: autores, revista, DOI. Nada se afirma sin una referencia que pueda abrirse.",
+      profiles: "Perfiles con fuentes",
+      references: "Referencias públicas",
+      areas: "Áreas de investigación",
+      action: "Ir a NEOGEN Research",
+      referencesAction: "Ver las referencias",
+    },
+
     products: {
-      index: "06",
-      label: "Productos",
+      index: "01",
+      label: "Insignia",
       title: "Compuestos insignia",
       action: "Catálogo completo",
       cta: "Ver producto",

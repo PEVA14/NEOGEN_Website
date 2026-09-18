@@ -83,24 +83,6 @@
   object-fit: cover;
 }
 
-.caption {
-  display: flex;
-  justify-content: space-between;
-  padding-block-start: var(--space-xs);
-  border-block-start: 1px solid var(--border-subtle);
-}
-
-.captionLabel,
-.captionMeta {
-  color: var(--ink-muted);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-}
-
-.captionMeta {
-  text-align: end;
-}
-
 .commerce {
   display: grid;
   align-content: start;
@@ -111,5 +93,21 @@
   .commerce {
     justify-items: stretch;
     inline-size: 100%;
+  }
+}
+
+/*
+ * A phone gets a shorter stage. At 4:5 across the full width the object took
+ * the whole first screen and pushed the name and price below the fold; at 1:1
+ * the name, the price and the first presentation chips arrive with it.
+ */
+@media (max-width: 47.999rem) {
+  .plate {
+    gap: var(--space-lg);
+  }
+
+  .frame,
+  .frame :global([data-size="plate"]) {
+    aspect-ratio: 1 / 1;
   }
 }

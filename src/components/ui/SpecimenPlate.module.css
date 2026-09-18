@@ -1,210 +1,259 @@
 /*
- * A specimen plate: 4:5, zero radius, 1px structure. The same frame the
- * product page and the catalogue card both use, so a compound keeps its shape
- * from listing to page.
+ * THE PRODUCT OBJECT — a vial on a lit studio sweep.
  *
- * `feature` is the wide variant — 5:4 rather than 4:5 — for the one card in a
- * composition that is allowed to be large.
+ * Two registers, one drawing:
+ *
+ *   NEUTRAL STORE   every product without a world. A warm-stone sweep — wall
+ *                   falling into floor at a soft horizon, light from the upper
+ *                   left like the 3D stages — and a clear-glass vial with an
+ *                   aluminium cap. The discovery area appears once: the stripe
+ *                   at the foot of the label.
+ *   WORLD STAGE     RETA, GLOW, GHK-Cu. The world's void as the ground and the
+ *                   world's own light on the glass. These are the only dark
+ *                   tiles in a catalogue grid, so a flagship interrupts the
+ *                   neutral store wherever it appears.
+ *
+ * Zero radius. The only shadow is the object's contact shadow on its own
+ * floor — a physical fact of the scene, not card elevation.
  */
 
 .plate {
   position: relative;
   inline-size: 100%;
   aspect-ratio: 4 / 5;
+  overflow: hidden;
+  isolation: isolate;
   display: grid;
   place-items: center;
-  overflow: hidden;
-  border: 1px solid var(--area-line, var(--border-subtle));
-  background-color: var(--surface-raised);
-  isolation: isolate;
+  background-color: var(--neogen-warm-stone);
+
+  /* The vial's palette, neutral store. */
+  --vial-glass: #ffffff;
+  --vial-edge: #3b3a36;
+  --vial-cap: #b9b7b1;
+  --vial-cap-light: #e6e4df;
+  --vial-cap-dark: #6f6d68;
+  --vial-collar-light: #f1f0ec;
+  --vial-collar-dark: #9d9b95;
+  --vial-label: var(--neogen-paper);
+  --vial-label-ink: var(--neogen-charcoal);
+  --vial-powder: #efebe3;
+  --vial-fill: color-mix(in oklab, #d9e2e8 70%, var(--area-wash, #d9e2e8));
+  --vial-stripe: color-mix(in oklab, var(--area-ink, var(--neogen-graphite)) 80%, transparent);
+  --vial-shadow: 0.3;
+  --vial-spec: 0.6;
+
+  /* The sweep. */
+  --sweep-wall: color-mix(in oklab, var(--neogen-warm-stone) 88%, var(--area-wash, transparent));
+  --sweep-floor: color-mix(in oklab, var(--neogen-chalk) 82%, var(--area-wash, transparent));
+  --sweep-light: var(--neogen-paper);
 }
 
 .plate[data-size="feature"] {
   aspect-ratio: 5 / 4;
 }
 
+.plate[data-size="stage"] {
+  aspect-ratio: 4 / 5;
+}
+
 /*
- * The ground. A diagonal wash rather than a flat fill — a flat panel reads as
- * an empty box, a graded one reads as a lit environment. The light falls from
- * the upper left, which is where the specular runs on the 3D stages, so the
- * static plates and the live canvas agree about where the light is.
+ * The wall: lit from the upper left, falling to the horizon.
+ * The floor: a separate plane below the horizon, slightly darker toward the
+ * viewer, so the vial's contact shadow has something to sit on.
  */
 .ground {
   position: absolute;
   inset: 0;
   z-index: 0;
   background:
-    radial-gradient(
-      120% 90% at 18% 8%,
-      color-mix(in oklab, var(--neogen-paper) 55%, transparent),
-      transparent 62%
-    ),
-    linear-gradient(
-      160deg,
-      color-mix(in oklab, var(--area-wash, var(--surface-raised)) 45%, transparent),
-      var(--area-wash, var(--surface-raised)) 78%
-    ),
-    var(--surface-raised);
+    radial-gradient(90% 70% at 24% 12%, var(--sweep-light), transparent 70%),
+    linear-gradient(180deg, var(--sweep-wall) 0%, var(--sweep-wall) 60%, var(--sweep-floor) 100%);
 }
 
-/* Registration marks at opposing corners — the instrument-plate device the
-   flagship stage and the product plate already use. */
-.plate::before,
-.plate::after {
-  content: "";
+.floor {
   position: absolute;
-  z-index: 3;
-  inline-size: 1rem;
-  block-size: 1rem;
-  border: 1px solid var(--area-line, var(--border-default));
+  inset-inline: 0;
+  inset-block-end: 0;
+  block-size: 24%;
+  z-index: 0;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--sweep-floor) 100%, transparent),
+    color-mix(in oklab, var(--sweep-floor) 86%, #000)
+  );
+  /* The horizon is soft: a sweep, not a table edge. */
+  mask-image: linear-gradient(180deg, transparent, #000 40%);
 }
 
-.plate::before {
-  inset-block-start: 0.5rem;
-  inset-inline-start: 0.5rem;
-  border-block-end: 0;
-  border-inline-end: 0;
-}
-
-.plate::after {
-  inset-block-end: 0.5rem;
-  inset-inline-end: 0.5rem;
-  border-block-start: 0;
-  border-inline-start: 0;
-}
-
-/* --- The compound name, as plate type ------------------------------------
- *
- * Set in the display face at its condensed width, cropped by both edges, and
- * held at low contrast so the silhouette and the annotations stay dominant.
- * The size is a container query rather than a viewport one: the same plate
- * appears at card, plate and feature scale, and the type has to be
- * proportional to ITS box, not to the window.
- */
-
-.nameLayer {
-  position: absolute;
-  inset: 0;
+.vial {
+  position: relative;
   z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  container-type: inline-size;
-  pointer-events: none;
+  block-size: 84%;
+  inline-size: auto;
+  /* Stand the vial on the floor rather than floating it in the middle. */
+  align-self: end;
+  margin-block-end: 5%;
+  transition: transform var(--motion-duration-slow) var(--ease-standard);
 }
 
-.name {
+.plate[data-size="feature"] .vial {
+  block-size: 84%;
+}
+
+.plate[data-size="stage"] .vial {
+  block-size: 74%;
+  margin-block-end: 9%;
+}
+
+/* --- Label typography — the packaging, set in the brand's own faces ------ */
+
+.labelMark {
+  font-family: var(--font-mono);
+  font-size: 7px;
+  letter-spacing: 0.32em;
+  font-weight: 500;
+}
+
+.labelName {
   font-family: var(--font-display);
   font-stretch: var(--font-stretch-display);
-  font-weight: 600;
-  font-size: var(--plate-name-size, 22cqi);
-  line-height: 0.82;
-  letter-spacing: var(--tracking-display);
-  text-transform: uppercase;
-  white-space: nowrap;
-  color: var(--area-ink, var(--ink-muted));
-  /*
-   * 0.16 on a light ground. Measured against the wash rather than chosen: the
-   * hero's ghosted wordmark sits at 0.13 on charcoal and reads as intentional;
-   * below about 0.10 here it read as a printing fault, and above 0.22 it
-   * competed with the product name set in real text beneath the plate.
-   */
-  opacity: 0.16;
-  transform: translateY(-4%);
+  font-weight: 700;
+  letter-spacing: 0;
 }
 
-/* The wide plate is 5:4, so the same inline size covers more of the frame. */
-.plate[data-size="feature"] .name {
-  font-size: calc(var(--plate-name-size, 22cqi) * 0.8);
-}
-
-/* --- Datum lines --------------------------------------------------------- */
-
-.datums {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-}
-
-/*
- * One hairline per presentation, indented from the left edge so they read as
- * graduation marks against the vial rather than as a full-width rule.
- */
-.datum {
-  position: absolute;
-  inset-inline: 12% 62%;
-  block-size: 1px;
-  background-color: var(--area-line, var(--border-default));
-  opacity: 0.9;
-}
-
-.silhouette {
-  position: relative;
-  z-index: 2;
-  block-size: 58%;
-  inline-size: auto;
-  color: var(--area-ink, var(--ink-muted));
-  opacity: 0.78;
-}
-
-.plate[data-size="plate"] .silhouette {
-  block-size: 62%;
-}
-
-.plate[data-size="feature"] .silhouette {
-  block-size: 74%;
-}
-
-/* --- Annotations --------------------------------------------------------- */
-
-.index,
-.annotation {
-  position: absolute;
-  z-index: 3;
-  color: var(--area-ink, var(--ink-muted));
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  opacity: 0.85;
+.labelLine {
+  font-family: var(--font-mono);
+  font-size: 7.5px;
+  letter-spacing: 0.08em;
 }
 
 .index {
-  inset-block-start: 0.6rem;
-  inset-inline-end: 0.75rem;
+  position: absolute;
+  z-index: 2;
+  inset-block-start: 0.65rem;
+  inset-inline-start: 0.75rem;
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
   font-variant-numeric: tabular-nums;
 }
 
-.annotation {
-  inset-block-end: 0.6rem;
-  inset-inline-start: 0.75rem;
-}
-
-/* --- On a world the ground is dark --------------------------------------- */
+/* --- World stages -------------------------------------------------------- */
 
 .plate[data-world] {
   background-color: var(--world-void);
+  --vial-glass: var(--world-light);
+  --vial-edge: var(--world-light);
+  --vial-label: var(--neogen-paper);
+  --vial-label-ink: var(--neogen-charcoal);
+  --vial-stripe: var(--world-accent);
+  --vial-shadow: 0.7;
+  --vial-spec: 0.5;
+  --sweep-light: color-mix(in oklab, var(--world-light) 26%, transparent);
+  --sweep-wall: var(--world-void);
+  --sweep-floor: color-mix(in oklab, var(--world-void) 80%, var(--world-accent));
 }
 
-.plate[data-world] .ground {
+.plate[data-world] .index {
+  color: color-mix(in oklab, var(--world-light) 70%, transparent);
+}
+
+/* RETA — cold precision. A steel cap, a blue key light, a clean floor line. */
+.plate[data-world="reta"] {
+  --vial-cap: #7d8794;
+  --vial-cap-light: #c9d3de;
+  --vial-cap-dark: #2c3440;
+  --vial-collar-light: #dfe7f0;
+  --vial-collar-dark: #5a6573;
+  --vial-powder: #eef5ff;
+}
+
+.plate[data-world="reta"] .ground {
   background:
     radial-gradient(
-      120% 90% at 22% 10%,
-      color-mix(in oklab, var(--world-light) 22%, transparent),
-      transparent 60%
+      60% 55% at 30% 18%,
+      color-mix(in oklab, var(--world-accent) 55%, transparent),
+      transparent 72%
     ),
-    linear-gradient(
-      160deg,
-      color-mix(in oklab, var(--world-accent) 16%, transparent),
+    radial-gradient(
+      40% 30% at 50% 88%,
+      color-mix(in oklab, var(--world-accent) 30%, transparent),
       transparent 70%
     ),
     var(--world-void);
 }
 
-.plate[data-world] .silhouette {
-  opacity: 0.62;
+/* GLOW — the vial is the source. An amber bloom from behind the glass. */
+.plate[data-world="glow"] {
+  --vial-cap: #b08a4c;
+  --vial-cap-light: #f3d9a4;
+  --vial-cap-dark: #4a3413;
+  --vial-collar-light: #fbe7bd;
+  --vial-collar-dark: #7a5a22;
+  --vial-powder: #ffe2a3;
+  --vial-glass: #ffd78a;
 }
 
-/* Light type on a dark ground carries further, so it is held lower. */
-.plate[data-world] .name {
-  color: var(--world-light);
-  opacity: 0.13;
+.plate[data-world="glow"] .ground {
+  background:
+    radial-gradient(
+      38% 34% at 50% 62%,
+      color-mix(in oklab, var(--world-light) 70%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      75% 60% at 50% 60%,
+      color-mix(in oklab, var(--world-accent) 45%, transparent),
+      transparent 75%
+    ),
+    var(--world-void);
+}
+
+/* GHK-Cu — material. A copper cap and collar, a warm key, verdigris floor. */
+.plate[data-world="ghk-cu"] {
+  --vial-cap: #b5683c;
+  --vial-cap-light: #efb58c;
+  --vial-cap-dark: #4b2410;
+  --vial-collar-light: #e9a57a;
+  --vial-collar-dark: #6e3417;
+  --vial-glass: #f2d8c4;
+  --vial-edge: #efb58c;
+  --sweep-floor: color-mix(in oklab, var(--world-void) 70%, #3f756d);
+}
+
+.plate[data-world="ghk-cu"] .ground {
+  background:
+    radial-gradient(
+      55% 50% at 26% 16%,
+      color-mix(in oklab, var(--world-accent) 50%, transparent),
+      transparent 72%
+    ),
+    radial-gradient(
+      60% 30% at 50% 100%,
+      color-mix(in oklab, #3f756d 45%, transparent),
+      transparent 70%
+    ),
+    var(--world-void);
+}
+
+/* Bare: the object alone, standing in someone else's light. */
+.plate[data-bare] {
+  background: transparent;
+  overflow: visible;
+  /* The object's own proportions; the container decides its height. */
+  aspect-ratio: 200 / 340;
+  inline-size: auto;
+  block-size: 100%;
+}
+
+.plate[data-bare] .vial {
+  block-size: 100%;
+  margin-block-end: 0;
+  align-self: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vial {
+    transition: none;
+  }
 }

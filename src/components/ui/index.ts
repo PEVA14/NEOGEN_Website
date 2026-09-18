@@ -14,5 +14,4 @@ export {
 } from "./ProductCard";
 export { SpecimenPlate } from "./SpecimenPlate";
 export { TextLink } from "./TextLink";
-export { VialSilhouette } from "./VialSilhouette";
 export { WorldDot } from "./WorldDot";

@@ -33,8 +33,7 @@ interface ProductStageProps {
   posterAlt: string;
   loadingLabel: string;
   staticLabel: string;
-  /** Caption for the media area. Describes the frame, never the contents. */
-  mediaLabel: string;
+
   /** Notes that the media responds to the cursor. Desktop pointers only. */
   viewerHint: string;
   /**
@@ -93,7 +92,6 @@ export function ProductStage({
   posterAlt,
   loadingLabel,
   staticLabel,
-  mediaLabel,
   viewerHint,
   material,
   frameMarks,
@@ -220,10 +218,20 @@ export function ProductStage({
     };
   }, [finePointer, reducedMotion]);
 
+  /* The name printed on the fallback object's label. */
+  const objectName = wordmark;
+
   const fallback = (
     <div className={styles.mediaWell}>
       {material}
-      <VialFallback poster={poster} diagramLabel={posterAlt} label={staticLabel} />
+      <VialFallback
+        poster={poster}
+        diagramLabel={posterAlt}
+        label={staticLabel}
+        world={world}
+        name={objectName}
+        upright={!modelPath}
+      />
     </div>
   );
 
@@ -257,6 +265,8 @@ export function ProductStage({
                     diagramLabel={posterAlt}
                     label={loadingLabel}
                     loading
+                    world={world}
+                    name={objectName}
                   />
                 </div>
               }
@@ -293,9 +303,6 @@ export function ProductStage({
         <div ref={panel} className={styles.media}>
           {frameMarks}
           <div className={styles.caption}>
-            <Mono size="2xs" className={styles.captionLabel}>
-              {mediaLabel}
-            </Mono>
             {/* Two gates: a live viewer to respond, and (in CSS) a cursor to
                 respond to. */}
             {viewer ? (

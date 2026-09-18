@@ -98,7 +98,9 @@ export function QualityRecord({
             {copy.emptyBody}
           </Body>
         </div>
-        <EvidenceChain copy={copy.chain} resolvedTo={null} />
+        {/* V1: no four-row chain of "no public document" under an empty
+            record. The rule is stated once above; the model itself lives on
+            the Research Hub, where it is the subject rather than an absence. */}
       </div>
     );
   }

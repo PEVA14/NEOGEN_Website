@@ -3,6 +3,7 @@ import { Body, Display, Eyebrow, Mono } from "@/components/typography";
 import { getWorld } from "@/config/worlds";
 import { mediaForWorld } from "@/content";
 
+import { MomentCommerce, type MomentCommerceProps } from "./MomentCommerce";
 import { RetaStage } from "./RetaStage";
 import styles from "./RetaExperience.module.css";
 
@@ -12,6 +13,8 @@ export interface RetaBeat {
   body?: string;
   /** Technical annotations. Key/value pairs — never invented product data. */
   annotations?: { key: string; value: string }[];
+  /** Where the sequence resolves: the product, its price, one action. */
+  commerce?: MomentCommerceProps;
 }
 
 export interface RetaExperienceCopy {
@@ -109,6 +112,8 @@ export function RetaExperience({ copy }: { copy: RetaExperienceCopy }) {
                 ))}
               </dl>
             ) : null}
+
+            {beat.commerce ? <MomentCommerce {...beat.commerce} showName={false} /> : null}
           </div>
         ))}
 

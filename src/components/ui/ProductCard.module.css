@@ -8,6 +8,8 @@
 .card {
   position: relative;
   display: flex;
+  inline-size: 100%;
+  container-type: inline-size;
   border: 1px solid var(--border-subtle);
   background-color: var(--surface-raised);
   transition: border-color var(--motion-duration-base) var(--ease-standard);
@@ -19,11 +21,17 @@
 
 /* One link covering the card: a card whose image, name and button are three
    separate links is three tab stops to one destination. */
+/*
+ * V1 COMMERCE PASS: the media runs edge to edge. The object stands on its
+ * own ground at the top of the card instead of inside a second inset frame —
+ * a tile within a tile read as a record, a full-bleed stage reads as a shelf.
+ * The record and the action carry the padding.
+ */
 .link {
   display: flex;
   flex-direction: column;
   inline-size: 100%;
-  padding: var(--space-sm);
+  padding: 0 0 var(--space-sm);
   color: inherit;
   text-decoration: none;
 }
@@ -166,7 +174,7 @@
   flex-direction: column;
   flex: 1;
   gap: var(--space-3xs);
-  padding-block-start: var(--space-md);
+  padding: var(--space-md) var(--space-sm) 0;
 }
 
 .eyebrow {
@@ -185,8 +193,8 @@
   font-family: var(--font-display);
   font-stretch: var(--font-stretch-display);
   font-weight: 700;
-  font-size: var(--text-xl);
-  line-height: 1.05;
+  font-size: var(--text-2xl);
+  line-height: 1;
   letter-spacing: -0.01em;
   color: var(--ink-primary);
   text-wrap: balance;
@@ -229,7 +237,7 @@
  */
 .price {
   font-family: var(--font-mono);
-  font-size: var(--text-base);
+  font-size: var(--text-lg);
   font-weight: 500;
   color: var(--ink-primary);
   font-variant-numeric: tabular-nums;
@@ -252,7 +260,7 @@
  * in a sensible order. It still reads as the affordance.
  */
 .cta {
-  margin-block-start: var(--space-md);
+  margin: var(--space-md) var(--space-sm) 0;
   min-block-size: 3rem;
   display: inline-flex;
   align-items: center;
@@ -288,8 +296,8 @@
 
 .reveal {
   position: absolute;
-  inset-block-start: var(--space-sm);
-  inset-inline: var(--space-sm);
+  inset-block-start: 0;
+  inset-inline: 0;
   aspect-ratio: 4 / 5;
   display: flex;
   align-items: flex-end;
@@ -528,5 +536,41 @@
   .revealToggle > span,
   .revealToggle > span::after {
     transition: none;
+  }
+}
+
+/* --- Compact: a card in a two-up phone grid ------------------------------
+ *
+ * Same card, sized to its column rather than to the viewport. The range moves
+ * above the price instead of beside it, the action gets shorter, and the
+ * reveal toggle steps aside — at this width the plate IS the preview.
+ */
+@container (max-width: 15rem) {
+  .body {
+    padding: var(--space-sm) var(--space-xs) 0;
+  }
+
+  .name {
+    font-size: var(--text-lg);
+  }
+
+  .commerce {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3xs);
+  }
+
+  .price {
+    font-size: var(--text-base);
+  }
+
+  .cta {
+    margin: var(--space-sm) var(--space-xs) 0;
+    min-block-size: 2.75rem;
+    font-size: var(--text-xs);
+  }
+
+  .revealToggle {
+    display: none;
   }
 }

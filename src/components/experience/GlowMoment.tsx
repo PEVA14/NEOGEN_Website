@@ -1,16 +1,17 @@
 import { Container, Section } from "@/components/primitives";
 import { Body, Display, Mono } from "@/components/typography";
+import { SpecimenPlate } from "@/components/ui/SpecimenPlate";
 import { getWorld } from "@/config/worlds";
 
+import { MomentCommerce, type MomentCommerceProps } from "./MomentCommerce";
 import styles from "./GlowMoment.module.css";
 
 export interface WorldMomentCopy {
   eyebrow: string;
   statement: string;
   body: string;
-  annotations: { key: string; value: string }[];
-  /** Names what the media slot will hold once a real asset exists. */
-  mediaLabel: string;
+  /** The product the moment is about — drawn as its object, then sold. */
+  product: MomentCommerceProps;
 }
 
 /**
@@ -46,46 +47,40 @@ export function GlowMoment({ copy }: { copy: WorldMomentCopy }) {
       className={styles.section}
     >
       <div className={styles.viewport}>
-        {/* The light. Grows and intensifies with scroll; this is the subject.
-            Wrapped in a centring layer because both bodies are deliberately
-            wider than the viewport, and an over-constrained absolute box
-            resolves to one side instead of staying centred. */}
-        <div className={styles.lights} aria-hidden="true">
-          <div className={styles.bloom} data-motion="cinematic" />
-          <div className={styles.halo} data-motion="cinematic" />
-        </div>
-
         <Container width="full" className={styles.content}>
-          <div className={styles.head}>
-            <Mono size="2xs" className={styles.eyebrow}>
-              {copy.eyebrow}
-            </Mono>
-            <Mono size="2xs" className={styles.mediaSlot}>
-              {copy.mediaLabel}
-            </Mono>
-          </div>
+          <Mono size="2xs" className={styles.eyebrow}>
+            {copy.eyebrow}
+          </Mono>
 
-          <div className={styles.centre}>
-            <Display id="glow-title" as="h2" size="5xl" className={styles.statement}>
-              {copy.statement}
-            </Display>
-            <Body size="lg" className={styles.body}>
-              {copy.body}
-            </Body>
-          </div>
+          <div className={styles.stage}>
+            <div className={styles.centre}>
+              <Display id="glow-title" as="h2" size="5xl" className={styles.statement}>
+                {copy.statement}
+              </Display>
+              <Body size="lg" className={styles.body}>
+                {copy.body}
+              </Body>
+            </div>
 
-          <dl className={styles.annotations}>
-            {copy.annotations.map((item) => (
-              <div key={item.key} className={styles.annotation}>
-                <Mono as="dt" size="2xs" className={styles.annotationKey}>
-                  {item.key}
-                </Mono>
-                <Mono as="dd" size="xs" className={styles.annotationValue}>
-                  {item.value}
-                </Mono>
+            {/* The object, in its own light. The bloom is the product's world;
+                the vial is the product. */}
+            <div className={styles.object}>
+              <div className={styles.lights} aria-hidden="true">
+                <div className={styles.bloom} data-motion="cinematic" />
+                <div className={styles.halo} data-motion="cinematic" />
               </div>
-            ))}
-          </dl>
+              <SpecimenPlate
+                areaId={null}
+                world="glow"
+                name={copy.product.name}
+                annotation={copy.product.range ?? undefined}
+                size="stage"
+                bare
+              />
+            </div>
+          </div>
+
+          <MomentCommerce {...copy.product} />
         </Container>
       </div>
     </Section>

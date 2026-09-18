@@ -65,7 +65,10 @@
   z-index: var(--z-content);
   display: grid;
   grid-template-columns: repeat(12, 1fr);
-  grid-template-rows: repeat(12, 1fr);
+  /* minmax(0, …): a tall beat must overflow its own rows, never grow the
+     grid past the pinned viewport and push its last line below the fold. */
+  grid-template-rows: repeat(12, minmax(0, 1fr));
+  min-block-size: 0;
   padding-inline: var(--gutter);
   padding-block: var(--space-2xl);
   /* Copy must never eat the pointer: the environment behind stays scrollable. */
@@ -142,8 +145,10 @@
    * rules forbid. Opacity keeps every beat in the a11y tree and in the DOM at
    * all times; the crossfade is purely visual.
    *
-   * Safe because beats contain no interactive elements. Revisit if one ever
-   * gains a control.
+   * The final beat now carries one control — the link into RETA's page. It
+   * is only clickable while its beat is active (below), and a beat holding
+   * keyboard focus is always shown, so focus never lands on something
+   * invisible.
    */
   pointer-events: none;
   transition:
@@ -182,12 +187,14 @@
   grid-row: 9 / span 4;
   align-self: end;
   max-inline-size: 46rem;
+  gap: var(--space-sm);
 }
 
 .viewport[data-beat="0"] .beat[data-beat-index="0"],
 .viewport[data-beat="1"] .beat[data-beat-index="1"],
 .viewport[data-beat="2"] .beat[data-beat-index="2"],
-.viewport[data-beat="3"] .beat[data-beat-index="3"] {
+.viewport[data-beat="3"] .beat[data-beat-index="3"],
+.beat:focus-within {
   opacity: 1;
   transform: translateY(0);
   pointer-events: auto;
@@ -321,10 +328,13 @@
   inline-size: auto;
   block-size: min(52%, 22rem);
   max-inline-size: 100%;
-  /* Deliberately diagrammatic: a stand-in for a rendered still, and it should
-     look like one rather than impersonate a product photo. */
-  opacity: 0.55;
+  aspect-ratio: 200 / 340;
   transform: rotate(-18deg);
+}
+
+.silhouette[data-upright="true"] {
+  transform: none;
+  block-size: min(70%, 30rem);
 }
 
 .silhouetteCap {

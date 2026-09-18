@@ -235,10 +235,10 @@ export default async function ProductPage({
    * spine is numbered from the sections that actually render.
    */
   const renderedSections = [
-    "quality",
+    "specifications",
     ...(overview ? ["overview"] : []),
     "research",
-    "specifications",
+    "quality",
     ...(otherFlagships.length > 0 ? ["worlds"] : []),
     ...(materials.length > 0 ? ["materials"] : []),
     ...(related.length > 0 ? ["related"] : []),
@@ -280,6 +280,7 @@ export default async function ProductPage({
         variants={product.variants.map((v) => ({
           variantId: v.id,
           presentation: formatStrength(v.strength),
+          pack: v.vials ? dict.products.card.pack.replace("{n}", String(v.vials)) : null,
           price: commerce.get(v.id) ?? null,
           availability: availability.get(v.id) ?? null,
         }))}
@@ -327,17 +328,16 @@ export default async function ProductPage({
               media.model ? <WorldMaterial world={world.id} interior={false} /> : undefined
             }
             wordmark={product.name}
-            posterAlt={dict.home.reta.vialAlt}
+            posterAlt={product.name}
             loadingLabel={dict.home.reta.loadingLabel}
             staticLabel={dict.home.reta.staticLabel}
-            mediaLabel={pdp.inspectionLabel}
             viewerHint={pdp.viewerHint}
           >
             {commercePanel}
           </ProductStage>
         </Section>
       ) : (
-        <Section mode="quiet" aria-label={product.name}>
+        <Section mode="quiet" aria-label={product.name} className="max-md:pt-(--space-md)">
           <Container width="full">
             <ProductPlate
               slug={product.slug}
@@ -345,8 +345,6 @@ export default async function ProductPage({
               areaId={areas[0]?.id ?? null}
               presentations={product.variants.length}
               annotation={presentationRange(product)}
-              mediaLabel={pdp.inspectionLabel}
-              meta={dict.products.catalog.categoryLabels[product.category]}
             >
               {commercePanel}
             </ProductPlate>
@@ -364,31 +362,49 @@ export default async function ProductPage({
       ) : null}
 
       {/*
-       * 02 — QUALITY / DOCUMENTATION. Directly after commerce.
+       * SPECIFICATIONS — led by the presentation ladder.
        *
-       * Once intent is established, the next question a careful buyer asks is
-       * whether THIS presentation is documented. Every state comes from
-       * `resolveEvidence`; with nothing public, the block says so once and
-       * shows the rule evidence follows.
+       * The ladder sets the catalogue's own facts as figures; the table below
+       * keeps the full technical record. The rows that only a verified source
+       * could fill — purity, storage, molecular mass — are not rendered at
+       * all rather than shown empty.
+       *
+       * "Clasificación de catálogo", not "Categoría": the value is where the
+       * compound is filed, and several compounds filed under Péptidos are not
+       * peptides.
        */}
-      <Section
-        mode="quiet"
-        aria-labelledby="quality-title"
-        id="calidad"
-        className="bg-(--surface-raised)"
-      >
+      <Section mode="quiet" aria-labelledby="spec-title">
         <Container width="full">
           <SectionHeader
-            index={sectionIndex("quality")}
-            label={`${pdp.quality.label} // ${pdp.quality.qualifier}`}
-            title={pdp.quality.title}
-            id="quality-title"
+            index={sectionIndex("specifications")}
+            label={`${pdp.specifications.label} // ${pdp.specifications.qualifier}`}
+            title={pdp.specifications.title}
+            id="spec-title"
           />
-          <QualityRecord
-            presentations={presentationLabels}
-            evidence={evidence}
-            copy={dict.quality.record}
-            localeTag={localeTags[locale]}
+          <div className="mb-(--space-xl)">
+            <PresentationLadder
+              label={pdp.specifications.ladder}
+              packLabel={pdp.specifications.pack}
+              steps={product.variants.map((v) => ladderStep(v.strength, v.vials))}
+            />
+          </div>
+          <SpecTable
+            rows={[
+              { key: pdp.specifications.compound, value: product.name },
+              {
+                key: pdp.specifications.classification,
+                value: dict.products.catalog.categoryLabels[product.category],
+              },
+              {
+                key: pdp.specifications.presentation,
+                value: product.variants
+                  .map((v) => `${formatStrength(v.strength)}${v.vials ? ` × ${v.vials}` : ""}`)
+                  .join(" · "),
+              },
+              ...(product.composition
+                ? [{ key: pdp.specifications.composition, value: product.composition }]
+                : []),
+            ]}
           />
         </Container>
       </Section>
@@ -512,49 +528,30 @@ export default async function ProductPage({
       </Section>
 
       {/*
-       * SPECIFICATIONS — led by the presentation ladder.
-       *
-       * The ladder sets the catalogue's own facts as figures; the table below
-       * keeps the full technical record. The rows that only a verified source
-       * could fill — purity, storage, molecular mass — are not rendered at
-       * all rather than shown empty.
-       *
-       * "Clasificación de catálogo", not "Categoría": the value is where the
-       * compound is filed, and several compounds filed under Péptidos are not
-       * peptides.
+       * QUALITY / DOCUMENTATION — after the product, its specification and its
+       * science (V1 commerce pass; the Design Bible's PDP order). A product
+       * with public documents shows every record here; one without says so in
+       * a single statement rather than a four-row chain of absences. `#calidad`
+       * is still the anchor the commerce panel links to.
        */}
-      <Section mode="quiet" aria-labelledby="spec-title">
+      <Section
+        mode="quiet"
+        aria-labelledby="quality-title"
+        id="calidad"
+        className="bg-(--surface-raised)"
+      >
         <Container width="full">
           <SectionHeader
-            index={sectionIndex("specifications")}
-            label={`${pdp.specifications.label} // ${pdp.specifications.qualifier}`}
-            title={pdp.specifications.title}
-            id="spec-title"
+            index={sectionIndex("quality")}
+            label={`${pdp.quality.label} // ${pdp.quality.qualifier}`}
+            title={pdp.quality.title}
+            id="quality-title"
           />
-          <div className="mb-(--space-xl)">
-            <PresentationLadder
-              label={pdp.specifications.ladder}
-              packLabel={pdp.specifications.pack}
-              steps={product.variants.map((v) => ladderStep(v.strength, v.vials))}
-            />
-          </div>
-          <SpecTable
-            rows={[
-              { key: pdp.specifications.compound, value: product.name },
-              {
-                key: pdp.specifications.classification,
-                value: dict.products.catalog.categoryLabels[product.category],
-              },
-              {
-                key: pdp.specifications.presentation,
-                value: product.variants
-                  .map((v) => `${formatStrength(v.strength)}${v.vials ? ` × ${v.vials}` : ""}`)
-                  .join(" · "),
-              },
-              ...(product.composition
-                ? [{ key: pdp.specifications.composition, value: product.composition }]
-                : []),
-            ]}
+          <QualityRecord
+            presentations={presentationLabels}
+            evidence={evidence}
+            copy={dict.quality.record}
+            localeTag={localeTags[locale]}
           />
         </Container>
       </Section>

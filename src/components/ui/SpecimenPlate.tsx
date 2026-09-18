@@ -1,41 +1,45 @@
+import { useId } from "react";
+
 import { Mono } from "@/components/typography";
-import { VialSilhouette } from "@/components/ui/VialSilhouette";
 
 import styles from "./SpecimenPlate.module.css";
 
-import type { CSSProperties } from "react";
 import type { DiscoveryAreaId } from "@/data/discovery";
 import type { WorldId } from "@/config/worlds";
 
-export type PlateSize = "card" | "plate" | "feature";
+export type PlateSize = "card" | "plate" | "feature" | "stage";
 
 /**
- * THE DELIBERATE FALLBACK — a composed specimen, not a missing photograph.
+ * THE PRODUCT OBJECT — the deliberate fallback for a product with no photograph.
  *
- * PHASE 12. The previous plate was an outlined vial centred on a near-white
- * ground with four hairlines. Honest, but at card scale it read as a wireframe
- * of a card rather than as a card: an empty box with a drawing in it, 85 times.
- * The failure was not the diagram — it was that nothing in the frame belonged
- * to THIS compound, so every plate was the same plate.
+ * V1 COMMERCE PASS. The plate used to be a specimen diagram: a pale outlined
+ * vial in front of the compound's name set as ghosted poster type. Honest, but
+ * across 85 cards it read as a database entry — a record OF a product rather
+ * than the product. The Design Bible now says the products get loud, so the
+ * fallback is an OBJECT: the NEOGEN vial, drawn from the proportions of the
+ * real model (`public/models/reta.glb`), standing on a lit studio sweep, with
+ * NEOGEN's own packaging identity — the wordmark, the product's name, its
+ * strength — printed on the paper label, exactly as the model's label is.
  *
- * THE NAME IS NOW THE ARTWORK. The compound's own name is set oversized,
- * condensed and cropped by the frame, with the silhouette passing in front of
- * it. That is the Hero's composition — wordmark behind, object in front —
- * brought down to product scale, so the catalogue is unmistakably the same
- * system as the front door. And because every compound's name is different,
- * every plate is different: the variation is the data, not a random seed.
+ * IT IS NOT A PHOTOGRAPH AND DOES NOT PRETEND TO BE ONE. It is flat vector
+ * drawing in the brand's own type, with no texture, grain or lens behaviour,
+ * so it reads as packaging art direction rather than as a product shot. A real
+ * photograph replaces it entirely (`stillMedia` picks the image and this never
+ * renders).
  *
- * EVERYTHING STILL COMES FROM REAL DATA. Nothing is invented:
+ * EVERYTHING ON IT IS REGISTRY DATA:
  *
- *   - the ground, hairline and ink come from the product's DISCOVERY AREA
- *     (or its world, which outranks it) — see `styles/areas.css`;
- *   - the ghosted name is the product's registry name;
- *   - the number of datum lines is its number of PRESENTATIONS;
- *   - the annotation is its presentation range.
+ *   label name    the product's registry name
+ *   label line    its presentation range
+ *   contents      powder for a product sold by mass or units, liquid for one
+ *                 sold by volume — read off the range itself ("3 ml – 10 ml")
+ *   stripe        its discovery area's colour (or its world's, for flagships)
+ *   ground        a neutral studio sweep; a dark world stage only for the
+ *                 three flagships, which is where controlled product colour
+ *                 interrupts the neutral store
  *
- * A photograph replaces this entirely — `stillMedia` picks the image and this
- * never renders. Nothing here is photographic, so it cannot be mistaken for
- * a product shot (see the social-card note in `content/media`).
+ * SIZES. `card` in grids, `plate` on the product page, `feature` for a wide
+ * lead card, `stage` for an Experience moment where the object IS the scene.
  */
 export function SpecimenPlate({
   areaId,
@@ -45,96 +49,249 @@ export function SpecimenPlate({
   index,
   annotation,
   size = "card",
+  bare = false,
 }: {
-  /** Primary discovery area, for tone. Null for the two unassigned products. */
+  /** Primary discovery area, for the label stripe. Null for unassigned products. */
   areaId: DiscoveryAreaId | null;
-  /** A world outranks an area — the three flagships have authored colour. */
+  /** A world outranks an area: the three flagships stand on their own ground. */
   world: WorldId | null;
   /**
-   * The compound's name, set as the ghosted plate type.
-   *
-   * Decorative and `aria-hidden`: every surface that renders a plate also
-   * renders the name as real text beside it, and a screen reader announcing
-   * "Semaglutide Semaglutide" is worse than no plate at all.
+   * The name printed on the label. Decorative and `aria-hidden` — every
+   * surface that renders a plate also renders the name as real text.
    */
   name?: string;
-  /** How many presentations this product is sold in. Drives the datum lines. */
-  presentations: number;
-  /** Catalogue index, shown as a corner mark where one is meaningful. */
+  /** Kept for callers; the object no longer draws per-presentation marks. */
+  presentations?: number;
+  /** Catalogue index, as a small corner mark where a composition wants one. */
   index?: string;
-  /** Short technical line — the presentation range. */
+  /** The presentation range, printed on the label and read for contents. */
   annotation?: string;
   size?: PlateSize;
+  /**
+   * The object alone, on a transparent ground — for an Experience moment whose
+   * own light is the scene. The world's vial palette still applies.
+   */
+  bare?: boolean;
 }) {
-  /*
-   * Capped at five. Beyond that the lines stop reading as a count and start
-   * reading as texture, and RETA has seven.
-   */
-  const datums = Math.max(1, Math.min(5, presentations));
-
-  /*
-   * THE NAME IS SIZED FROM ITS OWN LENGTH, so every plate crops the same
-   * amount whatever the compound is called.
-   *
-   * At one fixed size "GLOW" floated in the middle of the frame while
-   * "Retatrutide Research" showed four letters. The type is set to span about
-   * 135% of the plate — cropped, deliberately — and the condensed display face
-   * averages ~0.55em per uppercase character, so the size that achieves it is
-   * 135 / (length × 0.55) ≈ 245 / length, in container-inline units. Clamped
-   * at both ends: below 10 it stops reading as a poster, above 34 a short name
-   * loses its own last letter.
-   */
-  const nameSize = name ? Math.max(10, Math.min(34, Math.round(245 / name.length))) : 0;
-
+  void presentations;
   return (
     <div
       className={styles.plate}
       data-size={size}
       data-area={world ? undefined : (areaId ?? undefined)}
       data-world={world ?? undefined}
+      data-bare={bare ? "" : undefined}
     >
-      {/* The ground. Area-toned, and the only place a category's colour
-          appears at product scale. */}
-      <div className={styles.ground} aria-hidden="true" />
-
-      {/*
-       * The compound name, behind everything. Cropped by both edges on
-       * purpose — it is a graphic, not a label to be read, and letting it run
-       * off the frame is what makes the plate read as a crop of something
-       * larger rather than a centred logo.
-       */}
-      {name ? (
-        <div className={styles.nameLayer} aria-hidden="true">
-          <span
-            className={styles.name}
-            style={{ "--plate-name-size": `${nameSize}cqi` } as CSSProperties}
-          >
-            {name}
-          </span>
-        </div>
-      ) : null}
-
-      {/* Datum lines — one per presentation, rising from the base like a
-          graduated cylinder's marks. */}
-      <div className={styles.datums} aria-hidden="true">
-        {Array.from({ length: datums }, (_, i) => (
-          <span key={i} className={styles.datum} style={{ bottom: `${18 + i * 9}%` }} />
-        ))}
-      </div>
-
-      <VialSilhouette className={styles.silhouette} />
-
+      {bare ? null : (
+        <>
+          <div className={styles.ground} aria-hidden="true" />
+          <div className={styles.floor} aria-hidden="true" />
+        </>
+      )}
+      <VialObject
+        className={styles.vial}
+        name={name}
+        line={annotation}
+        liquid={isLiquid(annotation)}
+      />
       {index ? (
         <Mono size="2xs" className={styles.index}>
           {index}
         </Mono>
       ) : null}
-
-      {annotation ? (
-        <Mono size="2xs" className={styles.annotation}>
-          {annotation}
-        </Mono>
-      ) : null}
     </div>
   );
 }
+
+/** Sold by volume ("3 ml – 10 ml", "200 mg / 10 ml") → liquid. Mass or units → powder. */
+function isLiquid(range: string | undefined): boolean {
+  return range ? /\bml\b/i.test(range) : false;
+}
+
+/**
+ * Break a name for the label: one line when it fits, otherwise two, split at
+ * the space nearest the middle so the lines balance.
+ */
+function labelLines(name: string): string[] {
+  const upper = name.toUpperCase();
+  if (upper.length <= 11 || !upper.includes(" ")) return [upper];
+  const words = upper.split(" ");
+  let best: string[] = [upper];
+  let bestWidth = Infinity;
+  for (let i = 1; i < words.length; i++) {
+    const a = words.slice(0, i).join(" ");
+    const b = words.slice(i).join(" ");
+    const width = Math.max(a.length, b.length);
+    if (width < bestWidth) {
+      best = [a, b];
+      bestWidth = width;
+    }
+  }
+  return best;
+}
+
+const LABEL_WIDTH = 104;
+/** The condensed display face averages ~0.5em per uppercase character. */
+const CHAR = 0.5;
+
+/**
+ * THE VIAL. viewBox 200 × 340, drawn from the GLB's proportions: a straight
+ * cylinder with a short shoulder, a crimped aluminium collar and a flip cap.
+ * Every colour is a CSS custom property set by the plate's area/world scope,
+ * so one drawing serves the neutral store and all three worlds.
+ */
+function VialObject({
+  className,
+  name,
+  line,
+  liquid,
+}: {
+  className?: string;
+  name?: string;
+  line?: string;
+  liquid: boolean;
+}) {
+  const uid = useId().replace(/:/g, "");
+  const id = (part: string) => `${uid}-${part}`;
+  const lines = name ? labelLines(name) : [];
+  const longest = Math.max(1, ...lines.map((l) => l.length));
+  const fontSize = Math.max(10, Math.min(30, LABEL_WIDTH / (longest * CHAR)));
+  const nameTop = lines.length === 1 ? 214 : 200;
+  const fits = (text: string) => text.length * CHAR * fontSize <= LABEL_WIDTH;
+
+  return (
+    <svg viewBox="0 0 200 340" className={className} aria-hidden="true" focusable="false">
+      <defs>
+        {/* Glass: darker at the silhouette, clear through the middle. */}
+        <linearGradient id={id("glass")} x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0" stopColor="var(--vial-edge)" stopOpacity="0.55" />
+          <stop offset="0.16" stopColor="var(--vial-glass)" stopOpacity="0.35" />
+          <stop offset="0.5" stopColor="var(--vial-glass)" stopOpacity="0.12" />
+          <stop offset="0.84" stopColor="var(--vial-glass)" stopOpacity="0.3" />
+          <stop offset="1" stopColor="var(--vial-edge)" stopOpacity="0.6" />
+        </linearGradient>
+        {/* Metal: a brushed cylinder, lit from the upper left. */}
+        <linearGradient id={id("metal")} x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0" stopColor="var(--vial-cap-dark)" />
+          <stop offset="0.28" stopColor="var(--vial-cap-light)" />
+          <stop offset="0.55" stopColor="var(--vial-cap)" />
+          <stop offset="1" stopColor="var(--vial-cap-dark)" />
+        </linearGradient>
+        <linearGradient id={id("collar")} x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0" stopColor="var(--vial-collar-dark)" />
+          <stop offset="0.3" stopColor="var(--vial-collar-light)" />
+          <stop offset="1" stopColor="var(--vial-collar-dark)" />
+        </linearGradient>
+        {/* The label wraps a cylinder: its edges turn away from the light. */}
+        <linearGradient id={id("wrap")} x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0" stopColor="#000" stopOpacity="0.2" />
+          <stop offset="0.14" stopColor="#000" stopOpacity="0" />
+          <stop offset="0.78" stopColor="#000" stopOpacity="0" />
+          <stop offset="1" stopColor="#000" stopOpacity="0.26" />
+        </linearGradient>
+        <linearGradient id={id("fill")} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stopColor="var(--vial-fill)" stopOpacity="0.55" />
+          <stop offset="1" stopColor="var(--vial-fill)" stopOpacity="0.85" />
+        </linearGradient>
+        <radialGradient id={id("shadow")} cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stopColor="#000" stopOpacity="var(--vial-shadow, 0.28)" />
+          <stop offset="1" stopColor="#000" stopOpacity="0" />
+        </radialGradient>
+        <clipPath id={id("body")}>
+          <path d={BODY} />
+        </clipPath>
+      </defs>
+
+      {/* Contact shadow — the object stands on something. */}
+      <ellipse cx="100" cy="321" rx="86" ry="9" fill={`url(#${id("shadow")})`} />
+
+      {/* Contents, clipped to the glass. */}
+      <g clipPath={`url(#${id("body")})`}>
+        {liquid ? (
+          <>
+            <rect x="30" y="196" width="140" height="130" fill={`url(#${id("fill")})`} />
+            <ellipse cx="100" cy="196" rx="64" ry="4" fill="var(--vial-fill)" opacity="0.9" />
+          </>
+        ) : (
+          <>
+            {/* A lyophilised cake: a domed top catching the light. */}
+            <path
+              d="M36 288 C 58 274, 142 274, 164 288 L164 330 L36 330 Z"
+              fill="var(--vial-powder)"
+            />
+            <path
+              d="M40 287 C 62 276, 138 276, 160 287"
+              fill="none"
+              stroke="#fff"
+              strokeOpacity="0.9"
+              strokeWidth="1.4"
+            />
+            <path d="M36 300 L164 300 L164 330 L36 330 Z" fill="#000" opacity="0.05" />
+          </>
+        )}
+      </g>
+
+      {/* Glass body. */}
+      <path d={BODY} fill={`url(#${id("glass")})`} />
+      <path d={BODY} fill="none" stroke="var(--vial-edge)" strokeOpacity="0.55" strokeWidth="1.2" />
+
+      {/* Label — NEOGEN packaging identity, printed with registry data. */}
+      <g>
+        <rect x="36" y="150" width="128" height="116" fill="var(--vial-label)" />
+        <text
+          x="100"
+          y="170"
+          textAnchor="middle"
+          className={styles.labelMark}
+          fill="var(--vial-label-ink)"
+        >
+          NEOGEN
+        </text>
+        <rect x="58" y="178" width="84" height="0.8" fill="var(--vial-label-ink)" opacity="0.35" />
+        {lines.map((text, i) => (
+          <text
+            key={text}
+            x="100"
+            y={nameTop + i * fontSize * 0.98}
+            textAnchor="middle"
+            className={styles.labelName}
+            fill="var(--vial-label-ink)"
+            style={{ fontSize }}
+            {...(fits(text) ? {} : { textLength: LABEL_WIDTH, lengthAdjust: "spacingAndGlyphs" })}
+          >
+            {text}
+          </text>
+        ))}
+        {line ? (
+          <text
+            x="100"
+            y="250"
+            textAnchor="middle"
+            className={styles.labelLine}
+            fill="var(--vial-label-ink)"
+            {...(line.length > 22 ? { textLength: 108, lengthAdjust: "spacingAndGlyphs" } : {})}
+          >
+            {line.toUpperCase()}
+          </text>
+        ) : null}
+        <rect x="36" y="259" width="128" height="7" fill="var(--vial-stripe)" />
+        <rect x="36" y="150" width="128" height="116" fill={`url(#${id("wrap")})`} />
+      </g>
+
+      {/* Specular — one vertical highlight down the glass, over everything. */}
+      <rect x="47" y="104" width="5" height="206" fill="#fff" opacity="var(--vial-spec, 0.55)" />
+      <rect x="146" y="112" width="2" height="190" fill="#fff" opacity="0.18" />
+
+      {/* Collar and cap. */}
+      <rect x="62" y="58" width="76" height="18" fill={`url(#${id("collar")})`} />
+      <rect x="62" y="66" width="76" height="1" fill="#000" opacity="0.18" />
+      <rect x="56" y="14" width="88" height="46" fill={`url(#${id("metal")})`} />
+      <rect x="56" y="14" width="88" height="3" fill="#fff" opacity="0.25" />
+      <rect x="56" y="57" width="88" height="3" fill="#000" opacity="0.18" />
+    </svg>
+  );
+}
+
+/** Neck, shoulder, straight wall, rounded heel. */
+const BODY =
+  "M68 76 L132 76 L132 90 C 132 100 164 100 164 116 L164 308 Q164 318 154 318 L46 318 Q36 318 36 308 L36 116 C 36 100 68 100 68 90 Z";

@@ -106,18 +106,10 @@
 /* A plate, not a photo slot — matching the card's 4:5 frame at thumbnail
    scale so a line reads as the same object as its card. */
 .thumb {
-  display: grid;
-  place-items: center;
+  display: block;
   aspect-ratio: 4 / 5;
+  overflow: hidden;
   border: 1px solid var(--border-subtle);
-  background-color: var(--surface-raised);
-}
-
-.thumbArt {
-  block-size: 58%;
-  inline-size: auto;
-  color: var(--ink-muted);
-  opacity: 0.5;
 }
 
 .lineMain {

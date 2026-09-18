@@ -1,7 +1,8 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-09-17**, after the Atlas profile / privacy / policy /
-engine layering (§8l).
+Last updated **2026-09-17**: **Atlas is frozen and deferred to V2**; the
+priority is a complete, commercially effective V1 from what already exists
+(§8m).
 
 This file is the memory of the project for a new session. It records what is
 not derivable from the code: where the phases stand, how the owner runs the
@@ -36,10 +37,15 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 | `d3a9e46`   | Atlas part 1 + homepage index                                                                                                   |
 | _this_      | Sourced compound profiles, the research-function axis, and the data-driven questionnaire system (§8i)                           |
 | `f6b3249`   | Atlas understands the owner's questionnaire v4: field map, transmission boundary, pins, evidence, relevance (§8k)               |
-| _this_      | Atlas layers: complete typed profile → privacy → advisor policy over projections → engine (§8l)                                 |
+| `d4b7028`   | Atlas layers: complete typed profile → privacy → advisor policy over projections → engine (§8l)                                 |
+| _this_      | V1 commerce and art-direction pass: product objects, visible commerce, commercial homepage rhythm (§8n)                         |
 
-**Phase 12.1 is complete. Phase 13 has not been started or approved.** Do not
-begin it without a brief from the owner.
+**Current priority (owner, 2026-09-17): V1 completion.** Make NEOGEN V1 as
+complete, polished and commercially effective as possible with the
+functionality that already exists. Atlas and further Living Laboratory work
+are **V2 — frozen, not deleted** (§8m). The V1 audit and completion sequence
+were reported in conversation on 2026-09-17; nothing from it is implemented
+until the owner approves it.
 
 Pushing is the owner's job — see §3. Check `git status -sb` for what is
 still unpushed rather than trusting this file.
@@ -943,6 +949,99 @@ profile (so it tests the policy alone), separate selection/AI-context grants,
 and two fixture policies (a wider context grant; a policy that smuggles a
 field, refused). Three mutations (granting conditions to the model, a
 projection that ignores permissions, transmitting conditions) each fail it.
+
+## 8m. V1 scope: what is frozen and deferred to V2
+
+**Owner decision, 2026-09-17.** Atlas is deferred to V2. Freeze it in its
+current state (`d4b7028`) and take it off the V1 critical path. Do not delete
+or redesign it.
+
+**Frozen for V2 — keep the code, do not extend it:**
+
+- **NEOGEN Atlas**, whole: questionnaire v4 (owner content), profile / privacy /
+  policy / engine layers, `/atlas`, `/api/atlas`, `check:atlas`, and the
+  advisor adapter (no production AI provider connected). Open items that travel
+  with it: §6 item 8a (sensitive-data consent, public administration wording),
+  the sexual-health → Hormonal mapping, the owner's BMI TODO.
+- **Advanced Living Laboratory work beyond what ships today**: 3D models for
+  GLOW and GHK-Cu, macro visuals, new scroll-driven storytelling, new
+  Experience-mode moments. The existing RETA 3D vial, the world moments and the
+  flagship pages ship as they are.
+
+**V1 consequence (not yet implemented, awaiting approval):** Atlas's public
+entry points — primary nav, footer link, homepage hub card, sitemap entry and
+the `/atlas` route — should be switched off behind one V1 flag, so the code
+stays intact and `check:atlas` keeps passing. Until that is done, Atlas is
+still publicly reachable.
+
+## 8n. V1 commerce and art-direction pass
+
+**Owner direction (2026-09-18):** "The UI stays quiet. The products get loud."
+Keep the Design Bible identity (black/cream, zero radius, Instrument Sans /
+IBM Plex Mono, Quiet/Experience, the three worlds), but make NEOGEN
+unmistakably a premium store: products as physical objects, visible price and
+presentation, abundant catalogue, flagship colour as interruptions,
+Experience moments resolving into commerce, science supporting rather than
+dominating, and mobile designed for shopping. EXOMA is a functional benchmark
+only. The Bible now has a **Commerce Principles** section; follow it.
+
+**What changed**
+
+- **The product object** (`components/ui/SpecimenPlate`) replaces the
+  specimen diagram everywhere: cards, product pages, bag lines, area entries
+  and the 3D fallbacks.
+  - It is the NEOGEN vial drawn from `reta.glb`'s proportions on a studio
+    sweep, with the packaging identity on the label (mark, registry name,
+    presentation range).
+  - Contents come from the data: powder for mg/IU, liquid for ml.
+  - The area colour appears as the label stripe.
+  - Flagships get dark world stages: RETA blue, a GLOW amber bloom, a GHK-Cu
+    copper cap and collar.
+  - It is vector art direction, not photography. A registered photo still
+    replaces it.
+  - `VialSilhouette` was deleted.
+- **Cards** are full-bleed with a larger name and price. On phones they
+  compact themselves by container query.
+- **Homepage** order:
+  1. Hero
+  2. Flagships (a swipe row on phones)
+  3. Catalogue shelf (count, shop by area, entry product per area)
+  4. RETA → commerce
+  5. Areas
+  6. GLOW → commerce
+  7. Evidence band (counted)
+  8. GHK-Cu → commerce
+
+  Removed from the homepage: the hub (including its Atlas card), "Evolución
+  creativa", and the four-row documentation wall. The components remain.
+
+- **Experience moments** end in `MomentCommerce`: name, range, price and one
+  paper-on-dark action. GLOW and GHK-Cu show their own vials where "Medio /
+  Muestra pendiente" used to be.
+- **RETA scene fix:** the overlay rows are now `minmax(0,1fr)`. With plain
+  `1fr` rows the overlay grew to 974px in a 900px pin.
+- **Product page**
+  - Order: product → specs → profile → research → documentation → related.
+  - Documentation with no public document is one statement, not the chain.
+  - The buy box shows the pack ("5 mg × 10 viales"), and the bag line
+    carries it.
+  - The "Medio de producto" captions are gone.
+  - Flagship pages pass their own world and name to the fallback. GLOW had
+    been showing a RETA label.
+  - On mobile: a square plate, and a sticky buy dock once the buy box
+    scrolls away (only while the bag is enabled).
+- **Catalogue on mobile:** a two-up grid, and a one-line toolbar (the
+  register view toggle is desktop only).
+
+**Measured.** axe WCAG A/AA: 0 violations, and horizontal overflow: 0, on 10
+routes × 375/1440, ES and EN. Heights: mobile catalogue 55,900 → 20,900px;
+homepage 12,600 → 10,900px on desktop and 16,000 → 11,400px on mobile; RETA
+product page 15,800 → 9,800px on desktop.
+
+**Deliberately not done here:** Atlas nav/footer links (V2 flag, §8m) and all
+P0 backend (payments, persistence, shipping, policies). The research-use line
+is still unrendered pending approval. Real photography remains the owner's
+item; drop files per `public/images/README.md` and they win automatically.
 
 ## 9. Recommendation for Phase 13 (not approved)
 

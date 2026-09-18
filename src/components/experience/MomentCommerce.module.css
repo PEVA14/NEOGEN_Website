@@ -1,0 +1,81 @@
+.commerce {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-md) var(--space-xl);
+  padding-block-start: var(--space-md);
+  border-block-start: 1px solid
+    color-mix(in oklab, var(--world-accent, var(--border-default)) 45%, transparent);
+}
+
+.record {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+  margin-inline-end: auto;
+}
+
+.name {
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-2xl);
+  line-height: 1;
+  color: var(--ink-primary);
+}
+
+.range {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.price {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-xl);
+  font-weight: 500;
+  color: var(--ink-primary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.from {
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  font-weight: 400;
+}
+
+/* Paper on the world's dark, always — never the world's colour. */
+.action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  min-block-size: 3rem;
+  padding-inline: var(--space-lg);
+  background-color: var(--neogen-paper);
+  color: var(--neogen-charcoal);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: opacity var(--motion-duration-base) var(--ease-standard);
+}
+
+.action:hover {
+  opacity: 0.88;
+}
+
+.action:focus-visible {
+  outline: var(--focus-ring-width) solid var(--neogen-paper);
+  outline-offset: 3px;
+}
+
+@media (max-width: 47.999rem) {
+  .action {
+    inline-size: 100%;
+  }
+}

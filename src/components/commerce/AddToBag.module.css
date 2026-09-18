@@ -183,6 +183,12 @@
   font-variant-numeric: tabular-nums;
 }
 
+.pack {
+  color: var(--ink-secondary);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
 .priceValue[data-pending="true"] {
   color: var(--ink-muted);
 }
@@ -246,4 +252,110 @@
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   text-wrap: pretty;
+}
+
+/* --- The dock (mobile) ----------------------------------------------------
+ *
+ * Paper, a single hairline above, charcoal action: the same register as the
+ * buy box it stands in for. Slides up from the bottom edge; under reduced
+ * motion it simply appears. Never on a wide screen — there the buy box sits
+ * beside the product and never leaves the reader.
+ */
+.dock {
+  display: none;
+}
+
+@media (max-width: 47.999rem) {
+  .dock {
+    position: fixed;
+    inset-inline: 0;
+    inset-block-end: 0;
+    z-index: var(--z-sticky);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-xs) var(--gutter) calc(var(--space-xs) + env(safe-area-inset-bottom));
+    background-color: var(--neogen-paper);
+    color: var(--neogen-charcoal);
+    border-block-start: 1px solid
+      color-mix(in oklab, var(--neogen-charcoal) 18%, var(--neogen-paper));
+    transform: translateY(100%);
+    visibility: hidden;
+    transition:
+      transform var(--motion-duration-base) var(--ease-standard),
+      visibility 0s linear var(--motion-duration-base);
+  }
+
+  .dock[data-docked="true"] {
+    transform: none;
+    visibility: visible;
+    transition:
+      transform var(--motion-duration-base) var(--ease-standard),
+      visibility 0s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dock {
+    transition: none;
+  }
+}
+
+.dockRecord {
+  display: grid;
+  min-inline-size: 0;
+}
+
+.dockName {
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-base);
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Raw paper/charcoal mixes, not the ink tokens: inside a flagship world the
+   ink tokens point at the world's light tones, which vanish on paper. */
+.dockMeta {
+  color: color-mix(in oklab, var(--neogen-charcoal) 62%, var(--neogen-paper));
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dockPrice {
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.dockAdd {
+  min-block-size: 2.75rem;
+  padding-inline: var(--space-md);
+  background-color: var(--neogen-charcoal);
+  color: var(--neogen-paper);
+  border: 1px solid var(--neogen-charcoal);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.dockAdd:disabled {
+  background-color: transparent;
+  color: color-mix(in oklab, var(--neogen-charcoal) 62%, var(--neogen-paper));
+  border-color: color-mix(in oklab, var(--neogen-charcoal) 30%, var(--neogen-paper));
+  cursor: not-allowed;
+}
+
+.dockAdd:focus-visible {
+  outline: var(--focus-ring-width) solid var(--neogen-charcoal);
+  outline-offset: 2px;
 }

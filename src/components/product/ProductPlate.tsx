@@ -1,6 +1,5 @@
 import Image from "next/image";
 
-import { Mono } from "@/components/typography";
 import { SpecimenPlate } from "@/components/ui";
 import { PLATE_SIZES, stillMedia } from "@/content/media";
 
@@ -42,8 +41,6 @@ export function ProductPlate({
   areaId,
   presentations,
   annotation,
-  mediaLabel,
-  meta,
   children,
 }: {
   /** Product identity — the key its media is registered under. */
@@ -56,14 +53,6 @@ export function ProductPlate({
   presentations: number;
   /** The presentation range, as the plate's technical annotation. */
   annotation?: string;
-  mediaLabel: string;
-  /**
-   * The right-hand end of the caption rail — the compound's catalogue
-   * classification. The rail is a two-column rule (the flagship plate puts the
-   * cursor hint there), and with a single item it read as a stray label rather
-   * than as a specimen caption.
-   */
-  meta: string;
   children: ReactNode;
 }) {
   const still = stillMedia(slug);
@@ -112,14 +101,6 @@ export function ProductPlate({
               size="plate"
             />
           )}
-        </div>
-        <div className={styles.caption}>
-          <Mono size="2xs" className={styles.captionLabel}>
-            {mediaLabel}
-          </Mono>
-          <Mono size="2xs" className={styles.captionMeta}>
-            {meta}
-          </Mono>
         </div>
       </div>
 

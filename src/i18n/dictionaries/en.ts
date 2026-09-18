@@ -468,6 +468,7 @@ const en: Dictionary = {
     },
 
     reta: {
+      cta: "View RETA",
       eyebrow: "Retatrutide — research compound",
       beats: [
         {
@@ -539,7 +540,7 @@ const en: Dictionary = {
         category: "Category",
         from: "From",
       },
-      mediaLabel: "Media pending",
+      cta: "View GLOW",
     },
 
     /** See the Spanish source for why the three-row register was replaced. */
@@ -571,7 +572,7 @@ const en: Dictionary = {
         category: "Category",
         from: "From",
       },
-      mediaLabel: "Sample pending",
+      cta: "View GHK-Cu",
     },
 
     ticker: {
@@ -581,9 +582,30 @@ const en: Dictionary = {
       play: "Resume the moving catalog",
     },
 
+    shelf: {
+      index: "02",
+      label: "Catalogue",
+      title: "{n} compounds, one catalogue",
+      lede: "One entry compound per area, with its presentation ladder and its price.",
+      action: "View the full catalogue",
+      areasLabel: "Shop by area",
+    },
+
+    science: {
+      index: "04",
+      label: "Evidence",
+      title: "Every profile, with its source",
+      lede: "NEOGEN's compound profiles cite published literature: authors, journal, DOI. Nothing is stated without a reference that can be opened.",
+      profiles: "Sourced profiles",
+      references: "Public references",
+      areas: "Research areas",
+      action: "Go to NEOGEN Research",
+      referencesAction: "View the references",
+    },
+
     products: {
-      index: "06",
-      label: "Products",
+      index: "01",
+      label: "Flagship",
       title: "Flagship compounds",
       action: "Full catalogue",
       cta: "View product",

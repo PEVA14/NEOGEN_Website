@@ -37,7 +37,7 @@
  */
 .lights {
   position: absolute;
-  inset: 0;
+  inset: -40%;
   display: grid;
   /* The track must be pinned to the container, not sized by its content:
      `place-items: center` centres within the TRACK, and an auto track grows to
@@ -129,39 +129,34 @@
   z-index: var(--z-content);
   display: grid;
   grid-template-rows: auto 1fr auto;
-  gap: var(--space-2xl);
+  gap: var(--space-xl);
   padding-block: var(--space-3xl);
   min-block-size: inherit;
 }
 
-.head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-md);
-}
-
-.eyebrow,
-.mediaSlot {
+.eyebrow {
   color: var(--ink-muted);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
 }
 
 /*
- * Centred, not columnar. RETA composes around an object at the right; GLOW has
- * no object, so its type sits in the middle of the light.
+ * The stage: the statement on the left, the object standing in its light on
+ * the right. The vial is the brightest thing in the section — the light comes
+ * from it, which is the whole idea of GLOW.
  */
+.stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-2xl);
+}
+
 .centre {
-  align-self: center;
-  justify-self: center;
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: var(--space-lg);
-  max-inline-size: 46rem;
-  text-align: center;
+  max-inline-size: 38rem;
 }
 
 .statement {
@@ -171,58 +166,45 @@
 
 .body {
   color: var(--ink-secondary);
-  max-inline-size: 34rem;
+  max-inline-size: 32rem;
   text-wrap: pretty;
 }
 
-.annotations {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--space-sm) var(--space-2xl);
-  padding-block-start: var(--space-md);
-  border-block-start: 1px solid var(--border-subtle);
+.object {
+  position: relative;
+  display: grid;
+  place-items: center;
+  block-size: min(62vh, 34rem);
 }
 
-.annotation {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3xs);
-  text-align: center;
+.object > :last-child {
+  position: relative;
+  z-index: 1;
+  block-size: 100%;
+  inline-size: auto;
+  aspect-ratio: 200 / 340;
 }
-
-.annotationKey {
-  color: var(--ink-muted);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-}
-
-.annotationValue {
-  color: var(--ink-secondary);
-}
-
-/* --- Compact ------------------------------------------------------------- */
 
 @media (max-width: 47.999rem) {
   .viewport {
-    min-block-size: min(78vh, 40rem);
+    min-block-size: auto;
+  }
+
+  .content {
+    gap: var(--space-lg);
+    padding-block: var(--space-2xl);
+  }
+
+  .stage {
+    grid-template-columns: 1fr;
+    gap: var(--space-lg);
+  }
+
+  .object {
+    block-size: 22rem;
   }
 
   .bloom {
     inline-size: 150vw;
-  }
-
-  .centre {
-    text-align: start;
-    align-items: flex-start;
-  }
-
-  .annotations {
-    justify-content: flex-start;
-    gap: var(--space-sm) var(--space-lg);
-  }
-
-  .annotation {
-    text-align: start;
   }
 }

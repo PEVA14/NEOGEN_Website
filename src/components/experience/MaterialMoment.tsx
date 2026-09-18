@@ -1,6 +1,9 @@
 import { Container, Section } from "@/components/primitives";
 import { Body, Display, Mono } from "@/components/typography";
+import { SpecimenPlate } from "@/components/ui/SpecimenPlate";
 import { getWorld } from "@/config/worlds";
+
+import { MomentCommerce } from "./MomentCommerce";
 
 import type { WorldMomentCopy } from "./GlowMoment";
 import styles from "./MaterialMoment.module.css";
@@ -60,42 +63,26 @@ export function MaterialMoment({ copy }: { copy: WorldMomentCopy }) {
             </div>
 
             {/*
-             * The core sample — a vertical section through the material.
-             *
-             * A geological core, not a product shot: stacked strata of copper,
-             * patina and oxide with depth markers down the side. It is the most
-             * literal expression of "the environment becomes material", it
-             * carries real physical weight in the composition, and it invents
-             * nothing about the product.
+             * The product, on a copper-lit plinth. It replaces the abstract
+             * "core sample" that stood in for a missing asset: the object is
+             * GHK-Cu's own vial, with its copper cap and collar, and the
+             * material is the light it stands in.
              */}
             <div className={styles.specimen}>
-              <div className={styles.core} aria-hidden="true">
-                <span className={styles.coreLayer} data-layer="oxide" />
-                <span className={styles.coreLayer} data-layer="copper" />
-                <span className={styles.coreLayer} data-layer="patina" />
-                <span className={styles.coreLayer} data-layer="deep" />
-              </div>
-
-              <div className={styles.specimenMeta}>
-                <Mono size="2xs" className={styles.specimenLabel}>
-                  {copy.mediaLabel}
-                </Mono>
+              <div className={styles.object}>
+                <SpecimenPlate
+                  areaId={null}
+                  world="ghk-cu"
+                  name={copy.product.name}
+                  annotation={copy.product.range ?? undefined}
+                  size="stage"
+                  bare
+                />
               </div>
             </div>
           </div>
 
-          <dl className={styles.annotations}>
-            {copy.annotations.map((item) => (
-              <div key={item.key} className={styles.annotation}>
-                <Mono as="dt" size="2xs" className={styles.annotationKey}>
-                  {item.key}
-                </Mono>
-                <Mono as="dd" size="xs" className={styles.annotationValue}>
-                  {item.value}
-                </Mono>
-              </div>
-            ))}
-          </dl>
+          <MomentCommerce {...copy.product} />
         </Container>
       </div>
     </Section>

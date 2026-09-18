@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import { Mono } from "@/components/typography";
 import { ORDER_LIMITS } from "@/data/commerce/limits";
@@ -14,6 +14,11 @@ import type { Availability, Money } from "@/data/commerce";
 export interface AddToBagVariant {
   variantId: string;
   presentation: string;
+  /**
+   * What one pack holds — "× 10 viales". Shown under the price and carried
+   * into the bag line, because the price is for the pack, not for one vial.
+   */
+  pack?: string | null;
   price: Money | null;
   availability: Availability | null;
 }
@@ -73,6 +78,24 @@ export function AddToBag({
   const [quantity, setQuantity] = useState<number>(ORDER_LIMITS.min);
   const [justAdded, setJustAdded] = useState(false);
   const { add } = useBag();
+  const blockRef = useRef<HTMLDivElement>(null);
+  /*
+   * THE DOCK — mobile only. Once the buy box has scrolled up out of view, a
+   * slim bar with the selected presentation, its price and the same action
+   * holds the bottom edge, so a long product page never strands the reader
+   * away from the one thing it sells. Only while the bag is enabled: a dock
+   * offering a disabled button would be a permanent reminder of nothing.
+   */
+  const [docked, setDocked] = useState(false);
+  useEffect(() => {
+    const el = blockRef.current;
+    if (!el || !enabled || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(([entry]) => {
+      setDocked(!entry.isIntersecting && entry.boundingClientRect.top < 0);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [enabled]);
 
   const selected = variants.find((v) => v.variantId === selectedId) ?? variants[0];
   const soldOut = selected?.availability === "unavailable";
@@ -88,7 +111,9 @@ export function AddToBag({
         variantId: selected.variantId,
         slug,
         name,
-        presentation: selected.presentation,
+        presentation: selected.pack
+          ? `${selected.presentation} ${selected.pack}`
+          : selected.presentation,
         unitPrice: selected.price,
       },
       quantity,
@@ -108,7 +133,7 @@ export function AddToBag({
   if (variants.length === 0) return null;
 
   return (
-    <div className={styles.block}>
+    <div className={styles.block} ref={blockRef}>
       {variants.length > 1 ? (
         <fieldset className={styles.variants}>
           <legend className={styles.legend}>
@@ -179,7 +204,14 @@ export function AddToBag({
             {copy.priceLabel}
           </Mono>
           {selected?.price ? (
-            <span className={styles.priceValue}>{formatPrice(selected.price, localeTag)}</span>
+            <>
+              <span className={styles.priceValue}>{formatPrice(selected.price, localeTag)}</span>
+              {selected.pack ? (
+                <Mono size="2xs" className={styles.pack}>
+                  {selected.presentation} {selected.pack}
+                </Mono>
+              ) : null}
+            </>
           ) : (
             <span className={styles.priceValue} data-pending="true">
               —
@@ -208,6 +240,30 @@ export function AddToBag({
         <Mono size="2xs" className={styles.note}>
           {copy.unavailable}
         </Mono>
+      ) : null}
+
+      {enabled ? (
+        <div className={styles.dock} data-docked={docked ? "true" : undefined} inert={!docked}>
+          <div className={styles.dockRecord}>
+            <span className={styles.dockName}>{name}</span>
+            <Mono size="2xs" className={styles.dockMeta}>
+              {selected?.presentation}
+              {selected?.pack ? ` ${selected.pack}` : ""}
+            </Mono>
+          </div>
+          {selected?.price ? (
+            <span className={styles.dockPrice}>{formatPrice(selected.price, localeTag)}</span>
+          ) : null}
+          <button
+            type="button"
+            className={styles.dockAdd}
+            onClick={onAdd}
+            disabled={!canAdd}
+            data-added={justAdded ? "true" : undefined}
+          >
+            {soldOut ? copy.soldOut : justAdded ? copy.added : copy.add}
+          </button>
+        </div>
       ) : null}
     </div>
   );
