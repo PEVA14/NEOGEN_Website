@@ -92,6 +92,13 @@ export interface ProductCardProps {
   /** The reveal. Absent → the card is exactly its face, as before. */
   details?: CardDetails;
   detailsCopy?: CardDetailsCopy;
+  /**
+   * "store": the /productos storefront card — a softened product surface, the
+   * price as the commercial line's headline and a compact square action in
+   * place of the full-width bar. Everywhere else keeps the default card until
+   * the owner has reviewed the storefront.
+   */
+  variant?: "default" | "store";
 }
 
 /**
@@ -138,6 +145,7 @@ export function ProductCard({
   format = "standard",
   details,
   detailsCopy,
+  variant = "default",
 }: ProductCardProps) {
   const warmed = useRef(false);
   const revealId = useId();
@@ -180,6 +188,7 @@ export function ProductCard({
          plate uses, rather than a second palette for cards. */
       data-world={format === "flagship" ? (world ?? undefined) : undefined}
       data-reveal={reveals ? (open ? "open" : "closed") : undefined}
+      data-variant={variant === "store" ? "store" : undefined}
       onPointerEnter={warm}
     >
       {/*
@@ -205,7 +214,8 @@ export function ProductCard({
               world={world}
               name={name}
               presentations={presentations}
-              index={index}
+              /* A store shelf is not a numbered register. */
+              index={variant === "store" ? undefined : index}
               annotation={presentationRange ?? undefined}
               size={format === "feature" ? "feature" : "card"}
             />
@@ -245,6 +255,11 @@ export function ProductCard({
               <span className={styles.price}>
                 {priceFrom ? <span className={styles.priceFrom}>{priceFrom} </span> : null}
                 {price}
+              </span>
+            ) : null}
+            {variant === "store" ? (
+              <span className={styles.go} aria-hidden="true">
+                →
               </span>
             ) : null}
           </span>

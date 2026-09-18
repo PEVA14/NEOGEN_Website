@@ -732,3 +732,98 @@
     transition: none;
   }
 }
+
+/* --- Store variant: paging -------------------------------------------------- */
+
+.more {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-sm);
+  padding-block: var(--space-xl) var(--space-md);
+}
+
+.moreCount {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+
+.moreButton {
+  min-block-size: 3rem;
+  min-inline-size: 16rem;
+  padding-inline: var(--space-lg);
+  border: 1px solid var(--neogen-charcoal);
+  background: var(--neogen-charcoal);
+  color: var(--neogen-paper);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity var(--motion-duration-base) var(--ease-standard);
+}
+
+.moreButton:hover {
+  opacity: 0.88;
+}
+
+.moreButton:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}
+
+.cell[hidden] {
+  display: none;
+}
+
+/* --- Store variant: a shelf, not a gallery --------------------------------
+ *
+ * Four products across beside the filters on a laptop, five with the filters
+ * put away, and a tighter gutter: density comes from more products on screen,
+ * not from smaller type.
+ */
+@media (min-width: 64rem) {
+  .browser[data-variant="store"] .layout {
+    grid-template-columns: 15rem minmax(0, 1fr);
+  }
+
+  .browser[data-variant="store"] .layout[data-panel="hidden"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.browser[data-variant="store"] .grid {
+  gap: var(--space-md) var(--space-xs);
+}
+
+@media (min-width: 40rem) {
+  .browser[data-variant="store"] .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-lg) var(--space-sm);
+  }
+}
+
+@media (min-width: 64rem) {
+  .browser[data-variant="store"] .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 80rem) {
+  .browser[data-variant="store"] .grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .browser[data-variant="store"] .layout[data-panel="hidden"] .grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+/* Every card in a row ends on the same line: the cell hands its height down. */
+.browser[data-variant="store"] .cell {
+  display: flex;
+}
+
+.browser[data-variant="store"] .cell[hidden] {
+  display: none;
+}

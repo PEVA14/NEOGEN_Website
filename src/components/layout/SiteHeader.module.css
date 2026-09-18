@@ -36,7 +36,9 @@
    */
   --ink-primary: var(--neogen-paper);
   --ink-secondary: color-mix(in oklab, var(--neogen-paper) 78%, var(--neogen-charcoal));
-  --ink-muted: color-mix(in oklab, var(--neogen-paper) 52%, var(--neogen-charcoal));
+  /* 70%, not 52%: at 52% the inactive locale measured 3.5:1 (and 4.3:1 at 62%) over the
+     translucent bar on a dark section (axe, 2026-09-18). */
+  --ink-muted: color-mix(in oklab, var(--neogen-paper) 70%, var(--neogen-charcoal));
   --surface-raised: color-mix(in oklab, var(--neogen-paper) 12%, transparent);
   --focus-ring: var(--neogen-paper);
   --focus-ring-offset: var(--neogen-charcoal);

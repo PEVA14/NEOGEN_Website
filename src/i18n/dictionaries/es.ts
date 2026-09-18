@@ -910,6 +910,37 @@ const es = {
        * REGISTRO — la vista de tabla del catálogo es una matriz de
        * presentaciones: concentraciones y precios de empaque reales.
        */
+      /** THE STOREFRONT — /productos as NEOGEN's primary store (2026-09-18). */
+      store: {
+        eyebrow: "NEOGEN · Tienda",
+        stats: "{products} compuestos · {presentations} presentaciones · {areas} áreas",
+        lede: "Péptidos, metabólicos, mezclas y materiales de laboratorio. Cada presentación con su precio.",
+        searchLabel: "Buscar en el catálogo",
+        searchPlaceholder: "Nombre o concentración",
+        searchSubmit: "Buscar",
+        browseAll: "Ver todo el catálogo",
+        signature: {
+          label: "Compuestos insignia",
+          from: "Desde",
+        },
+        areas: {
+          index: "02",
+          label: "Áreas",
+          title: "Compra por área",
+          count: "{n} compuestos",
+          from: "Desde",
+          all: "Ver todos los compuestos",
+        },
+        collection: {
+          index: "03",
+          label: "Colección",
+          title: "Todo el catálogo",
+        },
+        more: {
+          show: "Ver {n} más",
+          showing: "{shown} de {total}",
+        },
+      },
       matrix: {
         caption: "Presentaciones y precios de los compuestos mostrados",
         othersCaption: "Presentaciones en otras unidades",

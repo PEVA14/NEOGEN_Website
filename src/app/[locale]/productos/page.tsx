@@ -1,18 +1,23 @@
 import { notFound } from "next/navigation";
 
 import { CatalogBrowser } from "@/components/catalog";
-import { SectionHeader } from "@/components/layout";
-import { Container, Section } from "@/components/primitives";
-import { AreaBoard } from "@/components/ui";
+import {
+  AreaShelf,
+  StoreCollection,
+  StoreMasthead,
+  type StoreArea,
+} from "@/components/catalog/Storefront";
+import { HideWhileSearching } from "@/components/catalog/StoreSearch";
 import { routes } from "@/config/routes";
+import { worldIds } from "@/config/worlds";
 import { isPublishable, products, publishedProducts } from "@/data/catalog";
-import { publicAreas, publicAreasFor } from "@/data/discovery";
+import { publicAreas } from "@/data/discovery";
 import { isLocale, localeTags } from "@/i18n/config";
 import { getDictionary } from "@/i18n/getDictionary";
-import { alternates } from "@/lib/alternates";
-import { catalogCopy, catalogEntries } from "@/server/catalog";
-import { fillTemplate, socialMetadata } from "@/lib/meta";
 import { localizePath } from "@/i18n/routing";
+import { alternates } from "@/lib/alternates";
+import { fillTemplate, socialMetadata } from "@/lib/meta";
+import { catalogCopy, catalogEntries } from "@/server/catalog";
 
 import type { Metadata } from "next";
 
@@ -40,17 +45,27 @@ export async function generateMetadata({
   };
 }
 
+/** The results region every "browse" affordance on the page lands on. */
+const RESULTS_ID = "catalogo";
+/** Two rows of four on a wide screen, twelve rows of two on a phone. */
+const PAGE_SIZE = 24;
+
 /**
- * THE CATALOGUE.
+ * THE STOREFRONT — NEOGEN's primary store, and the visual reference for V1.
  *
- * Quiet Mode from top to bottom: this is where a reader compares compounds, so
- * it is information design, not an experience. Product identity appears only in
- * the card image areas and in the world dots.
+ * The UI stays quiet; the products get loud:
  *
- * The page is a server component that resolves the compound set and hands it to
- * one client island for search, filtering, sorting and the view toggle. Nothing
- * about the catalogue's CONTENT depends on the client — the full set is in the
- * server-rendered HTML, so it is indexable and it works before hydration.
+ *   1. masthead   — charcoal. The count, the one search field, and the three
+ *                   signature products on their world grounds, priced.
+ *   2. areas      — eight ways in, each shown by a real product from it.
+ *   3. collection — the whole catalogue: facets, sort, the register view, and
+ *                   the storefront card, paged so a phone is a shelf rather
+ *                   than a 20,000px list.
+ *
+ * While a search is typed the merchandising steps aside, so the results sit
+ * right under the field. The whole catalogue is in the server-rendered HTML
+ * (paged cards are `hidden`, not absent), so it is indexable and works before
+ * hydration.
  */
 export default async function ProductsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -58,59 +73,85 @@ export default async function ProductsPage({ params }: { params: Promise<{ local
 
   const dict = await getDictionary(locale);
   const catalog = dict.products.catalog;
-  /* Areas with approved products — the strip and the area facet read the same list. */
+  const store = catalog.store;
   const areas = publicAreas();
   const path = (to: string) => localizePath(to, locale);
 
-  /*
-   * The whole catalogue, from the product registry — not from `worlds.ts`,
-   * which describes three Experience environments and knows nothing about the
-   * other 82 products. Entries are built by the one server builder every
-   * browser on the site uses (`server/catalog`), with prices and availability
-   * fetched in one batched call.
-   */
   const published = products.filter(isPublishable);
   const entries = await catalogEntries(published, { locale, dict });
 
-  /*
-   * THE AREA BOARD — eight named ways into 85 products, at the entrance.
-   *
-   * Counts are read from the registry, so an area that empties
-   * stops claiming a number, and `publicAreas()` keeps the board out of the DOM
-   * entirely if no assignment is ever approved. See `components/ui/AreaBoard`.
-   */
-  const areaBoard = areas.map((area) => ({
-    id: area.id,
-    href: path(routes.area(area.slug)),
-    short: dict.discovery.areas[area.id].short,
-    count: published.filter((p) => publicAreasFor(p.slug).some((a) => a.id === area.id)).length,
-  }));
+  /* The signature products, in world order, from the same entries the grid uses. */
+  const signatures = worldIds
+    .map((world) => entries.find((entry) => entry.world === world))
+    .filter((entry) => entry !== undefined)
+    .map((entry) => ({
+      slug: entry.slug,
+      name: entry.name,
+      href: entry.href,
+      world: entry.world!,
+      worldLabel: entry.worldLabel ?? "",
+      range: entry.range,
+      price: entry.price,
+    }));
+
+  /* Each area, shown by its entry product: the cheapest priced one filed there. */
+  const areaShelf: StoreArea[] = areas.map((area) => {
+    const inArea = entries.filter((entry) => entry.areas.includes(area.id));
+    const entry = inArea
+      .filter((e) => e.priceAmount !== null)
+      .sort((a, b) => a.priceAmount! - b.priceAmount!)[0];
+    return {
+      id: area.id,
+      href: path(routes.area(area.slug)),
+      label: dict.discovery.areas[area.id].short,
+      count: inArea.length,
+      entry: entry ? { name: entry.name, range: entry.range } : null,
+      price: entry?.price ?? null,
+    };
+  });
+
+  const stats = fillTemplate(store.stats, {
+    products: String(published.length),
+    presentations: String(published.reduce((n, p) => n + p.variants.length, 0)),
+    areas: String(areas.length),
+  });
 
   return (
-    <Section mode="quiet" aria-labelledby="catalog-title">
-      <Container width="full">
-        <SectionHeader
-          index={catalog.index}
-          label={`${catalog.label} // ${catalog.qualifier}`}
-          title={catalog.title}
-          id="catalog-title"
-          lede={catalog.lede}
-          as="h1"
-        />
+    <>
+      <StoreMasthead
+        copy={{
+          eyebrow: store.eyebrow,
+          title: catalog.title,
+          stats,
+          lede: store.lede,
+          searchLabel: store.searchLabel,
+          searchPlaceholder: store.searchPlaceholder,
+          searchSubmit: store.searchSubmit,
+          browseAll: store.browseAll,
+          signatureLabel: store.signature.label,
+          from: store.signature.from,
+        }}
+        signatures={signatures}
+        resultsId={RESULTS_ID}
+      />
 
-        <AreaBoard
-          entries={areaBoard}
-          label={dict.discovery.label}
-          countLabel={dict.discovery.countLabel}
-        />
+      <HideWhileSearching>
+        <AreaShelf areas={areaShelf} copy={store.areas} />
+      </HideWhileSearching>
 
+      <StoreCollection head={store.collection} resultsId={RESULTS_ID}>
         <CatalogBrowser
           products={entries}
           copy={catalogCopy(dict)}
           localeTag={localeTags[locale]}
           areaOrder={areas.map((area) => area.id)}
+          search={false}
+          pageSize={PAGE_SIZE}
+          moreCopy={store.more}
+          variant="store"
+          cardHeadingLevel={3}
         />
-      </Container>
-    </Section>
+      </StoreCollection>
+    </>
   );
 }

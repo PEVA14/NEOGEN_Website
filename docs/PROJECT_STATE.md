@@ -76,7 +76,8 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 | `d4b7028`   | Atlas layers: complete typed profile → privacy → advisor policy over projections → engine (§8l)                                 |
 | `df4e64f`   | V1 commerce and art-direction pass: product objects, visible commerce, commercial homepage rhythm (§8n)                         |
 | `87b0b5d`   | Atlas hidden for V1 by one feature flag: nav, footer and sitemap entries removed (§8m)                                          |
-| _this_      | PDP record pass: record rhythm, alternating grounds, research folded into the profile, swiped related shelves (§8o)             |
+| `5e76e06`   | PDP record pass: record rhythm, alternating grounds, research folded into the profile, swiped related shelves (§8o)             |
+| _this_      | The /productos storefront: masthead, area shelf, store card, paging (§8q), awaiting owner review                                |
 
 **Current priority (owner, 2026-09-17): V1 completion.** Make NEOGEN V1 as
 complete, polished and commercially effective as possible with the
@@ -1178,6 +1179,50 @@ File paths are where each fix lands.
    SPEI, and policies with the research-use line.
 5. **Launch:** production env and domain, commerce on, then a full
    walk-through in both languages on desktop and mobile, and all gates.
+
+## 8q. The /productos storefront (V1 creative reference)
+
+**Owner direction (2026-09-18):** redesign `/productos` first, as the visual
+and commercial reference for the rest of V1, from an owner-supplied catalogue
+concept used as art direction (not reproduced). Homepage, Atlas, payments and
+backend were explicitly out of scope. **Awaiting the owner's visual review;
+nothing here is to be propagated to other pages until approved.**
+
+**Composition**
+
+1. **Masthead** (charcoal, the hero/hub token remap): the store's counted
+   facts (products, presentations, areas), the one search field, and the three
+   signature products on their world grounds with range and entry price.
+2. **Compra por área**: eight tiles, each shown by the area's entry product
+   (its cheapest priced one) on the area's studio tone, with count and "from"
+   price. One row at ≥80rem, four at ≥48rem, a swipe shelf on phones.
+3. **Todo el catálogo**: the existing `CatalogBrowser` (facets, sort, register
+   view, URL state) with `variant="store"`: 4 across beside the facets and
+   5 with them hidden; the store card; and paging in 24s. Every product stays in
+   the server HTML, so paged cards are `hidden` rather than absent.
+
+**Behaviour**
+
+- The masthead search is the page's only search field. It writes `?q=` through
+  the shared `useUrlFilters` hook and is also a GET form. While a query is
+  typed, the area shelf is hidden so results sit under the field; facets never
+  move the layout.
+- **Softness:** `--radius-object` (6px) is new and applies only to product
+  surfaces: signature and area tiles, and store cards. Chrome stays square.
+  The Design Bible still says zero radius; update it only if the owner approves.
+- **Store card** (`ProductCard variant="store"`): paper body, price at xl, and
+  a compact charcoal square action in place of the full-width bar. The action
+  text stays in the link. No catalogue index on the plate. On phones: a square
+  stage and no category line.
+
+**Also fixed:** the header's dark state mixed `--ink-muted` at 52% paper, and
+the inactive locale measured 3.5:1 over dark sections. It is now 70%. This
+header change affects every page.
+
+**Measured.** Page height: desktop 21,300 → 5,660px; phone 21,260 → about
+6,800px. axe WCAG A/AA: 0 violations at 375 and 1440 on `/es/productos`,
+`/en/productos`, search mode, an area page and the homepage. Horizontal
+overflow: 0 on all of them. Area pages and the homepage keep the default card.
 
 ## 9. Recommendation for Phase 13 (not approved)
 

@@ -21,9 +21,7 @@ import {
   facetVisible,
   flagCounts,
   flagVisible,
-  parseFilters,
   priceBounds,
-  serializeFilters,
   toggleValue,
   FLAG_FACETS,
   type CatalogFilters,
@@ -34,6 +32,7 @@ import {
   type Sort,
 } from "./filters";
 import { RegisterMatrix, type RegisterMatrixCopy } from "./RegisterMatrix";
+import { useUrlFilters } from "./useUrlFilters";
 import styles from "./CatalogBrowser.module.css";
 
 export type { CatalogProduct } from "./filters";
@@ -92,43 +91,6 @@ export interface CatalogCopy {
   card: CardDetailsCopy;
 }
 
-/* ---- the URL is the filter state ----------------------------------------- *
- *
- * Filters live in the query string, read through `useSyncExternalStore`, so a
- * filtered catalogue is a link that can be shared, reloaded or reached with the
- * back button. The server snapshot is the empty string: the server renders the
- * complete, unfiltered list (indexable, and usable before hydration), and the
- * client applies the URL's filters immediately after.
- *
- * `replaceState`, not `pushState`: typing a search is not twelve history
- * entries.
- */
-const FILTER_EVENT = "neogen:catalog-filters";
-
-function subscribe(onChange: () => void) {
-  window.addEventListener("popstate", onChange);
-  window.addEventListener(FILTER_EVENT, onChange);
-  return () => {
-    window.removeEventListener("popstate", onChange);
-    window.removeEventListener(FILTER_EVENT, onChange);
-  };
-}
-
-function useUrlFilters(): [CatalogFilters, (next: CatalogFilters) => void] {
-  const search = useSyncExternalStore(
-    subscribe,
-    () => window.location.search,
-    () => "",
-  );
-  const filters = useMemo(() => parseFilters(search), [search]);
-  const setFilters = useCallback((next: CatalogFilters) => {
-    const url = `${window.location.pathname}${serializeFilters(next)}${window.location.hash}`;
-    window.history.replaceState(null, "", url);
-    window.dispatchEvent(new Event(FILTER_EVENT));
-  }, []);
-  return [filters, setFilters];
-}
-
 function useMediaQuery(query: string): boolean {
   const subscribeQuery = useCallback(
     (onChange: () => void) => {
@@ -180,6 +142,10 @@ export function CatalogBrowser({
   areaFacet = "area",
   areaOrder,
   cardHeadingLevel = 2,
+  search = true,
+  pageSize,
+  moreCopy,
+  variant = "default",
 }: {
   products: readonly CatalogProduct[];
   copy: CatalogCopy;
@@ -190,6 +156,17 @@ export function CatalogBrowser({
   /** Area ids in display order — on an area page, the OTHER areas. */
   areaOrder: readonly string[];
   cardHeadingLevel?: 2 | 3;
+  /** False where the page provides the search field itself (the storefront masthead). */
+  search?: boolean;
+  /**
+   * Grid paging. Every result is still in the HTML — the ones past the page are
+   * `hidden` until "show more" — so the full catalogue stays indexable and
+   * works before hydration; the page is simply not 20,000px tall on a phone.
+   */
+  pageSize?: number;
+  moreCopy?: { show: string; showing: string };
+  /** "store": the storefront card and grid (/productos). */
+  variant?: "default" | "store";
 }) {
   const [filters, setFilters] = useUrlFilters();
   const wide = useMediaQuery("(min-width: 64rem)");
@@ -200,6 +177,11 @@ export function CatalogBrowser({
   const [panelHidden, setPanelHidden] = useState(false);
 
   const results = useMemo(() => applyFilters(products, filters), [products, filters]);
+  const filterKey = JSON.stringify(filters);
+  const [paging, setPaging] = useState({ key: filterKey, pages: 1 });
+  /* A new search or filter starts again at the first page. */
+  const pages = paging.key === filterKey ? paging.pages : 1;
+  const visible = pageSize ? pageSize * pages : Infinity;
   const active = activeFilterCount(filters);
   const bounds = useMemo(() => priceBounds(products), [products]);
   const money = useMemo(
@@ -302,6 +284,7 @@ export function CatalogBrowser({
 
   /* "/" focuses the search from anywhere on the page, unless the reader is typing. */
   useEffect(() => {
+    if (!search) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey) return;
       const target = event.target;
@@ -316,65 +299,67 @@ export function CatalogBrowser({
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, []);
+  }, [search]);
 
   return (
-    <div className={styles.browser}>
+    <div className={styles.browser} data-variant={variant}>
       {/*
        * THE SEARCH FIELD — quiet, and precise. One hairline field with the
        * result count at its edge, a clear control once there is a query, and
        * "/" to reach it from anywhere on the page.
        */}
-      <search className={styles.search}>
-        <label htmlFor={searchId} className={styles.controlLabel}>
-          <Mono size="2xs">{copy.searchLabel}</Mono>
-        </label>
-        <div className={styles.searchField}>
-          <svg className={styles.searchIcon} viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="10.5" cy="10.5" r="6.5" />
-            <path d="M15.5 15.5 21 21" />
-          </svg>
-          <input
-            ref={searchRef}
-            id={searchId}
-            type="search"
-            value={filters.query}
-            onChange={(event) => setFilters({ ...filters, query: event.target.value })}
-            onKeyDown={(event) => {
-              if (event.key === "Escape" && filters.query) {
-                event.preventDefault();
-                setFilters({ ...filters, query: "" });
-              }
-            }}
-            placeholder={copy.searchPlaceholder}
-            className={styles.searchInput}
-            autoComplete="off"
-            spellCheck={false}
-            aria-keyshortcuts="/"
-          />
-          {filters.query ? (
-            <button
-              type="button"
-              className={styles.searchClear}
-              aria-label={copy.searchClear}
-              onClick={() => {
-                setFilters({ ...filters, query: "" });
-                searchRef.current?.focus();
+      {search ? (
+        <search className={styles.search}>
+          <label htmlFor={searchId} className={styles.controlLabel}>
+            <Mono size="2xs">{copy.searchLabel}</Mono>
+          </label>
+          <div className={styles.searchField}>
+            <svg className={styles.searchIcon} viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="10.5" cy="10.5" r="6.5" />
+              <path d="M15.5 15.5 21 21" />
+            </svg>
+            <input
+              ref={searchRef}
+              id={searchId}
+              type="search"
+              value={filters.query}
+              onChange={(event) => setFilters({ ...filters, query: event.target.value })}
+              onKeyDown={(event) => {
+                if (event.key === "Escape" && filters.query) {
+                  event.preventDefault();
+                  setFilters({ ...filters, query: "" });
+                }
               }}
-            >
-              ×
-            </button>
-          ) : (
-            <kbd className={styles.searchKey} aria-hidden="true">
-              /
-            </kbd>
-          )}
-          {/* The toolbar count below is the announced one; this is its echo, for the eye. */}
-          <span className={styles.searchCount} aria-hidden="true">
-            {String(results.length).padStart(2, "0")} / {String(products.length).padStart(2, "0")}
-          </span>
-        </div>
-      </search>
+              placeholder={copy.searchPlaceholder}
+              className={styles.searchInput}
+              autoComplete="off"
+              spellCheck={false}
+              aria-keyshortcuts="/"
+            />
+            {filters.query ? (
+              <button
+                type="button"
+                className={styles.searchClear}
+                aria-label={copy.searchClear}
+                onClick={() => {
+                  setFilters({ ...filters, query: "" });
+                  searchRef.current?.focus();
+                }}
+              >
+                ×
+              </button>
+            ) : (
+              <kbd className={styles.searchKey} aria-hidden="true">
+                /
+              </kbd>
+            )}
+            {/* The toolbar count below is the announced one; this is its echo, for the eye. */}
+            <span className={styles.searchCount} aria-hidden="true">
+              {String(results.length).padStart(2, "0")} / {String(products.length).padStart(2, "0")}
+            </span>
+          </div>
+        </search>
+      ) : null}
 
       <div className={styles.layout} data-panel={panelHidden ? "hidden" : undefined}>
         <details id={sheetId} className={styles.sheet} open={wide || undefined}>
@@ -556,31 +541,53 @@ export function CatalogBrowser({
               </button>
             </div>
           ) : filters.view === "grid" ? (
-            <div className={styles.grid}>
-              {results.map((product) => (
-                <div key={product.id} className={styles.cell}>
-                  <ProductCard
-                    slug={product.slug}
-                    world={product.world}
-                    worldLabel={product.worldLabel}
-                    areaId={product.areaId as never}
-                    eyebrow={product.categoryLabel}
-                    name={product.name}
-                    subtitle={product.subtitle}
-                    href={product.href}
-                    price={product.price}
-                    priceFrom={copy.from}
-                    presentationRange={product.range}
-                    presentations={product.presentations}
-                    index={product.index}
-                    ctaLabel={product.ctaLabel}
-                    headingLevel={cardHeadingLevel}
-                    details={product.details}
-                    detailsCopy={copy.card}
-                  />
+            <>
+              <div className={styles.grid}>
+                {results.map((product, i) => (
+                  <div key={product.id} className={styles.cell} hidden={i >= visible || undefined}>
+                    <ProductCard
+                      slug={product.slug}
+                      world={product.world}
+                      worldLabel={product.worldLabel}
+                      areaId={product.areaId as never}
+                      eyebrow={product.categoryLabel}
+                      name={product.name}
+                      subtitle={product.subtitle}
+                      href={product.href}
+                      price={product.price}
+                      priceFrom={copy.from}
+                      presentationRange={product.range}
+                      presentations={product.presentations}
+                      index={product.index}
+                      ctaLabel={product.ctaLabel}
+                      headingLevel={cardHeadingLevel}
+                      details={product.details}
+                      detailsCopy={copy.card}
+                      variant={variant}
+                    />
+                  </div>
+                ))}
+              </div>
+              {pageSize && moreCopy && results.length > visible ? (
+                <div className={styles.more}>
+                  <Mono size="2xs" className={styles.moreCount}>
+                    {moreCopy.showing
+                      .replace("{shown}", String(visible))
+                      .replace("{total}", String(results.length))}
+                  </Mono>
+                  <button
+                    type="button"
+                    className={styles.moreButton}
+                    onClick={() => setPaging({ key: filterKey, pages: pages + 1 })}
+                  >
+                    {moreCopy.show.replace(
+                      "{n}",
+                      String(Math.min(pageSize, results.length - visible)),
+                    )}
+                  </button>
                 </div>
-              ))}
-            </div>
+              ) : null}
+            </>
           ) : (
             <RegisterMatrix products={results} copy={copy.matrix} localeTag={localeTag} />
           )}

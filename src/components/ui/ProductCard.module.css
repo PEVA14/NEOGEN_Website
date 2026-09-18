@@ -574,3 +574,121 @@
     display: none;
   }
 }
+
+/* --- Store variant (/productos) --------------------------------------------
+ *
+ * The storefront card. The product is a handled object, so its surface takes
+ * the one softness the system allows (`--radius-object`). The commercial line
+ * leads with the price at size, and the action is a compact charcoal square —
+ * still charcoal-on-paper, still visible on every card, but no longer a bar
+ * that repeats 85 times louder than the products it sells. The action's words
+ * stay in the link for assistive technology.
+ */
+
+.card[data-variant="store"] {
+  border-radius: var(--radius-object);
+  overflow: hidden;
+  background-color: var(--neogen-paper);
+}
+
+.card[data-variant="store"] .link {
+  padding-block-end: var(--space-sm);
+}
+
+.card[data-variant="store"] .body {
+  padding: var(--space-sm) var(--space-sm) 0;
+}
+
+.card[data-variant="store"] .commerce {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--space-3xs) var(--space-xs);
+}
+
+.card[data-variant="store"] .range {
+  grid-column: 1 / -1;
+}
+
+.card[data-variant="store"] .price {
+  font-size: var(--text-xl);
+  line-height: 1.1;
+}
+
+.card[data-variant="store"] .priceFrom {
+  display: block;
+  line-height: 1.4;
+}
+
+.go {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  border-radius: calc(var(--radius-object) - 0.125rem);
+  background-color: var(--neogen-charcoal);
+  color: var(--neogen-paper);
+  font-size: var(--text-base);
+  transition: transform var(--motion-duration-base) var(--ease-standard);
+}
+
+.card[data-variant="store"]:hover .go {
+  transform: translateX(0.125rem);
+}
+
+.card[data-variant="store"] .cta {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@container (max-width: 15rem) {
+  .card[data-variant="store"] .body {
+    padding: var(--space-xs) var(--space-xs) 0;
+  }
+
+  .card[data-variant="store"] .commerce {
+    flex-direction: row;
+  }
+
+  .card[data-variant="store"] .price {
+    font-size: var(--text-lg);
+  }
+
+  .go {
+    inline-size: 2.25rem;
+    block-size: 2.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .go {
+    transition: none;
+  }
+
+  .card[data-variant="store"]:hover .go {
+    transform: none;
+  }
+}
+
+/* The phone's two-up shelf: a square stage and one fewer line. The category
+   is on the product page and in the filters; here the name and price lead. */
+@container (max-width: 15rem) {
+  .card[data-variant="store"] .media > *,
+  .card[data-variant="store"] .reveal {
+    aspect-ratio: 1 / 1;
+  }
+
+  .card[data-variant="store"] .eyebrow {
+    display: none;
+  }
+
+  .card[data-variant="store"] .commerce {
+    border-block-start: 0;
+    padding-block-start: var(--space-3xs);
+  }
+}

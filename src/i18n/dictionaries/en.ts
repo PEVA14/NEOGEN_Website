@@ -812,6 +812,37 @@ const en: Dictionary = {
       from: "From",
       empty: "No compound matches the applied filters.",
       clear: "Clear filters",
+      /** THE STOREFRONT — /productos as NEOGEN's primary store (2026-09-18). */
+      store: {
+        eyebrow: "NEOGEN · Store",
+        stats: "{products} compounds · {presentations} presentations · {areas} areas",
+        lede: "Peptides, metabolics, blends and laboratory materials. Every presentation with its price.",
+        searchLabel: "Search the catalogue",
+        searchPlaceholder: "Name or strength",
+        searchSubmit: "Search",
+        browseAll: "Browse the whole catalogue",
+        signature: {
+          label: "Signature compounds",
+          from: "From",
+        },
+        areas: {
+          index: "02",
+          label: "Areas",
+          title: "Shop by area",
+          count: "{n} compounds",
+          from: "From",
+          all: "View all compounds",
+        },
+        collection: {
+          index: "03",
+          label: "Collection",
+          title: "The whole catalogue",
+        },
+        more: {
+          show: "Show {n} more",
+          showing: "{shown} of {total}",
+        },
+      },
       matrix: {
         caption: "Presentations and prices of the listed compounds",
         othersCaption: "Presentations in other units",
