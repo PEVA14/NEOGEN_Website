@@ -1,225 +1,140 @@
-import type { AtlasExperienceLevel } from "./types";
-import type { DiscoveryAreaId } from "@/data/discovery";
-
 /**
- * WHAT EVERY ANSWER MEANS, AND WHAT IT IS ALLOWED TO DO — in one place.
+ * THE PROFILE'S FIELDS — what every answer IS. Not what may be done with it.
  *
- * The questionnaire (`content/atlas/questionnaire.ts`) is owner content: it
- * says what is ASKED. This file is the system's half of the contract, and the
- * only file that names question ids:
+ * Atlas keeps its concerns apart, each in its own file:
  *
- *   ATLAS_FIELDS       every field of the profile, with the uses it permits
- *                      or the reason it is withheld
- *   ATLAS_BINDINGS     which question fills which field
- *   GOAL_AREAS,        how an option id becomes a catalogue fact the rest of
- *   EXPERIENCE_LEVELS  the pipeline speaks (an area id, a level)
+ *   1. collection      content/atlas/questionnaire.ts   what is ASKED (owner content)
+ *   2. representation  THIS FILE + profile.ts           what each answer is, typed
+ *   3. transmission    privacy.ts                       what may leave the browser
+ *   4–7. permissions   policy.ts + policies/*           what one advisor may use a
+ *                                                       field for: candidate
+ *                                                       selection, retrieval, AI
+ *                                                       context, recap
  *
- * Nothing downstream reads a question id. The profile (`profile.ts`) is built
- * from these tables; the policy reads the profile; the ledger reads the same
- * tables to tell the visitor what happened to each answer.
+ * This file answers only (2). Every field declares its value KIND (so the
+ * profile is typed), its CATEGORY (what the answer is about) and its
+ * SENSITIVITY (how carefully it must be handled). It grants no permission: a
+ * field existing here says nothing about whether any advisor may read it.
  *
- * THE USES
+ * SENSITIVITY is explicit so handling is auditable, never implicit:
  *
- *   discovery         which products become candidates, and in what order
- *   research-context  which approved statements and references are retrieved
- *                     and put forward for those products
- *   personalization   what the model (or the composer) is told about the
- *                     visitor, to explain the selection in their terms
- *   filtering         preferences that narrow or size the selection: formats,
- *                     budget, how many to start with
- *   recap             shown back to the visitor on the result page
- *   presentation      shapes the page itself, and nothing else
+ *   standard   purchasing preferences — budget, formats, timing
+ *   personal   about the person but not sensitive — experience, age band, name
+ *   sensitive  datos personales sensibles or close to them — health, body,
+ *              medication, sexual health, use history, and goals that reveal
+ *              them. `privacy.ts` refuses to transmit one without a written basis.
  *
- * THE BOUNDARY. A WITHHELD field reaches no decision path: not discovery, not
- * research context, not the model, not filtering. It may at most be shown back
- * to the visitor who gave it (`recap`). And because nothing on the server may
- * use it, it is never sent: `transmittableAnswers` drops it in the browser and
- * the API route drops it again on arrival. The profile represents it by name
- * and reason only — its type has no slot for a value.
- *
- * Why each class is withheld:
- *
- *   health, body,     Choosing a compound from a person's conditions,
- *   lifestyle         medication, measurements or habits is individual
- *                     treatment selection. Atlas does not make that inference
- *                     and does not hand the material to a model that might.
- *                     It is also sensitive personal data (datos personales
- *                     sensibles), which has no business leaving the browser
- *                     for a use that is not permitted.
- *   administration    Route, duration and injection tolerance exist only to
- *                     shape a protocol. NEOGEN publishes none.
- *   personal-outcome  A specific personal outcome ("satiety", "erectile
- *                     function", "lose 8 kg") matched to a specific compound
- *                     is exactly the claim the catalogue has no approved
- *                     source for. The GOAL is used — as the catalogue area it
- *                     corresponds to, the same section the menu opens — but
- *                     its finer detail is not.
- *   use-history       Compounds a visitor has used on themselves.
- *   unbound           A question this file does not bind. Fail closed: a new
- *                     question is inert until it is classified here, and
- *                     `check:atlas` fails until it is.
+ * `ATLAS_BINDINGS` is the only map from question ids. A question it does not
+ * bind is still represented — in `AtlasProfile.unbound`, as `unclassified`
+ * and sensitive until someone classifies it.
  */
 
-export type AtlasUse =
-  "discovery" | "research-context" | "personalization" | "filtering" | "recap" | "presentation";
+export type AtlasFieldKind = "enum" | "enum-list" | "number" | "boolean" | "text";
 
-export const ATLAS_USES: readonly AtlasUse[] = [
-  "discovery",
-  "research-context",
-  "personalization",
-  "filtering",
-  "recap",
-  "presentation",
-];
-
-/** The uses that happen on the server. A field with none is never sent. */
-export const SERVER_USES: readonly AtlasUse[] = [
-  "discovery",
-  "research-context",
-  "personalization",
-  "filtering",
-  "presentation",
-];
-
-/** The uses a withheld field may never have. */
-export const DECISION_USES: readonly AtlasUse[] = [
-  "discovery",
-  "research-context",
-  "personalization",
-  "filtering",
-];
-
-export type AtlasWithheld =
-  | "health"
-  | "body"
-  | "lifestyle"
-  | "administration"
-  | "personal-outcome"
-  | "use-history"
-  | "unbound"
-  /* Decided per request, not per field: */
-  /** The note carried health, body, medication or dosing detail and was discarded whole. */
-  | "health-note"
-  /** The name personalises the page and is never sent to the model. */
-  | "name-private";
-
-export type AtlasFieldId =
-  /* bound to a question today */
-  | "goal-area"
+export type AtlasFieldCategory =
+  | "goal"
+  | "outcome"
   | "experience"
-  | "context-note"
-  /* withheld, bound to a question today */
-  | "goal-focus"
-  | "compounds-used"
-  | "age"
-  | "sex"
-  | "weight"
-  | "height"
-  | "activity"
-  | "sleep-quality"
-  | "stress"
-  | "administration-route"
-  | "protocol-duration"
-  | "conditions"
-  | "medications"
-  | "medications-other"
-  | "frustrations"
-  | "outcome-goal"
-  | "training"
-  | "injection-tolerance"
-  | "schedule"
-  | "work"
-  | "alcohol"
-  | "caffeine"
-  | "outcome-priority"
-  | "injuries"
-  /* permitted, but no question asks for them today — they run on defaults */
-  | "research-functions"
-  | "products"
-  | "intent"
-  | "history"
-  | "priorities"
-  | "style"
-  | "forms"
-  | "size"
-  | "supplies"
-  | "budget"
-  | "horizon"
-  | "timing"
-  | "name";
+  | "use-history"
+  | "body"
+  | "health"
+  | "administration"
+  | "lifestyle"
+  | "context"
+  | "commerce"
+  | "identity"
+  | "unclassified";
+
+export type AtlasSensitivity = "standard" | "personal" | "sensitive";
 
 export interface AtlasFieldSpec {
-  /** What the field may influence. For a withheld field: at most `recap`. */
-  uses: readonly AtlasUse[];
-  /** Null when the field is used; otherwise why it is kept out of every decision. */
-  withheld: AtlasWithheld | null;
+  kind: AtlasFieldKind;
+  category: AtlasFieldCategory;
+  sensitivity: AtlasSensitivity;
+  /** Free text screened for health detail before any server-side use. */
+  screened?: true;
+  /** For numbers: the unit the value is normalised to. */
+  unit?: "kg" | "cm" | "MXN";
 }
 
-const used = (...uses: AtlasUse[]): AtlasFieldSpec => ({ uses, withheld: null });
-const withheld = (reason: AtlasWithheld, ...uses: "recap"[]): AtlasFieldSpec => ({
-  uses,
-  withheld: reason,
-});
+type Spec<K extends AtlasFieldKind> = AtlasFieldSpec & { kind: K };
 
-export const ATLAS_FIELDS: Readonly<Record<AtlasFieldId, AtlasFieldSpec>> = {
-  /* The goal, as the catalogue area it corresponds to. The model is told the
-     AREA id, never the goal's wording. */
-  "goal-area": used("discovery", "personalization", "recap"),
-  /* Catalogue complexity only: how many products to start with, and whether
-     single-compound products come first. Not suitability. */
-  experience: used("filtering", "discovery", "personalization"),
-  /* Screened per request: discarded whole when it carries health detail. */
-  "context-note": used("personalization"),
+function f<K extends AtlasFieldKind>(
+  kind: K,
+  category: AtlasFieldCategory,
+  sensitivity: AtlasSensitivity,
+  extra: Partial<Pick<AtlasFieldSpec, "screened" | "unit">> = {},
+): Spec<K> {
+  return { kind, category, sensitivity, ...extra };
+}
 
-  "goal-focus": withheld("personal-outcome", "recap"),
-  "compounds-used": withheld("use-history"),
-  age: withheld("body"),
-  sex: withheld("body"),
-  weight: withheld("body"),
-  height: withheld("body"),
-  activity: withheld("body"),
-  "sleep-quality": withheld("body"),
-  stress: withheld("body"),
-  "administration-route": withheld("administration"),
-  "protocol-duration": withheld("administration"),
-  conditions: withheld("health"),
-  medications: withheld("health"),
-  "medications-other": withheld("health"),
-  frustrations: withheld("personal-outcome"),
-  "outcome-goal": withheld("personal-outcome"),
-  training: withheld("lifestyle"),
-  "injection-tolerance": withheld("administration"),
-  schedule: withheld("lifestyle"),
-  work: withheld("lifestyle"),
-  alcohol: withheld("lifestyle"),
-  caffeine: withheld("lifestyle"),
-  "outcome-priority": withheld("personal-outcome"),
-  injuries: withheld("health"),
+export const ATLAS_FIELDS = {
+  /* ---- asked by questionnaire v4 ---- */
+  /* A goal can reveal health or sexual health: sensitive. */
+  goal: f("enum", "goal", "sensitive"),
+  "goal-focus": f("enum", "outcome", "sensitive"),
+  experience: f("enum", "experience", "personal"),
+  "compounds-used": f("text", "use-history", "sensitive"),
+  "age-band": f("enum", "body", "personal"),
+  sex: f("enum", "body", "personal"),
+  "weight-kg": f("number", "body", "sensitive", { unit: "kg" }),
+  "height-cm": f("number", "body", "sensitive", { unit: "cm" }),
+  activity: f("enum", "body", "sensitive"),
+  "sleep-quality": f("enum", "body", "sensitive"),
+  stress: f("enum", "body", "sensitive"),
+  "administration-route": f("enum", "administration", "sensitive"),
+  "protocol-duration": f("enum", "administration", "sensitive"),
+  "injection-tolerance": f("enum", "administration", "sensitive"),
+  conditions: f("enum-list", "health", "sensitive"),
+  medications: f("enum-list", "health", "sensitive"),
+  "medications-other": f("text", "health", "sensitive"),
+  injuries: f("text", "health", "sensitive"),
+  "context-note": f("text", "context", "personal", { screened: true }),
+  frustrations: f("text", "outcome", "sensitive"),
+  "outcome-goal": f("text", "outcome", "sensitive"),
+  "outcome-priority": f("enum", "outcome", "personal"),
+  training: f("enum", "lifestyle", "personal"),
+  schedule: f("enum", "lifestyle", "personal"),
+  work: f("enum", "lifestyle", "personal"),
+  alcohol: f("enum", "lifestyle", "sensitive"),
+  caffeine: f("enum", "lifestyle", "sensitive"),
 
-  "research-functions": used("discovery", "research-context", "personalization", "recap"),
-  products: used("discovery", "personalization", "recap"),
-  intent: used("discovery", "filtering", "personalization", "recap"),
-  history: used("personalization", "presentation"),
-  priorities: used("discovery", "research-context", "personalization"),
-  style: used("personalization", "presentation"),
-  forms: used("filtering", "personalization"),
-  size: used("filtering", "personalization"),
-  supplies: used("filtering", "personalization"),
-  budget: used("filtering", "discovery", "personalization", "recap"),
-  horizon: used("filtering", "personalization"),
-  timing: used("discovery", "personalization"),
-  name: { uses: ["presentation"], withheld: null },
+  /* ---- representable, not asked by v4 (they run on defaults) ---- */
+  "research-functions": f("enum-list", "commerce", "standard"),
+  products: f("enum-list", "commerce", "standard"),
+  intent: f("enum", "commerce", "standard"),
+  history: f("enum", "commerce", "standard"),
+  priorities: f("enum-list", "commerce", "standard"),
+  style: f("enum", "commerce", "standard"),
+  forms: f("enum-list", "commerce", "standard"),
+  size: f("enum", "commerce", "standard"),
+  supplies: f("boolean", "commerce", "standard"),
+  budget: f("number", "commerce", "standard", { unit: "MXN" }),
+  horizon: f("enum", "commerce", "standard"),
+  timing: f("enum", "commerce", "standard"),
+  name: f("text", "identity", "personal"),
 };
 
+export type AtlasFieldId = keyof typeof ATLAS_FIELDS;
+export const ATLAS_FIELD_IDS = Object.keys(ATLAS_FIELDS) as AtlasFieldId[];
+
+/** A field's value type, derived from its declared kind. */
+interface KindValue {
+  enum: string;
+  "enum-list": readonly string[];
+  number: number;
+  boolean: boolean;
+  text: string;
+}
+export type AtlasFieldValue<K extends AtlasFieldId> = KindValue[(typeof ATLAS_FIELDS)[K]["kind"]];
+
 /**
- * WHICH QUESTION FILLS WHICH FIELD. The only map from question ids.
- *
- * Several questions may fill one field when at most one of them is visible at
- * a time — the ten goal follow-ups all fill `goal-focus`. A question id absent
- * here is `unbound`: withheld, never sent.
+ * WHICH QUESTION FILLS WHICH FIELD. Several questions may fill one field when
+ * at most one of them is visible at a time — the ten goal follow-ups all fill
+ * `goal-focus`.
  */
 export const ATLAS_BINDINGS: Readonly<Record<string, AtlasFieldId>> = {
-  goal: "goal-area",
+  goal: "goal",
   "goal-weight-loss": "goal-focus",
   "goal-body-composition": "goal-focus",
   "goal-longevity": "goal-focus",
@@ -230,10 +145,10 @@ export const ATLAS_BINDINGS: Readonly<Record<string, AtlasFieldId>> = {
   "goal-sexual-health": "goal-focus",
   "goal-daily-wellbeing": "goal-focus",
   "goal-immunity": "goal-focus",
-  age: "age",
+  age: "age-band",
   "biological-sex": "sex",
-  "weight-kg": "weight",
-  "height-cm": "height",
+  "weight-kg": "weight-kg",
+  "height-cm": "height-cm",
   "physical-activity": "activity",
   "sleep-quality": "sleep-quality",
   stress: "stress",
@@ -257,49 +172,20 @@ export const ATLAS_BINDINGS: Readonly<Record<string, AtlasFieldId>> = {
   injuries: "injuries",
 };
 
-/**
- * The goal → the catalogue section it corresponds to: the same area page the
- * menu opens. Coarse on purpose — a section of the catalogue, not a compound
- * matched to an outcome. A goal with no corresponding section maps to none,
- * and Atlas falls back to the catalogue as a whole.
- */
-export const GOAL_AREAS: Readonly<Record<string, readonly DiscoveryAreaId[]>> = {
-  "weight-loss": ["metabolic"],
-  "body-composition": ["growth"],
-  longevity: ["longevity"],
-  "tissue-recovery": ["recovery"],
-  sleep: ["neuro"],
-  cognition: ["neuro"],
-  "skin-hair": ["skin"],
-  "sexual-health": ["hormonal"],
-  "daily-wellbeing": [],
-  immunity: ["recovery"],
-};
-
-export const EXPERIENCE_LEVELS: Readonly<Record<string, AtlasExperienceLevel>> = {
-  none: "new",
-  beginner: "some",
-  intermediate: "some",
-  advanced: "experienced",
-};
-
-/* ---- lookups -------------------------------------------------------------- */
-
-const UNBOUND: AtlasFieldSpec = { uses: [], withheld: "unbound" };
-
 /** The field a question fills, or null when unbound. */
 export function fieldOf(questionId: string): AtlasFieldId | null {
   return ATLAS_BINDINGS[questionId] ?? null;
 }
 
-/** The spec governing a question's answer. Unbound questions are withheld. */
-export function specOf(questionId: string): AtlasFieldSpec {
-  const field = fieldOf(questionId);
-  return field ? ATLAS_FIELDS[field] : UNBOUND;
-}
+/** How an unbound question is treated until classified: the most careful way. */
+export const UNCLASSIFIED: AtlasFieldSpec = {
+  kind: "text",
+  category: "unclassified",
+  sensitivity: "sensitive",
+};
 
-/** May this question's answer leave the browser? Only when a server use is permitted. */
-export function isTransmitted(questionId: string): boolean {
-  const spec = specOf(questionId);
-  return spec.withheld === null && spec.uses.some((use) => SERVER_USES.includes(use));
+/** The spec for a question's answer; an unbound question is unclassified and sensitive. */
+export function fieldSpecOf(questionId: string): AtlasFieldSpec {
+  const field = fieldOf(questionId);
+  return field ? ATLAS_FIELDS[field] : UNCLASSIFIED;
 }

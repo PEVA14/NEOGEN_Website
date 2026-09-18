@@ -674,23 +674,25 @@ locale, registries already read — so the browser renders and validates against
 the same object the API route rebuilds and re-validates. An answer to a hidden
 or non-existent question is dropped, not coerced.
 
-**Meaning lives in one file.** `src/domain/atlas/fields.ts` is the only place
-that names question ids: it binds each question to a profile field, gives each
-field its permitted uses (discovery / research-context / personalization /
-filtering / recap / presentation) or its withholding reason, and translates
-option ids into catalogue facts (a goal → its area). `profileFromAnswers` builds
-the profile from those tables; nothing downstream reads a question id. A
-permitted field no question asks for runs on `FIELD_DEFAULTS`, marked as a
-default so it is never described as the visitor's choice. An unbound question
-is withheld — fail closed — and `check:atlas` fails until it is classified.
+**Seven concerns, kept apart.** Collection is the questionnaire content.
+Representation is `domain/atlas/fields.ts` (kind, category, sensitivity per
+field; the only map from question ids) and `profile.ts`: `AtlasProfile`
+represents the COMPLETE answered questionnaire, typed, and grants nothing.
+Transmission is `privacy.ts`: per field, device-only or sent with a written
+basis. Candidate selection, retrieval, AI context and recap (plus
+presentation) are permissions an ADVISOR POLICY grants per field
+(`policy.ts`, `policies/`). A policy receives one projection per permission,
+never the profile; `applyAtlasPolicy` refuses an AI context carrying an
+ungranted field. Withholding by a policy never removes data from the profile.
 
-**Withheld means never sent.** Health, body, lifestyle, administration,
-personal-outcome and use-history answers may at most be shown back (`recap`).
-The browser sends only transmittable answers, the route strips again and
-validates the transmitted view, and the profile carries withheld fields by name
-with no value slot. The ledger and recap are therefore built in the browser.
-`check:atlas` sweeps every withheld question through every option and proves
-the policy, retrieval, plan and the model's exact input do not change.
+**Policies and engines are swappable.** `ACTIVE_ATLAS_POLICY` is one line; the
+restricted catalogue policy is the current one and carries no medical rule. An
+`AtlasAdvisorEngine` (composer, or a model over `@/advisor`) receives only the
+AI-context projection, the policy's signals and specific candidate ids with
+approved facts and evidence ids. A new policy or engine touches neither the
+questionnaire, the profile, retrieval nor the result UI. Device-only answers
+never reach the server; the ledger and recap are built in the browser from
+the result's recorded policy.
 
 **Facts are never copied into questionnaire content.** Areas, products and
 research functions are `{ kind: "registry" }` option sources resolved at render
@@ -729,7 +731,7 @@ npm run check:checkout  # server-side pricing, gates, idempotency, policies
 npm run check:quality   # evidence resolver, lots, Janoshik rules, media readiness
 npm run check:content   # references, sourced statements, forbidden vocabulary, notifications
 npm run check:media     # media declarations vs real files
-npm run check:atlas     # questionnaire, bindings, branches, no-leak sweep, policy, retrieval, adapter
+npm run check:atlas     # questionnaire, profile, privacy, projections, no-leak sweep, policies, engines
 npm run check:output    # what the build actually emitted
 npm run format       # Prettier
 ```

@@ -1,7 +1,7 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-09-17**, after the Atlas field map for the owner's
-questionnaire v4 (§8k).
+Last updated **2026-09-17**, after the Atlas profile / privacy / policy /
+engine layering (§8l).
 
 This file is the memory of the project for a new session. It records what is
 not derivable from the code: where the phases stand, how the owner runs the
@@ -35,7 +35,8 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 | `d1300b1`   | NEOGEN Atlas: questionnaire → retrieval → AI adapter → validated map (§8h)                                                      |
 | `d3a9e46`   | Atlas part 1 + homepage index                                                                                                   |
 | _this_      | Sourced compound profiles, the research-function axis, and the data-driven questionnaire system (§8i)                           |
-| _this_      | Atlas understands the owner's questionnaire v4: field map, transmission boundary, pins, evidence, relevance (§8k)               |
+| `f6b3249`   | Atlas understands the owner's questionnaire v4: field map, transmission boundary, pins, evidence, relevance (§8k)               |
+| _this_      | Atlas layers: complete typed profile → privacy → advisor policy over projections → engine (§8l)                                 |
 
 **Phase 12.1 is complete. Phase 13 has not been started or approved.** Do not
 begin it without a brief from the owner.
@@ -179,7 +180,7 @@ also encoded in `src/config/site.ts`; anything undecided there is `null`.
    the 2025 LFPDPPP — no vendor offers a Mexico region. Orders, drafts and the
    notification outbox are in-memory today.
 8. **Email provider** and the internal operations destination (inbox or chat).
-8a. **Atlas questionnaire v4 asks for sensitive data** (§8k). None of it leaves
+   8a. **Atlas questionnaire v4 asks for sensitive data** (§8k). None of it leaves
    the browser and none of it is used, but asking still needs counsel on the
    privacy notice and consent for datos sensibles (health, sexual health), and
    the classification review should see the public administration wording
@@ -819,6 +820,9 @@ them in arrival order.
 
 ## 8k. Atlas understands the owner's questionnaire (v4)
 
+**Architecture superseded by §8l** (complete profile + policy projections).
+The classification and transmission outcomes below still hold.
+
 **The owner rewrote the questionnaire** (`src/content/atlas/questionnaire.ts`,
 version 4, from their Questionnaire.docx) and asked that it be treated as
 owner-authored: **do not rewrite, sanitize, rename or remove its questions or
@@ -884,6 +888,61 @@ into the profile, the browser sending everything) each failed the gates.
 - The owner's file is not Prettier-formatted; left exactly as authored.
   `format:check` is not part of `npm run check`.
 - Privacy/regulatory item 8a in §6.
+
+## 8l. Atlas layers: complete profile, privacy, policy, engine
+
+**Owner correction to §8k.** The USE/HOLD reading was not the intended final
+architecture. Atlas is a configurable questionnaire and advisor platform:
+`AtlasProfile` must represent the COMPLETE answered questionnaire, typed,
+including fields the current advisor does not use; policy decides what a
+particular advisor receives. The current restricted behaviour stays, as one
+policy implementation. No new medical rule, no production AI provider.
+
+**The layers.**
+
+1. Collection — `content/atlas/questionnaire.ts` (owner; untouched).
+2. Representation — `domain/atlas/fields.ts` declares every field's kind,
+   category and **sensitivity** (standard / personal / sensitive), with no
+   permission in it; `profile.ts` builds `AtlasProfile` with an entry per field
+   (`answer` / `unanswered` / `not-asked` / `not-received`) and keeps answers to
+   unbound questions in `unbound`.
+3. Transmission — `domain/atlas/privacy.ts`, per field: device-only, or sent
+   with a written basis. Unchanged in effect: only `goal`, `experience` and the
+   note leave the browser. The server builds the same profile type with
+   device-only fields marked `not-received`.
+   4–7. Permissions — `policy.ts` defines `AtlasAdvisorPolicy` and five
+   independent permissions (candidate-selection, retrieval, ai-context, recap,
+   presentation). `applyAtlasPolicy` hands a policy one projection per
+   permission, never the profile, and refuses an AI context with an ungranted
+   field. `policies/restricted.ts` is today's advisor; `ACTIVE_ATLAS_POLICY`
+   in `policies/index.ts` selects it.
+4. Engine — `engine.ts` defines `AtlasAdvisorEngine`; the composer and the
+   model (`server/atlas/engines/model.ts`) implement it. Input: the AI-context
+   projection (with category and sensitivity per field), the policy's signals,
+   constraints, and specific candidate product ids with approved facts and
+   evidence ids.
+
+**Behaviour change, deliberate:** under the restricted policy the goal now
+selects candidates but is no longer in the model's context (previously the
+model got the derived area id labelled as the visitor's answer); the model is
+told the selection's catalogue areas as a fact about the candidates. Retrieval
+results are identical to §8k in every test profile. The result records the
+policy (with its permission table) and the engine; the browser's ledger
+describes that recorded policy. The discarded-note notice no longer claims
+"all your other answers were used".
+
+**To add a policy later:** a new object in `policies/`, one line in
+`ACTIVE_ATLAS_POLICY`. If it needs a device-only (sensitive) field on the
+server, `privacy.ts` changes too, with a basis — `check:atlas` flags the gap
+(`unreachableGrants`) until it does, and §6 item 8a applies. The
+questionnaire, profile, retrieval, engines and result UI do not change.
+
+**Checks:** `check:atlas` proves the complete profile (every answer typed,
+sensitive included), projection purity, the leak sweep from the COMPLETE device
+profile (so it tests the policy alone), separate selection/AI-context grants,
+and two fixture policies (a wider context grant; a policy that smuggles a
+field, refused). Three mutations (granting conditions to the model, a
+projection that ignores permissions, transmitting conditions) each fail it.
 
 ## 9. Recommendation for Phase 13 (not approved)
 

@@ -14,7 +14,7 @@ import {
   type AtlasQuestionnaireView,
 } from "@/domain/atlas/questionnaire";
 import { atlasRecap, buildAtlasLedger } from "@/domain/atlas/ledger";
-import { transmittableAnswers } from "@/domain/atlas/profile";
+import { transmittableAnswers } from "@/domain/atlas/privacy";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 import { AtlasMark } from "./AtlasMark";
@@ -39,8 +39,8 @@ import type { Locale } from "@/i18n/config";
  * It holds no recommendation rule either. Generation is a single POST to
  * `/api/atlas` carrying the TRANSMITTABLE answers and a locale — never a
  * prompt, a model or a product list — and the response is an assembled
- * result. Withheld answers (`domain/atlas/fields.ts`) never leave this
- * component: they are shown back in the ledger, which is built here.
+ * result. Answers the privacy policy keeps on the device (`domain/atlas/privacy.ts`)
+ * never leave this component: they are shown back in the ledger, built here.
  *
  * PERSISTENCE is a per-viewer convenience only: the answers and the last
  * result sit in `sessionStorage`, keyed by the questionnaire's version so a
@@ -466,9 +466,10 @@ export function AtlasExperience({
             questionnaire,
             answers,
             copy.result.ledger,
+            result.policy,
             result.notices.noteDiscarded,
           )}
-          recap={atlasRecap(questionnaire, answers, copy.result.ledger)}
+          recap={atlasRecap(questionnaire, answers, copy.result.ledger, result.policy)}
           copy={copy}
           headingRef={headingRef}
           onEdit={() => first && setPhase({ step: first })}

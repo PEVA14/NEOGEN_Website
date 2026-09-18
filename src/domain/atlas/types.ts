@@ -1,4 +1,5 @@
-import type { AtlasFieldId, AtlasWithheld } from "./fields";
+import type { AtlasFieldCategory, AtlasFieldId, AtlasSensitivity } from "./fields";
+import type { AtlasPermission } from "./policy";
 import type { ResearchFunctionId } from "@/content/functions";
 import type { Availability } from "@/data/commerce";
 import type { DiscoveryAreaId } from "@/data/discovery";
@@ -6,19 +7,20 @@ import type { DiscoveryAreaId } from "@/data/discovery";
 /**
  * NEOGEN ATLAS — the shapes a personal selection is built from.
  *
- *   answers → AtlasProfile → POLICY → signals → retrieval → generation
- *           → validation → AtlasResultView → UI
+ *   answers → AtlasProfile (complete, typed)       profile.ts, fields.ts
+ *           → privacy / transmission policy         privacy.ts
+ *           → advisor policy, over projections      policy.ts, policies/*
+ *           → signals → retrieval → advisor engine → validation
+ *           → AtlasResultView → UI
  *
- * The PROFILE is what the visitor told Atlas, in the pipeline's own terms —
- * area ids, levels, amounts — never question ids. `fields.ts` says which
- * question fills which field and what each field may influence; `profile.ts`
- * builds the profile from those tables. The POLICY (`policy.ts`) turns the
- * profile into selection signals, constraints, narrative signals and
- * presentation signals; everything downstream consumes those and never reads
- * the profile directly.
+ * The PROFILE (`profile.ts`) is the whole answered questionnaire, typed. The
+ * ADVISOR POLICY never reads it: it receives one projection per permission
+ * and turns them into the shapes below — selection signals, constraints,
+ * narrative signals, the AI context, presentation signals. Everything
+ * downstream consumes those.
  */
 
-export type { AtlasFieldId, AtlasUse, AtlasWithheld } from "./fields";
+export type { AtlasFieldCategory, AtlasFieldId, AtlasSensitivity } from "./fields";
 
 /**
  * How many ranked topics the policy weighs. The questionnaire may offer fewer
@@ -76,66 +78,6 @@ export const atlasHorizons: readonly AtlasHorizon[] = ["one-order", "over-time"]
 export type AtlasTiming = "soon" | "no-rush";
 export const atlasTimings: readonly AtlasTiming[] = ["soon", "no-rush"];
 
-/* ---- The profile ---------------------------------------------------------- */
-
-/** Where a permitted field's value came from. */
-export type AtlasFieldSource =
-  /** A visible question bound to the field was answered. */
-  | "answer"
-  /** No question asks for it (or it was skipped): the documented default. */
-  | "default";
-
-/**
- * A withheld field, as the profile carries it: its name, the questions that
- * ask for it, and why it is withheld. There is deliberately no value slot —
- * the answer never reaches the server, and a field that cannot hold a value
- * cannot leak one into a decision.
- */
-export interface AtlasWithheldField {
-  field: AtlasFieldId;
-  questions: readonly string[];
-  reason: AtlasWithheld;
-}
-
-export interface AtlasProfile {
-  /* ---- discovery ---- */
-  /**
-   * Catalogue areas, RANKED: index 0 leads. Today: the area the goal
-   * corresponds to. Empty means the catalogue as a whole.
-   */
-  areas: readonly DiscoveryAreaId[];
-  /** Research functions (`content/functions`) — mechanisms named by the literature. */
-  functions: readonly ResearchFunctionId[];
-  /** Published product slugs the visitor named. Always candidates. */
-  products: readonly string[];
-  intent: AtlasIntent;
-  timing: AtlasTiming;
-  priorities: readonly AtlasPriority[];
-  /* ---- filtering ---- */
-  experience: AtlasExperienceLevel;
-  /** Empty means any form. */
-  forms: readonly AtlasForm[];
-  size: AtlasSize;
-  includeSupplies: boolean;
-  /**
-   * The MXN ceiling, applied to REAL registry prices; null is no ceiling. It
-   * arrives as an option's `value` or as a number answer.
-   */
-  budgetCap: number | null;
-  horizon: AtlasHorizon;
-  /* ---- personalization / presentation ---- */
-  history: AtlasHistory;
-  style: AtlasStyle;
-  firstName: string;
-  /** Free text, normalised but NOT yet judged — the policy decides its use. */
-  note: string;
-  /* ---- provenance ---- */
-  /** For every permitted field: answered, or running on its default. */
-  sources: Readonly<Partial<Record<AtlasFieldId, AtlasFieldSource>>>;
-  /** Every withheld field the questionnaire asks for — by name, never by value. */
-  withheld: readonly AtlasWithheldField[];
-}
-
 /* ---- What the policy hands downstream ------------------------------------- */
 
 export interface AtlasWeights {
@@ -165,6 +107,11 @@ export interface AtlasWeights {
 export interface AtlasSelectionSignals {
   topics: readonly DiscoveryAreaId[];
   functions: readonly ResearchFunctionId[];
+  /**
+   * RETRIEVAL permission, separate from selection: the research functions whose
+   * approved statements a card leads with. May differ from `functions`.
+   */
+  evidenceFocus: readonly ResearchFunctionId[];
   /** Products that must be candidates and must appear in the result. */
   pinned: readonly AtlasPin[];
   forms: readonly AtlasForm[];
@@ -209,14 +156,19 @@ export interface AtlasConstraints {
   moreWithinBudgetFirst: boolean;
 }
 
-/** What the model may know about the visitor. Nothing else is sent. */
+/**
+ * The policy's derived signals for writing the result — built from the
+ * AI-context projection, plus the catalogue areas the SELECTION used (a fact
+ * about the candidates, not an answer).
+ */
 export interface AtlasNarrativeSignals {
   /**
-   * The fields the visitor actually answered. Everything else below is a
-   * default, and neither the model nor the composer may present a default as
-   * something the visitor said.
+   * The fields the visitor answered AND the policy lets the writer know. Every
+   * other value below is a default, and neither the model nor the composer may
+   * present a default as something the visitor said.
    */
   asked: readonly AtlasFieldId[];
+  /** Catalogue areas of this selection, ranked. */
   topics: readonly DiscoveryAreaId[];
   functions: readonly ResearchFunctionId[];
   intent: AtlasIntent;
@@ -231,8 +183,18 @@ export interface AtlasNarrativeSignals {
   budgetCap: number | null;
   horizon: AtlasHorizon;
   timing: AtlasTiming;
-  /** Null when absent or discarded. */
-  note: string | null;
+}
+
+/**
+ * One profile field the advisor ENGINE may see: exactly the policy's
+ * AI-context projection, with category and sensitivity kept on it so what a
+ * model received is auditable. Text arrives as untrusted data.
+ */
+export interface AtlasContextEntry {
+  field: AtlasFieldId;
+  category: AtlasFieldCategory;
+  sensitivity: AtlasSensitivity;
+  value: string | number | boolean | readonly string[];
 }
 
 export interface AtlasPresentationSignals {
@@ -242,10 +204,18 @@ export interface AtlasPresentationSignals {
 }
 
 export interface AtlasPolicyDecision {
+  /** Which policy decided, and what it was permitted — recorded on the result. */
+  policy: {
+    id: string;
+    version: string;
+    permissions: Readonly<Record<AtlasFieldId, readonly AtlasPermission[]>>;
+  };
   selection: AtlasSelectionSignals;
   constraints: AtlasConstraints;
   narrative: AtlasNarrativeSignals;
   presentation: AtlasPresentationSignals;
+  /** What the advisor engine may know about the visitor, field by field. */
+  context: readonly AtlasContextEntry[];
   /** The note was provided and discarded. The ledger records it per question. */
   noteDiscarded: boolean;
 }

@@ -1,11 +1,12 @@
+import type { AtlasPermission } from "./policy";
 import type {
   AtlasDestination,
+  AtlasFieldCategory,
   AtlasFieldId,
   AtlasReasonCode,
   AtlasRelevance,
+  AtlasSensitivity,
   AtlasStyle,
-  AtlasUse,
-  AtlasWithheld,
 } from "./types";
 import type { Money } from "@/data/commerce";
 import type { DiscoveryAreaId } from "@/data/discovery";
@@ -152,13 +153,22 @@ export interface AtlasResultLedgerEntry {
   question: string;
   /** The profile field it fills; null when unbound. */
   field: AtlasFieldId | null;
+  category: AtlasFieldCategory;
+  sensitivity: AtlasSensitivity;
   /** The question as the visitor read it. */
   label: string;
   /** Display text of the answer, or null when skipped. */
   answer: string | null;
   answered: boolean;
-  uses: readonly AtlasUse[];
-  withheld: AtlasWithheld | null;
+  /** Whether the privacy policy lets this answer leave the device. */
+  transmitted: boolean;
+  /** What the ACTIVE policy did with it. Empty when unanswered or discarded. */
+  permissions: readonly AtlasPermission[];
+  /**
+   * Why it was not used, as a copy key: the field's category when the active
+   * policy grants it no server-side permission, or a per-request reason.
+   */
+  withheld: AtlasFieldCategory | "health-note" | "name-private" | null;
 }
 
 /** The answers echoed as chips above the result — questions with `recap`. */
@@ -170,6 +180,16 @@ export interface AtlasResultRecapEntry {
 
 export interface AtlasResultView {
   mode: AtlasMode;
+  /**
+   * The advisor policy that produced it, with its permission table — the
+   * browser's ledger and recap describe THIS policy, not an assumed one.
+   */
+  policy: {
+    id: string;
+    version: string;
+    permissions: Readonly<Record<AtlasFieldId, readonly AtlasPermission[]>>;
+  };
+  engine: string;
   /** For the page only — never sent to a model. */
   firstName: string | null;
   style: AtlasStyle;

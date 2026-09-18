@@ -56,22 +56,38 @@ import {
 import { atlasRecap, buildAtlasLedger } from "../src/domain/atlas/ledger.ts";
 import {
   ATLAS_BINDINGS,
+  ATLAS_FIELD_IDS,
   ATLAS_FIELDS,
-  DECISION_USES,
-  EXPERIENCE_LEVELS,
-  GOAL_AREAS,
-  isTransmitted,
-  specOf,
+  fieldSpecOf,
 } from "../src/domain/atlas/fields.ts";
+import { buildAtlasProfile } from "../src/domain/atlas/profile.ts";
 import {
-  profileFromAnswers,
+  ATLAS_PRIVACY_POLICY,
+  isFieldTransmitted,
+  isTransmitted,
   transmittableAnswers,
   transmittedView,
-} from "../src/domain/atlas/profile.ts";
+  unreachableGrants,
+  unusedTransmissions,
+} from "../src/domain/atlas/privacy.ts";
+import {
+  ATLAS_PERMISSIONS,
+  AtlasPolicyViolation,
+  contextEntry,
+  permits,
+  projectProfile,
+} from "../src/domain/atlas/policy.ts";
+import {
+  ACTIVE_ATLAS_POLICY,
+  EXPERIENCE_LEVELS,
+  GOAL_AREAS,
+  RESTRICTED_POLICY,
+} from "../src/domain/atlas/policies/index.ts";
+import { createComposerEngine } from "../src/domain/atlas/engine.ts";
 import { ATLAS_QUESTIONNAIRE } from "../src/content/atlas/questionnaire.ts";
 import { RESEARCH_FUNCTIONS } from "../src/content/functions.ts";
 import { publicStatementRefs } from "../src/content/overview/index.ts";
-import { applyAtlasPolicy } from "../src/domain/atlas/policy.ts";
+import { applyAtlasPolicy as applyPolicy } from "../src/domain/atlas/policy.ts";
 import { ATLAS_CANDIDATE_LIMIT, retrieveAtlas } from "../src/domain/atlas/retrieval.ts";
 import { effectiveStart, planAtlas } from "../src/domain/atlas/plan.ts";
 import { atlasSubjectsFrom } from "../src/domain/atlas/subjects.ts";
@@ -366,7 +382,11 @@ const everything = { ...initialAnswers(view), ...permittedAnswers, ...withheldAn
   );
 }
 
-/* ---- bindings: every question classified, withheld means withheld -------- */
+/** The active policy, unless a test names another. */
+const applyAtlasPolicy = (profile, policy = ACTIVE_ATLAS_POLICY) => applyPolicy(profile, policy);
+const POLICY = ACTIVE_ATLAS_POLICY;
+
+/* ---- representation, transmission, permission: three separate tables ----- */
 {
   const liveIds = questionsOf(view).map((q) => q.id);
   for (const id of liveIds) {
@@ -377,16 +397,76 @@ const everything = { ...initialAnswers(view), ...permittedAnswers, ...withheldAn
     check(field in ATLAS_FIELDS, "every binding names a declared field", `${question} → ${field}`);
   }
   for (const [field, spec] of Object.entries(ATLAS_FIELDS)) {
-    if (spec.withheld !== null) {
+    check(
+      ["enum", "enum-list", "number", "boolean", "text"].includes(spec.kind) &&
+        ["standard", "personal", "sensitive"].includes(spec.sensitivity) &&
+        typeof spec.category === "string",
+      "every field declares its kind, category and sensitivity",
+      field,
+    );
+    check(
+      !("uses" in spec) && !("withheld" in spec) && !("transmit" in spec),
+      "the field schema grants nothing: no uses, no withholding, no transmission",
+      field,
+    );
+    check(field in ATLAS_PRIVACY_POLICY, "every field has an explicit transmission rule", field);
+    check(field in POLICY.permissions, "the active policy states every field explicitly", field);
+  }
+  for (const category of ["health", "body", "administration", "use-history"]) {
+    for (const [field, spec] of Object.entries(ATLAS_FIELDS)) {
+      if (spec.category !== category || field === "age-band" || field === "sex") continue;
       check(
-        spec.uses.every((use) => !DECISION_USES.includes(use)),
-        "a withheld field has no decision use (at most recap)",
+        spec.sensitivity === "sensitive",
+        "health, body, administration and use-history fields are sensitive",
         field,
       );
-    } else {
-      check(spec.uses.length > 0, "a permitted field declares at least one use", field);
     }
   }
+
+  /* Transmission: every sensitive field that crosses carries a written basis. */
+  for (const field of ATLAS_FIELD_IDS) {
+    const rule = ATLAS_PRIVACY_POLICY[field];
+    if (rule.transmit && ATLAS_FIELDS[field].sensitivity === "sensitive") {
+      check(rule.basis.trim().length > 20, "a transmitted sensitive field states its basis", field);
+    }
+  }
+  check(
+    unreachableGrants(POLICY).length === 0,
+    "the active policy is granted no server-side use of a field that never reaches the server",
+    unreachableGrants(POLICY).join(","),
+  );
+  check(
+    unusedTransmissions(POLICY).length === 0,
+    "nothing is transmitted that the active policy does not use on the server (minimisation)",
+    unusedTransmissions(POLICY).join(","),
+  );
+
+  /* Permissions: the active policy's grants over the sensitive fields. */
+  for (const field of ATLAS_FIELD_IDS) {
+    if (ATLAS_FIELDS[field].sensitivity !== "sensitive") continue;
+    check(
+      !permits(POLICY, field, "ai-context") && !permits(POLICY, field, "retrieval"),
+      "the active policy gives the model and retrieval no sensitive field",
+      field,
+    );
+    if (field !== "goal") {
+      check(
+        !permits(POLICY, field, "candidate-selection"),
+        "the active policy selects from no sensitive field but the goal (as its area)",
+        field,
+      );
+    }
+  }
+  check(
+    permits(POLICY, "goal", "candidate-selection") && !permits(POLICY, "goal", "ai-context"),
+    "candidate selection and AI context are separate grants: the goal selects, the model never sees it",
+  );
+  check(
+    permits(POLICY, "context-note", "ai-context") &&
+      !permits(POLICY, "context-note", "candidate-selection"),
+    "…and the reverse: the note reaches the model and selects nothing",
+  );
+
   /* The server validates transmitted questions only; their visibility and
      requirements must not hang on an answer it never receives. */
   const refs = (condition) =>
@@ -433,8 +513,9 @@ const everything = { ...initialAnswers(view), ...permittedAnswers, ...withheldAn
     sent.join(","),
   );
   check(
-    specOf("an-unbound-question").withheld === "unbound" && !isTransmitted("an-unbound-question"),
-    "an unbound question fails closed: withheld, never sent (negative control)",
+    fieldSpecOf("an-unbound-question").sensitivity === "sensitive" &&
+      !isTransmitted("an-unbound-question"),
+    "an unbound question fails closed: sensitive, never sent (negative control)",
   );
 }
 
@@ -664,67 +745,125 @@ const everything = { ...initialAnswers(view), ...permittedAnswers, ...withheldAn
   );
 }
 
-/* ---- profile: answers in the pipeline's own terms ------------------------- */
-const profileOf = (answers, v = view) => profileFromAnswers(v, answers);
+/* ---- the profile: the COMPLETE questionnaire, typed ---------------------- */
+const deviceProfile = (answers, v = view) => buildAtlasProfile(v, answers, "device");
+const serverProfile = (answers, v = view) =>
+  buildAtlasProfile(v, transmittableAnswers(answers), "server");
+const profileOf = serverProfile;
 const baseAnswers = { ...initialAnswers(view), ...permittedAnswers };
 {
-  for (const goal of optionIds("goal")) {
-    const profile = profileOf({ ...baseAnswers, goal });
-    check(same(profile.areas, GOAL_AREAS[goal]), "a goal becomes its catalogue area(s)", goal);
-    check(profile.sources["goal-area"] === "answer", "…and is marked as answered", goal);
-  }
-  for (const level of optionIds("peptide-experience")) {
-    check(
-      profileOf({ ...baseAnswers, "peptide-experience": level }).experience ===
-        EXPERIENCE_LEVELS[level],
-      "an experience option becomes its level",
-      level,
-    );
-  }
-  const bare = profileOf({ goal: "sleep" });
+  const full = deviceProfile(everything);
   check(
-    bare.sources.experience === "default" && bare.experience === "some",
-    "a skipped question runs on its default, marked as such",
+    same(Object.keys(full.fields).sort(), [...ATLAS_FIELD_IDS].sort()),
+    "the profile has an entry for every declared field",
   );
-  check(bare.note === "" && bare.sources["context-note"] === "default", "a skipped note is empty");
-  const noted = profileOf({ ...baseAnswers });
-  check(noted.note === permittedAnswers["additional-notes"], "the note reaches the profile");
-  for (const field of ["intent", "budget", "forms", "timing", "products", "research-functions"]) {
-    check(
-      bare.sources[field] === "default",
-      "a field no question asks for is a marked default",
-      field,
-    );
-  }
-
-  /* The profile has no value slot for a withheld field — even when the server
-     is handed every answer, bypassing the strip. */
-  const full = profileOf(everything);
-  check(!JSON.stringify(full).includes(CANARY), "a withheld text answer never enters the profile");
-  for (const [question, value] of Object.entries(withheldAnswers)) {
+  /* Every answer — sensitive ones included — is in the device profile, typed. */
+  for (const [question, raw] of Object.entries({ ...permittedAnswers, ...withheldAnswers })) {
     const field = ATLAS_BINDINGS[question];
-    const entry = full.withheld.find((w) => w.field === field);
+    const entry = full.fields[field];
     check(
-      entry !== undefined && entry.questions.includes(question) && !("value" in entry),
-      "every withheld question is represented by name and reason, without a value",
+      entry.source === "answer" && entry.questions.includes(question),
+      "every answered question is represented in the profile",
       question,
     );
-    void value;
+    const expected =
+      typeof raw === "string" && ATLAS_FIELDS[field].kind === "text" ? raw.trim() : raw;
+    check(same(entry.value, expected), "…with its value, normalised to its kind", question);
   }
+  check(typeof full.fields["weight-kg"].value === "number", "a number field holds a number");
+  check(Array.isArray(full.fields.conditions.value), "a list field holds a list");
   check(
-    same(profileOf(everything), profileOf({ ...baseAnswers })),
-    "the withheld answers change nothing in the profile",
+    full.fields["medications-other"].value.includes(CANARY),
+    "sensitive free text is kept in the device profile, not discarded",
   );
   check(
-    same(profileOf(everything), profileOf(transmittableAnswers(everything))),
-    "the profile built from all answers equals the one built from what is sent",
+    full.fields.intent.source === "not-asked" && full.fields.intent.value === null,
+    "a field no question asks for is marked not-asked, not invented",
+  );
+  const skipped = deviceProfile({ goal: "sleep" });
+  check(
+    skipped.fields.experience.source === "unanswered" && skipped.fields.experience.value === null,
+    "a skipped question is marked unanswered",
   );
   check(
-    full.withheld.every((w) => w.reason !== null) &&
-      full.withheld.some((w) => w.reason === "health") &&
-      full.withheld.some((w) => w.reason === "administration") &&
-      full.withheld.some((w) => w.reason === "personal-outcome"),
-    "withheld fields carry their reasons",
+    deviceProfile({ ...everything, goal: "sleep" }).fields["goal-focus"].source === "unanswered",
+    "an answer to a hidden follow-up is not taken as the field's value",
+  );
+
+  /* An unbound question is kept, not dropped. */
+  const extended = {
+    ...ATLAS_QUESTIONNAIRE,
+    groups: ATLAS_QUESTIONNAIRE.groups.map((group, i) =>
+      i === 0
+        ? {
+            ...group,
+            questions: [
+              ...group.questions,
+              {
+                id: "new-question",
+                kind: "short-text",
+                maxLength: 40,
+                label: { es: "N", en: "N" },
+              },
+            ],
+          }
+        : group,
+    ),
+  };
+  const xView = buildQuestionnaireView(extended, "es", resolver([]));
+  const xProfile = deviceProfile({ ...everything, "new-question": "hola" }, xView);
+  check(
+    same(xProfile.unbound, [{ question: "new-question", value: "hola" }]),
+    "an answer to an unbound question is represented in profile.unbound",
+  );
+  check(
+    buildAtlasProfile(
+      xView,
+      transmittableAnswers({ ...everything, "new-question": "hola" }),
+      "server",
+    ).unbound.length === 0,
+    "…and never transmitted",
+  );
+
+  /* The SERVER profile: same type, untransmitted fields marked, never guessed. */
+  const server = serverProfile(everything);
+  for (const field of ATLAS_FIELD_IDS) {
+    const entry = server.fields[field];
+    if (full.fields[field].source === "not-asked") continue;
+    if (isFieldTransmitted(field)) {
+      check(
+        same(entry.value, full.fields[field].value),
+        "a transmitted field arrives intact",
+        field,
+      );
+    } else {
+      check(
+        entry.source === "not-received" && entry.value === null,
+        "a device-only field is present on the server as not-received",
+        field,
+      );
+    }
+  }
+  check(!JSON.stringify(server).includes(CANARY), "no device-only text reaches the server profile");
+  check(
+    same(buildAtlasProfile(view, everything, "server"), server),
+    "the server profile ignores device-only answers even when they arrive (strip bypassed)",
+  );
+
+  /* Projection is a READ: applying the policy never changes the profile. */
+  const snapshot = JSON.stringify(full);
+  for (const permission of ATLAS_PERMISSIONS) projectProfile(full, POLICY, permission);
+  applyAtlasPolicy(full);
+  check(JSON.stringify(full) === snapshot, "applying a policy never modifies the profile");
+  const selection = projectProfile(full, POLICY, "candidate-selection");
+  const context = projectProfile(full, POLICY, "ai-context");
+  check(
+    "goal" in selection.fields &&
+      !("goal" in context.fields) &&
+      !("conditions" in selection.fields) &&
+      !("conditions" in context.fields) &&
+      full.fields.conditions.value !== null,
+    "a projection carries only the granted fields; the profile keeps the rest",
   );
 }
 
@@ -749,12 +888,18 @@ const deps = { relatedAreas: (id) => relatedAreas(id).map((r) => r.area.id), pub
 const nameOf = new Map(publishedProducts.map((p) => [p.slug, p.name]));
 
 /** Everything downstream of the answers, down to the model's exact input. */
-function pipeline(answers, locale = "es") {
-  const profile = profileFromAnswers(view, answers);
-  const decision = applyAtlasPolicy(profile);
+/*
+ * The pipeline from a COMPLETE DEVICE profile — every sensitive value present —
+ * so what is proved below is the POLICY's boundary alone, not the privacy
+ * strip's. (The server never even receives those values; that is tested above.)
+ */
+function pipeline(answers, locale = "es", policy = POLICY) {
+  const profile = deviceProfile(answers);
+  const decision = applyAtlasPolicy(profile, policy);
   const retrieval = retrieveAtlas(decision.selection, subjects, deps);
   const plan = planAtlas(retrieval, decision.constraints);
   const input = buildAtlasInput({
+    context: decision.context,
     narrative: decision.narrative,
     constraints: decision.constraints,
     retrieval,
@@ -770,6 +915,7 @@ const downstream = (run) =>
     constraints: run.decision.constraints,
     narrative: run.decision.narrative,
     presentation: run.decision.presentation,
+    context: run.decision.context,
     candidates: run.retrieval.candidates.map((c) => c.slug),
     plan: [run.plan.start.map((c) => c.slug), run.plan.more.map((c) => c.slug)],
     input: run.input,
@@ -845,7 +991,7 @@ const downstream = (run) =>
   const run = (patch) => pipeline({ ...baseAnswers, ...patch });
   const base = run({});
 
-  /* goal → discovery and personalization */
+  /* goal → candidate selection only (as its area); never the model's context */
   const byGoal = Object.fromEntries(optionIds("goal").map((goal) => [goal, run({ goal })]));
   for (const [goal, r] of Object.entries(byGoal)) {
     check(
@@ -855,10 +1001,12 @@ const downstream = (run) =>
     );
     check(
       same(r.decision.narrative.topics, GOAL_AREAS[goal]) &&
-        r.decision.narrative.asked.includes("goal-area"),
-      "the goal's area reaches the model, marked as answered",
+        !r.decision.narrative.asked.includes("goal") &&
+        !r.decision.context.some((e) => e.field === "goal"),
+      "the model learns the selection's catalogue areas, never the goal itself",
       goal,
     );
+    check(!r.input.includes(`goal [`), "no goal line in the model's context", goal);
     check(r.retrieval.candidates.length > 0, "every goal retrieves candidates", goal);
     for (const candidate of r.retrieval.candidates) {
       check(
@@ -918,18 +1066,31 @@ const downstream = (run) =>
 
   /* note → personalization only */
   const noted = run({ "additional-notes": "Prefiero empezar con una sola compra." });
+  const noteEntry = noted.decision.context.find((e) => e.field === "context-note");
   check(
-    noted.decision.narrative.note === "Prefiero empezar con una sola compra." &&
-      noted.input.includes("Prefiero empezar con una sola compra.") &&
+    noteEntry?.value === "Prefiero empezar con una sola compra." &&
+      noteEntry.category === "context" &&
+      noted.input.includes("<visitor_text>Prefiero empezar con una sola compra.</visitor_text>") &&
       same(noted.decision.selection, base.decision.selection),
-    "a clean note reaches the model and moves no selection",
+    "a clean note reaches the model as fenced text, labelled, and moves no selection",
   );
   const health = run({ "additional-notes": "Tengo diabetes y tomo metformina" });
   check(
-    health.decision.narrative.note === null &&
+    !health.decision.context.some((e) => e.field === "context-note") &&
       !health.input.includes("metformina") &&
+      health.decision.noteDiscarded &&
       !health.decision.narrative.asked.includes("context-note"),
     "a health note is discarded before the model",
+  );
+  check(
+    deviceProfile({ ...baseAnswers, "additional-notes": "Tengo diabetes y tomo metformina" })
+      .fields["context-note"].value === "Tengo diabetes y tomo metformina",
+    "…while the profile still holds it: discarding is the policy's act, not the profile's",
+  );
+  check(
+    base.decision.context.every((e) => permits(POLICY, e.field, "ai-context")) &&
+      base.decision.context.every((e) => e.sensitivity !== "sensitive"),
+    "the engine context is exactly the ai-context projection, with no sensitive field",
   );
 
   /* Unasked fields are never described as the visitor's choice. */
@@ -944,45 +1105,52 @@ const downstream = (run) =>
     [view, LEDGER_COPY, "es"],
     [viewEn, LEDGER_COPY_EN, "en"],
   ]) {
-    const ledger = buildAtlasLedger(v, everything, copy, false);
+    const dict = locale === "es" ? es : en;
+    const ledger = buildAtlasLedger(v, everything, copy, POLICY, false);
     const visible = visibleGroups(v, everything).flatMap((g) => visibleQuestions(g, everything));
     check(ledger.length === visible.length, "every visible question appears in the ledger", locale);
     const byId = new Map(ledger.map((entry) => [entry.question, entry]));
+    const goal = byId.get("goal");
     check(
-      same(byId.get("goal").uses, ATLAS_FIELDS["goal-area"].uses) &&
-        byId.get("goal").withheld === null,
-      "the goal's row reports the field table's uses",
+      same(goal.permissions, POLICY.permissions.goal) &&
+        goal.withheld === null &&
+        goal.transmitted &&
+        goal.sensitivity === "sensitive",
+      "the goal's row reports its permissions, transmission and sensitivity separately",
       locale,
     );
     for (const id of Object.keys(withheldAnswers)) {
       const entry = byId.get(id);
+      const field = ATLAS_BINDINGS[id];
       check(
-        entry && entry.withheld === specOf(id).withheld && entry.uses.every((u) => u === "recap"),
-        "a withheld answer shows its reason and no decision use",
+        entry &&
+          !entry.transmitted &&
+          entry.withheld === ATLAS_FIELDS[field].category &&
+          entry.sensitivity === ATLAS_FIELDS[field].sensitivity &&
+          entry.permissions.every((p) => p === "recap"),
+        "a device-only answer shows its category, sensitivity and no server use",
         `${locale}: ${id}`,
       );
       check(
-        entry.withheld !== null &&
-          entry.withheld in (locale === "es" ? es : en).atlas.result.ledger.withheld,
+        entry.withheld in dict.atlas.result.ledger.withheld,
         "every withholding reason has copy",
         `${locale}: ${entry.withheld}`,
       );
     }
-    check(
-      !JSON.stringify(ledger).includes(CANARY),
-      "free text is never echoed back in the ledger",
-      locale,
-    );
-    for (const use of new Set(ledger.flatMap((e) => e.uses))) {
-      check(use in (locale === "es" ? es : en).atlas.result.ledger.uses, "every use has copy", use);
+    check(!JSON.stringify(ledger).includes(CANARY), "free text is never echoed back", locale);
+    for (const permission of ATLAS_PERMISSIONS) {
+      check(permission in dict.atlas.result.ledger.uses, "every permission has copy", permission);
     }
-    const recap = atlasRecap(v, everything, copy);
+    for (const category of new Set(Object.values(ATLAS_FIELDS).map((f) => f.category))) {
+      check(category in dict.atlas.result.ledger.withheld, "every category has copy", category);
+    }
+    const recap = atlasRecap(v, everything, copy, POLICY);
     check(
       same(
         recap.map((r) => r.question),
         ["goal", "goal-weight-loss"],
       ),
-      "the recap echoes the goal and its follow-up, and nothing withheld for health",
+      "the recap echoes the goal and its follow-up, and nothing else",
       `${locale}: ${recap.map((r) => r.question).join(",")}`,
     );
   }
@@ -990,18 +1158,22 @@ const downstream = (run) =>
     view,
     { ...baseAnswers, "additional-notes": "Tengo diabetes" },
     LEDGER_COPY,
+    POLICY,
     true,
   ).find((e) => e.question === "additional-notes");
   check(
-    discarded.withheld === "health-note" && discarded.uses.length === 0,
+    discarded.withheld === "health-note" && discarded.permissions.length === 0,
     "the ledger records a discarded note",
   );
-  const skipped = buildAtlasLedger(view, { goal: "sleep" }, LEDGER_COPY, false).find(
+  const skipped = buildAtlasLedger(view, { goal: "sleep" }, LEDGER_COPY, POLICY, false).find(
     (e) => e.question === "peptide-experience",
   );
-  check(!skipped.answered && skipped.uses.length === 0, "a skipped question is used for nothing");
+  check(
+    !skipped.answered && skipped.permissions.length === 0,
+    "a skipped question is used for nothing",
+  );
 
-  /* A recap flag in the content cannot echo a health answer (fixture). */
+  /* A recap flag in the content cannot echo what the policy does not permit. */
   const flagged = {
     ...ATLAS_QUESTIONNAIRE,
     groups: ATLAS_QUESTIONNAIRE.groups.map((group) => ({
@@ -1013,15 +1185,33 @@ const downstream = (run) =>
   };
   const fView = buildQuestionnaireView(flagged, "es", resolver([]));
   check(
-    !atlasRecap(fView, everything, LEDGER_COPY).some((r) => r.question === "health-conditions"),
-    "a recap flag cannot echo a withheld health answer",
+    !atlasRecap(fView, everything, LEDGER_COPY, POLICY).some(
+      (r) => r.question === "health-conditions",
+    ),
+    "a recap flag cannot echo an answer the policy does not permit to recap",
   );
 }
 
+/** A profile with some fields set as answered — for fields v4 does not ask. */
+const withFields = (profile, patch) => ({
+  ...profile,
+  fields: {
+    ...profile.fields,
+    ...Object.fromEntries(
+      Object.entries(patch).map(([field, value]) => [
+        field,
+        { value, source: "answer", questions: [] },
+      ]),
+    ),
+  },
+});
+
 /* ---- policy: granular, and the name stays on the page --------------------- */
 {
-  const base = { ...profileOf(baseAnswers), budgetCap: 20000, priorities: ["price"] };
+  const start = withFields(deviceProfile(baseAnswers), { budget: 20000, priorities: ["price"] });
+  const base = withFields(start, { "context-note": "" });
   const baseDecision = applyAtlasPolicy(base);
+  const noteOf = (d) => d.context.find((e) => e.field === "context-note")?.value ?? null;
 
   for (const note of [
     "Tengo diabetes y tomo metformina",
@@ -1030,19 +1220,16 @@ const downstream = (run) =>
     "Peso 92 kg y quiero bajar de peso",
     "for personal use before the gym",
   ]) {
-    const decision = applyAtlasPolicy({ ...base, note });
+    const decision = applyAtlasPolicy(withFields(start, { "context-note": note }));
     check(
-      decision.noteDiscarded && decision.narrative.note === null,
+      decision.noteDiscarded && noteOf(decision) === null,
       "a note with health detail is withheld from the model",
       note,
     );
     check(
       same(decision.selection, baseDecision.selection) &&
         same(decision.constraints, baseDecision.constraints) &&
-        same(
-          { ...decision.narrative, note: null, asked: [] },
-          { ...baseDecision.narrative, note: null, asked: [] },
-        ),
+        same(decision.narrative, baseDecision.narrative),
       "withholding a note weakens nothing else (granular, not global)",
       note,
     );
@@ -1053,17 +1240,18 @@ const downstream = (run) =>
     "Tengo un presupuesto de 20 mil pesos para el trimestre",
     "I'd like to build a set across two topics over a few orders",
   ]) {
-    const decision = applyAtlasPolicy({ ...base, note });
+    const decision = applyAtlasPolicy(withFields(start, { "context-note": note }));
     check(
-      !decision.noteDiscarded && decision.narrative.note === note,
+      !decision.noteDiscarded && noteOf(decision) === note,
       "an ordinary note reaches the model (negative control)",
       note,
     );
   }
 
-  const named = applyAtlasPolicy({ ...base, firstName: "Mariana" });
+  const named = applyAtlasPolicy(withFields(base, { name: "Mariana" }));
   check(
     !JSON.stringify(named.narrative).includes("Mariana") &&
+      !JSON.stringify(named.context).includes("Mariana") &&
       !JSON.stringify(named.selection).includes("Mariana"),
     "the name never reaches the model or selection",
   );
@@ -1071,11 +1259,11 @@ const downstream = (run) =>
 
   /* Presentation-only fields cannot move selection… */
   for (const [label, patch] of [
-    ["name", { firstName: "Mariana" }],
+    ["name", { name: "Mariana" }],
     ["history", { history: "returning" }],
     ["style", { style: "detailed" }],
   ]) {
-    const decision = applyAtlasPolicy({ ...base, ...patch });
+    const decision = applyAtlasPolicy(withFields(base, patch));
     check(
       same(decision.selection, baseDecision.selection) &&
         same(decision.constraints, baseDecision.constraints),
@@ -1086,20 +1274,20 @@ const downstream = (run) =>
   /* …and every selection field does — the pipeline can take them the day a
      question asks. */
   for (const [label, patch] of [
-    ["areas", { areas: ["skin"] }],
+    ["goal", { goal: "skin-hair" }],
     ["intent", { intent: "compare" }],
-    ["experience", { experience: "experienced" }],
+    ["experience", { experience: "advanced" }],
     ["priorities", { priorities: ["documentation"] }],
     ["size", { size: "largest" }],
-    ["budget", { budgetCap: 8000 }],
+    ["budget", { budget: 8000 }],
     ["horizon", { horizon: "over-time" }],
     ["timing", { timing: "soon" }],
     ["forms", { forms: ["solid"] }],
-    ["supplies", { includeSupplies: true }],
-    ["functions", { functions: ["wound-healing"] }],
+    ["supplies", { supplies: true }],
+    ["functions", { "research-functions": ["wound-healing"] }],
     ["products", { products: [publishedProducts[0].slug] }],
   ]) {
-    const decision = applyAtlasPolicy({ ...base, ...patch });
+    const decision = applyAtlasPolicy(withFields(base, patch));
     check(
       !same(decision.selection, baseDecision.selection) ||
         !same(decision.constraints, baseDecision.constraints),
@@ -1107,6 +1295,129 @@ const downstream = (run) =>
       label,
     );
   }
+}
+
+/* ---- another policy: same profile, a different projection ----------------
+ *
+ * Two fixture policies prove the layer, not new behaviour. Neither ships, and
+ * neither contains a recommendation rule: they reuse the restricted policy's
+ * decisions and differ only in what they are GRANTED. Nothing about the
+ * questionnaire, the profile, retrieval or the result UI changes for them.
+ */
+{
+  const profile = deviceProfile(everything);
+  /* 1. A policy granted the goal follow-up as AI context. */
+  const wider = {
+    ...RESTRICTED_POLICY,
+    id: "fixture-wider-context",
+    permissions: { ...RESTRICTED_POLICY.permissions, "goal-focus": ["ai-context", "recap"] },
+    decide(input) {
+      const out = RESTRICTED_POLICY.decide(input);
+      const focus = input.context.fields["goal-focus"];
+      return focus?.source === "answer"
+        ? { ...out, context: [...out.context, contextEntry("goal-focus", focus.value)] }
+        : out;
+    },
+  };
+  const restricted = applyPolicy(profile, RESTRICTED_POLICY);
+  const other = applyPolicy(profile, wider);
+  check(
+    other.context.some((e) => e.field === "goal-focus" && e.sensitivity === "sensitive") &&
+      !restricted.context.some((e) => e.field === "goal-focus"),
+    "a different policy receives a different projection of the SAME profile",
+  );
+  check(
+    same(other.selection, restricted.selection),
+    "…and an AI-context grant moves no selection: the two permissions are separate",
+  );
+  check(
+    other.policy.id === "fixture-wider-context" && restricted.policy.id === "restricted-catalogue",
+    "the decision records which policy made it",
+  );
+  check(
+    same(unreachableGrants(wider), ["goal-focus"]),
+    "…and the privacy layer flags that its new grant can never reach the server as things stand",
+  );
+  const run = pipeline(everything, "es", wider);
+  check(
+    run.input.includes("goal-focus [outcome, sensitive]: satiety"),
+    "the prompt renders any granted field generically, labelled with its category and sensitivity",
+  );
+
+  /* 2. A policy that tries to pass the engine a field it was not granted. */
+  const leaky = {
+    ...RESTRICTED_POLICY,
+    id: "fixture-leaky",
+    decide(input) {
+      const out = RESTRICTED_POLICY.decide(input);
+      return { ...out, context: [...out.context, contextEntry("conditions", ["diabetes"])] };
+    },
+  };
+  let refused = false;
+  try {
+    applyPolicy(profile, leaky);
+  } catch (error) {
+    refused = error instanceof AtlasPolicyViolation;
+  }
+  check(refused, "a policy cannot put an ungranted field in the AI context");
+
+  /* 3. A projection cannot be read around: decide() never sees the profile. */
+  let seen = null;
+  applyPolicy(profile, {
+    ...RESTRICTED_POLICY,
+    decide(input) {
+      seen = input;
+      return RESTRICTED_POLICY.decide(input);
+    },
+  });
+  check(
+    !JSON.stringify(seen).includes(CANARY) &&
+      !("conditions" in seen.selection.fields) &&
+      !("weight-kg" in seen.context.fields),
+    "decide() receives projections only — no sensitive value it was not granted",
+  );
+}
+
+/* ---- engines: one interface, the same input ------------------------------- */
+{
+  const run = pipeline(baseAnswers);
+  const composer = createComposerEngine({
+    copy: es.atlas.compose,
+    topicLabel: (id) => es.discovery.areas[id].short,
+    destinationLabel: (d) =>
+      d.kind === "area"
+        ? es.discovery.areas[d.ref].short
+        : d.kind === "product"
+          ? nameOf.get(d.ref)
+          : es.atlas.destinations[d.kind],
+    mode: "catalogue",
+  });
+  const input = {
+    locale: "es",
+    policy: run.decision.policy,
+    context: run.decision.context,
+    narrative: run.decision.narrative,
+    constraints: run.decision.constraints,
+    retrieval: run.retrieval,
+  };
+  const out = await composer.advise(input);
+  check(out.generation !== null && out.mode === "catalogue", "the composer engine advises");
+  check(
+    !JSON.stringify(input).includes(CANARY) &&
+      input.context.every((e) => permits(POLICY, e.field, "ai-context")),
+    "the engine input carries the ai-context projection and nothing more",
+  );
+  check(
+    input.retrieval.candidates.every(
+      (c) => typeof c.slug === "string" && Array.isArray(c.evidence),
+    ),
+    "the engine receives specific product ids with their approved evidence ids",
+  );
+  const empty = await composer.advise({
+    ...input,
+    retrieval: { ...input.retrieval, candidates: [] },
+  });
+  check(empty.generation === null, "an engine with no candidates writes nothing");
 }
 
 /* ---- pins: a product the policy requires travels with its reason ---------- */
@@ -1135,6 +1446,7 @@ const downstream = (run) =>
     "the plan includes a policy pin",
   );
   const input = buildAtlasInput({
+    context: decision.context,
     narrative: { ...decision.narrative, pinned: [target.slug] },
     constraints: decision.constraints,
     retrieval,
@@ -1210,6 +1522,7 @@ const downstream = (run) =>
       ...applyAtlasPolicy(profileOf(baseAnswers)).selection,
       topics: [],
       functions: [fn],
+      evidenceFocus: [fn],
       pinned: [],
     };
     const functional = subjects.map((s) =>
@@ -1290,11 +1603,14 @@ for (const file of [
   "src/server/atlas/assemble.ts",
   "src/components/atlas/AtlasResult.tsx",
   "src/components/atlas/AtlasMap.tsx",
+  "src/domain/atlas/engine.ts",
+  "src/server/atlas/engines/model.ts",
+  "src/domain/atlas/policies/restricted.ts",
 ]) {
   const source = readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
   check(
-    !/\bAtlasProfile\b|profileFromAnswers/.test(source),
-    "only the policy (and the request entry points) read the profile",
+    !/\bAtlasProfile\b|buildAtlasProfile|projectProfile/.test(source),
+    "nothing downstream of the policy layer — nor a policy itself — reads the profile",
     file,
   );
 }
@@ -1321,8 +1637,8 @@ for (const file of [
 ]) {
   const source = readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
   check(
-    !/domain\/atlas\/(policy|retrieval|plan|validate|compose)/.test(source),
-    "the UI contains no recommendation rule",
+    !/domain\/atlas\/(policy|policies|retrieval|plan|validate|compose|engine)/.test(source),
+    "the UI contains no recommendation rule and no policy",
     file,
   );
 }
@@ -1353,9 +1669,13 @@ const outsideSkin = subjects.find(
   const tagged = subjects.map((s) =>
     s.slug === target.slug ? { ...s, functions: ["wound-healing"] } : s,
   );
-  const skin = { ...profileOf({ goal: "skin-hair" }) };
+  const skin = profileOf({ goal: "skin-hair" });
   const without = applyAtlasPolicy(skin);
-  const withFn = applyAtlasPolicy({ ...skin, functions: ["wound-healing"] });
+  const withFn = applyAtlasPolicy(withFields(skin, { "research-functions": ["wound-healing"] }));
+  check(
+    same(withFn.selection.evidenceFocus, ["wound-healing"]),
+    "research functions also drive retrieval, through their own permission",
+  );
   check(
     same(withFn.narrative.functions, ["wound-healing"]),
     "the chosen research functions reach the narrative",
@@ -1378,46 +1698,56 @@ const outsideSkin = subjects.find(
   );
 }
 
-/* The policy's full range, exercised through profile fields that no question
-   asks for today — the capacity the pipeline keeps for a future question. */
-const withPatch = (answers, patch) => ({ ...profileOf(answers), ...patch });
+/*
+ * The policy's full range, exercised through profile fields that no question
+ * asks for today — the capacity the pipeline keeps for a future question.
+ * `areas` stands in for a decision spanning several catalogue areas, which a
+ * single goal cannot produce; it is applied to the decision, as a policy with
+ * a multi-area question would.
+ */
+const withPatch = (answers, patch) => withFields(profileOf(answers), patch);
+const withAreas = (decision, areas) =>
+  areas
+    ? {
+        ...decision,
+        selection: { ...decision.selection, topics: areas },
+        narrative: { ...decision.narrative, topics: areas },
+      }
+    : decision;
 const PROFILES = {
   firstOrderNewcomer: withPatch(
     { goal: "weight-loss", "peptide-experience": "none" },
-    { priorities: ["signature"], size: "smallest", budgetCap: 8000 },
+    { priorities: ["signature"], size: "smallest", budget: 8000 },
   ),
   compareSkinValue: withPatch(
     { goal: "skin-hair" },
-    {
-      areas: ["skin", "neuro"],
-      intent: "compare",
-      priorities: ["price"],
-      forms: ["solid"],
-      budgetCap: 20000,
-    },
+    { intent: "compare", priorities: ["price"], forms: ["solid"], budget: 20000 },
   ),
   coverTopicsExperienced: withPatch(
     { goal: "tissue-recovery", "peptide-experience": "advanced" },
     {
-      areas: ["recovery", "growth", "hormonal"],
       intent: "cover-topics",
       priorities: ["documentation", "overlap"],
       size: "largest",
-      includeSupplies: true,
-      budgetCap: 40000,
+      supplies: true,
+      budget: 40000,
       horizon: "over-time",
     },
   ),
   deepenWithProductInMind: withPatch(
     { goal: "longevity" },
     {
-      areas: ["longevity", "metabolic"],
       intent: "deepen",
       products: outsideSkin ? [outsideSkin.slug] : [],
       timing: "soon",
       style: "detailed",
     },
   ),
+};
+const PROFILE_AREAS = {
+  compareSkinValue: ["skin", "neuro"],
+  coverTopicsExperienced: ["recovery", "growth", "hormonal"],
+  deepenWithProductInMind: ["longevity", "metabolic"],
 };
 /* And the live questionnaire as it is today, answer for answer. */
 const LIVE_PROFILES = Object.fromEntries(
@@ -1433,7 +1763,7 @@ const LIVE_PROFILES = Object.fromEntries(
 
 const runs = {};
 for (const [name, profile] of Object.entries({ ...PROFILES, ...LIVE_PROFILES })) {
-  const decision = applyAtlasPolicy(profile);
+  const decision = withAreas(applyAtlasPolicy(profile), PROFILE_AREAS[name]);
   const retrieval = retrieveAtlas(decision.selection, subjects, deps);
   const plan = planAtlas(retrieval, decision.constraints);
   runs[name] = { profile, decision, retrieval, plan };
@@ -1539,21 +1869,19 @@ check(
 /* Same topics, different intent → a different plan. */
 {
   const planFor = (overrides) => {
-    const decision = applyAtlasPolicy(
-      withPatch(
-        { goal: "weight-loss" },
-        { areas: ["metabolic", "skin"], budgetCap: 20000, ...overrides },
-      ),
+    const decision = withAreas(
+      applyAtlasPolicy(withPatch({ goal: "weight-loss" }, { budget: 20000, ...overrides })),
+      ["metabolic", "skin"],
     );
     const retrieval = retrieveAtlas(decision.selection, subjects, deps);
     const plan = planAtlas(retrieval, decision.constraints);
     return [plan.start.map((c) => c.slug), plan.more.map((c) => c.slug)];
   };
-  const first = planFor({ intent: "first-order", experience: "new" });
-  const compare = planFor({ intent: "compare", experience: "experienced" });
+  const first = planFor({ intent: "first-order", experience: "none" });
+  const compare = planFor({ intent: "compare", experience: "advanced" });
   const documented = planFor({
     intent: "first-order",
-    experience: "new",
+    experience: "none",
     priorities: ["documentation"],
     size: "largest",
   });

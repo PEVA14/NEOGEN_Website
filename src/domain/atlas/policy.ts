@@ -1,193 +1,137 @@
-import type {
-  AtlasConstraints,
-  AtlasIntent,
-  AtlasPin,
-  AtlasPolicyDecision,
-  AtlasProfile,
-  AtlasRange,
-  AtlasWeights,
-} from "./types";
+import { ATLAS_FIELD_IDS, ATLAS_FIELDS } from "./fields";
 
-import { mentionsPersonalHealth } from "./screen";
-import { forbiddenTermIn } from "@/content/lifecycle";
+import type { AtlasFieldId } from "./fields";
+import type { AtlasProfile, AtlasProfileFields } from "./profile";
+import type { AtlasContextEntry, AtlasPolicyDecision } from "./types";
 
 /**
- * THE ADVISOR POLICY.
+ * THE ADVISOR POLICY LAYER — between the complete profile and an advisor.
  *
- * Turns the profile into everything downstream consumes: selection signals,
- * constraints, what the model may be told, and how the page is shaped.
- * Retrieval, the deterministic plan, the prompt, the validator and the result
- * page all read its output; none of them reads the profile, and none of them
- * contains a recommendation rule of its own.
+ * The profile holds everything the visitor answered. A POLICY decides what
+ * one advisor implementation may do with each field, as five independent
+ * permissions:
  *
- * WHAT EACH FIELD MAY DO is declared in `fields.ts` (`ATLAS_FIELDS`), and this
- * file keeps to it: a field used here for selection is one that table permits
- * for discovery or filtering, and a field the table withholds is not on the
- * profile as a value at all. `check:atlas` proves both directions — permitted
- * answers change the decision, withheld ones cannot.
+ *   candidate-selection  which products become candidates, and their order
+ *   retrieval            which approved statements and references are put
+ *                        forward for those products
+ *   ai-context           what the advisor ENGINE (a model, or the composer)
+ *                        is told about the visitor
+ *   recap                shown back to the visitor on the result page
+ *   presentation         shapes the page itself (a name, a tone)
  *
- * THE BOUNDARY
+ * They are separate on purpose: a field may select candidates without the
+ * model ever reading it (the current policy's goal), or reach the model
+ * without moving selection (the current note).
  *
- * Product selection is driven by what the catalogue can honestly answer: the
- * catalogue area the visitor's goal corresponds to, research functions,
- * products named, experience (as catalogue complexity), and the purchasing
- * preferences — formats, size, supplies, budget, how and when they buy. Each
- * maps to registry facts: areas, function tags, overlaps, signature products,
- * documentation, presentations, prices, availability.
+ * ENFORCEMENT IS STRUCTURAL. `applyAtlasPolicy` never hands a policy the
+ * profile. It builds one PROJECTION per permission — only the fields that
+ * permission grants — and the policy's `decide` works from those. The AI
+ * context it returns is then checked against the ai-context grant, so a
+ * policy cannot pass the engine a field it was not granted even by mistake.
+ * The profile itself is never modified: withholding is a property of a
+ * projection, not a loss of data.
  *
- * Health, body, lifestyle, administration, personal-outcome detail and use
- * history are withheld (`fields.ts` says why for each) and never reach this
- * file. A free note that carries such detail is discarded whole, per request,
- * before retrieval and before any model call; the rest of the profile keeps
- * all of its influence. The visitor's name personalises the page and is never
- * sent to a model.
- *
- * Nothing in this file scores a product by what it does to a body, because
- * there is no approved claim in the registries to score and the policy will
- * not invent one.
+ * A NEW POLICY is a new object implementing `AtlasAdvisorPolicy` (see
+ * `policies/`). The questionnaire, the profile, retrieval, the engines and the
+ * result UI do not change. If it needs a sensitive field on the server, that is
+ * also a deliberate change to `privacy.ts`, and `check:atlas` says so.
  */
 
-type Breadth = "focused" | "balanced" | "spread";
+export type AtlasPermission =
+  "candidate-selection" | "retrieval" | "ai-context" | "recap" | "presentation";
 
-const BREADTH: Readonly<Record<AtlasIntent, Breadth>> = {
-  "first-order": "balanced",
-  compare: "focused",
-  deepen: "focused",
-  "cover-topics": "spread",
-  browse: "spread",
-};
+export const ATLAS_PERMISSIONS: readonly AtlasPermission[] = [
+  "candidate-selection",
+  "retrieval",
+  "ai-context",
+  "recap",
+  "presentation",
+];
 
-const TOPIC_WEIGHTS: Readonly<Record<Breadth, readonly number[]>> = {
-  focused: [4, 1.5, 0.75],
-  balanced: [3, 2, 1],
-  spread: [3, 2.5, 2],
-};
+/** Permissions exercised on the server — a field needs transmitting for them to work. */
+export const SERVER_PERMISSIONS: readonly AtlasPermission[] = [
+  "candidate-selection",
+  "retrieval",
+  "ai-context",
+  "presentation",
+];
 
-const START_SIZE: Readonly<Record<AtlasIntent, AtlasRange>> = {
-  "first-order": { min: 1, max: 2 },
-  compare: { min: 2, max: 3 },
-  deepen: { min: 1, max: 3 },
-  "cover-topics": { min: 2, max: 3 },
-  browse: { min: 1, max: 2 },
-};
-
-export const ATLAS_TOTAL_RANGE: AtlasRange = { min: 3, max: 8 };
-
-/** Should the note be read at all? Health, body, medication or dosing: no. */
-export function noteIsUsable(note: string): boolean {
-  return note.length > 0 && !mentionsPersonalHealth(note) && forbiddenTermIn(note) === null;
+/** One permission's view of the profile: the granted fields and nothing else. */
+export interface AtlasProjection {
+  permission: AtlasPermission;
+  fields: Readonly<Partial<AtlasProfileFields>>;
 }
 
-/**
- * Products the policy itself requires. None today: no rule of the current
- * policy names a product. This is the seam a future rule plugs into — its pins
- * travel through retrieval, the model's constraints, the validator and the
- * result card exactly as a visitor-named product does, with its reasons.
- */
-export function policyPins(profile: AtlasProfile): readonly AtlasPin[] {
-  void profile;
-  return [];
+export interface AtlasPolicyInput {
+  selection: AtlasProjection;
+  retrieval: AtlasProjection;
+  context: AtlasProjection;
+  presentation: AtlasProjection;
 }
 
-export function applyAtlasPolicy(profile: AtlasProfile): AtlasPolicyDecision {
-  const breadth = BREADTH[profile.intent];
-  const pinned: AtlasPin[] = [
-    ...profile.products.map((slug) => ({
-      slug,
-      source: "visitor" as const,
-      reasons: ["named-by-visitor" as const],
-    })),
-    ...policyPins(profile).filter((pin) => !profile.products.includes(pin.slug)),
-  ];
-  /* What the visitor actually said. A discarded note was said, and is not passed on. */
-  const asked = (Object.keys(profile.sources) as (keyof typeof profile.sources)[]).filter(
-    (field) =>
-      profile.sources[field] === "answer" &&
-      (field !== "context-note" || noteIsUsable(profile.note)),
-  );
-  const priority = (p: AtlasProfile["priorities"][number]) => profile.priorities.includes(p);
+/** The decision a policy returns; `policy` is stamped by `applyAtlasPolicy`. */
+export type AtlasPolicyOutput = Omit<AtlasPolicyDecision, "policy">;
 
-  /* ---- ranking weights -------------------------------------------------- */
-  const weights: AtlasWeights = {
-    topic: TOPIC_WEIGHTS[breadth],
-    pinned: 8,
-    function: 4,
-    overlap: priority("overlap") ? 3 : profile.experience === "experienced" ? 1.5 : 1,
-    signature: priority("signature") ? 3 : profile.experience === "new" ? 1.5 : 0.5,
-    documented: priority("documentation") ? 3 : 0.5,
-    referenced: priority("documentation") ? 1.5 : 0,
-    value: priority("price") ? 2.5 : profile.intent === "first-order" ? 1 : 0,
-    overBudget: priority("price") ? -5 : -4,
-    // A first catalogue visit starts with single-component products: fewer
-    // things to compare on one page. A catalogue-complexity rule, not a
-    // judgement about any use.
-    blend: profile.experience === "new" ? -1.5 : 0,
-    range: profile.size === "largest" ? 1 : profile.experience === "experienced" ? 0.5 : 0,
-    unavailable: profile.timing === "soon" ? -5 : -1,
-  };
+export interface AtlasAdvisorPolicy {
+  id: string;
+  version: string;
+  /** One line a reviewer can read: what this policy is for. */
+  description: string;
+  /** Per field, what this policy may do with it. Absent means nothing. */
+  permissions: Readonly<Record<AtlasFieldId, readonly AtlasPermission[]>>;
+  decide(input: AtlasPolicyInput): AtlasPolicyOutput;
+}
 
-  /* ---- how many, and under which rules ----------------------------------- */
-  const startBase = START_SIZE[profile.intent];
-  const start: AtlasRange = {
-    min: startBase.min,
-    max: profile.experience === "new" ? Math.min(startBase.max, 2) : startBase.max,
-  };
-  const more: AtlasRange =
-    profile.horizon === "over-time" || profile.intent === "browse"
-      ? { min: 1, max: 5 }
-      : { min: 1, max: 3 };
+export function permits(
+  policy: Pick<AtlasAdvisorPolicy, "permissions">,
+  field: AtlasFieldId,
+  permission: AtlasPermission,
+): boolean {
+  return policy.permissions[field]?.includes(permission) ?? false;
+}
 
-  const constraints: AtlasConstraints = {
-    start,
-    more,
-    total: ATLAS_TOTAL_RANGE,
-    startWithinBudget: profile.budgetCap !== null,
-    includePinned: true,
-    coverTopics: breadth !== "focused",
-    moreWithinBudgetFirst: profile.horizon === "one-order",
-  };
+/** The profile as one permission of one policy sees it. A pure read. */
+export function projectProfile(
+  profile: AtlasProfile,
+  policy: Pick<AtlasAdvisorPolicy, "permissions">,
+  permission: AtlasPermission,
+): AtlasProjection {
+  const fields: Partial<Record<AtlasFieldId, AtlasProfileFields[AtlasFieldId]>> = {};
+  for (const field of ATLAS_FIELD_IDS) {
+    if (permits(policy, field, permission)) fields[field] = profile.fields[field];
+  }
+  return { permission, fields: fields as Partial<AtlasProfileFields> };
+}
 
-  /* ---- the note ---------------------------------------------------------- */
-  const noteProvided = profile.note.length > 0;
-  const noteUsable = noteIsUsable(profile.note);
-  const noteDiscarded = noteProvided && !noteUsable;
+/** An entry for the engine, carrying the field's declared category and sensitivity. */
+export function contextEntry(
+  field: AtlasFieldId,
+  value: AtlasContextEntry["value"],
+): AtlasContextEntry {
+  const spec = ATLAS_FIELDS[field];
+  return { field, category: spec.category, sensitivity: spec.sensitivity, value };
+}
 
+export class AtlasPolicyViolation extends Error {}
+
+export function applyAtlasPolicy(
+  profile: AtlasProfile,
+  policy: AtlasAdvisorPolicy,
+): AtlasPolicyDecision {
+  const output = policy.decide({
+    selection: projectProfile(profile, policy, "candidate-selection"),
+    retrieval: projectProfile(profile, policy, "retrieval"),
+    context: projectProfile(profile, policy, "ai-context"),
+    presentation: projectProfile(profile, policy, "presentation"),
+  });
+  const leaked = output.context.find((entry) => !permits(policy, entry.field, "ai-context"));
+  if (leaked) {
+    throw new AtlasPolicyViolation(
+      `${policy.id} put ${leaked.field} in the AI context without the ai-context permission`,
+    );
+  }
   return {
-    selection: {
-      topics: profile.areas,
-      functions: profile.functions,
-      pinned,
-      forms: profile.forms,
-      budgetCap: profile.budgetCap,
-      variant: profile.size === "largest" ? "largest-within-budget" : "entry",
-      includeSupplies: profile.includeSupplies,
-      perTopicFloor: breadth === "focused" ? 1 : 2,
-      weights,
-    },
-    constraints,
-    narrative: {
-      asked,
-      topics: profile.areas,
-      functions: profile.functions,
-      intent: profile.intent,
-      pinned: pinned.map((pin) => pin.slug),
-      experience: profile.experience,
-      history: profile.history,
-      priorities: profile.priorities,
-      style: profile.style,
-      forms: profile.forms,
-      size: profile.size,
-      includeSupplies: profile.includeSupplies,
-      budgetCap: profile.budgetCap,
-      horizon: profile.horizon,
-      timing: profile.timing,
-      note: noteUsable ? profile.note : null,
-    },
-    presentation: {
-      firstName: profile.firstName || null,
-      style: profile.style,
-      history: profile.history,
-    },
-    noteDiscarded,
+    policy: { id: policy.id, version: policy.version, permissions: policy.permissions },
+    ...output,
   };
 }

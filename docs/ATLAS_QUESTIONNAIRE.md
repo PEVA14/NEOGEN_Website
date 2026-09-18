@@ -1,21 +1,28 @@
 # Atlas questionnaire — developer guide
 
-Atlas has two halves that are edited separately.
+Atlas is a configurable questionnaire and advisor platform. Its concerns are
+kept apart, each in its own place:
 
-- **Content** — the questions themselves. One file:
-  [`src/content/atlas/questionnaire.ts`](../src/content/atlas/questionnaire.ts).
-- **System** — the schema, the engine, one renderer per question kind, the
-  field map, the advisor policy and the result page. Touched only when a
-  genuinely new _kind_ of interaction is needed, or when a question should start
-  _influencing_ something.
+| Concern                     | Where                                                | Decides                                          |
+| --------------------------- | ---------------------------------------------------- | ------------------------------------------------ |
+| 1. questionnaire collection | `src/content/atlas/questionnaire.ts` (owner content) | what is asked                                    |
+| 2. profile representation   | `src/domain/atlas/fields.ts`, `profile.ts`           | what each answer IS: kind, category, sensitivity |
+| 3. transmission / privacy   | `src/domain/atlas/privacy.ts`                        | what may leave the browser                       |
+| 4. candidate-selection      | the advisor policy (`policy.ts` + `policies/*`)      | which products become candidates                 |
+| 5. retrieval                | the advisor policy                                   | which approved evidence is put forward           |
+| 6. AI context               | the advisor policy                                   | what the advisor engine is told                  |
+| 7. result / recap           | the advisor policy                                   | what is shown back                               |
+
+**`AtlasProfile` represents the complete questionnaire.** A policy decides what
+one advisor implementation receives; withholding by the current policy never
+removes anything from the profile.
 
 Rewriting, reordering or removing a question is a change to the content file
-alone. A NEW question also renders, validates and appears in the ledger with no
-other edit — but it influences nothing, and is never sent to the server, until
-it is classified in
+alone. A NEW question also renders, validates, is kept in the profile (as
+`unbound`) and appears in the ledger with no other edit — but it is treated as
+unclassified and sensitive, never sent and never used, until it is bound in
 [`src/domain/atlas/fields.ts`](../src/domain/atlas/fields.ts) (§7).
-`check:atlas` fails until it is, so an unclassified question cannot ship by
-accident.
+`check:atlas` fails until it is.
 
 ---
 
@@ -161,7 +168,7 @@ One object, keyed by question id:
 ```
 
 String, string array, number or boolean — nothing else. Ids are what is stored,
-persisted in the session draft and translated by `fields.ts`; labels exist only
+persisted in the session draft and typed by `fields.ts`; labels exist only
 for reading. Only the transmitted subset is sent to the server (§7). That is why rewriting a label is free and
 changing an `id` is a data change (bump `version` when you do).
 
@@ -186,9 +193,11 @@ before anything is generated.
 2. Add an entry to a group's `questions`, with a new `id`, a `kind`, both
    languages, and whatever that kind needs.
 3. Optionally `recap: true` to echo it above the result, or `visibleWhen`.
-4. Classify it in `src/domain/atlas/fields.ts` (§7): bind its id to a field in
-   `ATLAS_BINDINGS`. To keep it collected-but-unused, bind it to a withheld
-   field (or declare a new one with `withheld(...)`).
+4. Represent it in `src/domain/atlas/fields.ts` (§7): bind its id to a field
+   in `ATLAS_BINDINGS`, declaring a new field (kind, category, sensitivity) if
+   none fits. Then give the field an explicit transmission rule in
+   `privacy.ts` and an explicit entry in the active policy's permissions —
+   `[]` if the advisor should not use it.
 5. Run `npm run check:atlas`.
 
 It renders, validates, blocks its step when required, appears in the ledger
@@ -214,9 +223,9 @@ Example — an optional follow-up shown only to newcomers:
 }
 ```
 
-Until it is bound, it is `unbound`: collected, shown back in the ledger, never
-sent, and it changes nothing. Binding it to a permitted field is what lets it
-influence the result — a system change, reviewed as one (§7).
+Until it is bound, it lives in `AtlasProfile.unbound`: kept, shown back in the
+ledger, never sent, and it changes nothing. Granting a policy permission over
+it is what lets it influence a result — a system change, reviewed as one (§7).
 
 ---
 
@@ -237,132 +246,143 @@ Then add a fixture to the "number and range kinds" block in
 
 ---
 
-## 7. How answers reach the advisor policy
+## 7. From answers to an advisor
 
 ```
-questionnaire config             content/atlas/questionnaire.ts   (owner)
-  → answers (by question id)     in the browser
-  → transmittableAnswers()       only permitted fields leave the browser
-  → POST /api/atlas              strips again, validates the transmitted view
-  → profileFromAnswers()         domain/atlas/profile.ts — via fields.ts
-  → AtlasProfile                 area ids, levels, amounts; never question ids
-  → AdvisorPolicy                domain/atlas/policy.ts
-  → selection signals + pins + constraints + narrative + presentation
-  → retrieval                    registry facts, reasons, relevance, evidence ids
-  → AI adapter (or composer)     sees only the narrative and the retrieval
+questionnaire config            content/atlas/questionnaire.ts        (owner)
+  → answers (by question id)
+  → AtlasProfile, complete       buildAtlasProfile(view, answers, "device")
+  → privacy / transmission       privacy.ts: transmittableAnswers()
+  → POST /api/atlas              strips again; validates transmittedView()
+  → AtlasProfile, server scope   same type; device-only fields "not-received"
+  → advisor policy               applyAtlasPolicy(profile, policy)
+       over projections           one per permission; never the profile
+  → selection signals, constraints, AI context, narrative, presentation
+  → candidate retrieval          product ids, approved facts, reasons,
+                                  relevance, approved evidence ids
+  → advisor engine               AtlasAdvisorEngine: model or composer
   → validation                   slugs, evidence ids, claims, figures, pins
-  → AtlasResultView              assembled on the server from the registries
+  → AtlasResultView              assembled from the registries; records the
+                                  policy (with its permissions) and the engine
   → result UI                    + ledger and recap, built in the browser
 ```
 
-### The field map — `src/domain/atlas/fields.ts`
+### Representation — `fields.ts` and `profile.ts`
 
-The one file that names question ids. Three tables:
+Every field declares its **kind** (`enum`, `enum-list`, `number`, `boolean`,
+`text`), its **category** (`goal`, `outcome`, `experience`, `use-history`,
+`body`, `health`, `administration`, `lifestyle`, `context`, `commerce`,
+`identity`) and its **sensitivity** (`standard`, `personal`, `sensitive`).
+Sensitivity is explicit so handling is auditable: health, body, medication,
+administration, use-history and goal fields are `sensitive`.
 
-- **`ATLAS_FIELDS`** — every field of the profile and its permitted **uses**,
-  or the reason it is **withheld**.
-- **`ATLAS_BINDINGS`** — which question fills which field. Several questions
-  may fill one field when only one is visible at a time (the ten goal
-  follow-ups all fill `goal-focus`).
-- **Option translations** — `GOAL_AREAS` (goal option → catalogue area ids)
-  and `EXPERIENCE_LEVELS` (experience option → `new`/`some`/`experienced`).
+`AtlasProfile.fields` has an entry for every declared field — typed from its
+kind — with `source`:
 
-The uses:
+| `source`       | Means                                                       |
+| -------------- | ----------------------------------------------------------- |
+| `answer`       | answered; `value` holds it, normalised                      |
+| `unanswered`   | a question asks for it; skipped or hidden                   |
+| `not-asked`    | no question in this questionnaire asks for it               |
+| `not-received` | server scope only: the privacy policy kept it on the device |
 
-| Use                | Means                                                      |
-| ------------------ | ---------------------------------------------------------- |
-| `discovery`        | which products become candidates, and in what order        |
-| `research-context` | which approved statements and references are put forward   |
-| `personalization`  | what the model (or the composer) is told about the visitor |
-| `filtering`        | preferences that narrow or size the selection              |
-| `recap`            | shown back to the visitor on the result page               |
-| `presentation`     | shapes the page itself, and nothing else                   |
+Answers to unbound questions go to `AtlasProfile.unbound`. The schema grants
+nothing: no field in `fields.ts` carries a use, a withholding or a
+transmission rule.
 
-A **withheld** field may have at most `recap`. It never reaches discovery,
-research context, the model or filtering, and — because nothing on the server
-may use it — it is **never sent**: the browser drops it
-(`transmittableAnswers`), the route drops it again, and the server validates
-against `transmittedView`, which does not contain it. The profile lists a
-withheld field by name and reason (`AtlasProfile.withheld`); its type has no
-slot for a value.
+### Transmission — `privacy.ts`
 
-Withholding reasons: `health`, `body`, `lifestyle`, `administration`,
-`personal-outcome`, `use-history`, `unbound`, plus two decided per request —
-`health-note` (a note that carried health detail, discarded whole) and
-`name-private`.
+A per-field rule: `device` (never leaves the browser) or `sent(basis)` with a
+written basis. A sensitive field never crosses without one. Two consistency
+checks tie it to the active policy: `unreachableGrants` (a server-side
+permission on a field that never arrives — cannot work) and
+`unusedTransmissions` (a field sent that nothing uses — data minimisation).
+Both must be empty for the active policy.
 
-### How every current question flows
+### Permissions — `policy.ts` and `policies/`
 
-| Question(s)                                                                                       | Field                                              | Uses / status                                   |
-| ------------------------------------------------------------------------------------------------- | -------------------------------------------------- | ----------------------------------------------- |
-| `goal`                                                                                            | `goal-area`                                        | discovery, personalization, recap — as area ids |
-| `goal-weight-loss` … `goal-immunity` (10)                                                         | `goal-focus`                                       | withheld (`personal-outcome`), recap only       |
-| `peptide-experience`                                                                              | `experience`                                       | filtering, discovery, personalization           |
-| `additional-notes`                                                                                | `context-note`                                     | personalization, after the health screen        |
-| `previous-compounds`                                                                              | `compounds-used`                                   | withheld (`use-history`)                        |
-| `age`, `biological-sex`, `weight-kg`, `height-cm`, `physical-activity`, `sleep-quality`, `stress` | `age` … `stress`                                   | withheld (`body`)                               |
-| `administration-route`, `protocol-duration`, `injection-tolerance`                                | same names                                         | withheld (`administration`)                     |
-| `health-conditions`, `medications`, `other-medications`, `injuries`                               | `conditions` … `injuries`                          | withheld (`health`)                             |
-| `current-frustrations`, `ninety-day-goal`, `main-priority`                                        | `frustrations`, `outcome-goal`, `outcome-priority` | withheld (`personal-outcome`)                   |
-| `training-type`, `daily-schedule`, `work-type`, `alcohol`, `caffeine`                             | same meaning                                       | withheld (`lifestyle`)                          |
+An **advisor policy** implements `AtlasAdvisorPolicy`:
 
-The goal is used **as the catalogue area it corresponds to** — the same
-section the menu opens — and the model is told the area id, never the goal's
-wording. `daily-wellbeing` corresponds to no single area, so Atlas starts from
-the whole catalogue and says so.
+```ts
+{
+  id, version, description,
+  permissions: Record<AtlasFieldId, AtlasPermission[]>,
+  decide(input: { selection, retrieval, context, presentation }): AtlasPolicyOutput
+}
+```
 
-**Permitted fields no question asks for today** run on `FIELD_DEFAULTS`
-(`profile.ts`) and are marked `default` in `AtlasProfile.sources`:
-`research-functions`, `products`, `intent`, `history`, `priorities`, `style`,
-`forms`, `size`, `supplies`, `budget`, `horizon`, `timing`, `name`. The policy
-still honours every one of them (`check:atlas` proves it), so a future question
-only needs a binding. Neither the model nor the composer may present a default
-as the visitor's choice: the prompt labels it "not asked", and the composer
-only describes answered fields.
+Permissions are `candidate-selection`, `retrieval`, `ai-context`, `recap` and
+`presentation`, granted independently per field. `applyAtlasPolicy` builds one
+**projection** per permission — only the granted fields — and passes those to
+`decide`; the policy never holds the profile. The AI context it returns is
+checked against its `ai-context` grant (`AtlasPolicyViolation` otherwise). The
+profile is never modified.
+
+`ACTIVE_ATLAS_POLICY` (`policies/index.ts`) is one line. Today it is
+`RESTRICTED_POLICY` (`policies/restricted.ts`), the current advisor:
+
+| Field(s)                                                             | Permissions (restricted policy)                       | Transmitted |
+| -------------------------------------------------------------------- | ----------------------------------------------------- | ----------- |
+| `goal`                                                               | candidate-selection (as its catalogue area), recap    | yes         |
+| `goal-focus` (the ten follow-ups)                                    | recap                                                 | no          |
+| `experience`                                                         | candidate-selection, ai-context                       | yes         |
+| `context-note`                                                       | ai-context, after the health screen                   | yes         |
+| body, health, administration, lifestyle, outcome, use-history fields | none                                                  | no          |
+| commerce fields (not asked by v4)                                    | as before: selection / retrieval / ai-context / recap | yes         |
+| `name` (not asked)                                                   | presentation                                          | yes         |
+
+Candidate selection and AI context are separate: the goal selects (as its
+area) but the model never sees it — it is told the catalogue areas of the
+selection; the note reaches the model and selects nothing. `research-functions`
+is the only field with `retrieval`: it orders which approved statements a card
+leads with (`evidenceFocus`), separately from selecting candidates.
+
+**Adding another policy** is a new object in `policies/` and a change to
+`ACTIVE_ATLAS_POLICY` (or passing it to `generateAtlas`). The questionnaire, the
+profile, retrieval, the engines and the result UI do not change. If it needs a
+device-only field on the server, `privacy.ts` changes too, deliberately, and
+`check:atlas` flags the gap until it does. It must not add medical
+recommendation rules to the restricted policy.
+
+### Engines — `engine.ts`
+
+`AtlasAdvisorEngine.advise(input)` receives `AtlasEngineInput`: locale, policy
+id, the **AI-context projection** (each entry with category and sensitivity),
+the narrative signals, the constraints, and the retrieval — specific product
+ids with approved catalogue facts and approved evidence ids. It returns an
+`AtlasGeneration` (ids and prose). Two engines: the composer
+(`createComposerEngine`, deterministic, no provider) and the model
+(`server/atlas/engines/model.ts`, over whichever `@/advisor` adapter is
+configured). The prompt renders any granted field generically, so a new policy
+needs no prompt change. No production provider is connected.
 
 ### Pins, reasons, evidence, relevance
 
-- **Pins.** `AtlasPolicyDecision.selection.pinned` lists products that must be
-  in the result, each with a `source` (`visitor` or `policy`) and reason
-  codes. `policyPins()` in `policy.ts` is the seam for a future rule; it
-  returns none today. Pins are always retrieved, marked for the model, required
-  by the validator (`missing_pinned`) and reach the card as `source`.
-- **Reasons.** Retrieval gives every candidate structured `reasons`
-  (`area-match`, `function-match`, `signature`, `documented`, `within-budget`…),
-  computed from the same facts as its score. The result resolves labels per
-  locale.
-- **Evidence.** Each subject carries its approved statement ids
-  (`publicStatementRefs` in `content/overview`). The model sees ids only and
-  may cite them per pick (`evidence` in the schema); the validator refuses any
-  id that is not that product's own (`unknown_evidence`); the page prints the
-  statement and its references from the registry. A chosen research function
-  moves the statements that back it to the front — research-context retrieval.
-- **Relevance.** `{ rank, score, tier }` from the policy's scoring. Deterministic,
-  not a model's self-reported confidence.
-
-The free note is screened before the policy uses it: anything touching health,
-body, medication or dosing is discarded whole (`domain/atlas/screen.ts`), and
-the ledger tells the visitor it was.
+- **Pins** — `selection.pinned`, each with a `source` (`visitor` or `policy`)
+  and reason codes. `policyPins()` is the seam; the restricted policy returns
+  none. Pins are always retrieved, marked for the model, required by the
+  validator (`missing_pinned`) and reach the card as `source`.
+- **Reasons** — structured codes computed by retrieval from the same facts as
+  the score; labels resolved per locale.
+- **Evidence** — approved statement ids from `publicStatementRefs`; the model
+  may cite a product's own ids only (`unknown_evidence`), and the page prints
+  statement and references from the registry.
+- **Relevance** — `{ rank, score, tier }`, deterministic, not model confidence.
 
 ---
 
 ## 8. How the result reaches the UI
 
-`AtlasResultView` (`domain/atlas/result.ts`) is assembled on the server
-(`server/atlas/assemble.ts`). Each product carries its own case: `source`,
-`reasons`, `evidence` (approved statements with their references),
-`relevance`, plus every registry fact (names, prices, presentations,
-documentation, links) — never from the questionnaire, never from the model.
+`AtlasResultView` (`domain/atlas/result.ts`) is assembled on the server. It
+records `policy` (id, version, permissions) and `engine`. Each product carries
+`source`, `reasons`, `evidence`, `relevance` and its registry facts.
 
-The **ledger** and the **recap** are built in the browser
-(`domain/atlas/ledger.ts`), from the resolved questionnaire, the visitor's own
-answers and `fields.ts` — they have to be, because withheld answers never leave
-the device. The server contributes one per-request fact, `notices.noteDiscarded`.
-
-- `recap` — every question marked `recap: true` **whose field permits
-  `recap`**. A content flag cannot echo a withheld health answer.
-- `ledger` — `{ question, field, label, answer, answered, uses, withheld }` for
-  every visible question. Free text is never echoed, only acknowledged.
+The **ledger** and **recap** are built in the browser (`domain/atlas/ledger.ts`)
+from the visitor's own answers and `result.policy` — the policy that actually
+produced the result. Each ledger row states three independent facts: the
+field's sensitivity and category, whether it was transmitted, and the policy's
+permissions. The recap shows questions marked `recap: true` whose field the
+policy permits to recap.
 
 ---
 
@@ -370,28 +390,29 @@ the device. The server contributes one per-request fact, `notices.noteDiscarded`
 
 `npm run check:atlas` covers, each with a negative control:
 
-- the live questionnaire validates (unique ids, no forward-referencing
-  condition, defaults that exist, sane bounds) in both locales
-- every live question is bound; a withheld field has no decision use; a
-  transmitted question's visibility never depends on an untransmitted answer
-- every conditional branch of the live questionnaire: each goal shows exactly
-  its follow-up, `previous-compounds` and `other-medications` track their
-  triggers, hidden answers are dropped, every step completes with optional
-  answers skipped
-- transmission: the browser sends exactly the permitted answers, the server's
-  view refuses a withheld one, and a full request fits the body limit
-- the profile: each goal becomes its area, each experience its level, skipped
-  fields are marked defaults, and withheld fields appear by name only
-- **no leaks**: every withheld question, set to every option (or to canary
-  text), changes nothing in selection, constraints, narrative, retrieval, the
-  plan or the model's exact input
-- permitted answers do change what they may: different goals retrieve
-  different products, experience changes the constraints, a clean note reaches
-  the model and a health note does not
-- pins, evidence ids and relevance travel end to end; the validator refuses a
-  foreign or invented statement id and a dropped pin
+- schema and both locales; every live question bound; every field declares
+  kind, category and sensitivity, and grants nothing
+- every field has an explicit transmission rule and an explicit entry in the
+  active policy; transmitted sensitive fields state a basis; no unreachable
+  grant and no unused transmission
+- every conditional branch of the live questionnaire
+- **the complete profile**: every answered question — sensitive ones included —
+  is in the device profile with its typed value; unbound answers are kept;
+  the server profile has every field, device-only ones `not-received`
+- **projections**: applying a policy never modifies the profile; a projection
+  carries only granted fields; `decide()` never sees an ungranted value
+- **no leaks through the policy**: starting from the COMPLETE device profile,
+  every sensitive question set to every option (or canary text) changes
+  nothing in selection, constraints, narrative, AI context, retrieval, the plan
+  or the model's exact prompt
+- **permissions are separate**: the goal selects but never reaches the model;
+  the note reaches the model and selects nothing; a fixture policy granted the
+  goal follow-up as AI context receives a different projection of the same
+  profile, selects identically, and is flagged by the privacy layer; a fixture
+  policy that smuggles an ungranted field into the AI context is refused
+- engines receive only the AI-context projection plus specific product ids and
+  evidence ids; pins, evidence and relevance travel end to end
 
-`npm run check:content` holds the questionnaire's wording to its use: a
-question worded in dosing or administration vocabulary must be withheld, and a
-question touching health, the body or a personal outcome must be withheld or
-consumed only as a translated option id (the goal → its area).
+`npm run check:content` holds sensitively worded questions to honest
+classification (declared personal or sensitive) and to the active policy
+(no server use, except the goal as a translated area id — never AI context).

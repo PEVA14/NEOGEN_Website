@@ -42,6 +42,7 @@ import type { Dictionary } from "@/i18n/types";
 export function assembleAtlasView({
   generation,
   mode,
+  engine,
   decision,
   retrieval,
   locale,
@@ -51,6 +52,7 @@ export function assembleAtlasView({
 }: {
   generation: AtlasGeneration;
   mode: AtlasMode;
+  engine: string;
   decision: AtlasPolicyDecision;
   retrieval: AtlasRetrieval;
   locale: Locale;
@@ -278,6 +280,8 @@ export function assembleAtlasView({
 
   return {
     mode,
+    policy: decision.policy,
+    engine,
     firstName: decision.presentation.firstName,
     style: decision.presentation.style,
     returning: decision.presentation.history === "returning",

@@ -199,10 +199,9 @@ const es = {
         yes: "Sí",
         no: "No",
         uses: {
-          discovery: "Elegir y ordenar productos",
-          "research-context": "Elegir qué investigación mostrarte",
-          personalization: "Explicarte la selección",
-          filtering: "Ajustar cuántos y cuáles",
+          "candidate-selection": "Elegir y ordenar productos",
+          retrieval: "Elegir qué investigación mostrarte",
+          "ai-context": "Explicarte la selección",
           recap: "Mostrártela de vuelta",
           presentation: "Presentar esta página",
         },
@@ -214,13 +213,19 @@ const es = {
             "Hábitos: Atlas no elige productos con esta información, y no sale de tu dispositivo.",
           administration:
             "Cómo y por cuánto tiempo se usaría: Atlas no da indicaciones de uso. No sale de tu dispositivo.",
-          "personal-outcome":
+          outcome:
             "Resultado personal: Atlas no relaciona productos con resultados personales. No sale de tu dispositivo.",
           "use-history":
             "Historial de uso: Atlas no elige productos con esta información, y no sale de tu dispositivo.",
-          unbound: "Todavía no tiene un uso asignado, así que no sale de tu dispositivo.",
+          unclassified: "Todavía no tiene un uso asignado, así que no sale de tu dispositivo.",
+          goal: "La política actual no usa esta respuesta para elegir productos. No sale de tu dispositivo.",
+          experience:
+            "La política actual no usa esta respuesta para elegir productos. No sale de tu dispositivo.",
+          context: "La política actual no usa esta respuesta. No sale de tu dispositivo.",
+          commerce: "La política actual no usa esta preferencia. No sale de tu dispositivo.",
+          identity: "Sólo se usa en esta página.",
           "health-note":
-            "Tu nota incluía temas de salud, así que se descartó completa antes de preparar tu selección. Todas tus demás respuestas se usaron.",
+            "Tu nota incluía temas de salud, así que se descartó completa antes de preparar tu selección. Tus demás respuestas se trataron como muestra esta tabla.",
           "name-private": "Sólo se usa en esta página; no se envía a la IA.",
         },
       },
@@ -246,7 +251,7 @@ const es = {
       healthNotice:
         "Tu nota mencionaba temas personales o de salud. Atlas no evalúa salud ni medicación y no la tomó en cuenta. Cualquier decisión sobre tu salud corresponde a un profesional de la salud.",
       screenedNotice:
-        "Tu nota incluía información de salud, así que se descartó antes de preparar tu selección. El resto de tus respuestas se usó.",
+        "Tu nota incluía información de salud, así que se descartó antes de preparar tu selección. Tus demás respuestas se trataron como siempre.",
       disclaimer:
         "Atlas te ayuda a elegir dentro del catálogo de NEOGEN con base en tus objetivos, preferencias y presupuesto. No es consejo médico: no evalúa tu salud y no indica cantidades, formas de uso ni horarios.",
     },

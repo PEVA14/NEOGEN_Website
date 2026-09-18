@@ -423,8 +423,8 @@ export function AtlasResult({
                       </span>
                       {entry.answered ? (
                         <span className={styles.ledgerUses}>
-                          {entry.uses.length > 0
-                            ? entry.uses.map((use) => r.ledger.uses[use]).join(" · ")
+                          {entry.permissions.length > 0
+                            ? entry.permissions.map((use) => r.ledger.uses[use]).join(" · ")
                             : r.ledger.notUsed}
                         </span>
                       ) : null}

@@ -1,28 +1,71 @@
 export * from "./types";
 export * from "./questionnaire";
+/* 2. representation */
 export {
   ATLAS_BINDINGS,
+  ATLAS_FIELD_IDS,
   ATLAS_FIELDS,
-  ATLAS_USES,
-  DECISION_USES,
-  EXPERIENCE_LEVELS,
-  GOAL_AREAS,
-  SERVER_USES,
+  UNCLASSIFIED,
   fieldOf,
-  isTransmitted,
-  specOf,
+  fieldSpecOf,
 } from "./fields";
-export type { AtlasFieldSpec } from "./fields";
+export type { AtlasFieldKind, AtlasFieldSpec, AtlasFieldValue } from "./fields";
+export { buildAtlasProfile, profileValue } from "./profile";
+export type {
+  AtlasEntrySource,
+  AtlasProfile,
+  AtlasProfileEntry,
+  AtlasProfileFields,
+} from "./profile";
+/* 3. transmission */
 export {
-  FIELD_DEFAULTS,
-  profileFromAnswers,
+  ATLAS_PRIVACY_POLICY,
+  isFieldTransmitted,
+  isTransmitted,
   transmittableAnswers,
   transmittedView,
-} from "./profile";
+  unreachableGrants,
+  unusedTransmissions,
+} from "./privacy";
+export type { AtlasTransmission } from "./privacy";
+/* 4–7. permissions */
+export {
+  ATLAS_PERMISSIONS,
+  AtlasPolicyViolation,
+  SERVER_PERMISSIONS,
+  applyAtlasPolicy,
+  contextEntry,
+  permits,
+  projectProfile,
+} from "./policy";
+export type {
+  AtlasAdvisorPolicy,
+  AtlasPermission,
+  AtlasPolicyInput,
+  AtlasPolicyOutput,
+  AtlasProjection,
+} from "./policy";
+export {
+  ACTIVE_ATLAS_POLICY,
+  ATLAS_TOTAL_RANGE,
+  EXPERIENCE_LEVELS,
+  GOAL_AREAS,
+  RESTRICTED_PERMISSIONS,
+  RESTRICTED_POLICY,
+  noteIsUsable,
+  policyPins,
+} from "./policies";
+/* the engine */
+export { createComposerEngine } from "./engine";
+export type {
+  AtlasAdvisorEngine,
+  AtlasComposerDeps,
+  AtlasEngineInput,
+  AtlasEngineOutput,
+} from "./engine";
 export { atlasRecap, buildAtlasLedger } from "./ledger";
 export type { AtlasLedgerCopy } from "./ledger";
 export { mentionsPersonalHealth, normaliseText } from "./screen";
-export { ATLAS_TOTAL_RANGE, applyAtlasPolicy, noteIsUsable, policyPins } from "./policy";
 export {
   ATLAS_CANDIDATE_LIMIT,
   ATLAS_SUPPLIES_LIMIT,

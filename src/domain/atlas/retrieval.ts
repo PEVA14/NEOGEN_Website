@@ -68,9 +68,10 @@ export function suggestVariant(
 const PENDING: AtlasRelevance = { rank: 0, score: 0, tier: "supporting" };
 
 /**
- * Statements backing a chosen research function first, then the rest in the
- * overview's own order. That ordering IS research-context retrieval: the
- * visitor's functions decide which approved finding a card leads with.
+ * Statements backing a focused research function first, then the rest in the
+ * overview's own order. That ordering IS retrieval: the policy's retrieval
+ * permission (`evidenceFocus`, separate from selection) decides which approved
+ * finding a card leads with.
  */
 function evidenceFor(
   evidence: readonly AtlasEvidenceRef[],
@@ -191,7 +192,7 @@ export function retrieveAtlas(
       matchedFunctions,
       pin,
       reasons,
-      evidence: evidenceFor(subject.evidence, signals.functions),
+      evidence: evidenceFor(subject.evidence, signals.evidenceFocus),
       relevance: PENDING,
       suggestedVariantId: suggested?.id ?? null,
       suggestedPrice,

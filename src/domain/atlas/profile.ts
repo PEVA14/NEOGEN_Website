@@ -1,157 +1,128 @@
-import {
-  ATLAS_BINDINGS,
-  ATLAS_FIELDS,
-  EXPERIENCE_LEVELS,
-  GOAL_AREAS,
-  fieldOf,
-  isTransmitted,
-  type AtlasFieldId,
-} from "./fields";
+import { ATLAS_FIELD_IDS, ATLAS_FIELDS, fieldOf } from "./fields";
+import { isFieldTransmitted } from "./privacy";
 import { allQuestions, questionVisible } from "./questionnaire";
-import { ATLAS_TOPIC_RANKS } from "./types";
+import { normaliseText } from "./screen";
 
+import type { AtlasFieldId, AtlasFieldValue } from "./fields";
 import type { AtlasAnswers, AtlasAnswerValue, AtlasQuestionnaireView } from "./questionnaire";
-import type { AtlasProfile, AtlasWithheldField } from "./types";
-import type { DiscoveryAreaId } from "@/data/discovery";
 
 /**
- * ANSWERS → PROFILE.
+ * THE PROFILE — the complete answered questionnaire, typed.
  *
- * The only code that reads an answer by question id, and it does so through
- * `fields.ts`: each visible, bound question fills its field, translated into
- * the pipeline's own vocabulary (a goal becomes an area id, an experience
- * option becomes a level). Downstream code sees the profile and never a
- * question id, so the questionnaire can be reworded, reordered or extended
- * without touching the policy.
+ * Every field of `fields.ts` has an entry, whatever any advisor is allowed to
+ * do with it. A field's value is normalised to its declared kind (an option
+ * id, a list of ids, a number in its unit, a boolean, trimmed text) and
+ * carries where it came from. Nothing here knows about permissions: an
+ * advisor policy reads PROJECTIONS of this profile (`policy.ts`), and
+ * withholding a field from one advisor never removes it from the profile.
  *
- * A permitted field no question fills runs on `FIELD_DEFAULTS` and is marked
- * `default` in `sources`, so nothing downstream presents a default as
- * something the visitor said. A withheld field is listed by name and reason in
- * `withheld`, with no value — see `AtlasWithheldField`.
+ * TWO SCOPES, ONE TYPE. In the browser the profile is built from every answer
+ * and is complete. On the server it is built from what the privacy policy let
+ * cross (`privacy.ts`); a field that stayed on the device is present with
+ * `source: "not-received"` — represented, marked, and empty. That is the
+ * transmission boundary doing its job, not the advisor policy.
  */
 
-export const FIELD_DEFAULTS = {
-  areas: [] as readonly DiscoveryAreaId[],
-  functions: [] as AtlasProfile["functions"],
-  products: [] as readonly string[],
-  intent: "first-order",
-  timing: "no-rush",
-  priorities: [] as AtlasProfile["priorities"],
-  experience: "some",
-  forms: [] as AtlasProfile["forms"],
-  size: "no-preference",
-  includeSupplies: false,
-  budgetCap: null as number | null,
-  horizon: "one-order",
-  history: "first-time",
-  style: "direct",
-  firstName: "",
-  note: "",
-} as const satisfies Omit<AtlasProfile, "sources" | "withheld">;
+export type AtlasEntrySource =
+  /** A visible question bound to the field was answered. */
+  | "answer"
+  /** A question asks for it, and it was skipped or hidden. */
+  | "unanswered"
+  /** No question in this questionnaire asks for it. */
+  | "not-asked"
+  /** Asked, but kept on the device by the privacy policy: not on the server. */
+  | "not-received";
 
-/** The visible, bound answer for a field — the first visible question that fills it. */
-function answerFor(
-  view: AtlasQuestionnaireView,
-  answers: AtlasAnswers,
-  field: AtlasFieldId,
-): AtlasAnswerValue | undefined {
-  for (const question of allQuestions(view)) {
-    if (fieldOf(question.id) !== field || !questionVisible(question, answers)) continue;
-    const value = answers[question.id];
-    const answered =
-      value !== undefined &&
-      !(typeof value === "string" && value.trim() === "") &&
-      !(Array.isArray(value) && value.length === 0);
-    if (answered) return value;
-  }
-  return undefined;
+export interface AtlasProfileEntry<K extends AtlasFieldId = AtlasFieldId> {
+  value: AtlasFieldValue<K> | null;
+  source: AtlasEntrySource;
+  /** The questions that fill this field in the current questionnaire. */
+  questions: readonly string[];
 }
 
-export function profileFromAnswers(
+export type AtlasProfileFields = { readonly [K in AtlasFieldId]: AtlasProfileEntry<K> };
+
+export interface AtlasProfile {
+  /** The questionnaire version the answers belong to. */
+  version: string;
+  /** "device": built from every answer. "server": from transmitted answers only. */
+  scope: "device" | "server";
+  fields: AtlasProfileFields;
+  /**
+   * Answers to questions `fields.ts` does not bind yet. Kept, not dropped —
+   * treated as unclassified and sensitive, so never transmitted or used.
+   */
+  unbound: readonly { question: string; value: AtlasAnswerValue }[];
+}
+
+const TEXT_LIMIT = 2000;
+
+function answered(value: AtlasAnswerValue | undefined): value is AtlasAnswerValue {
+  if (value === undefined) return false;
+  if (typeof value === "string") return value.trim().length > 0;
+  if (Array.isArray(value)) return value.length > 0;
+  return true;
+}
+
+/** An answer, normalised to the field's declared kind; null when it does not fit. */
+function normalise(field: AtlasFieldId, value: AtlasAnswerValue): unknown {
+  switch (ATLAS_FIELDS[field].kind) {
+    case "enum":
+      return typeof value === "string" ? value : null;
+    case "enum-list":
+      return Array.isArray(value) ? [...new Set(value as readonly string[])] : null;
+    case "number":
+      return typeof value === "number" && Number.isFinite(value) ? value : null;
+    case "boolean":
+      return typeof value === "boolean" ? value : null;
+    case "text":
+      return typeof value === "string" ? normaliseText(value, TEXT_LIMIT) : null;
+  }
+}
+
+export function buildAtlasProfile(
   view: AtlasQuestionnaireView,
   answers: AtlasAnswers,
+  scope: "device" | "server",
 ): AtlasProfile {
-  const sources: Partial<Record<AtlasFieldId, "answer" | "default">> = {};
-  const mark = (field: AtlasFieldId, answered: boolean) => {
-    sources[field] = answered ? "answer" : "default";
-  };
+  const questions = allQuestions(view);
+  const fields = {} as Record<AtlasFieldId, AtlasProfileEntry>;
 
-  /* goal-area: the goal option → the catalogue area it corresponds to. */
-  const goal = answerFor(view, answers, "goal-area");
-  const areas =
-    typeof goal === "string" && goal in GOAL_AREAS
-      ? GOAL_AREAS[goal].slice(0, ATLAS_TOPIC_RANKS)
-      : FIELD_DEFAULTS.areas;
-  mark("goal-area", typeof goal === "string" && goal in GOAL_AREAS);
-
-  /* experience: an option id → a level; an id the table does not know falls back. */
-  const level = answerFor(view, answers, "experience");
-  const experience =
-    typeof level === "string" && level in EXPERIENCE_LEVELS
-      ? EXPERIENCE_LEVELS[level]
-      : FIELD_DEFAULTS.experience;
-  mark("experience", typeof level === "string" && level in EXPERIENCE_LEVELS);
-
-  const note = answerFor(view, answers, "context-note");
-  mark("context-note", typeof note === "string");
-
-  /* Permitted fields no question binds today: defaults, marked as such. */
-  const bound = new Set(Object.values(ATLAS_BINDINGS));
-  for (const field of Object.keys(ATLAS_FIELDS) as AtlasFieldId[]) {
-    if (ATLAS_FIELDS[field].withheld === null && !bound.has(field)) mark(field, false);
-  }
-
-  /* Withheld fields: the questions that ask for them, and why — never a value. */
-  const withheld: AtlasWithheldField[] = [];
-  for (const question of allQuestions(view)) {
-    const field = fieldOf(question.id);
-    const reason = field ? ATLAS_FIELDS[field].withheld : "unbound";
-    if (reason === null) continue;
-    const key = field ?? (question.id as AtlasFieldId);
-    const existing = withheld.find((entry) => entry.field === key);
-    if (existing) {
-      withheld[withheld.indexOf(existing)] = {
-        ...existing,
-        questions: [...existing.questions, question.id],
-      };
-    } else {
-      withheld.push({ field: key, questions: [question.id], reason });
+  for (const field of ATLAS_FIELD_IDS) {
+    const bound = questions.filter((q) => fieldOf(q.id) === field);
+    const ids = bound.map((q) => q.id);
+    if (bound.length === 0) {
+      fields[field] = { value: null, source: "not-asked", questions: ids };
+      continue;
     }
+    if (scope === "server" && !isFieldTransmitted(field)) {
+      fields[field] = { value: null, source: "not-received", questions: ids };
+      continue;
+    }
+    const hit = bound.find((q) => questionVisible(q, answers) && answered(answers[q.id]));
+    const value = hit ? normalise(field, answers[hit.id]) : null;
+    fields[field] = {
+      value: value as AtlasProfileEntry["value"],
+      source: value === null ? "unanswered" : "answer",
+      questions: ids,
+    };
   }
 
-  return {
-    ...FIELD_DEFAULTS,
-    areas,
-    experience,
-    note: typeof note === "string" ? note : FIELD_DEFAULTS.note,
-    sources,
-    withheld,
-  };
+  const unbound =
+    scope === "server"
+      ? []
+      : questions
+          .filter((q) => fieldOf(q.id) === null)
+          .filter((q) => questionVisible(q, answers) && answered(answers[q.id]))
+          .map((q) => ({ question: q.id, value: answers[q.id] }));
+
+  return { version: view.version, scope, fields: fields as AtlasProfileFields, unbound };
 }
 
-/**
- * THE ANSWERS THAT MAY LEAVE THE BROWSER — those whose field has a server
- * use. Everything withheld or unbound stays on the visitor's device: it
- * reaches the result page's ledger and recap, which are built there, and
- * nothing else. The API route applies the same filter on arrival.
- */
-export function transmittableAnswers(answers: AtlasAnswers): AtlasAnswers {
-  return Object.fromEntries(Object.entries(answers).filter(([id]) => isTransmitted(id)));
-}
-
-/**
- * The questionnaire as the SERVER validates it: transmitted questions only.
- * A withheld question is not in it, so the server cannot accept an answer to
- * one even if a client sends it.
- */
-export function transmittedView(view: AtlasQuestionnaireView): AtlasQuestionnaireView {
-  return {
-    ...view,
-    groups: view.groups
-      .map((group) => ({
-        ...group,
-        questions: group.questions.filter((question) => isTransmitted(question.id)),
-      }))
-      .filter((group) => group.questions.length > 0),
-  };
+/** The value of a field, typed, or null. */
+export function profileValue<K extends AtlasFieldId>(
+  profile: Pick<AtlasProfile, "fields">,
+  field: K,
+): AtlasFieldValue<K> | null {
+  return profile.fields[field].value;
 }

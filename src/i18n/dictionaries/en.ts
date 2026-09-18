@@ -189,10 +189,9 @@ const en: Dictionary = {
         yes: "Yes",
         no: "No",
         uses: {
-          discovery: "Choose and order products",
-          "research-context": "Choose which research to show you",
-          personalization: "Explain the selection to you",
-          filtering: "Set how many and which",
+          "candidate-selection": "Choose and order products",
+          retrieval: "Choose which research to show you",
+          "ai-context": "Explain the selection to you",
           recap: "Show it back to you",
           presentation: "Shape this page",
         },
@@ -204,13 +203,19 @@ const en: Dictionary = {
             "Habits: Atlas does not choose products from this, and it never leaves your device.",
           administration:
             "How and for how long something would be used: Atlas gives no instructions for use. It never leaves your device.",
-          "personal-outcome":
+          outcome:
             "Personal outcome: Atlas does not match products to personal outcomes. It never leaves your device.",
           "use-history":
             "Use history: Atlas does not choose products from this, and it never leaves your device.",
-          unbound: "Not assigned a use yet, so it never leaves your device.",
+          unclassified: "Not assigned a use yet, so it never leaves your device.",
+          goal: "The current policy does not use this answer to choose products. It never leaves your device.",
+          experience:
+            "The current policy does not use this answer to choose products. It never leaves your device.",
+          context: "The current policy does not use this answer. It never leaves your device.",
+          commerce: "The current policy does not use this preference. It never leaves your device.",
+          identity: "Used on this page only.",
           "health-note":
-            "Your note included health topics, so it was discarded in full before your selection was prepared. All your other answers were used.",
+            "Your note included health topics, so it was discarded in full before your selection was prepared. Your other answers were handled as this table shows.",
           "name-private": "Used on this page only; never sent to the AI.",
         },
       },
@@ -236,7 +241,7 @@ const en: Dictionary = {
       healthNotice:
         "Your note mentioned personal or health topics. Atlas does not assess health or medication and did not take it into account. Any decision about your health belongs with a health professional.",
       screenedNotice:
-        "Your note included health information, so it was discarded before your selection was prepared. The rest of your answers were used.",
+        "Your note included health information, so it was discarded before your selection was prepared. Your other answers were handled as usual.",
       disclaimer:
         "Atlas helps you choose within NEOGEN's catalogue based on your goals, preferences and budget. It is not medical advice: it does not assess your health and does not suggest amounts, methods of use or schedules.",
     },

@@ -56,7 +56,9 @@ import {
 import { publishedProducts } from "../src/data/catalog/index.ts";
 import { AREAS, publicAreas } from "../src/data/discovery/index.ts";
 import { ATLAS_QUESTIONNAIRE } from "../src/content/atlas/questionnaire.ts";
-import { GOAL_AREAS, fieldOf, specOf } from "../src/domain/atlas/fields.ts";
+import { fieldOf, fieldSpecOf } from "../src/domain/atlas/fields.ts";
+import { SERVER_PERMISSIONS, permits } from "../src/domain/atlas/policy.ts";
+import { ACTIVE_ATLAS_POLICY, GOAL_AREAS } from "../src/domain/atlas/policies/index.ts";
 import { dispatch, orderPlacedMessages } from "../src/domain/notifications/index.ts";
 import { noneChannel } from "../src/domain/notifications/adapters/none.ts";
 import { __resetOutbox, memoryOutbox } from "../src/domain/notifications/adapters/memoryOutbox.ts";
@@ -484,16 +486,21 @@ eq(
   }
 }
 
-/* ---- the Atlas questionnaire: sensitive wording is never a decision input --
+/* ---- the Atlas questionnaire: sensitive wording, honest classification ---
  *
- * The questionnaire is owner content and may ASK what the owner decides to
- * ask. What this gate holds is the USE: a question whose wording touches
- * dosing or administration, health, the body, or a personal outcome must be
- * bound to a WITHHELD field (`domain/atlas/fields.ts`) — never sent, never a
- * decision input. The one exception is a field that consumes only an option
- * ID through a translation table to a catalogue fact (the goal → its catalogue
- * area), so its wording never travels; every option of such a question must
- * then translate to real area ids.
+ * The questionnaire is owner content and may ASK what the owner decides. This
+ * gate holds two things about how the SYSTEM treats what it asks:
+ *
+ *   representation  a question worded around dosing, administration, health,
+ *                   the body or a personal outcome is bound to a field the
+ *                   schema declares personal or sensitive — never "standard".
+ *   active policy   the ACTIVE advisor policy grants no server-side use of
+ *                   such a field, with one exception: a field consumed only as
+ *                   an option id translated to a catalogue fact (the goal → its
+ *                   catalogue area), which may select candidates but may not
+ *                   reach the model. Dosing-worded questions have no exception.
+ *
+ * A future policy that wants more is a deliberate change here, reviewed.
  */
 {
   const SENSITIVE = [
@@ -505,7 +512,10 @@ eq(
     /peso|weight|altura|height|edad\b|\bage\b|sexo|\bsex\b/i,
     /medicament|medication|condici|condition|lesi[oó]n|injur|alcohol|cafe[ií]na|caffeine/i,
   ];
-  const TRANSLATED = { "goal-area": GOAL_AREAS };
+  const TRANSLATED = { goal: GOAL_AREAS };
+  const policy = ACTIVE_ATLAS_POLICY;
+  const serverUse = (field) =>
+    field !== null && SERVER_PERMISSIONS.some((p) => permits(policy, field, p));
   const areaIds = new Set(publicAreas().map((a) => a.id));
   const textsOf = (q) =>
     [
@@ -526,21 +536,25 @@ eq(
       const sensitive = dosing || texts.some((t) => SENSITIVE.some((re) => re.test(t)));
       if (!sensitive) continue;
       sensitiveQuestions += 1;
-      const spec = specOf(q.id);
       const field = fieldOf(q.id);
+      ok(
+        fieldSpecOf(q.id).sensitivity !== "standard",
+        "a sensitively worded question is declared personal or sensitive in the profile schema",
+        q.id,
+      );
       if (dosing) {
         ok(
-          spec.withheld !== null,
-          "a question worded in dosing or administration vocabulary is withheld",
+          fieldSpecOf(q.id).sensitivity === "sensitive" && !serverUse(field),
+          "a dosing- or administration-worded question is sensitive and unused by the active policy",
           `${q.id} (${dosing})`,
         );
         continue;
       }
-      if (spec.withheld !== null) continue;
+      if (!serverUse(field)) continue;
       const table = field ? TRANSLATED[field] : undefined;
       ok(
-        table !== undefined,
-        "a sensitive question is withheld, or consumed only as a translated option id",
+        table !== undefined && !permits(policy, field, "ai-context"),
+        "a sensitive question the active policy uses is consumed only as a translated option id, never shown to the model",
         q.id,
       );
       if (table && q.options?.kind === "static") {
@@ -559,14 +573,19 @@ eq(
     "the sensitivity screen recognises the questionnaire's sensitive questions",
   );
 
-  /* Negative controls: the same rules refuse a used binding. */
+  /* Negative controls. */
+  for (const id of ["administration-route", "health-conditions", "weight-kg", "medications"]) {
+    ok(
+      fieldSpecOf(id).sensitivity === "sensitive" && !serverUse(fieldOf(id)),
+      "administration, health and body questions are sensitive and unused by the active policy",
+      id,
+    );
+  }
   ok(
-    specOf("administration-route").withheld !== null &&
-      specOf("health-conditions").withheld !== null &&
-      specOf("weight-kg").withheld !== null,
-    "administration, health and body questions are withheld",
+    fieldSpecOf("a-question-nobody-bound").category === "unclassified" &&
+      fieldSpecOf("a-question-nobody-bound").sensitivity === "sensitive",
+    "an unbound question is unclassified and treated as sensitive",
   );
-  ok(specOf("a-question-nobody-bound").withheld === "unbound", "an unbound question is withheld");
 }
 
 /* ---- the research-function vocabulary is grouped, wholly ---------------- */
