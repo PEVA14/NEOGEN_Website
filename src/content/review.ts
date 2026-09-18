@@ -56,8 +56,10 @@ export const BATCH_3_METABOLIC_PROFILES: ContentStatus = "approved";
  * it establishing a finding for these two tripeptides specifically. Citing a
  * review about short peptides in general as if it were about these would be
  * the kind of borrowed authority this content model exists to prevent.
+ *
+ * APPROVED BY THE OWNER, 2026-09-17.
  */
-export const BATCH_4_RECOVERY_PROFILES: ContentStatus = "owner-review";
+export const BATCH_4_RECOVERY_PROFILES: ContentStatus = "approved";
 
 /**
  * Batch 5 — the remainder: the growth line, the hormonal line, longevity,
@@ -77,5 +79,8 @@ export const BATCH_4_RECOVERY_PROFILES: ContentStatus = "owner-review";
  *     (both), Lemon Bottle — blends with no published study, and for most of
  *     them no declared composition to work from.
  *   Sterile, bacteriostatic and amino-acid water — supplies, not compounds.
+ *
+ * APPROVED BY THE OWNER, 2026-09-17. With this, 62 of the 85 published
+ * products carry a sourced profile and all 35 research functions are offered.
  */
-export const BATCH_5_REMAINDER_PROFILES: ContentStatus = "owner-review";
+export const BATCH_5_REMAINDER_PROFILES: ContentStatus = "approved";
