@@ -9,6 +9,9 @@
 .table {
   margin: 0;
   border: 1px solid var(--border-subtle);
+  /* Its own paper ground, so the stripe reads on a stone section as well as
+     on a paper one (the PDP record alternates grounds). */
+  background-color: var(--surface-base);
 }
 
 .row {

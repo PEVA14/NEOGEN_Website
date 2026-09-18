@@ -1,8 +1,9 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-09-17**: **Atlas is frozen and deferred to V2**; the
-priority is a complete, commercially effective V1 from what already exists
-(§8m).
+Last updated **2026-09-18**: **Atlas is frozen and deferred to V2** (§8m).
+The priority is a complete, commercially effective V1 built from what already
+exists. The commerce pass (§8n) and the PDP record pass (§8o) are done, and
+the V1 audit ledger is in §8p.
 
 This file is the memory of the project for a new session. It records what is
 not derivable from the code: where the phases stand, how the owner runs the
@@ -13,6 +14,41 @@ facts, and what is still undecided. Architecture lives in
 Read order for a fresh session: `CLAUDE.md` → this file →
 `docs/NEOGEN_DESIGN_BIBLE.md` → `docs/NEOGEN_MVP_SCOPE.md` →
 `docs/CONVENTIONS.md`.
+
+### Start here: handoff of 2026-09-18
+
+- **Tree.** `main`. The PDP record pass (§8o) and this handoff are
+  committed together, the commit after `87b0b5d`. Nothing is pushed. Every
+  gate passed, and axe and overflow were clean on 7 PDP routes at 375 and 1440.
+- **What the owner is doing.** Visual review of V1:
+  - the commerce pass `df4e64f` (§8n): product-object vials, visible prices,
+    the homepage order;
+  - the PDP record pass (§8o), driven by
+    `references/neogen-pdp-v1-desktop.png`.
+- **Nothing is approved to start.** The V1 audit ledger (§8p) lists what is
+  done, and what is open as code-only work or blocked on a decision. Ask
+  before picking up any open item.
+- **Figma** (claude.ai connector, the owner's account): file
+  `QRvGMkkoFPfhEsjQAyPBq4` ("NEOGEN — Web Design"):
+  - page `0:1` "01 — Design Exploration": directions A–E, comps, world studies;
+  - page `2022:2` "02 — NEOGEN Design System V1": foundations, type, colour,
+    tokens, components, world boards.
+
+  The site is now ahead of Figma: the product-object vial and the commerce
+  pass are not in the file. Nothing has been written to Figma. Load the
+  `figma:figma-use` skill before any `use_figma` call.
+
+- **Design references** live in `references/*.png` (home, catalogue, PDP,
+  RETA flagship PDP, cart, checkout, research hub, system status). The owner
+  points at them by filename.
+- **Dev server.** The owner runs `next dev` on :3000 themselves. Never start a
+  second one or kill theirs.
+- **Visual QA without the browser pane.** When the pane is hidden its
+  screenshots break. Use headless Playwright with system Chrome instead
+  (`playwright-core`, `chromium.launch({ channel: "chrome" })`). Full-page
+  shots need a scroll walk first so reveal-on-scroll content settles. Axe
+  loads from cdnjs. The scripts were session scratch and are gone (§10); they
+  are a few lines each to recreate.
 
 ---
 
@@ -38,14 +74,17 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 | _this_      | Sourced compound profiles, the research-function axis, and the data-driven questionnaire system (§8i)                           |
 | `f6b3249`   | Atlas understands the owner's questionnaire v4: field map, transmission boundary, pins, evidence, relevance (§8k)               |
 | `d4b7028`   | Atlas layers: complete typed profile → privacy → advisor policy over projections → engine (§8l)                                 |
-| _this_      | V1 commerce and art-direction pass: product objects, visible commerce, commercial homepage rhythm (§8n)                         |
+| `df4e64f`   | V1 commerce and art-direction pass: product objects, visible commerce, commercial homepage rhythm (§8n)                         |
+| `87b0b5d`   | Atlas hidden for V1 by one feature flag: nav, footer and sitemap entries removed (§8m)                                          |
+| _this_      | PDP record pass: record rhythm, alternating grounds, research folded into the profile, swiped related shelves (§8o)             |
 
 **Current priority (owner, 2026-09-17): V1 completion.** Make NEOGEN V1 as
 complete, polished and commercially effective as possible with the
 functionality that already exists. Atlas and further Living Laboratory work
 are **V2 — frozen, not deleted** (§8m). The V1 audit and completion sequence
-were reported in conversation on 2026-09-17; nothing from it is implemented
-until the owner approves it.
+were reported in conversation on 2026-09-17. They are recorded in §8p with
+the status of each item. The commerce pass (§8n) and the PDP pass (§8o)
+closed several P1 items. Everything still open waits for the owner's go.
 
 Pushing is the owner's job — see §3. Check `git status -sb` for what is
 still unpushed rather than trusting this file.
@@ -206,10 +245,9 @@ also encoded in `src/config/site.ts`; anything undecided there is `null`.
 13. Three unlabelled blends (Relaxation PM, SUPER Human Blend, Healthy Hair)
     publish with only name, volume and price.
 14. Optional short subtitles for twelve products.
-15. **Design Bible vs Phase 11 PDP order.** The Bible orders PDP sections
-    Experience → Commerce → Specifications → Documentation; the Phase 11 brief
-    put Quality before Specifications, and that is what was built. Confirm, or
-    align the Bible.
+15. ~~Design Bible vs Phase 11 PDP order.~~ Resolved in §8n. The Bible and
+    the build agree: Experience → Commerce → Specifications → Research
+    (profile) → Documentation → Related → Materials.
 
 Visual polish deferred on purpose is tracked in `docs/DEFERRED_POLISH.md`.
 
@@ -1044,6 +1082,103 @@ P0 backend (payments, persistence, shipping, policies). The research-use line
 is still unrendered pending approval. Real photography remains the owner's
 item; drop files per `public/images/README.md` and they win automatically.
 
+## 8o. PDP record pass (from `references/neogen-pdp-v1-desktop.png`)
+
+The owner pointed at the reference's lower half: everything below the buy
+box. What was taken, and what was deliberately not:
+
+- **Record rhythm.** Below the buy box, the page reads as one document.
+  `Section rhythm="record"` uses the new `--section-pad-record` token, and
+  `SectionHeader scale="record"` gives a 3xl title and a closer gap. The spine
+  stays: rule, index, condensed caps.
+- **Alternating grounds.** The page alternates stone and paper by rendered
+  position (`ground()` in the PDP), so every section boundary is visible with
+  no rule or box. `SpecTable` gets its own paper ground so the stripe reads on
+  stone.
+- **Research folded into the profile.** With a sourced profile (most
+  products), the citation rail and the "continue by area" routes sit inside
+  it, and the hub link becomes its header action. The standalone research
+  section now renders only for products without a profile. It had been one
+  area link under a display heading.
+- **Documentation at full measure.** The empty quality plate spans the
+  section, with the statement beside its explanation.
+- **Related before materials; no stagger.** The cards sit in one even row. On
+  a phone both shelves are swiped rows, the homepage flagship pattern with
+  `scroll-px` so snapping keeps the gutter; the homepage row got the same fix.
+
+**Not taken.** The reference's placeholder document cards (a COA, lot report
+and storage protocol with dummy filenames), and its stock research imagery.
+Both would present documents and imagery that do not exist.
+
+**Measured.** Mobile BPC-157: about 10,300 → 7,300px.
+
+## 8p. V1 audit ledger (audit of 2026-09-17, status as of 2026-09-18)
+
+This is the audit reported in conversation after Atlas was deferred. It walks
+the full customer path on desktop and phone in the production build, in ES
+and EN. Headline: **V1 cannot take a paid order yet.** Every blocker is a
+missing business decision or an unbuilt backend piece, not the storefront.
+File paths are where each fix lands.
+
+### P0: required for a working V1 (mostly owner decisions)
+
+| #   | Finding                                                                                                                                                                                                                     | Smallest fix                                                                                                                                                                                       | Status                                                                                                                         |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | No way to get paid. The only provider is `none`, so checkout ends with "no se realizó ningún cargo" (`src/payments/index.ts`, `checkout/pago`).                                                                             | Manual SPEI transfer, using the payment-instructions display that already exists. The order waits in "awaiting payment" until the owner confirms. Needs the owner's OK plus CLABE and beneficiary. | Open, needs a decision                                                                                                         |
+| 2   | Orders are in memory and lost on restart. Emails are queued and never sent, although the customer is promised a receipt (`server/persistence.ts`, `server/notifications.ts`).                                               | Approve Neon (`PERSISTENCE_RECOMMENDATION.md`) and an email provider, then plug them into the existing slots. The owner's inbox is the V1 back office.                                             | Open, needs a decision                                                                                                         |
+| 3   | Orders under MX$10,000 outside Guadalajara and Durango stop at delivery with "no hay tarifa de envío definida", after the customer has typed their address (`siteConfig.tbd.shippingRates`, `domain/checkout/delivery.ts`). | The owner sets a national rate and a priority-city rate: a config value plus a small change to the delivery step.                                                                                  | Open, needs a decision                                                                                                         |
+| 4   | No terms, privacy notice or returns policy. All 7 policies are drafts that 404, and checkout collects personal data with no notice (`content/policies.ts`).                                                                 | Counsel's text, then set each policy to approved. The routes and the acceptance step switch on automatically.                                                                                      | Open, needs counsel                                                                                                            |
+| 5   | The research-use line appears nowhere (owner rule Q32). It is tied to the unapproved `research-use` policy.                                                                                                                 | Approve the wording, then render it in the buy box, bag and footer.                                                                                                                                | Open, needs a decision                                                                                                         |
+| 6   | Tax copy contradicts itself: the bag says "IVA incluido", checkout says it will be included once confirmed. Prices are still provisional.                                                                                   | Final prices including IVA, then one line everywhere.                                                                                                                                              | Open, needs a decision                                                                                                         |
+| 7   | Cold chain undecided, and the delivery step says so publicly.                                                                                                                                                               | The owner decides; remove the line either way.                                                                                                                                                     | Open, needs a decision                                                                                                         |
+| 8   | Classification review still open. PDPs show human trial results next to Add to bag: sourced, but on a shop it reads as efficacy marketing.                                                                                  | No code change. The reviewer must see it.                                                                                                                                                          | Open, regulatory                                                                                                               |
+| 9   | Atlas was public.                                                                                                                                                                                                           | V1 flag, `src/config/features.ts`.                                                                                                                                                                 | **Done** `87b0b5d`. `/atlas` still renders (noindex) for review. The audit had proposed a real 404; the owner chose hide-only. |
+| 10  | Production config: the commerce switch, site URL and domain are build-time.                                                                                                                                                 | A deploy checklist.                                                                                                                                                                                | Open                                                                                                                           |
+
+### P1: code-only improvements
+
+| #   | Finding                                                                                                                                                                              | Status                                                                                                                                                                                                                                                                                                             |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Placeholder or internal wording on public pages.                                                                                                                                     | **Mostly done** (§8n): the moment media labels and product-image captions are gone. Remaining: the checkout lede "Cada importe se calcula en el servidor…" (`es.ts` ~l.1218) and the colonia explanation. The `home.evolution` ("Evolución creativa") dictionary entry is no longer rendered and could be deleted. |
+| 2   | The price did not say it was for 10 vials.                                                                                                                                           | **Done** (§8n): the pack shows in the buy box and on bag lines.                                                                                                                                                                                                                                                    |
+| 3   | The quality block was a wall of absence.                                                                                                                                             | **Done** (§8n, §8o): one full-width statement, after the specification and profile.                                                                                                                                                                                                                                |
+| 4   | Add to bag leads nowhere: the button flashes "Añadido" and resets.                                                                                                                   | Open. Needs an inline confirmation with a "Ver bag" link.                                                                                                                                                                                                                                                          |
+| 5   | Mobile PDP: the empty image filled the first screen, and there was no sticky buy bar.                                                                                                | **Done** (§8n): a 1:1 plate and the mobile buy dock (only while the bag is enabled).                                                                                                                                                                                                                               |
+| 6   | Mobile catalogue was 55,900px tall.                                                                                                                                                  | **Done** (§8n): a two-up grid and a one-line toolbar, now 20,900px.                                                                                                                                                                                                                                                |
+| 7   | The bag has no cross-sell at the "Faltan $X para envío gratis" moment.                                                                                                               | Open. Reuse the materials/related row.                                                                                                                                                                                                                                                                             |
+| 8   | Unknown product URLs show Next's unstyled 404. Still true: seen on `/es/productos/bpc-157` on 2026-09-18. `[locale]/not-found.tsx` exists, but there is no root `app/not-found.tsx`. | Open                                                                                                                                                                                                                                                                                                               |
+| 9   | Opening checkout directly says the bag is empty while it has items.                                                                                                                  | Open                                                                                                                                                                                                                                                                                                               |
+| 10  | The homepage was 12,600px and previewed the catalogue four times.                                                                                                                    | **Done** (§8n): hub, editorial and chain removed, now about 10,900px.                                                                                                                                                                                                                                              |
+| 11  | Trust basics are thin: phone only, no About page, no legal links.                                                                                                                    | Open. Needs owner content (the Nosotros/Contacto route is reserved).                                                                                                                                                                                                                                               |
+
+### P2: polish (all open)
+
+- "Bag" in the Spanish UI. This is the owner's call; the reference nav uses it.
+- The card label slot mixes world names with product classes: GHK-Cu shows
+  "MATERIAL" beside the "MATERIALES" area.
+- Catalogue filters overlap: Clasificación, Tipo and Formato. "Viales por
+  empaque" splits the catalogue 84 to 1.
+- The chosen presentation is not in the URL.
+- A `metadataBase` warning in the server log, and a 404 on `favicon.ico`.
+- No product structured data.
+- The Research hub is about 12,700px long.
+- The mobile header takes about 140px.
+- Three unlabelled blends (§6 item 13).
+
+### Recommended sequence (owner has not approved)
+
+1. **Owner decisions, in parallel:** payment method and bank details,
+   shipping rates under MX$10,000, final prices and IVA, cold chain, counsel's
+   policies and the research-use line, Neon and an email provider, the
+   domain, and starting the classification review.
+2. **Truth pass** (code only): the remaining P1-1 copy and P1-8's branded
+   root 404.
+3. **Commercial UX** (code only): P1-4, P1-7, P1-9.
+4. **Order infrastructure, as decisions land:** durable orders, email, rates,
+   SPEI, and policies with the research-use line.
+5. **Launch:** production env and domain, commerce on, then a full
+   walk-through in both languages on desktop and mobile, and all gates.
+
 ## 9. Recommendation for Phase 13 (not approved)
 
 Photography and first evidence together, for RETA, GLOW and GHK-Cu: shoot the
@@ -1062,3 +1197,6 @@ vendor and counsel questions are answered.
   belong to the claude.ai account that published them.
 - **claude.ai connectors** (ClickUp, Google Drive, Figma, Canva) are per
   account and must be reconnected.
+- **Session scratch** (the Playwright screenshot, axe and overflow scripts,
+  and before/after screenshots) lived in a per-session temp directory and is
+  gone. The method is described in "Start here", above.

@@ -35,6 +35,15 @@ lives in `src/components/experience/` and is the only place client-side motion
 and 3D are permitted. `src/components/ui`, `primitives` and `typography` stay
 server-rendered and dependency-free.
 
+**The record rhythm.** On a product page, everything below the buy box is one
+document. Each of its sections is built as
+`<Section mode="quiet" rhythm="record">` with `<SectionHeader scale="record">`:
+`--section-pad-record` padding, a 3xl title and a closer header gap. Their
+grounds alternate stone and paper by rendered position (`ground()` in the
+PDP). Homepage and hub sections keep the default spine scale. A component
+that renders its own table or panel sets its own paper ground, so it reads on
+either ground (`SpecTable`).
+
 ## 3. Product worlds
 
 > The product doesn't adapt to the interface. The interface reacts to the product.

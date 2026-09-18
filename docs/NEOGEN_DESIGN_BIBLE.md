@@ -183,6 +183,14 @@ profile, citations) 5. Documentation 6. Related products
 Opening may react to the product world; commerce/technical areas return
 to Quiet Mode.
 
+Below the buy box the page is a record, read as one document:
+- **Rhythm.** It uses a tighter rhythm than the homepage (`--section-pad-record`, record-scale titles).
+- **Grounds.** It alternates stone and paper, so boundaries need no rules or boxes.
+- **Research.** When a sourced profile exists, the research citations and area routes live inside it, with no separate section.
+- **Cards.** Related products sit in one even row and are swiped on a phone.
+
+Empty documentation is stated once, at full measure. Never build placeholder document cards or filenames.
+
 Documentation can support lab analysis/COA, lot, storage and
 supplier/origin where appropriate. Never fabricate values.
 

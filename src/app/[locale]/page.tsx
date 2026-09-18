@@ -267,7 +267,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           />
           {/* Three across on a wide screen; a swiped row on a phone, where three
               full-width dark cards stacked were 1,600px of scroll. */}
-          <div className="-mx-(--gutter) flex snap-x snap-mandatory [scrollbar-width:none] gap-(--space-sm) overflow-x-auto px-(--gutter) md:mx-0 md:grid md:grid-cols-3 md:gap-(--gutter) md:overflow-visible md:px-0">
+          <div className="-mx-(--gutter) flex snap-x snap-mandatory scroll-px-(--gutter) [scrollbar-width:none] gap-(--space-sm) overflow-x-auto px-(--gutter) md:mx-0 md:grid md:grid-cols-3 md:gap-(--gutter) md:overflow-visible md:px-0">
             {flagships.map((product, position) => (
               <div key={product.id} className="flex shrink-0 basis-[82%] snap-start md:basis-auto">
                 {flagshipCard(product, position)}

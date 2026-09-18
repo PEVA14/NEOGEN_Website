@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { SectionHeader } from "@/components/layout";
-import { Container, Grid, Section } from "@/components/primitives";
+import { Container, Section } from "@/components/primitives";
 import { AddToBag } from "@/components/commerce";
 import {
   CommercePanel,
@@ -236,14 +236,41 @@ export default async function ProductPage({
    */
   const renderedSections = [
     "specifications",
-    ...(overview ? ["overview"] : []),
-    "research",
+    /* With a sourced profile, the research routes live inside it: a separate
+       section holding one link under a heading was the thinnest on the page. */
+    ...(overview ? ["overview"] : ["research"]),
     "quality",
     ...(otherFlagships.length > 0 ? ["worlds"] : []),
-    ...(materials.length > 0 ? ["materials"] : []),
     ...(related.length > 0 ? ["related"] : []),
+    ...(materials.length > 0 ? ["materials"] : []),
   ];
   const sectionIndex = (id: string) => String(renderedSections.indexOf(id) + 2).padStart(2, "0");
+  /*
+   * THE RECORD ALTERNATES ITS GROUND — stone, paper, stone — by rendered
+   * position, so every section boundary is visible without a rule or a box,
+   * whichever sections a product happens to have. Specifications open on
+   * stone, directly under the paper buy box.
+   */
+  const ground = (id: string) =>
+    renderedSections.indexOf(id) % 2 === 0 ? "bg-(--surface-raised)" : undefined;
+
+  const areaRoutes =
+    areas.length > 0 ? (
+      <nav aria-label={pdp.research.routes} className="mt-(--space-lg)">
+        <Mono size="2xs" className="mb-(--space-2xs) block text-(--ink-muted) uppercase">
+          {pdp.research.routes}
+        </Mono>
+        <ul className="flex flex-wrap gap-x-(--space-lg)">
+          {areas.map((area) => (
+            <li key={area.id}>
+              <TextLink href={path(routes.area(area.slug))}>
+                {dict.discovery.areas[area.id].title}
+              </TextLink>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    ) : null;
 
   const commercePanel = (
     <CommercePanel
@@ -373,9 +400,15 @@ export default async function ProductPage({
        * compound is filed, and several compounds filed under Péptidos are not
        * peptides.
        */}
-      <Section mode="quiet" aria-labelledby="spec-title">
+      <Section
+        mode="quiet"
+        rhythm="record"
+        aria-labelledby="spec-title"
+        className={ground("specifications")}
+      >
         <Container width="full">
           <SectionHeader
+            scale="record"
             index={sectionIndex("specifications")}
             label={`${pdp.specifications.label} // ${pdp.specifications.qualifier}`}
             title={pdp.specifications.title}
@@ -437,14 +470,21 @@ export default async function ProductPage({
        * Every sentence it can render carries at least one public reference.
        */}
       {overview ? (
-        <Section mode="quiet" aria-labelledby="overview-title">
+        <Section
+          mode="quiet"
+          rhythm="record"
+          aria-labelledby="overview-title"
+          className={ground("overview")}
+        >
           <Container width="full">
             <SectionHeader
+              scale="record"
               index={sectionIndex("overview")}
               label={`${pdp.overview.label} // ${pdp.overview.qualifier}`}
               title={pdp.overview.title}
               id="overview-title"
               lede={overview.summary ?? undefined}
+              action={<TextLink href={path(routes.research)}>{pdp.research.hub}</TextLink>}
             />
             <div className="grid gap-(--space-xl) lg:grid-cols-12">
               <div className="flex flex-col gap-(--space-lg) lg:col-span-7">
@@ -483,6 +523,7 @@ export default async function ProductPage({
               </div>
               <div className="lg:col-span-5">
                 <CitationRail references={references} copy={dict.citations} />
+                {areaRoutes}
               </div>
             </div>
           </Container>
@@ -493,39 +534,33 @@ export default async function ProductPage({
        * RESEARCH — citations this page actually makes, and where to read on.
        *
        * The references are derived from the overview's citations, the same
-       * records the Research Hub indexes. With none, the section is a route
-       * map into the areas this compound belongs to — it never announces an
-       * absence of literature.
+       * records the Research Hub indexes. With a sourced profile, the rail and
+       * the area routes sit inside the profile (above); only a product with no
+       * profile gets this section, as a route map into its areas — it never
+       * announces an absence of literature.
        */}
-      <Section mode="quiet" aria-labelledby="research-title">
-        <Container width="full">
-          <SectionHeader
-            index={sectionIndex("research")}
-            label={`${pdp.research.label} // ${pdp.research.qualifier}`}
-            title={pdp.research.title}
-            id="research-title"
-            lede={pdp.research.lede}
-            action={<TextLink href={path(routes.research)}>{pdp.research.hub}</TextLink>}
-          />
-          {!overview ? <CitationRail references={references} copy={dict.citations} /> : null}
-          {areas.length > 0 ? (
-            <nav aria-label={pdp.research.routes} className="mt-(--space-lg)">
-              <Mono size="2xs" className="mb-(--space-2xs) block text-(--ink-muted) uppercase">
-                {pdp.research.routes}
-              </Mono>
-              <ul className="flex flex-wrap gap-x-(--space-lg)">
-                {areas.map((area) => (
-                  <li key={area.id}>
-                    <TextLink href={path(routes.area(area.slug))}>
-                      {dict.discovery.areas[area.id].title}
-                    </TextLink>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          ) : null}
-        </Container>
-      </Section>
+      {!overview ? (
+        <Section
+          mode="quiet"
+          rhythm="record"
+          aria-labelledby="research-title"
+          className={ground("research")}
+        >
+          <Container width="full">
+            <SectionHeader
+              scale="record"
+              index={sectionIndex("research")}
+              label={`${pdp.research.label} // ${pdp.research.qualifier}`}
+              title={pdp.research.title}
+              id="research-title"
+              lede={pdp.research.lede}
+              action={<TextLink href={path(routes.research)}>{pdp.research.hub}</TextLink>}
+            />
+            <CitationRail references={references} copy={dict.citations} />
+            {areaRoutes}
+          </Container>
+        </Section>
+      ) : null}
 
       {/*
        * QUALITY / DOCUMENTATION — after the product, its specification and its
@@ -536,12 +571,14 @@ export default async function ProductPage({
        */}
       <Section
         mode="quiet"
+        rhythm="record"
         aria-labelledby="quality-title"
         id="calidad"
-        className="bg-(--surface-raised)"
+        className={ground("quality")}
       >
         <Container width="full">
           <SectionHeader
+            scale="record"
             index={sectionIndex("quality")}
             label={`${pdp.quality.label} // ${pdp.quality.qualifier}`}
             title={pdp.quality.title}
@@ -557,25 +594,20 @@ export default async function ProductPage({
       </Section>
 
       {/*
-       * 05 — COMPLEMENTARY MATERIALS.
-       *
-       * The solvents are the catalogue's only low-ticket items and its most
-       * natural adjacency, and they were reachable only by scrolling 85 cards
-       * or knowing to filter. Shown on every compound page and on none of the
-       * solvent pages themselves.
-       *
-       * Verb-free by design: this lists products, it does not suggest a
-       * procedure. See the dictionary note.
-       */}
-      {/*
        * THE OTHER WORLDS — the flagship counter, with this product's siblings.
        * Quiet: the worlds appear in the plate and the tab dots, never in the
        * controls (CONVENTIONS §3, §11), and the action is gated on the server.
        */}
       {otherFlagships.length > 0 ? (
-        <Section mode="quiet" aria-labelledby="worlds-title">
+        <Section
+          mode="quiet"
+          rhythm="record"
+          aria-labelledby="worlds-title"
+          className={ground("worlds")}
+        >
           <Container width="full">
             <SectionHeader
+              scale="record"
               index={sectionIndex("worlds")}
               label={`${pdp.shop.label} // ${pdp.shop.qualifier}`}
               title={pdp.shop.title}
@@ -605,63 +637,29 @@ export default async function ProductPage({
         </Section>
       ) : null}
 
-      {materials.length > 0 ? (
-        <Section mode="quiet" aria-labelledby="materials-title" className="bg-(--surface-raised)">
-          <Container width="full">
-            <SectionHeader
-              index={sectionIndex("materials")}
-              label={`${pdp.materials.label} // ${pdp.materials.qualifier}`}
-              title={pdp.materials.title}
-              id="materials-title"
-              action={
-                <TextLink href={path(routes.area("materiales"))}>{pdp.materials.action}</TextLink>
-              }
-            />
-            <Grid className="items-start">
-              {materials.map((item) => (
-                <div key={item.id} className="col-span-12 md:col-span-6 lg:col-span-4">
-                  <ProductCard
-                    slug={item.slug}
-                    world={null}
-                    areaId="materials"
-                    eyebrow={dict.discovery.areas.materials.title}
-                    name={item.name}
-                    href={path(routes.product(item.slug))}
-                    price={materialPrice(item.slug)}
-                    priceFrom={dict.products.catalog.from}
-                    presentationRange={presentationRange(item)}
-                    presentations={item.variants.length}
-                    ctaLabel={dict.home.products.cta}
-                    details={detailsFor(item)}
-                    detailsCopy={detailsCopy}
-                  />
-                </div>
-              ))}
-            </Grid>
-          </Container>
-        </Section>
-      ) : null}
-
       {/* RELATED, by discovery area. */}
       {related.length > 0 ? (
-        <Section mode="quiet" aria-labelledby="related-title">
+        <Section
+          mode="quiet"
+          rhythm="record"
+          aria-labelledby="related-title"
+          className={ground("related")}
+        >
           <Container width="full">
             <SectionHeader
+              scale="record"
               index={sectionIndex("related")}
               label={`${pdp.related.label} // ${pdp.related.qualifier}`}
               title={pdp.related.title}
               id="related-title"
               action={<TextLink href={path(routes.products)}>{pdp.related.action}</TextLink>}
             />
-            <Grid className="items-start">
-              {related.map((item, position) => (
-                <div
-                  key={item.id}
-                  className={
-                    "col-span-12 md:col-span-6 lg:col-span-4 " +
-                    (position === 1 ? "md:mt-(--space-2xl)" : "")
-                  }
-                >
+            {/* One even row: a buyer compares these side by side, so the
+                cards share a baseline rather than staggering. A swiped shelf
+                on a phone. */}
+            <div className="-mx-(--gutter) flex snap-x snap-mandatory scroll-px-(--gutter) [scrollbar-width:none] gap-(--space-sm) overflow-x-auto px-(--gutter) md:mx-0 md:grid md:grid-cols-3 md:items-start md:gap-(--gutter) md:overflow-visible md:px-0">
+              {related.map((item) => (
+                <div key={item.id} className="flex shrink-0 basis-[64%] snap-start md:basis-auto">
                   <ProductCard
                     slug={item.slug}
                     world={item.world}
@@ -685,7 +683,64 @@ export default async function ProductPage({
                   />
                 </div>
               ))}
-            </Grid>
+            </div>
+          </Container>
+        </Section>
+      ) : null}
+
+      {/*
+       * COMPLEMENTARY MATERIALS — after related compounds: the lower-ticket
+       * adjacency closes the page rather than interrupting it.
+       *
+       * The solvents are the catalogue's only low-ticket items and its most
+       * natural adjacency, and they were reachable only by scrolling 85 cards
+       * or knowing to filter. Shown on every compound page and on none of the
+       * solvent pages themselves.
+       *
+       * Verb-free by design: this lists products, it does not suggest a
+       * procedure. See the dictionary note.
+       */}
+      {materials.length > 0 ? (
+        <Section
+          mode="quiet"
+          rhythm="record"
+          aria-labelledby="materials-title"
+          className={ground("materials")}
+        >
+          <Container width="full">
+            <SectionHeader
+              scale="record"
+              index={sectionIndex("materials")}
+              label={`${pdp.materials.label} // ${pdp.materials.qualifier}`}
+              title={pdp.materials.title}
+              id="materials-title"
+              action={
+                <TextLink href={path(routes.area("materiales"))}>{pdp.materials.action}</TextLink>
+              }
+            />
+            {/* A swiped shelf on a phone, as on the homepage: three full-width
+                cards stacked were the longest scroll on the page. */}
+            <div className="-mx-(--gutter) flex snap-x snap-mandatory scroll-px-(--gutter) [scrollbar-width:none] gap-(--space-sm) overflow-x-auto px-(--gutter) md:mx-0 md:grid md:grid-cols-3 md:items-start md:gap-(--gutter) md:overflow-visible md:px-0">
+              {materials.map((item) => (
+                <div key={item.id} className="flex shrink-0 basis-[64%] snap-start md:basis-auto">
+                  <ProductCard
+                    slug={item.slug}
+                    world={null}
+                    areaId="materials"
+                    eyebrow={dict.discovery.areas.materials.title}
+                    name={item.name}
+                    href={path(routes.product(item.slug))}
+                    price={materialPrice(item.slug)}
+                    priceFrom={dict.products.catalog.from}
+                    presentationRange={presentationRange(item)}
+                    presentations={item.variants.length}
+                    ctaLabel={dict.home.products.cta}
+                    details={detailsFor(item)}
+                    detailsCopy={detailsCopy}
+                  />
+                </div>
+              ))}
+            </div>
           </Container>
         </Section>
       ) : null}

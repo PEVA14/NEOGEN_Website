@@ -34,7 +34,23 @@
 
 .emptyPlate {
   border-inline-start: 2px solid var(--border-strong);
-  max-inline-size: 48rem;
+}
+
+/*
+ * Full measure, statement beside its explanation (V1 PDP pass). A half-width
+ * box left the other half of the section empty, which read as something
+ * missing rather than as a record that says plainly what exists.
+ */
+@media (min-width: 64rem) {
+  .emptyPlate {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    column-gap: var(--space-xl);
+    align-items: start;
+    padding: var(--space-lg) var(--space-xl);
+  }
+  .emptyPlate .panelLabel {
+    grid-column: 1 / -1;
+  }
 }
 
 .panelLabel {

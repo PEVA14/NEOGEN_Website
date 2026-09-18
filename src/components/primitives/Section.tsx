@@ -43,6 +43,12 @@ interface SectionProps {
    * from `className`; it has to be opted out of here.
    */
   padded?: boolean;
+  /**
+   * "record": the tighter rhythm of a product page's record — specification,
+   * profile, documentation, related — which reads as one document rather than
+   * as separate homepage beats. Quiet sections only.
+   */
+  rhythm?: "default" | "record";
   as?: DOMTag;
   /** Anchor target / skip-link destination. */
   id?: string;
@@ -64,6 +70,7 @@ export function Section({
   atmosphere = false,
   surface,
   padded = true,
+  rhythm = "default",
   as: Tag = "section",
   id,
   className,
@@ -76,7 +83,11 @@ export function Section({
       data-world={world}
       data-atmosphere={world && atmosphere ? "true" : undefined}
       data-surface={(surface ?? (world ? "dark" : "paper")) === "dark" ? "dark" : undefined}
-      className={cn("relative w-full", padded && modeClass[mode], className)}
+      className={cn(
+        "relative w-full",
+        padded && (rhythm === "record" ? "py-(--section-pad-record)" : modeClass[mode]),
+        className,
+      )}
       {...aria}
     >
       {children}

@@ -25,6 +25,12 @@ interface SectionHeaderProps {
    * ships with no `h1` at all and its outline starts at level 2.
    */
   as?: "h1" | "h2";
+  /**
+   * "record": a smaller title and a closer gap to the content, for the
+   * product record below a PDP's buy box. The spine is the same — rule, index,
+   * condensed caps — at the scale of a document rather than a homepage beat.
+   */
+  scale?: "spine" | "record";
 }
 
 /**
@@ -49,9 +55,10 @@ export function SectionHeader({
   action,
   lede,
   as = "h2",
+  scale = "spine",
 }: SectionHeaderProps) {
   return (
-    <header className={styles.header}>
+    <header className={styles.header} data-scale={scale}>
       <div className={styles.rule} />
 
       <div className={styles.row}>
@@ -67,7 +74,7 @@ export function SectionHeader({
         {action ? <div className={styles.action}>{action}</div> : null}
       </div>
 
-      <Display id={id} as={as} size="4xl" className={styles.title}>
+      <Display id={id} as={as} size={scale === "record" ? "3xl" : "4xl"} className={styles.title}>
         {title}
       </Display>
 
