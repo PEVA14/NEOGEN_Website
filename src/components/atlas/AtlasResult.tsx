@@ -11,7 +11,13 @@ import { AtlasMark } from "./AtlasMark";
 import styles from "./AtlasResult.module.css";
 
 import type { AtlasCopy } from "./types";
-import type { AtlasResultProduct, AtlasResultSum, AtlasResultView } from "@/domain/atlas/result";
+import type {
+  AtlasResultLedgerEntry,
+  AtlasResultProduct,
+  AtlasResultRecapEntry,
+  AtlasResultSum,
+  AtlasResultView,
+} from "@/domain/atlas/result";
 
 /**
  * THE RESULT — the visitor's selection, written and counted.
@@ -36,12 +42,17 @@ const fill = (template: string, values: Record<string, string | number>) =>
 
 export function AtlasResult({
   result,
+  ledger,
+  recap,
   copy,
   headingRef,
   onEdit,
   onRestart,
 }: {
   result: AtlasResultView;
+  /** Built in the browser from the visitor's own answers, withheld ones included. */
+  ledger: readonly AtlasResultLedgerEntry[];
+  recap: readonly AtlasResultRecapEntry[];
   copy: AtlasCopy;
   headingRef: RefObject<HTMLHeadingElement | null>;
   onEdit: () => void;
@@ -142,7 +153,7 @@ export function AtlasResult({
               <p className={styles.aboutText}>{result.aboutYou}</p>
               {/* Whichever questions the questionnaire marks `recap`. */}
               <ul className={styles.answerChips}>
-                {result.recap.map((entry) => (
+                {recap.map((entry) => (
                   <li key={entry.question} className={styles.answerChip}>
                     <span className={styles.muted}>{entry.label}</span> {entry.answer}
                   </li>
@@ -403,7 +414,7 @@ export function AtlasResult({
               </h3>
               <p className={styles.method}>{r.ledger.lede}</p>
               <dl className={styles.ledger}>
-                {result.ledger.map((entry) => (
+                {ledger.map((entry) => (
                   <div key={entry.question} data-answered={entry.answered ? "" : undefined}>
                     <dt>{entry.label}</dt>
                     <dd>

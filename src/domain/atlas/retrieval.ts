@@ -2,7 +2,10 @@ import type {
   AtlasAreaStat,
   AtlasCandidate,
   AtlasDestination,
+  AtlasEvidenceRef,
   AtlasForm,
+  AtlasReason,
+  AtlasRelevance,
   AtlasRetrieval,
   AtlasSelectionSignals,
   AtlasSubject,
@@ -19,8 +22,16 @@ import type { DiscoveryAreaId } from "@/data/discovery";
  * did not release.
  *
  * TOKENS FOLLOW RELEVANCE. At most `ATLAS_CANDIDATE_LIMIT` products (plus the
- * ones the visitor named) are passed on, and those are the ONLY slugs the
- * model may name.
+ * pinned ones) are passed on, and those are the ONLY slugs the model may name.
+ *
+ * EVERY CANDIDATE ARRIVES EXPLAINED. Its structured reasons, its relevance and
+ * its evidence (approved statement ids, the ones backing the visitor's research
+ * functions first) are computed here from registry facts, so the result can
+ * say why a product is there without asking a model to make that up.
+ *
+ * NO AREA, NO FUNCTION, NO PIN: the whole catalogue (supplies aside) is the
+ * pool, ranked by the facts that need no topic — signature line,
+ * documentation, value.
  *
  * PURE. Subjects arrive precomputed, so `check:atlas` drives this with the
  * live catalogue and asserts that different visitors get different results.
@@ -54,6 +65,31 @@ export function suggestVariant(
   return fitting.length > 0 ? fitting[fitting.length - 1] : priced[0];
 }
 
+const PENDING: AtlasRelevance = { rank: 0, score: 0, tier: "supporting" };
+
+/**
+ * Statements backing a chosen research function first, then the rest in the
+ * overview's own order. That ordering IS research-context retrieval: the
+ * visitor's functions decide which approved finding a card leads with.
+ */
+function evidenceFor(
+  evidence: readonly AtlasEvidenceRef[],
+  functions: AtlasSelectionSignals["functions"],
+): readonly AtlasEvidenceRef[] {
+  const backs = (e: AtlasEvidenceRef) => e.functions.some((id) => functions.includes(id));
+  return [...evidence.filter(backs), ...evidence.filter((e) => !backs(e))];
+}
+
+/** Pinned products lead; otherwise the share of the top score decides the tier. */
+function relevanceOf(candidate: AtlasCandidate, index: number, top: number): AtlasRelevance {
+  const share = top > 0 ? candidate.score / top : 0;
+  return {
+    rank: index + 1,
+    score: candidate.score,
+    tier: candidate.pin || share >= 0.75 ? "primary" : share >= 0.4 ? "secondary" : "supporting",
+  };
+}
+
 export function retrieveAtlas(
   signals: AtlasSelectionSignals,
   subjects: readonly AtlasSubject[],
@@ -62,7 +98,9 @@ export function retrieveAtlas(
   const { weights } = signals;
   const cap = signals.budgetCap;
   const rankOf = new Map(signals.topics.map((id, index) => [id, index]));
-  const inMind = new Set(signals.inMind);
+  const pinOf = new Map(signals.pinned.map((pin) => [pin.slug, pin]));
+  const catalogueWide =
+    signals.topics.length === 0 && signals.functions.length === 0 && signals.pinned.length === 0;
   const functionsOf = (subject: AtlasSubject) =>
     signals.functions.filter((id) => subject.functions.includes(id));
 
@@ -71,14 +109,16 @@ export function retrieveAtlas(
     subject.forms.some((form) => signals.forms.includes(form as AtlasForm));
 
   /*
-   * A product the visitor named is always considered, whatever its area or
-   * form. A product publicly tagged with a chosen research function is
-   * considered whatever its area — the function is the more specific answer.
+   * A pinned product is always considered, whatever its area or form. A
+   * product publicly tagged with a chosen research function is considered
+   * whatever its area — the function is the more specific answer.
    */
   const pool = subjects.filter(
     (subject) =>
-      inMind.has(subject.slug) ||
-      ((subject.areas.some((area) => rankOf.has(area)) || functionsOf(subject).length > 0) &&
+      pinOf.has(subject.slug) ||
+      ((catalogueWide
+        ? subject.areas.some((area) => area !== SUPPLIES)
+        : subject.areas.some((area) => rankOf.has(area)) || functionsOf(subject).length > 0) &&
         matchesForm(subject)),
   );
 
@@ -99,21 +139,20 @@ export function retrieveAtlas(
     const withinBudget = cap === null ? null : suggestedPrice !== null && suggestedPrice <= cap;
     const available =
       suggested?.availability == null ? null : suggested.availability !== "unavailable";
-    const named = inMind.has(subject.slug);
+    const pin = pinOf.get(subject.slug) ?? null;
+    const valued = median !== null && subject.entryPrice !== null && subject.entryPrice <= median;
 
     let score = matchedAreas.reduce(
       (sum, area) => sum + (weights.topic[rankOf.get(area)!] ?? 0),
       0,
     );
-    if (named) score += weights.inMind;
+    if (pin) score += weights.pinned;
     score += weights.function * matchedFunctions.length;
     if (bridges) score += weights.overlap;
     if (subject.world !== null) score += weights.signature;
     if (subject.documented) score += weights.documented;
     if (subject.referenceIds.length > 0) score += weights.referenced;
-    if (median !== null && subject.entryPrice !== null && subject.entryPrice <= median) {
-      score += weights.value;
-    }
+    if (valued) score += weights.value;
     if (withinBudget === false) score += weights.overBudget;
     if (subject.forms.length > 0 && subject.forms.every((f) => f === "blend")) {
       score += weights.blend;
@@ -121,13 +160,39 @@ export function retrieveAtlas(
     score += weights.range * Math.min(Math.max(subject.presentations - 1, 0), 2);
     if (available === false) score += weights.unavailable;
 
+    /* The same facts as the score, as reasons — heaviest first. */
+    const reasons: AtlasReason[] = [
+      ...(pin
+        ? [
+            {
+              code: pin.source === "visitor" ? "named-by-visitor" : "policy-pin",
+              ref: null,
+            } as const,
+          ]
+        : []),
+      ...matchedFunctions.map((id) => ({ code: "function-match" as const, ref: id })),
+      ...matchedAreas.map((id) => ({ code: "area-match" as const, ref: id })),
+      ...(catalogueWide ? [{ code: "catalogue-wide" as const, ref: null }] : []),
+      ...(bridges ? [{ code: "spans-areas" as const, ref: null }] : []),
+      ...(subject.world !== null ? [{ code: "signature" as const, ref: null }] : []),
+      ...(subject.documented ? [{ code: "documented" as const, ref: null }] : []),
+      ...(subject.referenceIds.length > 0 ? [{ code: "referenced" as const, ref: null }] : []),
+      ...(valued ? [{ code: "value" as const, ref: null }] : []),
+      ...(withinBudget === true ? [{ code: "within-budget" as const, ref: null }] : []),
+      ...(withinBudget === false ? [{ code: "over-budget" as const, ref: null }] : []),
+      ...(available === false ? [{ code: "unavailable" as const, ref: null }] : []),
+    ];
+
     return {
       ...subject,
       score: round(score),
       matchedAreas,
       bridges,
       matchedFunctions,
-      inMind: named,
+      pin,
+      reasons,
+      evidence: evidenceFor(subject.evidence, signals.functions),
+      relevance: PENDING,
       suggestedVariantId: suggested?.id ?? null,
       suggestedPrice,
       withinBudget,
@@ -138,11 +203,11 @@ export function retrieveAtlas(
   const byScore = pool.map(toCandidate).sort((a, b) => b.score - a.score || a.order - b.order);
 
   /*
-   * Named products first, then each topic's floor, then the rest by score —
+   * Pinned products first, then each topic's floor, then the rest by score —
    * so a crowded primary topic cannot push a chosen third topic out entirely.
    */
   const chosen = new Map<string, AtlasCandidate>();
-  for (const candidate of byScore) if (candidate.inMind) chosen.set(candidate.slug, candidate);
+  for (const candidate of byScore) if (candidate.pin) chosen.set(candidate.slug, candidate);
   /* Every chosen research function keeps its strongest product. */
   for (const id of signals.functions) {
     if (chosen.size >= ATLAS_CANDIDATE_LIMIT) break;
@@ -162,7 +227,12 @@ export function retrieveAtlas(
     if (chosen.size >= ATLAS_CANDIDATE_LIMIT) break;
     chosen.set(candidate.slug, candidate);
   }
-  const candidates = [...chosen.values()].sort((a, b) => b.score - a.score || a.order - b.order);
+  const ranked = [...chosen.values()].sort((a, b) => b.score - a.score || a.order - b.order);
+  const top = ranked[0]?.score ?? 0;
+  const candidates = ranked.map((candidate, index) => ({
+    ...candidate,
+    relevance: relevanceOf(candidate, index, top),
+  }));
 
   const supplies =
     signals.includeSupplies && !rankOf.has(SUPPLIES)
@@ -178,7 +248,10 @@ export function retrieveAtlas(
               matchedAreas: [],
               bridges: false,
               matchedFunctions: [],
-              inMind: false,
+              pin: null,
+              reasons: [],
+              evidence: [],
+              relevance: { rank: 0, score: 0, tier: "supporting" as const },
               suggestedVariantId: suggested?.id ?? null,
               suggestedPrice: suggested?.price ?? null,
               withinBudget:
@@ -203,13 +276,14 @@ export function retrieveAtlas(
     kind: "area",
     ref: id,
   }));
-  for (const related of deps.relatedAreas(signals.topics[0]).slice(0, 2)) {
+  const neighbours = signals.topics.length > 0 ? deps.relatedAreas(signals.topics[0]) : [];
+  for (const related of neighbours.slice(0, 2)) {
     if (!rankOf.has(related)) {
       destinations.push({ id: `area:${related}`, kind: "area", ref: related });
     }
   }
   const productRefs = [
-    ...candidates.filter((c) => c.inMind),
+    ...candidates.filter((c) => c.pin),
     ...candidates.slice(0, 4),
     ...candidates.filter((c) => c.world !== null),
   ];

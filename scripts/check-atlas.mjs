@@ -3,22 +3,36 @@
  *
  * What this gate guarantees, each with a negative control so it can fail:
  *
- *   SCHEMA        the questionnaire content is answerable: unique ids, one
- *                 question per role, no forward-referencing condition.
- *   ANSWERS       the parser rejects anything the schema does not describe,
- *                 conditional questions appear and disappear, and answers to
- *                 hidden questions are dropped.
- *   ROLES         answers reach the profile by role, and a role no question
- *                 fills falls back to its documented default.
+ *   SCHEMA        the questionnaire content is answerable: unique ids, no
+ *                 forward-referencing condition, sane bounds.
+ *   BINDINGS      every live question is classified in `fields.ts`; a withheld
+ *                 field can do nothing but be shown back; nothing the server
+ *                 validates depends on an answer it never receives.
+ *   BRANCHES      every conditional follow-up of the live questionnaire
+ *                 appears exactly when its condition holds, blocks its step
+ *                 only while visible, and is dropped when hidden.
+ *   TRANSMISSION  only permitted answers leave the browser, and the server
+ *                 refuses to accept any other.
+ *   PROFILE       answers become a profile in the pipeline's own terms; each
+ *                 permitted answer changes it, and it has no slot for a
+ *                 withheld value.
+ *   NO LEAKS      changing ANY withheld answer, to anything, changes nothing
+ *                 the policy, retrieval, the plan or the model's input sees.
+ *   LEDGER        every visible question is accounted for, in both locales,
+ *                 with its permitted uses or its reason for being withheld.
  *   POLICY        is granular: a health note is withheld without weakening any
  *                 other answer; the name never reaches the model; presentation-
- *                 only answers cannot move selection, and selection answers do.
+ *                 only fields cannot move selection, and selection fields do.
+ *   PINS          a product the policy requires is carried, with its reason,
+ *                 through retrieval, the model's constraints and the validator.
+ *   EVIDENCE      candidates carry approved statement ids only; the chosen
+ *                 research function decides which leads; the validator
+ *                 refuses a statement that is not the product's own.
  *   ISOLATION     nothing downstream of the policy reads the profile.
- *   RETRIEVAL     candidates follow the signals (topics, forms, named products,
- *                 floors) and four substantially different real profiles
- *                 retrieve DIFFERENT products.
+ *   RETRIEVAL     candidates follow the signals, and substantially different
+ *                 profiles retrieve DIFFERENT products.
  *   PLAN          the no-model result validates in both locales, keeps "start
- *                 here" inside the budget, includes named products and covers
+ *                 here" inside the budget, includes pinned products and covers
  *                 topics when the policy asks.
  *   VALIDATION    invented slugs, broken constraints, claims, suitability to a
  *                 person, figures, dosing vocabulary, unlisted products and
@@ -35,31 +49,35 @@ import {
   groupComplete,
   initialAnswers,
   parseAtlasAnswers,
-  profileFromAnswers,
   validateQuestionnaire,
   visibleGroups,
   visibleQuestions,
 } from "../src/domain/atlas/questionnaire/index.ts";
 import { atlasRecap, buildAtlasLedger } from "../src/domain/atlas/ledger.ts";
+import {
+  ATLAS_BINDINGS,
+  ATLAS_FIELDS,
+  DECISION_USES,
+  EXPERIENCE_LEVELS,
+  GOAL_AREAS,
+  isTransmitted,
+  specOf,
+} from "../src/domain/atlas/fields.ts";
+import {
+  profileFromAnswers,
+  transmittableAnswers,
+  transmittedView,
+} from "../src/domain/atlas/profile.ts";
 import { ATLAS_QUESTIONNAIRE } from "../src/content/atlas/questionnaire.ts";
 import { RESEARCH_FUNCTIONS } from "../src/content/functions.ts";
-import {
-  atlasExperienceLevels,
-  atlasForms,
-  atlasHistories,
-  atlasHorizons,
-  atlasIntents,
-  atlasPriorities,
-  atlasSizes,
-  atlasStyles,
-  atlasTimings,
-} from "../src/domain/atlas/types.ts";
+import { publicStatementRefs } from "../src/content/overview/index.ts";
 import { applyAtlasPolicy } from "../src/domain/atlas/policy.ts";
 import { ATLAS_CANDIDATE_LIMIT, retrieveAtlas } from "../src/domain/atlas/retrieval.ts";
 import { effectiveStart, planAtlas } from "../src/domain/atlas/plan.ts";
 import { atlasSubjectsFrom } from "../src/domain/atlas/subjects.ts";
 import { composeAtlasGeneration } from "../src/domain/atlas/compose.ts";
 import { validateAtlasGeneration } from "../src/domain/atlas/validate.ts";
+import { buildAtlasInput } from "../src/server/atlas/prompt.ts";
 import { referencesForProduct } from "../src/content/research.ts";
 import { publishedProducts } from "../src/data/catalog/index.ts";
 import { getAvailability, getPrices } from "../src/data/commerce/index.ts";
@@ -75,26 +93,13 @@ const check = (condition, what, detail = "") => {
 };
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
-const VOCABULARIES = {
-  intents: atlasIntents,
-  experience: atlasExperienceLevels,
-  histories: atlasHistories,
-  priorities: atlasPriorities,
-  styles: atlasStyles,
-  forms: atlasForms,
-  sizes: atlasSizes,
-  horizons: atlasHorizons,
-  timings: atlasTimings,
-};
-
 /*
  * THE QUESTIONNAIRE, RESOLVED THE WAY THE SERVER RESOLVES IT.
  *
- * `server/atlas/questionnaire.ts` cannot be imported here (it is `server-only`),
- * so the registry resolver is rebuilt from the same registries. Two views:
- * `view` is the live one, and `viewWithFunctions` pretends a sourced overview
- * has been approved, which is the only way to exercise the research-function
- * question before the first approval.
+ * `server/atlas/questionnaire.ts` reads prices through the commerce layer, so
+ * the registry resolver is rebuilt here from the same registries. The live
+ * questionnaire has only static options today; the registry sources are
+ * exercised by fixtures below.
  */
 const areaOptions = publicAreas().map((area) => ({
   id: area.id,
@@ -129,30 +134,59 @@ const resolver = (functions) => (registry) =>
       : functions;
 
 const view = buildQuestionnaireView(ATLAS_QUESTIONNAIRE, "es", resolver([]));
-const viewWithFunctions = buildQuestionnaireView(
-  ATLAS_QUESTIONNAIRE,
-  "es",
-  resolver(functionOptions),
-);
 const viewEn = buildQuestionnaireView(ATLAS_QUESTIONNAIRE, "en", resolver([]));
+const questionsOf = (v) => v.groups.flatMap((g) => g.questions);
+const questionById = (id, v = view) => questionsOf(v).find((q) => q.id === id);
+const optionIds = (id) => questionById(id).options.map((o) => o.id);
 
-const answersOf = (overrides = {}, v = view) => ({
-  ...initialAnswers(v),
-  topics: ["metabolic"],
-  ...overrides,
-});
-const profileOf = (overrides = {}, v = view) =>
-  profileFromAnswers(v, answersOf(overrides, v), VOCABULARIES);
 const LEDGER_COPY = {
   yes: es.atlas.result.ledger.yes,
   no: es.atlas.result.ledger.no,
   noteGiven: es.atlas.result.ledger.noteGiven,
 };
-const ledgerOf = (overrides = {}, v = view) => {
-  const answers = answersOf(overrides, v);
-  const decision = applyAtlasPolicy(profileFromAnswers(v, answers, VOCABULARIES));
-  return buildAtlasLedger(v, answers, LEDGER_COPY, decision.noteDiscarded);
+const LEDGER_COPY_EN = {
+  yes: en.atlas.result.ledger.yes,
+  no: en.atlas.result.ledger.no,
+  noteGiven: en.atlas.result.ledger.noteGiven,
 };
+
+/*
+ * A VISITOR WHO ANSWERED EVERYTHING — the withheld answers carry canaries, so
+ * a leak anywhere downstream is a string search away.
+ */
+const CANARY = "ZQXCANARY";
+const permittedAnswers = {
+  goal: "weight-loss",
+  "peptide-experience": "beginner",
+  "additional-notes": "Quiero empezar con la línea insignia y comparar presentaciones.",
+};
+const withheldAnswers = {
+  "goal-weight-loss": "satiety",
+  age: "36-45",
+  "biological-sex": "female",
+  "weight-kg": 92.5,
+  "height-cm": 164,
+  "physical-activity": "light",
+  "sleep-quality": "poor",
+  stress: "high",
+  "previous-compounds": `${CANARY}-retatrutida`,
+  "administration-route": "subcutaneous",
+  "protocol-duration": "12-weeks",
+  "health-conditions": ["diabetes", "hypertension"],
+  medications: ["diabetes", "other"],
+  "other-medications": `${CANARY}-metformina`,
+  "current-frustrations": `${CANARY}-hambre nocturna`,
+  "ninety-day-goal": `${CANARY}-bajar 8 kg`,
+  "training-type": "strength",
+  "injection-tolerance": "high",
+  "daily-schedule": "rotating",
+  "work-type": "seated",
+  alcohol: "weekly",
+  caffeine: "3",
+  "main-priority": "aesthetics",
+  injuries: `${CANARY}-rodilla`,
+};
+const everything = { ...initialAnswers(view), ...permittedAnswers, ...withheldAnswers };
 
 /* ---- schema: the questionnaire content is answerable --------------------- */
 {
@@ -175,7 +209,6 @@ const ledgerOf = (overrides = {}, v = view) => {
           {
             id: "topics",
             kind: "multi-select",
-            role: "topics",
             required: true,
             label: { es: "T", en: "T" },
             options: { kind: "registry", registry: "discovery-areas" },
@@ -198,7 +231,6 @@ const ledgerOf = (overrides = {}, v = view) => {
   });
   for (const [label, questionnaire, code] of [
     ["a duplicate question id", q([single({ id: "topics" })]), "duplicate_question_id"],
-    ["two questions on one role", q([single({ role: "topics" })]), "duplicate_role"],
     ["a default that is not an option", q([single({ default: "zzz" })]), "default_not_an_option"],
     [
       "a condition on a later question",
@@ -219,11 +251,6 @@ const ledgerOf = (overrides = {}, v = view) => {
       "a number question with inverted bounds",
       q([{ id: "n", kind: "number", label: { es: "N", en: "N" }, min: 10, max: 2 }]),
       "bad_bounds",
-    ],
-    [
-      "a free note that is not long text",
-      q([single({ id: "note", role: "free-note" })]),
-      "role_kind_mismatch",
     ],
     [
       "a duplicate option id",
@@ -247,117 +274,267 @@ const ledgerOf = (overrides = {}, v = view) => {
     codes(q([single({})])).length === 0,
     "a well-formed questionnaire passes (negative control)",
   );
-
-  /* The advisor cannot work without topics, and every role it knows is either
-     filled by a question or documented as defaulted. */
-  const roles = view.groups.flatMap((g) => g.questions.map((question) => question.role));
-  check(roles.includes("topics"), "a question fills the topics role");
   check(
-    new Set(roles.filter(Boolean)).size === roles.filter(Boolean).length,
-    "each role is filled at most once",
+    codes(q([{ id: "n", kind: "number", label: { es: "N", en: "N" }, min: 1 }])).length === 0,
+    "a number question may be open-ended above its floor",
   );
 }
 
-/* ---- the resolved view: content in, registries read ---------------------- */
+/* ---- the resolved view, in both locales ----------------------------------- */
 {
-  const ids = view.groups.flatMap((g) => g.questions.map((question) => question.id));
+  const ids = questionsOf(view).map((question) => question.id);
   check(ids.length === new Set(ids).size, "every question appears once in the view");
-  const topics = view.groups[0].questions.find((question) => question.id === "topics");
   check(
-    topics.options.length === publicAreas().length && topics.options.every((o) => o.meta?.area),
+    same(
+      ids,
+      questionsOf(viewEn).map((q) => q.id),
+    ),
+    "both locales resolve the same questions in the same order",
+  );
+  for (const question of questionsOf(view)) {
+    const other = questionById(question.id, viewEn);
+    check(
+      question.label.length > 0 && other.label.length > 0,
+      "every question has a label in both locales",
+      question.id,
+    );
+    check(
+      same(
+        question.options.map((o) => o.id),
+        other.options.map((o) => o.id),
+      ),
+      "option ids are identical across locales",
+      question.id,
+    );
+    check(
+      question.options.every((o) => o.label.length > 0) &&
+        other.options.every((o) => o.label.length > 0),
+      "every option has a label in both locales",
+      question.id,
+    );
+  }
+  check(questionById("goal").label !== questionById("goal", viewEn).label, "wording is localised");
+  check(
+    questionById("weight-kg").max === null && questionById("weight-kg").min === 1,
+    "an open-ended number resolves with no ceiling",
+  );
+  check(
+    questionsOf(view).every((q) => q.registry === null),
+    "the live questionnaire's options are static (registry sources are fixture-tested)",
+  );
+
+  /* Registry sources, through a fixture. */
+  const fixture = {
+    version: "t",
+    groups: [
+      {
+        id: "g",
+        label: { es: "G", en: "G" },
+        title: { es: "G", en: "G" },
+        lede: { es: "G", en: "G" },
+        questions: [
+          {
+            id: "areas",
+            kind: "multi-select",
+            label: { es: "A", en: "A" },
+            options: { kind: "registry", registry: "discovery-areas" },
+          },
+          {
+            id: "fns",
+            kind: "multi-select",
+            hideWithoutOptions: true,
+            label: { es: "F", en: "F" },
+            options: { kind: "registry", registry: "research-functions" },
+          },
+        ],
+      },
+    ],
+  };
+  const without = buildQuestionnaireView(fixture, "es", resolver([]));
+  const withFns = buildQuestionnaireView(fixture, "es", resolver(functionOptions));
+  const areas = questionsOf(without).find((q) => q.id === "areas");
+  check(
+    areas.registry === "discovery-areas" &&
+      areas.options.length === publicAreas().length &&
+      areas.options.every((o) => o.meta?.area),
     "registry options are read from the registry, with their own facts",
   );
   check(
-    topics.label === es.atlas.field.optional || topics.label.length > 0,
-    "a question's label is resolved for the locale",
-  );
-  const topicsEn = viewEn.groups[0].questions.find((question) => question.id === "topics");
-  check(topics.label !== topicsEn.label, "both locales resolve their own wording");
-  check(
-    !view.groups.some((g) => g.questions.some((question) => question.id === "research-functions")),
-    "a registry question with nothing to offer is dropped (hideWithoutOptions)",
-  );
-  check(
-    viewWithFunctions.groups.some((g) =>
-      g.questions.some((question) => question.id === "research-functions"),
-    ),
-    "…and appears as soon as the registry has options",
-  );
-  /* A long registry list carries its own sections; the renderer partitions on
-     them in arrival order, so the resolver's order is the visitor's order. */
-  const functions = viewWithFunctions.groups
-    .flatMap((g) => g.questions)
-    .find((question) => question.role === "research-functions");
-  check(
-    functions.options.every((o) => o.meta?.group && o.meta?.groupLabel),
-    "every research-function option arrives with its group",
-  );
-  const order = functions.options.map((o) => o.meta.group);
-  check(
-    order.every((g, i) => i === 0 || order.indexOf(g) >= order.lastIndexOf(order[i - 1]) - 1),
-    "options of one group arrive together, never interleaved",
-    order.join(","),
-  );
-
-  const budget = viewWithFunctions.groups
-    .flatMap((g) => g.questions)
-    .find((question) => question.role === "budget-cap");
-  check(
-    budget.options.some((o) => o.value === 8000) && budget.options.some((o) => o.value === null),
-    "an option's numeric payload survives into the view",
+    !questionsOf(without).some((q) => q.id === "fns") &&
+      questionsOf(withFns).some((q) => q.id === "fns"),
+    "a registry question with nothing to offer is dropped, and returns with options",
   );
 }
 
-/* ---- answers: the parser rejects what the schema does not describe -------- */
+/* ---- bindings: every question classified, withheld means withheld -------- */
 {
-  const ok = parseAtlasAnswers(answersOf(), view);
-  check(ok.ok, "a complete set of answers parses", ok.ok ? "" : JSON.stringify(ok.issues));
-  check(
-    parseAtlasAnswers({ topics: ["metabolic"] }, view).ok,
-    "optional questions may be absent entirely",
-  );
-  for (const [label, answers] of [
-    ["an unknown question", answersOf({ favouriteColour: "blue" })],
-    ["an unknown option", answersOf({ topics: ["astrology"] })],
-    [
-      "too many selections",
-      answersOf({
-        topics: publicAreas()
-          .slice(0, 4)
-          .map((a) => a.id),
-      }),
-    ],
-    ["a repeated selection", answersOf({ topics: ["metabolic", "metabolic"] })],
-    ["no answer to a required question", answersOf({ topics: [] })],
-    ["a single-select given a list", answersOf({ intent: ["compare"] })],
-    ["an unknown single-select option", answersOf({ intent: "dose" })],
-    ["a toggle given a string", answersOf({ "include-supplies": "yes" })],
-    ["a text answer given a number", answersOf({ "first-name": 42 })],
-    ["text over its limit", answersOf({ note: "x".repeat(401) })],
-    ["an unknown product", answersOf({ "products-in-mind": ["invented-compound"] })],
-    ["too many priorities", answersOf({ priorities: ["documentation", "price", "signature"] })],
-    ["an unknown form", answersOf({ forms: ["capsule"] })],
-    ["a research function the registry does not offer", answersOf({ "research-functions": ["x"] })],
-    ["a body that is not an object", null],
-  ]) {
-    check(!parseAtlasAnswers(answers, view).ok, `the parser rejects ${label}`);
+  const liveIds = questionsOf(view).map((q) => q.id);
+  for (const id of liveIds) {
+    check(id in ATLAS_BINDINGS, "every live question is bound to a profile field", id);
   }
-  /* A question the registry dropped cannot be answered at all. */
+  for (const [question, field] of Object.entries(ATLAS_BINDINGS)) {
+    check(liveIds.includes(question), "every binding names a live question", question);
+    check(field in ATLAS_FIELDS, "every binding names a declared field", `${question} → ${field}`);
+  }
+  for (const [field, spec] of Object.entries(ATLAS_FIELDS)) {
+    if (spec.withheld !== null) {
+      check(
+        spec.uses.every((use) => !DECISION_USES.includes(use)),
+        "a withheld field has no decision use (at most recap)",
+        field,
+      );
+    } else {
+      check(spec.uses.length > 0, "a permitted field declares at least one use", field);
+    }
+  }
+  /* The server validates transmitted questions only; their visibility and
+     requirements must not hang on an answer it never receives. */
+  const refs = (condition) =>
+    condition === null
+      ? []
+      : "all" in condition
+        ? condition.all.flatMap(refs)
+        : "any" in condition
+          ? condition.any.flatMap(refs)
+          : "not" in condition
+            ? refs(condition.not)
+            : [condition.question];
+  for (const question of questionsOf(view).filter((q) => isTransmitted(q.id))) {
+    for (const ref of refs(question.visibleWhen)) {
+      check(
+        isTransmitted(ref),
+        "a transmitted question's visibility depends only on transmitted answers",
+        `${question.id} ← ${ref}`,
+      );
+    }
+  }
+  for (const question of questionsOf(view).filter((q) => q.required)) {
+    check(
+      isTransmitted(question.id),
+      "a required question is one the server receives",
+      question.id,
+    );
+  }
+  for (const option of optionIds("goal")) {
+    check(
+      option in GOAL_AREAS &&
+        GOAL_AREAS[option].every((a) => publicAreas().some((p) => p.id === a)),
+      "every goal option translates to real catalogue areas",
+      option,
+    );
+  }
+  for (const option of optionIds("peptide-experience")) {
+    check(option in EXPERIENCE_LEVELS, "every experience option translates to a level", option);
+  }
+  const sent = liveIds.filter(isTransmitted);
   check(
-    !parseAtlasAnswers(answersOf({ "research-functions": ["wound-healing"] }), view).ok,
-    "an answer to a question that is not in the view is refused",
+    same(sent, ["goal", "peptide-experience", "additional-notes"]),
+    "exactly the three permitted questions are transmitted",
+    sent.join(","),
   );
   check(
-    parseAtlasAnswers(
-      answersOf({ "research-functions": ["wound-healing"] }, viewWithFunctions),
-      viewWithFunctions,
-    ).ok,
-    "…and accepted once the question exists (negative control)",
+    specOf("an-unbound-question").withheld === "unbound" && !isTransmitted("an-unbound-question"),
+    "an unbound question fails closed: withheld, never sent (negative control)",
   );
 }
 
-/* ---- conditional questions ------------------------------------------------ */
+/* ---- every conditional branch of the live questionnaire ------------------- */
 {
+  const followUps = questionsOf(view).filter(
+    (q) => q.visibleWhen && "question" in q.visibleWhen && q.visibleWhen.question === "goal",
+  );
+  check(followUps.length === optionIds("goal").length, "every goal has its own follow-up");
+  for (const goal of optionIds("goal")) {
+    const answers = { ...initialAnswers(view), goal };
+    const visible = visibleQuestions(view.groups[0], answers).map((q) => q.id);
+    const shown = followUps.filter((q) => visible.includes(q.id)).map((q) => q.id);
+    check(
+      shown.length === 1 && shown[0] === `goal-${goal}`,
+      "a goal shows exactly its own follow-up",
+      `${goal} → ${shown.join(",")}`,
+    );
+    /* A follow-up is optional: the step completes without it. */
+    check(groupComplete(view.groups[0], answers), "the goal step completes once a goal is chosen");
+    const followUp = questionById(`goal-${goal}`);
+    for (const option of followUp.options) {
+      check(
+        groupComplete(view.groups[0], { ...answers, [followUp.id]: option.id }),
+        "every follow-up option is accepted",
+        `${followUp.id}/${option.id}`,
+      );
+    }
+    /* An answer to a DIFFERENT goal's follow-up is dropped, never stored. */
+    const other = followUps.find((q) => q.id !== `goal-${goal}`);
+    const parsed = parseAtlasAnswers({ goal, [other.id]: other.options[0].id }, view);
+    check(
+      parsed.ok && parsed.answers[other.id] === undefined,
+      "an answer to a hidden goal follow-up is dropped",
+      `${goal} / ${other.id}`,
+    );
+  }
+  check(
+    !groupComplete(view.groups[0], initialAnswers(view)),
+    "the goal step blocks until a goal is chosen (required)",
+  );
+  check(
+    visibleQuestions(view.groups[0], initialAnswers(view)).length === 1,
+    "with no goal, no follow-up is shown",
+  );
+
+  /* previous-compounds: shown for any experience but none. */
+  const you = view.groups.find((g) => g.questions.some((q) => q.id === "previous-compounds"));
+  for (const level of optionIds("peptide-experience")) {
+    const shown = visibleQuestions(you, { "peptide-experience": level }).some(
+      (q) => q.id === "previous-compounds",
+    );
+    check(
+      shown === (level !== "none"),
+      "previous compounds are asked exactly when there is experience",
+      level,
+    );
+  }
+  check(
+    !visibleQuestions(you, {}).some((q) => q.id === "previous-compounds"),
+    "…and not before experience is answered",
+  );
+
+  /* other-medications: shown only while "other" is among the medications. */
+  const prefs = view.groups.find((g) => g.questions.some((q) => q.id === "other-medications"));
+  for (const [answer, expected] of [
+    [["other"], true],
+    [["diabetes", "other"], true],
+    [["diabetes"], false],
+    [["none"], false],
+    [[], false],
+  ]) {
+    check(
+      visibleQuestions(prefs, { medications: answer }).some((q) => q.id === "other-medications") ===
+        expected,
+      "the other-medications follow-up tracks the medications answer",
+      JSON.stringify(answer),
+    );
+  }
+  const hiddenOther = parseAtlasAnswers(
+    { goal: "sleep", medications: ["none"], "other-medications": "x" },
+    view,
+  );
+  check(
+    hiddenOther.ok && hiddenOther.answers["other-medications"] === undefined,
+    "a hidden medications follow-up is dropped",
+  );
+
+  /* Every step can be completed with only the required answers. */
+  const minimal = { ...initialAnswers(view), goal: "longevity" };
+  for (const group of visibleGroups(view, minimal)) {
+    check(
+      groupComplete(group, minimal),
+      "every step completes with optional answers skipped",
+      group.id,
+    );
+  }
+  check(visibleGroups(view, minimal).length === view.groups.length, "every group is shown");
+
+  /* The fixture the engine's combinators are proved on. */
   const conditional = {
     version: "t",
     groups: [
@@ -370,7 +547,6 @@ const ledgerOf = (overrides = {}, v = view) => {
           {
             id: "experience",
             kind: "single-select",
-            role: "experience",
             default: "some",
             label: { es: "E", en: "E" },
             options: {
@@ -397,15 +573,7 @@ const ledgerOf = (overrides = {}, v = view) => {
         title: { es: "X", en: "X" },
         lede: { es: "X", en: "X" },
         visibleWhen: { question: "experience", equals: "new" },
-        questions: [
-          {
-            id: "note",
-            kind: "long-text",
-            role: "free-note",
-            maxLength: 50,
-            label: { es: "N", en: "N" },
-          },
-        ],
+        questions: [{ id: "note", kind: "long-text", maxLength: 50, label: { es: "N", en: "N" } }],
       },
     ],
   };
@@ -413,15 +581,6 @@ const ledgerOf = (overrides = {}, v = view) => {
   const cView = buildQuestionnaireView(conditional, "es", resolver([]));
   const hidden = { experience: "some" };
   const shown = { experience: "new" };
-
-  check(
-    visibleQuestions(cView.groups[0], hidden).length === 1,
-    "a follow-up is hidden while its condition fails",
-  );
-  check(
-    visibleQuestions(cView.groups[0], shown).length === 2,
-    "…and appears when the condition holds",
-  );
   check(visibleGroups(cView, hidden).length === 1, "a conditional GROUP drops out of the rail");
   check(visibleGroups(cView, shown).length === 2, "…and joins it when its condition holds");
   check(
@@ -431,11 +590,6 @@ const ledgerOf = (overrides = {}, v = view) => {
   check(
     groupComplete(cView.groups[0], { ...shown, "follow-up": "ok" }),
     "…and stops blocking once answered",
-  );
-  const parsed = parseAtlasAnswers({ experience: "some", "follow-up": "smuggled" }, cView);
-  check(
-    parsed.ok && parsed.answers["follow-up"] === undefined,
-    "an answer to a hidden question is dropped, not stored",
   );
   check(
     conditionHolds({ all: [{ question: "experience", equals: "new" }] }, shown) &&
@@ -453,162 +607,420 @@ const ledgerOf = (overrides = {}, v = view) => {
   );
 }
 
-/* ---- number and range kinds ---------------------------------------------- */
+/* ---- answers: the parser rejects what the schema does not describe -------- */
 {
-  const numeric = {
-    version: "t",
-    groups: [
-      {
-        id: "g",
-        label: { es: "G", en: "G" },
-        title: { es: "G", en: "G" },
-        lede: { es: "G", en: "G" },
-        questions: [
-          {
-            id: "topics",
-            kind: "multi-select",
-            role: "topics",
-            required: true,
-            label: { es: "T", en: "T" },
-            options: { kind: "registry", registry: "discovery-areas" },
-          },
-          {
-            id: "spend",
-            kind: "range",
-            role: "budget-cap",
-            min: 2000,
-            max: 40000,
-            step: 1000,
-            default: 8000,
-            label: { es: "S", en: "S" },
-          },
-          { id: "vials", kind: "number", min: 1, max: 99, label: { es: "V", en: "V" } },
-        ],
-      },
-    ],
-  };
-  check(validateQuestionnaire(numeric).length === 0, "the numeric fixture validates");
-  const nView = buildQuestionnaireView(numeric, "es", resolver([]));
-  const spend = nView.groups[0].questions[1];
-  const vials = nView.groups[0].questions[2];
-  check(initialAnswers(nView).spend === 8000, "a range starts at its default");
-  check(answerIssues(spend, 12000).length === 0, "a value inside the range is accepted");
+  const ok = parseAtlasAnswers(everything, view);
+  check(ok.ok, "a complete set of answers parses", ok.ok ? "" : JSON.stringify(ok.issues));
+  check(parseAtlasAnswers({ goal: "cognition" }, view).ok, "optional questions may be absent");
+  for (const [label, answers] of [
+    ["an unknown question", { ...everything, favouriteColour: "blue" }],
+    ["an unknown option", { ...everything, goal: "astrology" }],
+    ["no answer to a required question", { ...everything, goal: "" }],
+    ["a single-select given a list", { ...everything, goal: ["sleep"] }],
+    ["a multi-select given a string", { ...everything, "health-conditions": "diabetes" }],
+    ["a repeated selection", { ...everything, medications: ["diabetes", "diabetes"] }],
+    ["a number given a string", { ...everything, "weight-kg": "92" }],
+    ["a number below its floor", { ...everything, "height-cm": 0 }],
+    ["text over its limit", { ...everything, "additional-notes": "x".repeat(401) }],
+    ["a body that is not an object", null],
+  ]) {
+    check(!parseAtlasAnswers(answers, view).ok, `the parser rejects ${label}`);
+  }
+  const numeric = questionById("weight-kg");
   check(
-    answerIssues(spend, 100).some((i) => i.code === "out_of_range"),
-    "below the floor is not",
+    answerIssues(numeric, 250).length === 0,
+    "an open-ended number accepts any value above its floor",
   );
-  check(
-    answerIssues(spend, 999999).some((i) => i.code === "out_of_range"),
-    "nor above the ceiling",
-  );
-  check(
-    answerIssues(vials, "3").some((i) => i.code === "wrong_type"),
-    "a number takes a number",
-  );
-  check(answerIssues(vials, undefined).length === 0, "an optional number may be skipped");
-  /* The budget role reads a number answer directly — tiers today, a slider tomorrow. */
-  const profile = profileFromAnswers(
-    nView,
-    { ...initialAnswers(nView), topics: ["metabolic"], spend: 15000 },
-    VOCABULARIES,
-  );
-  check(profile.budgetCap === 15000, "a range answer becomes the budget ceiling");
 }
 
-/* ---- roles: answers → profile, and defaults when a question is gone ------- */
+/* ---- transmission: only permitted answers leave the browser --------------- */
 {
-  const profile = profileOf({
-    topics: ["skin", "metabolic"],
-    intent: "compare",
-    "products-in-mind": [publishedProducts[0].slug],
-    "first-name": "Mariana",
-    experience: "experienced",
-    priorities: ["price"],
-    forms: ["solid"],
-    "presentation-size": "largest",
-    "include-supplies": true,
-    budget: "20k",
-    "purchase-horizon": "over-time",
-    timing: "soon",
-    note: "Quiero comparar precios",
+  const sent = transmittableAnswers(everything);
+  check(
+    same(Object.keys(sent).sort(), Object.keys(permittedAnswers).sort()),
+    "the browser sends exactly the permitted answers",
+    Object.keys(sent).join(","),
+  );
+  check(!JSON.stringify(sent).includes(CANARY), "no withheld text is in the request body");
+  const serverView = transmittedView(view);
+  check(
+    same(
+      questionsOf(serverView).map((q) => q.id),
+      ["goal", "peptide-experience", "additional-notes"],
+    ),
+    "the server validates against the transmitted questions only",
+  );
+  /* A client that sends withheld answers anyway: the route's two steps. */
+  const refused = parseAtlasAnswers(everything, serverView);
+  check(!refused.ok, "the server's view refuses a withheld answer outright");
+  const stripped = parseAtlasAnswers(transmittableAnswers(everything), serverView);
+  check(
+    stripped.ok && same(Object.keys(stripped.answers).sort(), Object.keys(permittedAnswers).sort()),
+    "…and the route's strip-then-parse accepts the permitted remainder",
+  );
+  check(
+    new TextEncoder().encode(JSON.stringify({ locale: "es", answers: sent })).length < 4096,
+    "a full request fits the route's body limit",
+  );
+}
+
+/* ---- profile: answers in the pipeline's own terms ------------------------- */
+const profileOf = (answers, v = view) => profileFromAnswers(v, answers);
+const baseAnswers = { ...initialAnswers(view), ...permittedAnswers };
+{
+  for (const goal of optionIds("goal")) {
+    const profile = profileOf({ ...baseAnswers, goal });
+    check(same(profile.areas, GOAL_AREAS[goal]), "a goal becomes its catalogue area(s)", goal);
+    check(profile.sources["goal-area"] === "answer", "…and is marked as answered", goal);
+  }
+  for (const level of optionIds("peptide-experience")) {
+    check(
+      profileOf({ ...baseAnswers, "peptide-experience": level }).experience ===
+        EXPERIENCE_LEVELS[level],
+      "an experience option becomes its level",
+      level,
+    );
+  }
+  const bare = profileOf({ goal: "sleep" });
+  check(
+    bare.sources.experience === "default" && bare.experience === "some",
+    "a skipped question runs on its default, marked as such",
+  );
+  check(bare.note === "" && bare.sources["context-note"] === "default", "a skipped note is empty");
+  const noted = profileOf({ ...baseAnswers });
+  check(noted.note === permittedAnswers["additional-notes"], "the note reaches the profile");
+  for (const field of ["intent", "budget", "forms", "timing", "products", "research-functions"]) {
+    check(
+      bare.sources[field] === "default",
+      "a field no question asks for is a marked default",
+      field,
+    );
+  }
+
+  /* The profile has no value slot for a withheld field — even when the server
+     is handed every answer, bypassing the strip. */
+  const full = profileOf(everything);
+  check(!JSON.stringify(full).includes(CANARY), "a withheld text answer never enters the profile");
+  for (const [question, value] of Object.entries(withheldAnswers)) {
+    const field = ATLAS_BINDINGS[question];
+    const entry = full.withheld.find((w) => w.field === field);
+    check(
+      entry !== undefined && entry.questions.includes(question) && !("value" in entry),
+      "every withheld question is represented by name and reason, without a value",
+      question,
+    );
+    void value;
+  }
+  check(
+    same(profileOf(everything), profileOf({ ...baseAnswers })),
+    "the withheld answers change nothing in the profile",
+  );
+  check(
+    same(profileOf(everything), profileOf(transmittableAnswers(everything))),
+    "the profile built from all answers equals the one built from what is sent",
+  );
+  check(
+    full.withheld.every((w) => w.reason !== null) &&
+      full.withheld.some((w) => w.reason === "health") &&
+      full.withheld.some((w) => w.reason === "administration") &&
+      full.withheld.some((w) => w.reason === "personal-outcome"),
+    "withheld fields carry their reasons",
+  );
+}
+
+/* ---- the live catalogue, as retrieval sees it ----------------------------- */
+const variantIds = publishedProducts.flatMap((p) => p.variants.map((v) => v.id));
+const [prices, availability] = await Promise.all([
+  getPrices(variantIds),
+  getAvailability(variantIds),
+]);
+const subjectDeps = {
+  price: (id) => prices.get(id)?.amount ?? null,
+  availability: (id) => availability.get(id) ?? null,
+  areas: (slug) => publicAreasFor(slug).map((a) => a.id),
+  documented: (product) => publicEvidenceIndex([product]).length > 0,
+  references: (slug) => referencesForProduct(slug).map((r) => r.id),
+  evidence: (slug) => publicStatementRefs(slug),
+  functions: () => [],
+};
+const subjects = atlasSubjectsFrom(publishedProducts, subjectDeps);
+const publicEvidence = publicEvidenceIndex(publishedProducts).length > 0;
+const deps = { relatedAreas: (id) => relatedAreas(id).map((r) => r.area.id), publicEvidence };
+const nameOf = new Map(publishedProducts.map((p) => [p.slug, p.name]));
+
+/** Everything downstream of the answers, down to the model's exact input. */
+function pipeline(answers, locale = "es") {
+  const profile = profileFromAnswers(view, answers);
+  const decision = applyAtlasPolicy(profile);
+  const retrieval = retrieveAtlas(decision.selection, subjects, deps);
+  const plan = planAtlas(retrieval, decision.constraints);
+  const input = buildAtlasInput({
+    narrative: decision.narrative,
+    constraints: decision.constraints,
+    retrieval,
+    locale,
+    dict: locale === "es" ? es : en,
+    productName: (slug) => nameOf.get(slug) ?? slug,
   });
-  check(same(profile.topics, ["skin", "metabolic"]), "ranked topics reach the profile in order");
-  check(profile.intent === "compare", "an enum answer reaches the profile");
-  check(profile.budgetCap === 20000, "an option's payload becomes the budget ceiling");
-  check(profile.includeSupplies === true, "a toggle reaches the profile");
-  check(profile.firstName === "Mariana" && profile.note === "Quiero comparar precios", "text too");
-  check(same(profile.inMind, [publishedProducts[0].slug]), "named products reach the profile");
-  check(profile.size === "largest" && profile.timing === "soon", "preferences reach the profile");
+  return { profile, decision, retrieval, plan, input };
+}
+const downstream = (run) =>
+  JSON.stringify({
+    selection: run.decision.selection,
+    constraints: run.decision.constraints,
+    narrative: run.decision.narrative,
+    presentation: run.decision.presentation,
+    candidates: run.retrieval.candidates.map((c) => c.slug),
+    plan: [run.plan.start.map((c) => c.slug), run.plan.more.map((c) => c.slug)],
+    input: run.input,
+  });
 
-  /* An option id the policy does not recognise falls back, rather than leaking. */
-  const unknown = profileFromAnswers(view, answersOf({ intent: "party" }), VOCABULARIES);
-  check(unknown.intent === "first-order", "an unrecognised option id falls back to the default");
+/* ---- no leaks: no withheld answer, whatever its value, moves anything ----- */
+{
+  const baseline = pipeline(baseAnswers);
+  const baseDownstream = downstream(baseline);
+  const variants = (question) => {
+    switch (question.kind) {
+      case "single-select":
+        return question.options.map((o) => o.id);
+      case "multi-select":
+        return [
+          [],
+          ...question.options.map((o) => [o.id]),
+          question.options.slice(0, 3).map((o) => o.id),
+        ];
+      case "number":
+        return [question.min, question.min + 1, 250, 999];
+      case "long-text":
+      case "short-text":
+        return [`${CANARY} diabetes, metformina, 8 kg`, `${CANARY} BPC-157 y retatrutida`, ""];
+      default:
+        return [];
+    }
+  };
+  let sweeps = 0;
+  for (const question of questionsOf(view)) {
+    if (isTransmitted(question.id)) continue;
+    for (const value of variants(question)) {
+      /* Make the question visible, so a leak could not hide behind visibility. */
+      const answers = {
+        ...baseAnswers,
+        medications: question.id === "other-medications" ? ["other"] : baseAnswers.medications,
+        [question.id]: value,
+      };
+      if (question.id.startsWith("goal-")) answers.goal = question.id.slice("goal-".length);
+      const run = pipeline(answers);
+      const comparable = question.id.startsWith("goal-")
+        ? downstream(pipeline({ ...baseAnswers, goal: answers.goal }))
+        : baseDownstream;
+      sweeps += 1;
+      check(
+        downstream(run) === comparable,
+        "a withheld answer changes nothing downstream (selection, constraints, narrative, retrieval, plan, model input)",
+        `${question.id}=${JSON.stringify(value)}`,
+      );
+      check(!run.input.includes(CANARY), "no withheld text reaches the model's input", question.id);
+    }
+  }
+  check(sweeps > 100, "the leak sweep covered every withheld question and option", String(sweeps));
 
-  /* Drop a question and its role defaults — the shorter questionnaire still works. */
-  const shorter = {
+  /* And all of them at once, with every canary. */
+  const all = pipeline(everything);
+  check(downstream(all) === baseDownstream, "every withheld answer together changes nothing");
+  for (const term of [
+    "satiety",
+    "subcutaneous",
+    "12-weeks",
+    "diabetes",
+    "female",
+    "92.5",
+    CANARY,
+  ]) {
+    check(!all.input.includes(term), "the model's input carries no withheld value", term);
+  }
+}
+
+/* ---- meaningful answers move what they are permitted to move ------------- */
+{
+  const run = (patch) => pipeline({ ...baseAnswers, ...patch });
+  const base = run({});
+
+  /* goal → discovery and personalization */
+  const byGoal = Object.fromEntries(optionIds("goal").map((goal) => [goal, run({ goal })]));
+  for (const [goal, r] of Object.entries(byGoal)) {
+    check(
+      same(r.decision.selection.topics, GOAL_AREAS[goal]),
+      "the goal's area drives selection",
+      goal,
+    );
+    check(
+      same(r.decision.narrative.topics, GOAL_AREAS[goal]) &&
+        r.decision.narrative.asked.includes("goal-area"),
+      "the goal's area reaches the model, marked as answered",
+      goal,
+    );
+    check(r.retrieval.candidates.length > 0, "every goal retrieves candidates", goal);
+    for (const candidate of r.retrieval.candidates) {
+      check(
+        GOAL_AREAS[goal].length === 0 || candidate.matchedAreas.length > 0 || candidate.pin,
+        "every candidate is in the goal's area",
+        `${goal}: ${candidate.slug}`,
+      );
+    }
+    /* The model is told the AREA, never the goal's own words. */
+    const goalLabels = [
+      questionById("goal").options.find((o) => o.id === goal).label,
+      questionById("goal", viewEn).options.find((o) => o.id === goal).label,
+    ];
+    for (const label of goalLabels) {
+      check(
+        !r.input.includes(label),
+        "the goal's wording never reaches the model",
+        `${goal}: ${label}`,
+      );
+    }
+  }
+  const slugsOf = (r) => r.retrieval.candidates.map((c) => c.slug).join(",");
+  check(
+    slugsOf(byGoal["weight-loss"]) !== slugsOf(byGoal["skin-hair"]) &&
+      slugsOf(byGoal["cognition"]) !== slugsOf(byGoal["longevity"]),
+    "different goals retrieve different products",
+  );
+  check(
+    slugsOf(byGoal.sleep) === slugsOf(byGoal.cognition),
+    "goals that map to the same catalogue area retrieve the same products (area, not outcome)",
+  );
+  check(
+    byGoal["daily-wellbeing"].retrieval.candidates.every((c) =>
+      c.reasons.some((r) => r.code === "catalogue-wide"),
+    ) && byGoal["daily-wellbeing"].input.includes("whole catalogue"),
+    "a goal with no catalogue area falls back to the catalogue as a whole, and says so",
+  );
+
+  /* experience → filtering and personalization */
+  const levels = optionIds("peptide-experience").map((level) =>
+    run({ "peptide-experience": level }),
+  );
+  check(
+    !same(levels[0].decision.constraints, levels[3].decision.constraints) ||
+      !same(levels[0].decision.selection.weights, levels[3].decision.selection.weights),
+    "experience changes the constraints or weights",
+  );
+  check(
+    levels[0].decision.constraints.start.max <= 2 &&
+      levels[0].decision.narrative.experience === "new",
+    "no experience starts small, and the model is told so",
+  );
+  check(
+    levels.every((r) => r.decision.narrative.asked.includes("experience")),
+    "an answered experience is marked as answered",
+  );
+
+  /* note → personalization only */
+  const noted = run({ "additional-notes": "Prefiero empezar con una sola compra." });
+  check(
+    noted.decision.narrative.note === "Prefiero empezar con una sola compra." &&
+      noted.input.includes("Prefiero empezar con una sola compra.") &&
+      same(noted.decision.selection, base.decision.selection),
+    "a clean note reaches the model and moves no selection",
+  );
+  const health = run({ "additional-notes": "Tengo diabetes y tomo metformina" });
+  check(
+    health.decision.narrative.note === null &&
+      !health.input.includes("metformina") &&
+      !health.decision.narrative.asked.includes("context-note"),
+    "a health note is discarded before the model",
+  );
+
+  /* Unasked fields are never described as the visitor's choice. */
+  for (const line of ["wants to: not asked", "budget: not asked", "formats: not asked"]) {
+    check(base.input.includes(line), "a default is labelled 'not asked' for the model", line);
+  }
+}
+
+/* ---- the ledger and the recap, built in the browser ------------------------ */
+{
+  for (const [v, copy, locale] of [
+    [view, LEDGER_COPY, "es"],
+    [viewEn, LEDGER_COPY_EN, "en"],
+  ]) {
+    const ledger = buildAtlasLedger(v, everything, copy, false);
+    const visible = visibleGroups(v, everything).flatMap((g) => visibleQuestions(g, everything));
+    check(ledger.length === visible.length, "every visible question appears in the ledger", locale);
+    const byId = new Map(ledger.map((entry) => [entry.question, entry]));
+    check(
+      same(byId.get("goal").uses, ATLAS_FIELDS["goal-area"].uses) &&
+        byId.get("goal").withheld === null,
+      "the goal's row reports the field table's uses",
+      locale,
+    );
+    for (const id of Object.keys(withheldAnswers)) {
+      const entry = byId.get(id);
+      check(
+        entry && entry.withheld === specOf(id).withheld && entry.uses.every((u) => u === "recap"),
+        "a withheld answer shows its reason and no decision use",
+        `${locale}: ${id}`,
+      );
+      check(
+        entry.withheld !== null &&
+          entry.withheld in (locale === "es" ? es : en).atlas.result.ledger.withheld,
+        "every withholding reason has copy",
+        `${locale}: ${entry.withheld}`,
+      );
+    }
+    check(
+      !JSON.stringify(ledger).includes(CANARY),
+      "free text is never echoed back in the ledger",
+      locale,
+    );
+    for (const use of new Set(ledger.flatMap((e) => e.uses))) {
+      check(use in (locale === "es" ? es : en).atlas.result.ledger.uses, "every use has copy", use);
+    }
+    const recap = atlasRecap(v, everything, copy);
+    check(
+      same(
+        recap.map((r) => r.question),
+        ["goal", "goal-weight-loss"],
+      ),
+      "the recap echoes the goal and its follow-up, and nothing withheld for health",
+      `${locale}: ${recap.map((r) => r.question).join(",")}`,
+    );
+  }
+  const discarded = buildAtlasLedger(
+    view,
+    { ...baseAnswers, "additional-notes": "Tengo diabetes" },
+    LEDGER_COPY,
+    true,
+  ).find((e) => e.question === "additional-notes");
+  check(
+    discarded.withheld === "health-note" && discarded.uses.length === 0,
+    "the ledger records a discarded note",
+  );
+  const skipped = buildAtlasLedger(view, { goal: "sleep" }, LEDGER_COPY, false).find(
+    (e) => e.question === "peptide-experience",
+  );
+  check(!skipped.answered && skipped.uses.length === 0, "a skipped question is used for nothing");
+
+  /* A recap flag in the content cannot echo a health answer (fixture). */
+  const flagged = {
     ...ATLAS_QUESTIONNAIRE,
     groups: ATLAS_QUESTIONNAIRE.groups.map((group) => ({
       ...group,
-      questions: group.questions.filter(
-        (question) => question.role !== "timing" && question.role !== "budget-cap",
+      questions: group.questions.map((q) =>
+        q.id === "health-conditions" ? { ...q, recap: true } : q,
       ),
     })),
   };
-  const sView = buildQuestionnaireView(shorter, "es", resolver([]));
-  const sProfile = profileFromAnswers(sView, answersOf({}, sView), VOCABULARIES);
+  const fView = buildQuestionnaireView(flagged, "es", resolver([]));
   check(
-    sProfile.timing === "no-rush" && sProfile.budgetCap === null,
-    "a role no question fills falls back to its documented default",
-  );
-  check(
-    applyAtlasPolicy(sProfile).constraints.startWithinBudget === false,
-    "…and the policy still decides with it",
-  );
-}
-
-/* ---- the ledger and the recap are built from the questionnaire ------------ */
-{
-  const ledger = ledgerOf({ topics: ["skin"], priorities: [], budget: "8k" });
-  const byId = new Map(ledger.map((entry) => [entry.question, entry]));
-  check(
-    ledger.length === view.groups.flatMap((g) => g.questions).length,
-    "every visible question appears in the ledger",
-  );
-  check(
-    byId.get("topics").label === es.discovery.areas.skin.short ||
-      byId.get("topics").label.length > 0,
-    "a ledger row carries the question's own wording",
-  );
-  check(byId.get("budget").answer !== null, "an answered question shows its answer");
-  check(
-    same(byId.get("topics").uses, ["selection", "ranking", "explanation", "presentation"]),
-    "the ledger reports the POLICY's permitted uses for the role",
-  );
-  check(
-    byId.get("priorities").answered === false && byId.get("priorities").uses.length === 0,
-    "a skipped question shows as skipped and used for nothing",
-  );
-  const recap = atlasRecap(view, answersOf({ topics: ["skin"] }), LEDGER_COPY);
-  check(
-    recap.length > 0 && recap.every((entry) => entry.label && entry.answer),
-    "the recap carries label and answer for every question marked recap",
-  );
-  check(
-    recap.every(
-      (entry) =>
-        view.groups.flatMap((g) => g.questions).find((q) => q.id === entry.question)?.recap,
-    ),
-    "…and nothing else",
+    !atlasRecap(fView, everything, LEDGER_COPY).some((r) => r.question === "health-conditions"),
+    "a recap flag cannot echo a withheld health answer",
   );
 }
 
 /* ---- policy: granular, and the name stays on the page --------------------- */
 {
-  const base = profileOf({ topics: ["skin"], budget: "20k", priorities: ["price"] });
-  const ledgerEntry = (overrides, id) =>
-    ledgerOf({ topics: ["skin"], budget: "20k", priorities: ["price"], ...overrides }).find(
-      (entry) => entry.question === id,
-    );
+  const base = { ...profileOf(baseAnswers), budgetCap: 20000, priorities: ["price"] };
   const baseDecision = applyAtlasPolicy(base);
 
   for (const note of [
@@ -619,28 +1031,24 @@ const ledgerOf = (overrides = {}, v = view) => {
     "for personal use before the gym",
   ]) {
     const decision = applyAtlasPolicy({ ...base, note });
-    const entry = ledgerEntry({ note }, "note");
     check(
       decision.noteDiscarded && decision.narrative.note === null,
       "a note with health detail is withheld from the model",
       note,
     );
     check(
-      entry?.withheld === "health-note" && entry.uses.length === 0,
-      "the ledger records the withheld note",
-      note,
-    );
-    check(
       same(decision.selection, baseDecision.selection) &&
         same(decision.constraints, baseDecision.constraints) &&
-        same({ ...decision.narrative, note: null }, { ...baseDecision.narrative, note: null }),
+        same(
+          { ...decision.narrative, note: null, asked: [] },
+          { ...baseDecision.narrative, note: null, asked: [] },
+        ),
       "withholding a note weakens nothing else (granular, not global)",
       note,
     );
   }
   for (const note of [
     "Quiero empezar con algo de la línea insignia y seguir después",
-    "Quiero empezar con la línea insignia y dejar lo demás para mi siguiente pedido.",
     "Me interesa comparar precios antes de mi primera compra",
     "Tengo un presupuesto de 20 mil pesos para el trimestre",
     "I'd like to build a set across two topics over a few orders",
@@ -660,12 +1068,8 @@ const ledgerOf = (overrides = {}, v = view) => {
     "the name never reaches the model or selection",
   );
   check(named.presentation.firstName === "Mariana", "the name personalises the page");
-  check(
-    ledgerEntry({ "first-name": "Mariana" }, "first-name")?.withheld === "name-private",
-    "the ledger says the name stays private",
-  );
 
-  /* Presentation-only answers cannot move selection… */
+  /* Presentation-only fields cannot move selection… */
   for (const [label, patch] of [
     ["name", { firstName: "Mariana" }],
     ["history", { history: "returning" }],
@@ -675,12 +1079,14 @@ const ledgerOf = (overrides = {}, v = view) => {
     check(
       same(decision.selection, baseDecision.selection) &&
         same(decision.constraints, baseDecision.constraints),
-      "a presentation-only answer does not change selection",
+      "a presentation-only field does not change selection",
       label,
     );
   }
-  /* …and selection answers do. */
+  /* …and every selection field does — the pipeline can take them the day a
+     question asks. */
   for (const [label, patch] of [
+    ["areas", { areas: ["skin"] }],
     ["intent", { intent: "compare" }],
     ["experience", { experience: "experienced" }],
     ["priorities", { priorities: ["documentation"] }],
@@ -688,16 +1094,190 @@ const ledgerOf = (overrides = {}, v = view) => {
     ["budget", { budgetCap: 8000 }],
     ["horizon", { horizon: "over-time" }],
     ["timing", { timing: "soon" }],
-    ["products in mind", { inMind: [publishedProducts[0].slug] }],
+    ["forms", { forms: ["solid"] }],
+    ["supplies", { includeSupplies: true }],
+    ["functions", { functions: ["wound-healing"] }],
+    ["products", { products: [publishedProducts[0].slug] }],
   ]) {
     const decision = applyAtlasPolicy({ ...base, ...patch });
     check(
       !same(decision.selection, baseDecision.selection) ||
         !same(decision.constraints, baseDecision.constraints),
-      "a selection answer changes selection or constraints",
+      "a selection field changes selection or constraints",
       label,
     );
   }
+}
+
+/* ---- pins: a product the policy requires travels with its reason ---------- */
+{
+  const profile = profileOf({ ...baseAnswers, goal: "skin-hair" });
+  const decision = applyAtlasPolicy(profile);
+  const target = subjects.find(
+    (s) => !s.areas.includes("skin") && !s.areas.includes("materials") && s.entryPrice !== null,
+  );
+  const selection = {
+    ...decision.selection,
+    pinned: [{ slug: target.slug, source: "policy", reasons: ["policy-pin"] }],
+  };
+  const retrieval = retrieveAtlas(selection, subjects, deps);
+  const pinned = retrieval.candidates.find((c) => c.slug === target.slug);
+  check(pinned !== undefined, "a policy pin is retrieved whatever its area", target.slug);
+  check(
+    pinned?.pin?.source === "policy" &&
+      pinned.reasons[0]?.code === "policy-pin" &&
+      pinned.relevance.tier === "primary",
+    "…carrying its source, its reason first, and primary relevance",
+  );
+  const plan = planAtlas(retrieval, decision.constraints);
+  check(
+    [...plan.start, ...plan.more].some((c) => c.slug === target.slug),
+    "the plan includes a policy pin",
+  );
+  const input = buildAtlasInput({
+    narrative: { ...decision.narrative, pinned: [target.slug] },
+    constraints: decision.constraints,
+    retrieval,
+    locale: "es",
+    dict: es,
+    productName: (slug) => nameOf.get(slug) ?? slug,
+  });
+  check(
+    input.includes(`${target.slug} |`) && input.includes("| policy |"),
+    "the model is told the product is pinned by policy",
+  );
+  const ctx = {
+    retrieval,
+    constraints: decision.constraints,
+    catalogue: publishedProducts.map((p) => ({ slug: p.slug, name: p.name })),
+    approvedLabels: publicAreas().flatMap((a) => [
+      es.discovery.areas[a.id].short,
+      es.discovery.areas[a.id].title,
+    ]),
+  };
+  const generation = composeAtlasGeneration({
+    narrative: decision.narrative,
+    retrieval,
+    plan,
+    topicLabel: (id) => es.discovery.areas[id].short,
+    destinationLabel: (d) =>
+      d.kind === "area"
+        ? es.discovery.areas[d.ref].short
+        : d.kind === "product"
+          ? nameOf.get(d.ref)
+          : es.atlas.destinations[d.kind],
+    copy: es.atlas.compose,
+  });
+  const issues = validateAtlasGeneration(generation, ctx);
+  check(
+    issues.length === 0,
+    "a result carrying a policy pin validates",
+    issues.map((i) => `${i.path} ${i.code} ${i.detail}`).join("; "),
+  );
+  const dropped = JSON.parse(JSON.stringify(generation));
+  dropped.start = dropped.start.filter((p) => p.slug !== target.slug);
+  dropped.more = dropped.more.filter((p) => p.slug !== target.slug);
+  check(
+    validateAtlasGeneration(dropped, ctx).some((i) => i.code === "missing_pinned"),
+    "the validator refuses a result that drops a pinned product",
+  );
+}
+
+/* ---- evidence: approved statements, by id, research functions first ------- */
+{
+  const withEvidence = subjects.filter((s) => s.evidence.length > 0);
+  check(
+    withEvidence.length > 0,
+    "subjects carry approved statement ids from the overview registry",
+  );
+  for (const subject of withEvidence) {
+    for (const e of subject.evidence) {
+      check(
+        e.referenceIds.length > 0 && ["mechanism", "research"].includes(e.kind),
+        "every evidence id is a sourced, public statement",
+        `${subject.slug}/${e.id}`,
+      );
+    }
+  }
+  /* A product with a function-tagged statement that is not its first. */
+  const tagged = withEvidence.find(
+    (s) => s.evidence.length > 1 && s.evidence.slice(1).some((e) => e.functions.length > 0),
+  );
+  if (tagged) {
+    const statement = tagged.evidence.slice(1).find((e) => e.functions.length > 0);
+    const fn = statement.functions[0];
+    const selection = {
+      ...applyAtlasPolicy(profileOf(baseAnswers)).selection,
+      topics: [],
+      functions: [fn],
+      pinned: [],
+    };
+    const functional = subjects.map((s) =>
+      s.slug === tagged.slug ? { ...s, functions: [fn] } : s,
+    );
+    const candidate = retrieveAtlas(selection, functional, deps).candidates.find(
+      (c) => c.slug === tagged.slug,
+    );
+    check(
+      candidate?.evidence[0]?.functions.includes(fn) &&
+        candidate.reasons.some((r) => r.code === "function-match" && r.ref === fn),
+      "a chosen research function leads the product's evidence (research-context retrieval)",
+      `${tagged.slug}/${fn}`,
+    );
+  }
+  check(tagged !== undefined, "the catalogue offers a product to prove evidence ordering on");
+
+  /* The validator: a product's own statement passes, anything else does not. */
+  const run = pipeline(baseAnswers);
+  const ctx = {
+    retrieval: run.retrieval,
+    constraints: run.decision.constraints,
+    catalogue: publishedProducts.map((p) => ({ slug: p.slug, name: p.name })),
+    approvedLabels: publicAreas().flatMap((a) => [
+      es.discovery.areas[a.id].short,
+      es.discovery.areas[a.id].title,
+    ]),
+  };
+  const generation = composeAtlasGeneration({
+    narrative: run.decision.narrative,
+    retrieval: run.retrieval,
+    plan: run.plan,
+    topicLabel: (id) => es.discovery.areas[id].short,
+    destinationLabel: (d) =>
+      d.kind === "area"
+        ? es.discovery.areas[d.ref].short
+        : d.kind === "product"
+          ? nameOf.get(d.ref)
+          : es.atlas.destinations[d.kind],
+    copy: es.atlas.compose,
+  });
+  check(
+    validateAtlasGeneration(generation, ctx).length === 0,
+    "the composed result's evidence validates",
+  );
+  const lead = generation.start[0];
+  const own = run.retrieval.candidates.find((c) => c.slug === lead.slug).evidence;
+  const foreign = subjects
+    .filter((s) => s.slug !== lead.slug)
+    .flatMap((s) => s.evidence)
+    .find((e) => !own.some((o) => o.id === e.id));
+  for (const [label, ids] of [
+    ["an invented statement id", ["invented-finding"]],
+    ["another product's statement", foreign ? [foreign.id] : []],
+    ["a repeated statement", own.length > 0 ? [own[0].id, own[0].id] : []],
+  ]) {
+    if (ids.length === 0) continue;
+    const g = JSON.parse(JSON.stringify(generation));
+    g.start[0].evidence = ids;
+    check(
+      validateAtlasGeneration(g, ctx).some((i) => i.code === "unknown_evidence"),
+      `the validator refuses ${label}`,
+    );
+  }
+  check(
+    run.input.includes("EVIDENCE") && own.every((e) => run.input.includes(e.id)),
+    "the model is given the lead product's statement ids",
+  );
 }
 
 /* ---- isolation: nothing downstream reads the profile ---------------------- */
@@ -718,6 +1298,23 @@ for (const file of [
     file,
   );
 }
+/* Question ids live in `fields.ts` and nowhere else downstream. */
+for (const file of [
+  "src/domain/atlas/policy.ts",
+  "src/domain/atlas/retrieval.ts",
+  "src/domain/atlas/compose.ts",
+  "src/server/atlas/prompt.ts",
+  "src/server/atlas/assemble.ts",
+  "src/server/atlas/generate.ts",
+  "src/components/atlas/AtlasResult.tsx",
+  "src/components/atlas/AtlasExperience.tsx",
+]) {
+  const source = readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
+  const named = Object.keys(ATLAS_BINDINGS).find(
+    (id) => id.length > 4 && new RegExp(`["'\`]${id}["'\`]`).test(source),
+  );
+  check(!named, "no downstream file names a question id", `${file}: ${named}`);
+}
 for (const file of [
   "src/components/atlas/AtlasExperience.tsx",
   "src/components/atlas/AtlasResult.tsx",
@@ -729,23 +1326,21 @@ for (const file of [
     file,
   );
 }
-
-/* ---- retrieval, against the live catalogue -------------------------------- */
-const variantIds = publishedProducts.flatMap((p) => p.variants.map((v) => v.id));
-const [prices, availability] = await Promise.all([
-  getPrices(variantIds),
-  getAvailability(variantIds),
-]);
-const subjects = atlasSubjectsFrom(publishedProducts, {
-  price: (id) => prices.get(id)?.amount ?? null,
-  availability: (id) => availability.get(id) ?? null,
-  areas: (slug) => publicAreasFor(slug).map((a) => a.id),
-  documented: (product) => publicEvidenceIndex([product]).length > 0,
-  references: (slug) => referencesForProduct(slug).map((r) => r.id),
-  functions: () => [],
-});
-const publicEvidence = publicEvidenceIndex(publishedProducts).length > 0;
-const deps = { relatedAreas: (id) => relatedAreas(id).map((r) => r.area.id), publicEvidence };
+check(
+  /transmittableAnswers\(answers\)/.test(
+    readFileSync(new URL("../src/components/atlas/AtlasExperience.tsx", import.meta.url), "utf8"),
+  ),
+  "the browser sends only transmittable answers",
+);
+check(
+  /transmittableAnswers\(/.test(
+    readFileSync(new URL("../src/app/api/atlas/route.ts", import.meta.url), "utf8"),
+  ) &&
+    /transmittedView\(/.test(
+      readFileSync(new URL("../src/app/api/atlas/route.ts", import.meta.url), "utf8"),
+    ),
+  "the API route strips withheld answers and validates against the transmitted view",
+);
 
 const outsideSkin = subjects.find(
   (s) => !s.areas.includes("longevity") && !s.areas.includes("metabolic") && s.entryPrice !== null,
@@ -758,18 +1353,9 @@ const outsideSkin = subjects.find(
   const tagged = subjects.map((s) =>
     s.slug === target.slug ? { ...s, functions: ["wound-healing"] } : s,
   );
-  const without = applyAtlasPolicy(profileOf({ topics: ["skin"] }, viewWithFunctions));
-  const withFn = applyAtlasPolicy(
-    profileOf({ topics: ["skin"], "research-functions": ["wound-healing"] }, viewWithFunctions),
-  );
-  const entry = ledgerOf(
-    { topics: ["skin"], "research-functions": ["wound-healing"] },
-    viewWithFunctions,
-  ).find((e) => e.question === "research-functions");
-  check(
-    same(entry?.uses, ["selection", "ranking", "explanation"]),
-    "research functions may select, rank and explain — not present",
-  );
+  const skin = { ...profileOf({ goal: "skin-hair" }) };
+  const without = applyAtlasPolicy(skin);
+  const withFn = applyAtlasPolicy({ ...skin, functions: ["wound-healing"] });
   check(
     same(withFn.narrative.functions, ["wound-healing"]),
     "the chosen research functions reach the narrative",
@@ -790,51 +1376,63 @@ const outsideSkin = subjects.find(
     after.candidates.every((c) => c.slug === target.slug || c.matchedFunctions.length === 0),
     "only tagged products carry a function match",
   );
-  check(
-    retrieveAtlas(withFn.selection, subjects, deps).candidates.every(
-      (c) => c.matchedFunctions.length === 0,
-    ),
-    "untagged subjects never match a function",
-  );
 }
 
+/* The policy's full range, exercised through profile fields that no question
+   asks for today — the capacity the pipeline keeps for a future question. */
+const withPatch = (answers, patch) => ({ ...profileOf(answers), ...patch });
 const PROFILES = {
-  firstOrderNewcomer: profileOf({
-    topics: ["metabolic"],
-    intent: "first-order",
-    experience: "new",
-    priorities: ["signature"],
-    "presentation-size": "smallest",
-    budget: "8k",
-  }),
-  compareSkinValue: profileOf({
-    topics: ["skin", "neuro"],
-    intent: "compare",
-    priorities: ["price"],
-    forms: ["solid"],
-    budget: "20k",
-  }),
-  coverTopicsExperienced: profileOf({
-    topics: ["recovery", "growth", "hormonal"],
-    intent: "cover-topics",
-    experience: "experienced",
-    priorities: ["documentation", "overlap"],
-    "presentation-size": "largest",
-    "include-supplies": true,
-    budget: "40k",
-    "purchase-horizon": "over-time",
-  }),
-  deepenWithProductInMind: profileOf({
-    topics: ["longevity", "metabolic"],
-    intent: "deepen",
-    "products-in-mind": outsideSkin ? [outsideSkin.slug] : [],
-    timing: "soon",
-    "explanation-style": "detailed",
-  }),
+  firstOrderNewcomer: withPatch(
+    { goal: "weight-loss", "peptide-experience": "none" },
+    { priorities: ["signature"], size: "smallest", budgetCap: 8000 },
+  ),
+  compareSkinValue: withPatch(
+    { goal: "skin-hair" },
+    {
+      areas: ["skin", "neuro"],
+      intent: "compare",
+      priorities: ["price"],
+      forms: ["solid"],
+      budgetCap: 20000,
+    },
+  ),
+  coverTopicsExperienced: withPatch(
+    { goal: "tissue-recovery", "peptide-experience": "advanced" },
+    {
+      areas: ["recovery", "growth", "hormonal"],
+      intent: "cover-topics",
+      priorities: ["documentation", "overlap"],
+      size: "largest",
+      includeSupplies: true,
+      budgetCap: 40000,
+      horizon: "over-time",
+    },
+  ),
+  deepenWithProductInMind: withPatch(
+    { goal: "longevity" },
+    {
+      areas: ["longevity", "metabolic"],
+      intent: "deepen",
+      products: outsideSkin ? [outsideSkin.slug] : [],
+      timing: "soon",
+      style: "detailed",
+    },
+  ),
 };
+/* And the live questionnaire as it is today, answer for answer. */
+const LIVE_PROFILES = Object.fromEntries(
+  optionIds("goal").map((goal) => [
+    `live:${goal}`,
+    profileOf({
+      ...baseAnswers,
+      goal,
+      "peptide-experience": goal === "sleep" ? "none" : "advanced",
+    }),
+  ]),
+);
 
 const runs = {};
-for (const [name, profile] of Object.entries(PROFILES)) {
+for (const [name, profile] of Object.entries({ ...PROFILES, ...LIVE_PROFILES })) {
   const decision = applyAtlasPolicy(profile);
   const retrieval = retrieveAtlas(decision.selection, subjects, deps);
   const plan = planAtlas(retrieval, decision.constraints);
@@ -843,18 +1441,24 @@ for (const [name, profile] of Object.entries(PROFILES)) {
 
   check(retrieval.candidates.length > 0, "a real profile retrieves candidates", name);
   check(
-    retrieval.candidates.length <= ATLAS_CANDIDATE_LIMIT + selection.inMind.length,
+    retrieval.candidates.length <= ATLAS_CANDIDATE_LIMIT + selection.pinned.length,
     "retrieval respects the candidate limit",
     `${name}: ${retrieval.candidates.length}`,
   );
   for (const c of retrieval.candidates) {
     check(
-      c.inMind ||
+      c.pin ||
+        selection.topics.length === 0 ||
         (c.matchedAreas.length > 0 && c.matchedAreas.every((a) => selection.topics.includes(a))),
-      "every candidate is in a chosen topic or was named",
+      "every candidate is in a chosen topic or was pinned",
       `${name}: ${c.slug}`,
     );
-    if (selection.forms.length > 0 && !c.inMind) {
+    check(
+      c.reasons.length > 0 && c.relevance.rank > 0,
+      "every candidate carries structured reasons and a relevance",
+      `${name}: ${c.slug}`,
+    );
+    if (selection.forms.length > 0 && !c.pin) {
       check(
         c.forms.some((f) => selection.forms.includes(f)),
         "candidates respect the format filter",
@@ -882,10 +1486,10 @@ for (const [name, profile] of Object.entries(PROFILES)) {
       );
     }
   }
-  for (const slug of selection.inMind) {
+  for (const { slug } of selection.pinned) {
     check(
       retrieval.candidates.some((c) => c.slug === slug),
-      "a named product is always retrieved",
+      "a pinned product is always retrieved",
       `${name}: ${slug}`,
     );
   }
@@ -915,7 +1519,7 @@ check(
 
 /* DIFFERENT VISITORS, DIFFERENT PRODUCTS — the property the feature exists for. */
 {
-  const names = Object.keys(runs);
+  const names = Object.keys(PROFILES);
   const slugs = (name) => new Set(runs[name].retrieval.candidates.map((c) => c.slug));
   for (let i = 0; i < names.length; i += 1) {
     for (let j = i + 1; j < names.length; j += 1) {
@@ -932,11 +1536,15 @@ check(
   }
 }
 
-/* Same topics, different goal → a different plan. */
+/* Same topics, different intent → a different plan. */
 {
-  const topics = ["metabolic", "skin"];
   const planFor = (overrides) => {
-    const decision = applyAtlasPolicy(profileOf({ topics, budget: "20k", ...overrides }));
+    const decision = applyAtlasPolicy(
+      withPatch(
+        { goal: "weight-loss" },
+        { areas: ["metabolic", "skin"], budgetCap: 20000, ...overrides },
+      ),
+    );
     const retrieval = retrieveAtlas(decision.selection, subjects, deps);
     const plan = planAtlas(retrieval, decision.constraints);
     return [plan.start.map((c) => c.slug), plan.more.map((c) => c.slug)];
@@ -947,9 +1555,9 @@ check(
     intent: "first-order",
     experience: "new",
     priorities: ["documentation"],
-    "presentation-size": "largest",
+    size: "largest",
   });
-  check(!same(first, compare), "the same topics with a different goal give a different plan");
+  check(!same(first, compare), "the same topics with a different intent give a different plan");
   check(first[0].length <= 2, "a newcomer's first order starts small", first[0].join(","));
   check(
     !same(first, documented) || publicEvidence === false,
@@ -965,7 +1573,6 @@ const approvedLabels = publicAreas().flatMap((a) => [
   en.discovery.areas[a.id].title,
 ]);
 const catalogue = publishedProducts.map((p) => ({ slug: p.slug, name: p.name }));
-const nameOf = new Map(publishedProducts.map((p) => [p.slug, p.name]));
 
 function composeFor(name, dict) {
   const { decision, retrieval, plan } = runs[name];
@@ -1016,16 +1623,17 @@ for (const name of Object.keys(runs)) {
     const total = plan.start.reduce((sum, c) => sum + (c.suggestedPrice ?? 0), 0);
     check(total <= cap, "the plan's start set fits the cap together", `${name}: ${total} > ${cap}`);
   }
-  for (const c of retrieval.candidates.filter((c) => c.inMind)) {
+  for (const c of retrieval.candidates.filter((c) => c.pin)) {
     check(
       [...plan.start, ...plan.more].includes(c),
-      "the plan includes named products",
+      "the plan includes pinned products",
       `${name}: ${c.slug}`,
     );
   }
 }
 check(
-  new Set(Object.values(composedStarts)).size === Object.keys(composedStarts).length,
+  new Set(Object.keys(PROFILES).map((name) => composedStarts[name])).size ===
+    Object.keys(PROFILES).length,
   "different profiles produce different results",
 );
 
@@ -1067,7 +1675,7 @@ const exercised = new Set();
   }
   {
     const g = clone();
-    g.more.push({ slug: g.start[0].slug, why: "Otra vez." });
+    g.more.push({ slug: g.start[0].slug, why: "Otra vez.", evidence: [] });
     expect(g, "duplicate", "a repeated product");
   }
   {
@@ -1077,7 +1685,7 @@ const exercised = new Set();
     );
     g.start = [
       ...g.start,
-      ...extra.slice(0, 4).map((c) => ({ slug: c.slug, why: "Está en tus temas." })),
+      ...extra.slice(0, 4).map((c) => ({ slug: c.slug, why: "Está en tus temas.", evidence: [] })),
     ];
     expect(g, "count", "too many start products");
   }
@@ -1085,7 +1693,7 @@ const exercised = new Set();
     const g = clone();
     const supply = retrieval.supplies[0];
     if (supply) {
-      g.start.push({ slug: supply.slug, why: "Insumo." });
+      g.start.push({ slug: supply.slug, why: "Insumo.", evidence: [] });
       expect(g, "misplaced_supply", "a supply in start");
     }
   }
@@ -1094,7 +1702,7 @@ const exercised = new Set();
     g.start = [...retrieval.candidates]
       .sort((a, b) => (b.suggestedPrice ?? 0) - (a.suggestedPrice ?? 0))
       .slice(0, 3)
-      .map((c) => ({ slug: c.slug, why: "Está en tus temas." }));
+      .map((c) => ({ slug: c.slug, why: "Está en tus temas.", evidence: [] }));
     g.more = g.more.filter((p) => !g.start.some((s) => s.slug === p.slug));
     const sum = g.start.reduce(
       (t, p) => t + (retrieval.candidates.find((c) => c.slug === p.slug)?.suggestedPrice ?? 0),
@@ -1104,12 +1712,12 @@ const exercised = new Set();
   }
   {
     const inMindName = "deepenWithProductInMind";
-    const named = runs[inMindName].retrieval.candidates.find((c) => c.inMind);
+    const named = runs[inMindName].retrieval.candidates.find((c) => c.pin);
     if (named) {
       const g = composeFor(inMindName, es);
       g.start = g.start.filter((p) => p.slug !== named.slug);
       g.more = g.more.filter((p) => p.slug !== named.slug);
-      expect(g, "missing_in_mind", "a result that drops a named product", contextFor(inMindName));
+      expect(g, "missing_pinned", "a result that drops a named product", contextFor(inMindName));
     }
   }
   {
@@ -1159,7 +1767,7 @@ const exercised = new Set();
     "count",
     "misplaced_supply",
     "over_budget",
-    "missing_in_mind",
+    "missing_pinned",
     "missing_topic",
     "claim",
     "invented_figure",

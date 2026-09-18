@@ -1,26 +1,25 @@
 import "server-only";
 
 import { routes } from "@/config/routes";
+import { getResearchFunction } from "@/content/functions";
 import { publicOverview } from "@/content/overview";
 import { REFERENCES, referenceHref } from "@/content/references";
 import { referencesForProduct } from "@/content/research";
 import { formatStrength, presentationRange, publishedProducts } from "@/data/catalog";
 import { formatPrice } from "@/data/commerce";
 import { getArea } from "@/data/discovery";
-import { atlasRecap, buildAtlasLedger } from "@/domain/atlas";
 import { publicEvidenceIndex } from "@/domain/quality";
 import { localeTags, type Locale } from "@/i18n/config";
 import { localizePath } from "@/i18n/routing";
 
 import type {
   AtlasCandidate,
-  AtlasAnswers,
   AtlasDestination,
   AtlasGeneration,
   AtlasMode,
   AtlasPickList,
   AtlasPolicyDecision,
-  AtlasQuestionnaireView,
+  AtlasResultEvidence,
   AtlasResultProduct,
   AtlasResultSum,
   AtlasResultView,
@@ -34,18 +33,16 @@ import type { Dictionary } from "@/i18n/types";
  *
  * The generation contributes identifiers and prose. Everything a visitor could
  * act on — a name, a price, a presentation, a documentation state, a link, a
- * bag line — is read here from the registries, by identifiers the validator
- * has already confirmed. The policy decision contributes the page's
- * personalisation; the questionnaire and the answers contribute the ledger and
- * the recap, so the result page needs no knowledge of today's questions.
- * Nothing here decides what to recommend.
+ * bag line, an approved finding and its references — is read here from the
+ * registries, by identifiers the validator has already confirmed. The policy
+ * decision contributes the page's personalisation, and retrieval the reasons
+ * and relevance. The ledger and the recap are built in the browser, where the
+ * withheld answers are. Nothing here decides what to recommend.
  */
 export function assembleAtlasView({
   generation,
   mode,
   decision,
-  questionnaire,
-  answers,
   retrieval,
   locale,
   dict,
@@ -55,8 +52,6 @@ export function assembleAtlasView({
   generation: AtlasGeneration;
   mode: AtlasMode;
   decision: AtlasPolicyDecision;
-  questionnaire: AtlasQuestionnaireView;
-  answers: AtlasAnswers;
   retrieval: AtlasRetrieval;
   locale: Locale;
   dict: Dictionary;
@@ -75,11 +70,52 @@ export function assembleAtlasView({
   );
   const supplySlugs = new Set(retrieval.supplies.map((s) => s.slug));
 
-  /* Sourced statements only: publicOverview drops anything unapproved or unreferenced. */
-  const researchView = (slug: string): AtlasResultProduct["research"] => {
-    const overview = publicOverview(slug, locale);
-    const mechanism = overview?.mechanismNotes[0]?.text ?? null;
-    const studied = overview?.researchContext[0]?.text ?? null;
+  /*
+   * Evidence: approved statements, resolved by id from `content/overview` —
+   * publicOverview drops anything unapproved or unreferenced. The ids the
+   * model chose (already validated against this product's own) lead; the
+   * rest follow in retrieval's order, which puts the visitor's research
+   * functions first.
+   */
+  const evidenceView = (
+    candidate: AtlasCandidate,
+    chosen: readonly string[],
+  ): readonly AtlasResultEvidence[] => {
+    const overview = publicOverview(candidate.slug, locale);
+    if (!overview) return [];
+    const statements = new Map(
+      [...overview.mechanismNotes, ...overview.researchContext].map((st) => [st.id, st]),
+    );
+    const order = [
+      ...chosen,
+      ...candidate.evidence.map((e) => e.id).filter((id) => !chosen.includes(id)),
+    ];
+    return order.flatMap((id) => {
+      const ref = candidate.evidence.find((e) => e.id === id);
+      const statement = statements.get(id);
+      if (!ref || !statement) return [];
+      return [
+        {
+          id,
+          kind: ref.kind,
+          text: statement.text,
+          references: statement.references.map((r) => ({
+            id: r.id,
+            title: r.title,
+            href: referenceHref(r),
+          })),
+        },
+      ];
+    });
+  };
+
+  /* The card's research block: the first mechanism and first research statement. */
+  const researchView = (
+    slug: string,
+    evidence: readonly AtlasResultEvidence[],
+  ): AtlasResultProduct["research"] => {
+    const mechanism = evidence.find((e) => e.kind === "mechanism")?.text ?? null;
+    const studied = evidence.find((e) => e.kind === "research")?.text ?? null;
     if (!mechanism && !studied) return null;
     return {
       mechanism,
@@ -89,20 +125,41 @@ export function assembleAtlasView({
     };
   };
 
+  const reasonLabel = (code: AtlasCandidate["reasons"][number]["code"], ref: string | null) => {
+    const template = dict.atlas.result.reasons[code];
+    const subject =
+      ref === null
+        ? ""
+        : code === "area-match"
+          ? (areaCopy(ref as DiscoveryAreaId)?.short ?? ref)
+          : (getResearchFunction(ref)?.label[locale] ?? ref);
+    return template.replace("{ref}", subject);
+  };
+
   const productView = (
     candidate: AtlasCandidate,
     list: AtlasPickList,
     why: string | null,
+    chosenEvidence: readonly string[],
   ): AtlasResultProduct => {
     const product = bySlug.get(candidate.slug)!;
     const variant = product.variants.find((v) => v.id === candidate.suggestedVariantId);
+    const evidence = list === "supply" ? [] : evidenceView(candidate, chosenEvidence);
     return {
       slug: candidate.slug,
       name: product.name,
       href: path(routes.product(candidate.slug)),
       list,
       why,
-      inMind: candidate.inMind,
+      source: list === "supply" ? "supply" : (candidate.pin?.source ?? "retrieval"),
+      inMind: candidate.pin?.source === "visitor",
+      reasons: candidate.reasons.map((reason) => ({
+        code: reason.code,
+        ref: reason.ref,
+        label: reasonLabel(reason.code, reason.ref),
+      })),
+      evidence,
+      relevance: list === "supply" ? null : candidate.relevance,
       world: product.world,
       worldLabel: product.world ? dict.home.products.worldLabels[product.world] : null,
       areas: candidate.areas.map((id) => ({ id, label: areaCopy(id).short })),
@@ -122,15 +179,22 @@ export function assembleAtlasView({
           : null,
       withinBudget: candidate.withinBudget,
       documented: candidate.documented,
-      research: researchView(candidate.slug),
+      research: researchView(candidate.slug, evidence),
     };
   };
 
-  const pick = (list: "start" | "more") => (entry: { slug: string; why: string }) => {
-    const candidate = offered.get(entry.slug);
-    if (!candidate) return null;
-    return productView(candidate, supplySlugs.has(entry.slug) ? "supply" : list, entry.why);
-  };
+  const pick =
+    (list: "start" | "more") =>
+    (entry: { slug: string; why: string; evidence: readonly string[] }) => {
+      const candidate = offered.get(entry.slug);
+      if (!candidate) return null;
+      return productView(
+        candidate,
+        supplySlugs.has(entry.slug) ? "supply" : list,
+        entry.why,
+        entry.evidence,
+      );
+    };
   const picked = [
     ...generation.start.map(pick("start")),
     ...generation.more.map(pick("more")),
@@ -141,7 +205,7 @@ export function assembleAtlasView({
   /* Supplies the visitor asked for still appear when the text left them out. */
   for (const supply of retrieval.supplies) {
     if (!supplies.some((s) => s.slug === supply.slug)) {
-      supplies.push(productView(supply, "supply", null));
+      supplies.push(productView(supply, "supply", null, []));
     }
   }
 
@@ -208,13 +272,6 @@ export function assembleAtlasView({
     };
   };
 
-  /* The three strings the ledger needs that are not a question's own words. */
-  const ledgerCopy = {
-    yes: dict.atlas.result.ledger.yes,
-    no: dict.atlas.result.ledger.no,
-    noteGiven: dict.atlas.result.ledger.noteGiven,
-  };
-
   const resultProducts = [...start, ...more, ...supplies]
     .map((p) => bySlug.get(p.slug))
     .filter((p) => p !== undefined);
@@ -245,8 +302,6 @@ export function assembleAtlasView({
       noteDiscarded: decision.noteDiscarded,
       healthMentioned: generation.contextMentionsHealth && !decision.noteDiscarded,
     },
-    ledger: buildAtlasLedger(questionnaire, answers, ledgerCopy, decision.noteDiscarded),
-    recap: atlasRecap(questionnaire, answers, ledgerCopy),
     references: retrieval.referenceIds
       .map((id) => REFERENCES.find((ref) => ref.id === id))
       .filter((ref) => ref !== undefined)

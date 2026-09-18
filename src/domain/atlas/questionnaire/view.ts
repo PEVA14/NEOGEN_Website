@@ -1,4 +1,9 @@
-import type { AtlasCondition, AtlasQuestionKind, AtlasQuestionRender, AtlasRole } from "./types";
+import type {
+  AtlasCondition,
+  AtlasQuestionKind,
+  AtlasQuestionRender,
+  AtlasRegistrySource,
+} from "./types";
 
 /**
  * THE RESOLVED QUESTIONNAIRE — one locale, registries already read.
@@ -18,7 +23,7 @@ export interface AtlasOptionView {
   id: string;
   label: string;
   hint: string | null;
-  /** The numeric payload a role may consume (today: the budget ceiling). */
+  /** The numeric payload a profile field may consume (e.g. a budget ceiling). */
   value: number | null;
   /** Registry facts for the tile and card renderers. Never authored by hand. */
   meta: AtlasOptionMeta | null;
@@ -55,7 +60,8 @@ export interface AtlasQuestionView {
   hint: string | null;
   required: boolean;
   markOptional: boolean;
-  role: AtlasRole | null;
+  /** The registry a select's options were read from; null for static options. */
+  registry: AtlasRegistrySource | null;
   recap: boolean;
   visibleWhen: AtlasCondition | null;
   /* select */

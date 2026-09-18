@@ -61,7 +61,7 @@ function toggle(list: readonly string[], id: string, max: number | null): string
 
 /** Count copy for a registry option — products for an area, compounds for a function. */
 function metaCount(question: AtlasQuestionView, count: number, copy: AtlasFieldCopy): string {
-  if (question.role === "research-functions") {
+  if (question.registry === "research-functions") {
     return count === 1 ? copy.meta.compoundOne : fill(copy.meta.compounds, { n: count });
   }
   return fill(copy.meta.products, { n: count });
@@ -502,13 +502,13 @@ export function QuestionField({
   );
 }
 
-/** Products the visitor already chose for the role-topics question, if any. */
+/** The areas the visitor already chose in an area question, if there is one. */
 export function usePreferredAreas(
   questions: readonly AtlasQuestionView[],
   answers: Readonly<Record<string, AtlasAnswerValue>>,
 ): readonly string[] {
   return useMemo(() => {
-    const topics = questions.find((question) => question.role === "topics");
+    const topics = questions.find((question) => question.registry === "discovery-areas");
     return topics ? asList(answers[topics.id]) : [];
   }, [questions, answers]);
 }

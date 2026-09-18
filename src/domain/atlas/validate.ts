@@ -158,7 +158,8 @@ export type AtlasIssueCode =
   | "length"
   | "count"
   | "over_budget"
-  | "missing_in_mind"
+  | "missing_pinned"
+  | "unknown_evidence"
   | "missing_topic"
   | "misplaced_supply"
   | "forbidden_term"
@@ -292,7 +293,8 @@ export function validateAtlasGeneration(
   const supplies = new Set(retrieval.supplies.map((c) => c.slug));
   const seen = new Set<string>();
   const checkPick =
-    (list: "start" | "more") => (entry: { slug: string; why: string }, i: number) => {
+    (list: "start" | "more") =>
+    (entry: { slug: string; why: string; evidence: readonly string[] }, i: number) => {
       const path = `${list}[${i}]`;
       if (supplies.has(entry.slug)) {
         if (list === "start") issues.push({ path, code: "misplaced_supply", detail: entry.slug });
@@ -302,6 +304,15 @@ export function validateAtlasGeneration(
       if (seen.has(entry.slug)) issues.push({ path, code: "duplicate", detail: entry.slug });
       seen.add(entry.slug);
       text(entry.why, `${path}.why`, ATLAS_LIMITS.why);
+      /* Evidence: only this product's own approved statements, each once. */
+      const own = new Set((candidates.get(entry.slug)?.evidence ?? []).map((e) => e.id));
+      const cited = new Set<string>();
+      entry.evidence.forEach((id, j) => {
+        if (!own.has(id) || cited.has(id)) {
+          issues.push({ path: `${path}.evidence[${j}]`, code: "unknown_evidence", detail: id });
+        }
+        cited.add(id);
+      });
     };
   generation.start.forEach(checkPick("start"));
   generation.more.forEach(checkPick("more"));
@@ -338,10 +349,9 @@ export function validateAtlasGeneration(
     }
   }
 
-  if (constraints.includeInMind) {
-    for (const c of retrieval.candidates.filter((c) => c.inMind)) {
-      if (!seen.has(c.slug))
-        issues.push({ path: "start", code: "missing_in_mind", detail: c.slug });
+  if (constraints.includePinned) {
+    for (const c of retrieval.candidates.filter((c) => c.pin)) {
+      if (!seen.has(c.slug)) issues.push({ path: "start", code: "missing_pinned", detail: c.slug });
     }
   }
   if (constraints.coverTopics) {

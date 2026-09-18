@@ -1,4 +1,9 @@
-import { parseAtlasAnswers } from "@/domain/atlas";
+import {
+  parseAtlasAnswers,
+  transmittableAnswers,
+  transmittedView,
+  type AtlasAnswers,
+} from "@/domain/atlas";
 import { isLocale } from "@/i18n/config";
 import { generateAtlas } from "@/server/atlas/generate";
 import { atlasQuestionnaireView } from "@/server/atlas/questionnaire";
@@ -6,9 +11,11 @@ import { atlasQuestionnaireView } from "@/server/atlas/questionnaire";
 /**
  * ATLAS GENERATION — one POST, provider-independent.
  *
- * The browser sends a profile and a locale; it never sends a prompt, a model
- * name, a product list or a price, and it never receives the model's raw text
- * or usage. What comes back is an assembled result whose facts were read from
+ * The browser sends its TRANSMITTABLE answers and a locale; it never sends a
+ * prompt, a model name, a product list or a price, and it never receives the
+ * model's raw text or usage. Withheld answers (health, body, lifestyle,
+ * administration, personal outcomes — `domain/atlas/fields.ts`) are not sent,
+ * and any that arrive anyway are dropped here before anything reads them. What comes back is an assembled result whose facts were read from
  * the registries on this server.
  *
  * GUARDS, because this endpoint spends money on every call:
@@ -89,7 +96,10 @@ export async function POST(request: Request): Promise<Response> {
    * question that no longer exists.
    */
   const questionnaire = await atlasQuestionnaireView(body.locale);
-  const parsed = parseAtlasAnswers(body.answers, questionnaire);
+  const received = isRecord(body.answers)
+    ? transmittableAnswers(body.answers as AtlasAnswers)
+    : body.answers;
+  const parsed = parseAtlasAnswers(received, transmittedView(questionnaire));
   if (!parsed.ok) return json({ ok: false, error: "invalid_answers" }, 400);
 
   try {

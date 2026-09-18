@@ -13,6 +13,8 @@ import {
   type AtlasAnswerValue,
   type AtlasQuestionnaireView,
 } from "@/domain/atlas/questionnaire";
+import { atlasRecap, buildAtlasLedger } from "@/domain/atlas/ledger";
+import { transmittableAnswers } from "@/domain/atlas/profile";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 import { AtlasMark } from "./AtlasMark";
@@ -35,8 +37,10 @@ import type { Locale } from "@/i18n/config";
  * `src/content/atlas/questionnaire.ts` and `docs/ATLAS_QUESTIONNAIRE.md`.
  *
  * It holds no recommendation rule either. Generation is a single POST to
- * `/api/atlas` carrying the ANSWERS and a locale — never a prompt, a model or
- * a product list — and the response is an assembled result.
+ * `/api/atlas` carrying the TRANSMITTABLE answers and a locale — never a
+ * prompt, a model or a product list — and the response is an assembled
+ * result. Withheld answers (`domain/atlas/fields.ts`) never leave this
+ * component: they are shown back in the ledger, which is built here.
  *
  * PERSISTENCE is a per-viewer convenience only: the answers and the last
  * result sit in `sessionStorage`, keyed by the questionnaire's version so a
@@ -184,7 +188,7 @@ export function AtlasExperience({
       const response = await fetch("/api/atlas", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ locale, answers }),
+        body: JSON.stringify({ locale, answers: transmittableAnswers(answers) }),
       });
       status = response.status;
       payload = await response.json().catch(() => null);
@@ -458,6 +462,13 @@ export function AtlasExperience({
       {phase === "result" && result ? (
         <AtlasResult
           result={result}
+          ledger={buildAtlasLedger(
+            questionnaire,
+            answers,
+            copy.result.ledger,
+            result.notices.noteDiscarded,
+          )}
+          recap={atlasRecap(questionnaire, answers, copy.result.ledger)}
           copy={copy}
           headingRef={headingRef}
           onEdit={() => first && setPhase({ step: first })}

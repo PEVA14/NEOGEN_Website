@@ -1,13 +1,12 @@
 import type {
   AtlasConstraints,
   AtlasIntent,
+  AtlasPin,
   AtlasPolicyDecision,
   AtlasProfile,
   AtlasRange,
-  AtlasUse,
   AtlasWeights,
 } from "./types";
-import type { AtlasRole } from "./questionnaire";
 
 import { mentionsPersonalHealth } from "./screen";
 import { forbiddenTermIn } from "@/content/lifecycle";
@@ -15,69 +14,38 @@ import { forbiddenTermIn } from "@/content/lifecycle";
 /**
  * THE ADVISOR POLICY.
  *
- * The one place that decides what each ANSWER ROLE may influence. Retrieval,
- * the deterministic plan, the prompt, the validator, the ledger and the result
- * page all consume `applyAtlasPolicy`'s output; none of them reads the profile,
- * and none of them contains a recommendation rule of its own.
+ * Turns the profile into everything downstream consumes: selection signals,
+ * constraints, what the model may be told, and how the page is shaped.
+ * Retrieval, the deterministic plan, the prompt, the validator and the result
+ * page all read its output; none of them reads the profile, and none of them
+ * contains a recommendation rule of its own.
  *
- * IT SPEAKS ROLES, NOT QUESTIONS. The questionnaire declares which question
- * plays which role (`content/atlas/questionnaire.ts`); this file says what a
- * role is allowed to do. So questions can be rewritten, reordered, added or
- * dropped without touching the policy, and a role no question fills falls back
- * to `ROLE_DEFAULTS`.
+ * WHAT EACH FIELD MAY DO is declared in `fields.ts` (`ATLAS_FIELDS`), and this
+ * file keeps to it: a field used here for selection is one that table permits
+ * for discovery or filtering, and a field the table withholds is not on the
+ * profile as a value at all. `check:atlas` proves both directions — permitted
+ * answers change the decision, withheld ones cannot.
  *
- * THE FOUR USES
- *
- *   selection     which products can appear at all, and how many
- *   ranking       the order they are weighed in
- *   explanation   what the model is told about the visitor, to explain picks
- *   presentation  how the result page is shaped and addressed
- *
- * THE BOUNDARY, KEPT HERE AND ONLY HERE
+ * THE BOUNDARY
  *
  * Product selection is driven by what the catalogue can honestly answer: the
- * visitor's topics and their order, the research functions (mechanisms and
- * processes, each backed by an approved source) they want to study, what they
- * want to get done, products they already have in mind, experience with the
- * catalogue, priorities, formats, preferred presentation size, supplies,
- * budget, how they buy and when they need it. Each maps to registry facts —
- * areas, function tags, overlaps, signature products, documentation,
- * presentations, prices, availability.
+ * catalogue area the visitor's goal corresponds to, research functions,
+ * products named, experience (as catalogue complexity), and the purchasing
+ * preferences — formats, size, supplies, budget, how and when they buy. Each
+ * maps to registry facts: areas, function tags, overlaps, signature products,
+ * documentation, presentations, prices, availability.
  *
- * Two things are withheld, and each withholding is recorded in the ledger the
- * visitor sees:
- *
- *   - A note that carries health, body, medication or dosing detail is
- *     discarded whole, before retrieval and before any model call. Choosing a
- *     compound from a person's health is individual treatment selection; the
- *     policy does not make that inference and does not pass the material to a
- *     model that might. The rest of the profile keeps all of its influence.
- *   - The visitor's name personalises the page and is never sent to a model.
+ * Health, body, lifestyle, administration, personal-outcome detail and use
+ * history are withheld (`fields.ts` says why for each) and never reach this
+ * file. A free note that carries such detail is discarded whole, per request,
+ * before retrieval and before any model call; the rest of the profile keeps
+ * all of its influence. The visitor's name personalises the page and is never
+ * sent to a model.
  *
  * Nothing in this file scores a product by what it does to a body, because
  * there is no approved claim in the registries to score and the policy will
  * not invent one.
  */
-
-/** What each ROLE is ALLOWED to influence. The ledger is built from this. */
-export const ATLAS_POLICY: Readonly<Record<AtlasRole, readonly AtlasUse[]>> = {
-  topics: ["selection", "ranking", "explanation", "presentation"],
-  "research-functions": ["selection", "ranking", "explanation"],
-  intent: ["selection", "ranking", "explanation", "presentation"],
-  "products-in-mind": ["selection", "ranking", "explanation"],
-  "first-name": ["presentation"],
-  experience: ["selection", "ranking", "explanation"],
-  history: ["explanation", "presentation"],
-  priorities: ["ranking", "explanation"],
-  "explanation-style": ["explanation", "presentation"],
-  forms: ["selection", "explanation"],
-  "presentation-size": ["selection", "ranking", "explanation", "presentation"],
-  "include-supplies": ["selection", "explanation", "presentation"],
-  "budget-cap": ["selection", "ranking", "explanation", "presentation"],
-  "purchase-horizon": ["selection", "explanation"],
-  timing: ["ranking", "explanation"],
-  "free-note": ["selection", "explanation"],
-};
 
 type Breadth = "focused" | "balanced" | "spread";
 
@@ -110,14 +78,39 @@ export function noteIsUsable(note: string): boolean {
   return note.length > 0 && !mentionsPersonalHealth(note) && forbiddenTermIn(note) === null;
 }
 
+/**
+ * Products the policy itself requires. None today: no rule of the current
+ * policy names a product. This is the seam a future rule plugs into — its pins
+ * travel through retrieval, the model's constraints, the validator and the
+ * result card exactly as a visitor-named product does, with its reasons.
+ */
+export function policyPins(profile: AtlasProfile): readonly AtlasPin[] {
+  void profile;
+  return [];
+}
+
 export function applyAtlasPolicy(profile: AtlasProfile): AtlasPolicyDecision {
   const breadth = BREADTH[profile.intent];
+  const pinned: AtlasPin[] = [
+    ...profile.products.map((slug) => ({
+      slug,
+      source: "visitor" as const,
+      reasons: ["named-by-visitor" as const],
+    })),
+    ...policyPins(profile).filter((pin) => !profile.products.includes(pin.slug)),
+  ];
+  /* What the visitor actually said. A discarded note was said, and is not passed on. */
+  const asked = (Object.keys(profile.sources) as (keyof typeof profile.sources)[]).filter(
+    (field) =>
+      profile.sources[field] === "answer" &&
+      (field !== "context-note" || noteIsUsable(profile.note)),
+  );
   const priority = (p: AtlasProfile["priorities"][number]) => profile.priorities.includes(p);
 
   /* ---- ranking weights -------------------------------------------------- */
   const weights: AtlasWeights = {
     topic: TOPIC_WEIGHTS[breadth],
-    inMind: 8,
+    pinned: 8,
     function: 4,
     overlap: priority("overlap") ? 3 : profile.experience === "experienced" ? 1.5 : 1,
     signature: priority("signature") ? 3 : profile.experience === "new" ? 1.5 : 0.5,
@@ -149,7 +142,7 @@ export function applyAtlasPolicy(profile: AtlasProfile): AtlasPolicyDecision {
     more,
     total: ATLAS_TOTAL_RANGE,
     startWithinBudget: profile.budgetCap !== null,
-    includeInMind: true,
+    includePinned: true,
     coverTopics: breadth !== "focused",
     moreWithinBudgetFirst: profile.horizon === "one-order",
   };
@@ -161,9 +154,9 @@ export function applyAtlasPolicy(profile: AtlasProfile): AtlasPolicyDecision {
 
   return {
     selection: {
-      topics: profile.topics,
+      topics: profile.areas,
       functions: profile.functions,
-      inMind: profile.inMind,
+      pinned,
       forms: profile.forms,
       budgetCap: profile.budgetCap,
       variant: profile.size === "largest" ? "largest-within-budget" : "entry",
@@ -173,10 +166,11 @@ export function applyAtlasPolicy(profile: AtlasProfile): AtlasPolicyDecision {
     },
     constraints,
     narrative: {
-      topics: profile.topics,
+      asked,
+      topics: profile.areas,
       functions: profile.functions,
       intent: profile.intent,
-      inMind: profile.inMind,
+      pinned: pinned.map((pin) => pin.slug),
       experience: profile.experience,
       history: profile.history,
       priorities: profile.priorities,

@@ -25,7 +25,6 @@ import { bagEnabled } from "@/payments";
 
 import { assembleAtlasView } from "./assemble";
 import { ATLAS_SYSTEM, buildAtlasInput } from "./prompt";
-import { ATLAS_VOCABULARIES } from "./questionnaire";
 import { atlasSubjects } from "./subjects";
 
 import type { Locale } from "@/i18n/config";
@@ -33,15 +32,15 @@ import type { Locale } from "@/i18n/config";
 /**
  * ONE ATLAS REQUEST, END TO END.
  *
- *   answers → PROFILE (by role) → POLICY → selection signals → retrieval
+ *   answers → PROFILE → POLICY → selection signals → retrieval
  *           → (model | plan) → validation against the policy's constraints
  *           → assembly
  *
- * The answers become a profile by ROLE (`profileFromAnswers`), and the profile
- * is handed to the policy and to nothing else. Which question fills which role
- * is questionnaire content; what a role may influence is the policy's. The retry budget is
- * time-boxed: a correction is attempted only if the first answer came back
- * quickly enough for another to fit inside the route's limit.
+ * `answers` holds TRANSMITTED answers only — withheld ones never left the
+ * browser. They become a profile through `fields.ts` (`profileFromAnswers`),
+ * and the profile is handed to the policy and to nothing else. The retry
+ * budget is time-boxed: a correction is attempted only if the first answer
+ * came back quickly enough for another to fit inside the route's limit.
  */
 
 const MAX_TOKENS = 16_000;
@@ -59,7 +58,7 @@ export async function generateAtlas(
     atlasSubjects(),
   ]);
 
-  const profile = profileFromAnswers(questionnaire, answers, ATLAS_VOCABULARIES);
+  const profile = profileFromAnswers(questionnaire, answers);
   const decision = applyAtlasPolicy(profile);
   const publicEvidence = publicEvidenceIndex(publishedProducts).length > 0;
   const retrieval = retrieveAtlas(decision.selection, subjects, {
@@ -181,8 +180,6 @@ export async function generateAtlas(
     generation,
     mode,
     decision,
-    questionnaire,
-    answers,
     retrieval,
     locale,
     dict,

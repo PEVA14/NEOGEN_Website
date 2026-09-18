@@ -17,6 +17,12 @@ const pick = z.object({
   slug: z.string(),
   /** Why this product, connected to what the visitor said. */
   why: z.string(),
+  /**
+   * Which of THIS product's approved statements to put forward, by id, from
+   * its `evidence` column. The page prints the statement and its references
+   * from the registry; the model never writes a finding.
+   */
+  evidence: z.array(z.string()),
 });
 
 export const atlasGenerationSchema = z.object({

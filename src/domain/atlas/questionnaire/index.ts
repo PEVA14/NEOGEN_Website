@@ -1,5 +1,3 @@
-import { ATLAS_TOPIC_RANKS } from "../types";
-
 import type {
   AtlasAnswerIssue,
   AtlasAnswers,
@@ -8,7 +6,6 @@ import type {
   AtlasQuestion,
   AtlasQuestionnaire,
   AtlasRegistrySource,
-  AtlasRole,
   AtlasSchemaIssue,
   AtlasCondition,
 } from "./types";
@@ -18,7 +15,6 @@ import type {
   AtlasQuestionnaireView,
   AtlasQuestionView,
 } from "./view";
-import type { AtlasProfile } from "../types";
 import type { LocalizedText } from "@/content/lifecycle";
 import type { Locale } from "@/i18n/config";
 
@@ -36,12 +32,11 @@ import type { Locale } from "@/i18n/config";
  *   conditionHolds           conditional visibility, over answers by id
  *   answerIssues             one question's rules
  *   parseAtlasAnswers        an untrusted body → answers, or issues
- *   profileFromAnswers       answers by ROLE → the profile the policy reads
+ *   answerSummary            one answer as the visitor reads it back
  *
- * `profileFromAnswers` is the decoupling that matters: the policy keeps one
- * typed contract, and the questionnaire decides which question fills each part
- * of it. Delete a question and its role falls back to the default recorded in
- * `ROLE_DEFAULTS` — the advisor keeps working with a shorter questionnaire.
+ * It knows no question and no meaning. What an answer MEANS — which profile
+ * field it fills and what that field may influence — is `domain/atlas/fields.ts`,
+ * and turning answers into the profile is `domain/atlas/profile.ts`.
  */
 
 /* ---- building the view ---------------------------------------------------- */
@@ -84,7 +79,11 @@ function questionView(
     hint: text(question.hint, locale),
     required: question.required ?? false,
     markOptional: question.markOptional ?? false,
-    role: question.role ?? null,
+    registry:
+      (question.kind === "single-select" || question.kind === "multi-select") &&
+      question.options.kind === "registry"
+        ? question.options.registry
+        : null,
     recap: question.recap ?? false,
     visibleWhen: question.visibleWhen ?? null,
     options: [] as readonly AtlasOptionView[],
@@ -129,7 +128,7 @@ function questionView(
       return {
         ...base,
         min: question.min,
-        max: question.max,
+        max: question.max ?? null,
         step: question.step ?? 1,
         unit: text(question.unit, locale),
         initial: question.default ?? null,
@@ -380,146 +379,8 @@ export function parseAtlasAnswers(
   return { ok: true, answers: staged };
 }
 
-/* ---- answers → profile, by role ------------------------------------------- */
-
-/**
- * What the profile falls back to when NO question fills a role — the advisor's
- * behaviour with a shorter questionnaire, stated once.
- */
-export const ROLE_DEFAULTS = {
-  topics: [] as readonly string[],
-  "research-functions": [] as readonly string[],
-  intent: "first-order",
-  "products-in-mind": [] as readonly string[],
-  "first-name": "",
-  experience: "some",
-  history: "first-time",
-  priorities: [] as readonly string[],
-  "explanation-style": "direct",
-  forms: [] as readonly string[],
-  "presentation-size": "no-preference",
-  "include-supplies": false,
-  "budget-cap": null as number | null,
-  "purchase-horizon": "one-order",
-  timing: "no-rush",
-  "free-note": "",
-} as const;
-
-function byRole(view: AtlasQuestionnaireView, role: AtlasRole): AtlasQuestionView | undefined {
-  return allQuestions(view).find((question) => question.role === role);
-}
-
-const asList = (value: AtlasAnswerValue | undefined): readonly string[] =>
-  Array.isArray(value) ? (value as readonly string[]) : [];
 const asText = (value: AtlasAnswerValue | undefined): string =>
   typeof value === "string" ? value : "";
-
-/**
- * One recognised id, or the role's default.
- *
- * An id outside the recognised set is kept in the ledger and shown back to the
- * visitor, but the policy is fed the default — so rewriting an option's
- * wording is free, while inventing a NEW id changes nothing about behaviour
- * until the policy learns it. `check:atlas` lists the recognised ids per role.
- */
-function asEnum<T extends string>(
-  value: AtlasAnswerValue | undefined,
-  allowed: readonly T[],
-  fallback: T,
-): T {
-  return typeof value === "string" && (allowed as readonly string[]).includes(value)
-    ? (value as T)
-    : fallback;
-}
-
-/** The numeric payload of the chosen option, or the number itself. */
-function asCap(question: AtlasQuestionView | undefined, value: AtlasAnswerValue | undefined) {
-  if (question === undefined) return ROLE_DEFAULTS["budget-cap"];
-  if (typeof value === "number") return value;
-  const option = question.options.find((o) => o.id === value);
-  return option?.value ?? null;
-}
-
-export interface AtlasProfileVocabularies {
-  /** Recognised ids per enum role, from the domain's closed vocabularies. */
-  intents: readonly AtlasProfile["intent"][];
-  experience: readonly AtlasProfile["experience"][];
-  histories: readonly AtlasProfile["history"][];
-  priorities: readonly AtlasProfile["priorities"][number][];
-  styles: readonly AtlasProfile["style"][];
-  forms: readonly AtlasProfile["forms"][number][];
-  sizes: readonly AtlasProfile["size"][];
-  horizons: readonly AtlasProfile["horizon"][];
-  timings: readonly AtlasProfile["timing"][];
-}
-
-/**
- * Answers → the profile the policy reads.
- *
- * Nothing here decides what an answer may influence; it only puts each
- * answer where the policy expects to find it. Answers with no role reach the
- * ledger and stop there.
- */
-export function profileFromAnswers(
-  view: AtlasQuestionnaireView,
-  answers: AtlasAnswers,
-  vocabularies: AtlasProfileVocabularies,
-): AtlasProfile {
-  const value = (role: AtlasRole) => {
-    const question = byRole(view, role);
-    return question ? answers[question.id] : undefined;
-  };
-  const list = (role: AtlasRole, fallback: readonly string[]) => {
-    const question = byRole(view, role);
-    return question ? asList(answers[question.id]) : fallback;
-  };
-
-  const budget = byRole(view, "budget-cap");
-  const ranked = list("topics", ROLE_DEFAULTS.topics).slice(0, ATLAS_TOPIC_RANKS);
-
-  return {
-    topics: ranked as AtlasProfile["topics"],
-    functions: list(
-      "research-functions",
-      ROLE_DEFAULTS["research-functions"],
-    ) as AtlasProfile["functions"],
-    intent: asEnum(value("intent"), vocabularies.intents, ROLE_DEFAULTS.intent),
-    inMind: list("products-in-mind", ROLE_DEFAULTS["products-in-mind"]),
-    firstName: byRole(view, "first-name")
-      ? asText(value("first-name"))
-      : ROLE_DEFAULTS["first-name"],
-    experience: asEnum(value("experience"), vocabularies.experience, ROLE_DEFAULTS.experience),
-    history: asEnum(value("history"), vocabularies.histories, ROLE_DEFAULTS.history),
-    priorities: list("priorities", ROLE_DEFAULTS.priorities).filter((id) =>
-      (vocabularies.priorities as readonly string[]).includes(id),
-    ) as AtlasProfile["priorities"],
-    style: asEnum(
-      value("explanation-style"),
-      vocabularies.styles,
-      ROLE_DEFAULTS["explanation-style"],
-    ),
-    forms: list("forms", ROLE_DEFAULTS.forms).filter((id) =>
-      (vocabularies.forms as readonly string[]).includes(id),
-    ) as AtlasProfile["forms"],
-    size: asEnum(
-      value("presentation-size"),
-      vocabularies.sizes,
-      ROLE_DEFAULTS["presentation-size"],
-    ),
-    includeSupplies:
-      typeof value("include-supplies") === "boolean"
-        ? (value("include-supplies") as boolean)
-        : ROLE_DEFAULTS["include-supplies"],
-    budgetCap: asCap(budget, value("budget-cap")),
-    horizon: asEnum(
-      value("purchase-horizon"),
-      vocabularies.horizons,
-      ROLE_DEFAULTS["purchase-horizon"],
-    ),
-    timing: asEnum(value("timing"), vocabularies.timings, ROLE_DEFAULTS.timing),
-    note: byRole(view, "free-note") ? asText(value("free-note")) : ROLE_DEFAULTS["free-note"],
-  };
-}
 
 /* ---- showing an answer back ----------------------------------------------- */
 
@@ -559,8 +420,8 @@ export function answerSummary(
  * Everything structurally wrong with the questionnaire CONTENT.
  *
  * `check:atlas` fails on any issue, so a questionnaire that could not be
- * answered — a condition pointing at a later question, two questions filling
- * one role, a default that is not an option — is caught before it ships.
+ * answered — a condition pointing at a later question, a duplicate id, a
+ * default that is not an option — is caught before it ships.
  */
 export function validateQuestionnaire(
   questionnaire: AtlasQuestionnaire,
@@ -576,7 +437,6 @@ export function validateQuestionnaire(
 
   const groupIds = new Set<string>();
   const questionIds = new Set<string>();
-  const roles = new Map<AtlasRole, string>();
   const seen: string[] = [];
 
   const checkCondition = (condition: AtlasCondition, where: string) => {
@@ -601,13 +461,6 @@ export function validateQuestionnaire(
     for (const question of group.questions) {
       const where = `${group.id}/${question.id}`;
       if (questionIds.has(question.id)) add("duplicate_question_id", where);
-
-      if (question.role) {
-        if (roles.has(question.role)) {
-          add("duplicate_role", where, `${question.role} also on ${roles.get(question.role)}`);
-        }
-        roles.set(question.role, question.id);
-      }
 
       if (question.kind === "single-select" || question.kind === "multi-select") {
         if (question.options.kind === "registry") {
@@ -637,7 +490,7 @@ export function validateQuestionnaire(
       }
 
       if (question.kind === "number" || question.kind === "range") {
-        if (question.max <= question.min)
+        if (question.max !== undefined && question.max <= question.min)
           add("bad_bounds", where, `${question.min}–${question.max}`);
         if (
           question.kind === "range" &&
@@ -645,24 +498,6 @@ export function validateQuestionnaire(
         ) {
           add("bad_bounds", where, `default ${question.default} outside bounds`);
         }
-      }
-
-      /* A free note must be long text: the health screen reads a text field. */
-      if (question.role === "free-note" && question.kind !== "long-text") {
-        add("role_kind_mismatch", where, "free-note must be long-text");
-      }
-      if (question.role === "budget-cap" && question.kind === "multi-select") {
-        add("role_kind_mismatch", where, "budget-cap takes one value");
-      }
-      if (
-        (question.role === "topics" ||
-          question.role === "research-functions" ||
-          question.role === "products-in-mind" ||
-          question.role === "priorities" ||
-          question.role === "forms") &&
-        question.kind !== "multi-select"
-      ) {
-        add("role_kind_mismatch", where, `${question.role} takes several values`);
       }
 
       /* Declared BEFORE its own conditions are checked: self-reference is a
@@ -686,7 +521,6 @@ export type {
   AtlasQuestionnaire,
   AtlasQuestionGroup,
   AtlasRegistrySource,
-  AtlasRole,
   AtlasSchemaIssue,
 } from "./types";
 export type {

@@ -674,12 +674,23 @@ locale, registries already read — so the browser renders and validates against
 the same object the API route rebuilds and re-validates. An answer to a hidden
 or non-existent question is dropped, not coerced.
 
-**The policy speaks roles.** A question declares a `role`; `ATLAS_POLICY` maps
-role → permitted uses (selection / ranking / explanation / presentation).
-`profileFromAnswers` fills the policy's typed profile by role, and a role no
-question fills falls back to `ROLE_DEFAULTS` — so the advisor keeps working
-with a shorter questionnaire. A question with no role is collected, echoed back
-and can move nothing.
+**Meaning lives in one file.** `src/domain/atlas/fields.ts` is the only place
+that names question ids: it binds each question to a profile field, gives each
+field its permitted uses (discovery / research-context / personalization /
+filtering / recap / presentation) or its withholding reason, and translates
+option ids into catalogue facts (a goal → its area). `profileFromAnswers` builds
+the profile from those tables; nothing downstream reads a question id. A
+permitted field no question asks for runs on `FIELD_DEFAULTS`, marked as a
+default so it is never described as the visitor's choice. An unbound question
+is withheld — fail closed — and `check:atlas` fails until it is classified.
+
+**Withheld means never sent.** Health, body, lifestyle, administration,
+personal-outcome and use-history answers may at most be shown back (`recap`).
+The browser sends only transmittable answers, the route strips again and
+validates the transmitted view, and the profile carries withheld fields by name
+with no value slot. The ledger and recap are therefore built in the browser.
+`check:atlas` sweeps every withheld question through every option and proves
+the policy, retrieval, plan and the model's exact input do not change.
 
 **Facts are never copied into questionnaire content.** Areas, products and
 research functions are `{ kind: "registry" }` option sources resolved at render
@@ -687,15 +698,22 @@ time in `server/atlas/questionnaire.ts`. A long list may arrive grouped — the
 research-function vocabulary declares its own groups and the renderer sections
 the cards on them, in arrival order, without re-sorting or filtering.
 
-**The result UI reads structured data.** `recap` and `ledger` entries carry
-their own label, answer, permitted uses and withholding, so the result page has
-no knowledge of today's questions.
+**The result UI reads structured data.** Each result product carries its
+`source` (visitor / policy / retrieval / supply), structured `reasons`, approved
+`evidence` resolved by statement id, and a deterministic `relevance`. The model
+may cite a product's own statement ids and nothing else; it never writes a
+finding, a price, a presentation or a reference. `recap` and `ledger` entries
+carry their own label, answer, permitted uses and withholding, so the result
+page has no knowledge of today's questions.
 
 **A research function is never asserted.** A compound is tagged with a function
 only from inside its overview, pointing at a sourced statement; the tag is
 public exactly while that statement is (`publicFunctions`). Atlas offers a
-function only when a compound carries an approved tag. Questions may not ask
-for a personal outcome to match a compound to — `check:content` fails on it.
+function only when a compound carries an approved tag. The questionnaire may
+ASK what the owner decides; what it may not do is USE a personal outcome, a
+health, body or dosing answer to select a compound — `check:content` fails if a
+question so worded is bound to a decision field, unless it is consumed only as
+an option id translated to a catalogue area.
 
 ## 18. Commands
 
@@ -711,7 +729,7 @@ npm run check:checkout  # server-side pricing, gates, idempotency, policies
 npm run check:quality   # evidence resolver, lots, Janoshik rules, media readiness
 npm run check:content   # references, sourced statements, forbidden vocabulary, notifications
 npm run check:media     # media declarations vs real files
-npm run check:atlas     # questionnaire schema, answers, roles, policy, retrieval, adapter
+npm run check:atlas     # questionnaire, bindings, branches, no-leak sweep, policy, retrieval, adapter
 npm run check:output    # what the build actually emitted
 npm run format       # Prettier
 ```

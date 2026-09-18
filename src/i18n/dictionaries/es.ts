@@ -189,7 +189,7 @@ const es = {
       },
       ledger: {
         title: "Cómo usó Atlas tus respuestas",
-        lede: "Cada respuesta, y lo que Atlas hizo con ella.",
+        lede: "Cada respuesta, y lo que Atlas hizo con ella. Lo que no se usa para elegir productos no sale de tu dispositivo.",
         question: "Pregunta",
         answer: "Tu respuesta",
         used: "Se usó para",
@@ -199,16 +199,45 @@ const es = {
         yes: "Sí",
         no: "No",
         uses: {
-          selection: "Elegir productos",
-          ranking: "Ordenarlos",
-          explanation: "Explicártelos",
+          discovery: "Elegir y ordenar productos",
+          "research-context": "Elegir qué investigación mostrarte",
+          personalization: "Explicarte la selección",
+          filtering: "Ajustar cuántos y cuáles",
+          recap: "Mostrártela de vuelta",
           presentation: "Presentar esta página",
         },
         withheld: {
+          health:
+            "Salud y medicación: Atlas no elige productos con esta información, y no sale de tu dispositivo.",
+          body: "Datos corporales: Atlas no elige productos con esta información, y no sale de tu dispositivo.",
+          lifestyle:
+            "Hábitos: Atlas no elige productos con esta información, y no sale de tu dispositivo.",
+          administration:
+            "Cómo y por cuánto tiempo se usaría: Atlas no da indicaciones de uso. No sale de tu dispositivo.",
+          "personal-outcome":
+            "Resultado personal: Atlas no relaciona productos con resultados personales. No sale de tu dispositivo.",
+          "use-history":
+            "Historial de uso: Atlas no elige productos con esta información, y no sale de tu dispositivo.",
+          unbound: "Todavía no tiene un uso asignado, así que no sale de tu dispositivo.",
           "health-note":
             "Tu nota incluía temas de salud, así que se descartó completa antes de preparar tu selección. Todas tus demás respuestas se usaron.",
           "name-private": "Sólo se usa en esta página; no se envía a la IA.",
         },
+      },
+      reasons: {
+        "named-by-visitor": "Lo mencionaste",
+        "policy-pin": "Incluido por la política de Atlas",
+        "area-match": "En {ref}",
+        "function-match": "Etiquetado con {ref}",
+        "spans-areas": "Cruza varios de tus temas",
+        signature: "Línea insignia",
+        documented: "Con documentación pública",
+        referenced: "Con fuentes publicadas",
+        value: "Precio de entrada accesible",
+        "within-budget": "Dentro de tu presupuesto",
+        "over-budget": "Sobre tu presupuesto",
+        unavailable: "No disponible por ahora",
+        "catalogue-wide": "Destacado del catálogo",
       },
       empty: {
         title: "No encontramos productos",
@@ -236,11 +265,14 @@ const es = {
         "cover-topics": "{topics} en un solo pedido",
         browse: "Un recorrido por {topics}",
       },
+      headlineArea: "Tu selección en {topic}",
+      headlineCatalogue: "Una selección del catálogo de NEOGEN",
       summary:
         "Empieza con {start}. Después, considera {more} productos más. Los elegimos por {reasons}.",
       summaryNoMore: "Empieza con {start}. Lo elegimos por {reasons}.",
       reasons: {
-        topics: "el orden de tus temas",
+        topics: "el tema del catálogo que corresponde a tu objetivo",
+        catalogue: "la línea insignia y la documentación disponible",
         inMind: "los productos que ya tenías en mente",
         budget: "tu presupuesto",
         priorities: {
@@ -250,8 +282,14 @@ const es = {
           overlap: "que cubran varios de tus temas",
         },
       },
-      aboutYou:
-        "{experience} y quieres {intent}, con {topics} como prioridad. Buscas opciones {budget}, {horizon}.",
+      aboutYou: {
+        topics: "partimos de {topics}, el tema del catálogo que corresponde a tu objetivo.",
+        catalogue:
+          "tu objetivo no corresponde a un solo tema del catálogo, así que partimos del catálogo completo.",
+        experience: "{experience}.",
+        intent: "quieres {intent}.",
+        budget: "buscas opciones {budget}, {horizon}.",
+      },
       experience: {
         new: "es tu primera vez con productos como estos",
         some: "ya has comprado productos como estos",
@@ -272,6 +310,8 @@ const es = {
       },
       why: {
         inMind: "Lo tenías en mente.",
+        policy: "Lo incluye la política de Atlas.",
+        catalogue: "Es uno de los productos destacados del catálogo.",
         primary: "Está en {topic}, tu tema principal.",
         secondary: "Está en {topic}, otro de tus temas.",
         outside: "Lo elegiste aunque está fuera de tus temas.",

@@ -54,7 +54,9 @@ import {
   researchReferenceIndex,
 } from "../src/content/research.ts";
 import { publishedProducts } from "../src/data/catalog/index.ts";
-import { AREAS } from "../src/data/discovery/index.ts";
+import { AREAS, publicAreas } from "../src/data/discovery/index.ts";
+import { ATLAS_QUESTIONNAIRE } from "../src/content/atlas/questionnaire.ts";
+import { GOAL_AREAS, fieldOf, specOf } from "../src/domain/atlas/fields.ts";
 import { dispatch, orderPlacedMessages } from "../src/domain/notifications/index.ts";
 import { noneChannel } from "../src/domain/notifications/adapters/none.ts";
 import { __resetOutbox, memoryOutbox } from "../src/domain/notifications/adapters/memoryOutbox.ts";
@@ -482,24 +484,89 @@ eq(
   }
 }
 
-/* ---- the Atlas questionnaire is content, held to the same vocabulary ----- */
+/* ---- the Atlas questionnaire: sensitive wording is never a decision input --
+ *
+ * The questionnaire is owner content and may ASK what the owner decides to
+ * ask. What this gate holds is the USE: a question whose wording touches
+ * dosing or administration, health, the body, or a personal outcome must be
+ * bound to a WITHHELD field (`domain/atlas/fields.ts`) — never sent, never a
+ * decision input. The one exception is a field that consumes only an option
+ * ID through a translation table to a catalogue fact (the goal → its catalogue
+ * area), so its wording never travels; every option of such a question must
+ * then translate to real area ids.
+ */
 {
-  const source = readFileSync("src/content/atlas/questionnaire.ts", "utf8")
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/^\s*\/\/.*$/gm, "");
-  const strings = [...source.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map((m) => m[1]);
-  const term = strings.map((value) => forbiddenTermIn(value)).find(Boolean);
-  ok(!term, "the questionnaire asks nothing in forbidden vocabulary", term ?? "");
-  /* Its answers must stay a research question, never a personal outcome. */
-  for (const banned of [
-    /bajar de peso|lose weight|weight loss/i,
-    /ganar m[uú]sculo|gain muscle|muscle gain/i,
-    /apetito|appetite/i,
-    /libido|sexual/i,
-    /dormir mejor|better sleep/i,
-  ]) {
-    ok(!banned.test(source), "the questionnaire offers no personal-outcome option", String(banned));
+  const SENSITIVE = [
+    /bajar de peso|p[eé]rdida de peso|lose weight|weight loss/i,
+    /m[uú]scul|muscle/i,
+    /apetito|appetite|saciedad|satiety|antojo|craving/i,
+    /libido|sexual|er[eé]cti/i,
+    /sue[nñ]o|dormir|sleep/i,
+    /peso|weight|altura|height|edad\b|\bage\b|sexo|\bsex\b/i,
+    /medicament|medication|condici|condition|lesi[oó]n|injur|alcohol|cafe[ií]na|caffeine/i,
+  ];
+  const TRANSLATED = { "goal-area": GOAL_AREAS };
+  const areaIds = new Set(publicAreas().map((a) => a.id));
+  const textsOf = (q) =>
+    [
+      q.label,
+      q.shortLabel,
+      q.hint,
+      q.placeholder,
+      ...(q.options?.kind === "static" ? q.options.items.flatMap((i) => [i.label, i.hint]) : []),
+    ]
+      .filter(Boolean)
+      .flatMap((t) => [t.es, t.en]);
+
+  let sensitiveQuestions = 0;
+  for (const group of ATLAS_QUESTIONNAIRE.groups) {
+    for (const q of group.questions) {
+      const texts = textsOf(q);
+      const dosing = texts.map(forbiddenTermIn).find(Boolean);
+      const sensitive = dosing || texts.some((t) => SENSITIVE.some((re) => re.test(t)));
+      if (!sensitive) continue;
+      sensitiveQuestions += 1;
+      const spec = specOf(q.id);
+      const field = fieldOf(q.id);
+      if (dosing) {
+        ok(
+          spec.withheld !== null,
+          "a question worded in dosing or administration vocabulary is withheld",
+          `${q.id} (${dosing})`,
+        );
+        continue;
+      }
+      if (spec.withheld !== null) continue;
+      const table = field ? TRANSLATED[field] : undefined;
+      ok(
+        table !== undefined,
+        "a sensitive question is withheld, or consumed only as a translated option id",
+        q.id,
+      );
+      if (table && q.options?.kind === "static") {
+        for (const item of q.options.items) {
+          ok(
+            Array.isArray(table[item.id]) && table[item.id].every((id) => areaIds.has(id)),
+            "every option of a translated question maps to real catalogue areas",
+            `${q.id}/${item.id}`,
+          );
+        }
+      }
+    }
   }
+  ok(
+    sensitiveQuestions > 0,
+    "the sensitivity screen recognises the questionnaire's sensitive questions",
+  );
+
+  /* Negative controls: the same rules refuse a used binding. */
+  ok(
+    specOf("administration-route").withheld !== null &&
+      specOf("health-conditions").withheld !== null &&
+      specOf("weight-kg").withheld !== null,
+    "administration, health and body questions are withheld",
+  );
+  ok(specOf("a-question-nobody-bound").withheld === "unbound", "an unbound question is withheld");
 }
 
 /* ---- the research-function vocabulary is grouped, wholly ---------------- */

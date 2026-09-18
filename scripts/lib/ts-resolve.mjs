@@ -21,6 +21,16 @@ function firstFile(base) {
 }
 
 export async function resolve(specifier, context, next) {
+  /*
+   * `server-only` throws outside a React Server Components build. The check
+   * scripts ARE server-side code, so they get what the server gets: an empty
+   * module. This is how `check:atlas` can read the exact prompt the model
+   * would receive (`server/atlas/prompt.ts`) instead of a copy of it.
+   */
+  if (specifier === "server-only") {
+    return { url: "data:text/javascript,export{}", format: "module", shortCircuit: true };
+  }
+
   let base = null;
 
   if (specifier.startsWith("@/")) {

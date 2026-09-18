@@ -1,9 +1,28 @@
 export * from "./types";
 export * from "./questionnaire";
+export {
+  ATLAS_BINDINGS,
+  ATLAS_FIELDS,
+  ATLAS_USES,
+  DECISION_USES,
+  EXPERIENCE_LEVELS,
+  GOAL_AREAS,
+  SERVER_USES,
+  fieldOf,
+  isTransmitted,
+  specOf,
+} from "./fields";
+export type { AtlasFieldSpec } from "./fields";
+export {
+  FIELD_DEFAULTS,
+  profileFromAnswers,
+  transmittableAnswers,
+  transmittedView,
+} from "./profile";
 export { atlasRecap, buildAtlasLedger } from "./ledger";
 export type { AtlasLedgerCopy } from "./ledger";
 export { mentionsPersonalHealth, normaliseText } from "./screen";
-export { ATLAS_POLICY, ATLAS_TOTAL_RANGE, applyAtlasPolicy, noteIsUsable } from "./policy";
+export { ATLAS_TOTAL_RANGE, applyAtlasPolicy, noteIsUsable, policyPins } from "./policy";
 export {
   ATLAS_CANDIDATE_LIMIT,
   ATLAS_SUPPLIES_LIMIT,

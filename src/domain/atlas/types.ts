@@ -1,3 +1,4 @@
+import type { AtlasFieldId, AtlasWithheld } from "./fields";
 import type { ResearchFunctionId } from "@/content/functions";
 import type { Availability } from "@/data/commerce";
 import type { DiscoveryAreaId } from "@/data/discovery";
@@ -5,16 +6,19 @@ import type { DiscoveryAreaId } from "@/data/discovery";
 /**
  * NEOGEN ATLAS — the shapes a personal selection is built from.
  *
- *   Questionnaire → AtlasProfile → POLICY → signals → retrieval → generation
- *                 → validation → AtlasResultView → UI
+ *   answers → AtlasProfile → POLICY → signals → retrieval → generation
+ *           → validation → AtlasResultView → UI
  *
- * The PROFILE is everything the visitor told Atlas, parsed and nothing more.
- * The POLICY (`policy.ts`) is the only code that decides what each answer is
- * allowed to influence. Everything downstream consumes the policy's outputs —
- * selection signals, constraints, narrative signals, presentation signals and
- * a ledger — and never reads the profile directly. Changing what an answer
- * may do is an edit to the policy and nowhere else.
+ * The PROFILE is what the visitor told Atlas, in the pipeline's own terms —
+ * area ids, levels, amounts — never question ids. `fields.ts` says which
+ * question fills which field and what each field may influence; `profile.ts`
+ * builds the profile from those tables. The POLICY (`policy.ts`) turns the
+ * profile into selection signals, constraints, narrative signals and
+ * presentation signals; everything downstream consumes those and never reads
+ * the profile directly.
  */
+
+export type { AtlasFieldId, AtlasUse, AtlasWithheld } from "./fields";
 
 /**
  * How many ranked topics the policy weighs. The questionnaire may offer fewer
@@ -74,59 +78,70 @@ export const atlasTimings: readonly AtlasTiming[] = ["soon", "no-rush"];
 
 /* ---- The profile ---------------------------------------------------------- */
 
+/** Where a permitted field's value came from. */
+export type AtlasFieldSource =
+  /** A visible question bound to the field was answered. */
+  | "answer"
+  /** No question asks for it (or it was skipped): the documented default. */
+  | "default";
+
+/**
+ * A withheld field, as the profile carries it: its name, the questions that
+ * ask for it, and why it is withheld. There is deliberately no value slot —
+ * the answer never reaches the server, and a field that cannot hold a value
+ * cannot leak one into a decision.
+ */
+export interface AtlasWithheldField {
+  field: AtlasFieldId;
+  questions: readonly string[];
+  reason: AtlasWithheld;
+}
+
 export interface AtlasProfile {
-  /* Goals */
-  /** One to three topics (discovery areas), RANKED: index 0 leads. */
-  topics: readonly DiscoveryAreaId[];
+  /* ---- discovery ---- */
   /**
-   * Zero to three research functions — mechanisms or processes named by the
-   * literature (`content/functions`). Optional; only functions with an
-   * approved, sourced product behind them can be offered or accepted.
+   * Catalogue areas, RANKED: index 0 leads. Today: the area the goal
+   * corresponds to. Empty means the catalogue as a whole.
    */
+  areas: readonly DiscoveryAreaId[];
+  /** Research functions (`content/functions`) — mechanisms named by the literature. */
   functions: readonly ResearchFunctionId[];
+  /** Published product slugs the visitor named. Always candidates. */
+  products: readonly string[];
   intent: AtlasIntent;
-  /** Published product slugs the visitor already has in mind. */
-  inMind: readonly string[];
-  /* About you */
-  firstName: string;
-  experience: AtlasExperienceLevel;
-  history: AtlasHistory;
+  timing: AtlasTiming;
   priorities: readonly AtlasPriority[];
-  style: AtlasStyle;
-  /* Preferences */
+  /* ---- filtering ---- */
+  experience: AtlasExperienceLevel;
   /** Empty means any form. */
   forms: readonly AtlasForm[];
   size: AtlasSize;
   includeSupplies: boolean;
-  /* Budget and context */
   /**
    * The MXN ceiling, applied to REAL registry prices; null is no ceiling. It
-   * arrives as an option's `value` or as a number answer, so the budget
-   * question can be tiers today and a slider tomorrow.
+   * arrives as an option's `value` or as a number answer.
    */
   budgetCap: number | null;
   horizon: AtlasHorizon;
-  timing: AtlasTiming;
+  /* ---- personalization / presentation ---- */
+  history: AtlasHistory;
+  style: AtlasStyle;
+  firstName: string;
   /** Free text, normalised but NOT yet judged — the policy decides its use. */
   note: string;
+  /* ---- provenance ---- */
+  /** For every permitted field: answered, or running on its default. */
+  sources: Readonly<Partial<Record<AtlasFieldId, AtlasFieldSource>>>;
+  /** Every withheld field the questionnaire asks for — by name, never by value. */
+  withheld: readonly AtlasWithheldField[];
 }
 
 /* ---- What the policy hands downstream ------------------------------------- */
 
-/** The four things an answer can be allowed to affect. */
-export type AtlasUse = "selection" | "ranking" | "explanation" | "presentation";
-
-/** Why an answer, or part of one, was kept away from a use. */
-export type AtlasWithheld =
-  /** The note carried health, body or medication detail and was discarded whole. */
-  | "health-note"
-  /** The name personalises the page and is never sent to the model. */
-  | "name-private";
-
 export interface AtlasWeights {
   /** Per topic rank. Length ≥ ATLAS_TOPIC_RANKS. */
   topic: readonly number[];
-  inMind: number;
+  pinned: number;
   /** Per research function the product is publicly tagged with. */
   function: number;
   /** Filed under more than one of the visitor's topics. */
@@ -150,7 +165,8 @@ export interface AtlasWeights {
 export interface AtlasSelectionSignals {
   topics: readonly DiscoveryAreaId[];
   functions: readonly ResearchFunctionId[];
-  inMind: readonly string[];
+  /** Products that must be candidates and must appear in the result. */
+  pinned: readonly AtlasPin[];
   forms: readonly AtlasForm[];
   budgetCap: number | null;
   /** Which presentation to put forward for each product. */
@@ -159,6 +175,18 @@ export interface AtlasSelectionSignals {
   /** Each topic keeps at least this many candidates, when it has them. */
   perTopicFloor: number;
   weights: AtlasWeights;
+}
+
+/**
+ * A product the policy requires in the result, with its reasons. The visitor
+ * naming a product is one source; a future policy rule is the other — the
+ * pipeline carries both identically, from retrieval through the model's
+ * constraints and the validator to the result card.
+ */
+export interface AtlasPin {
+  slug: string;
+  source: "visitor" | "policy";
+  reasons: readonly AtlasReasonCode[];
 }
 
 export interface AtlasRange {
@@ -173,8 +201,8 @@ export interface AtlasConstraints {
   total: AtlasRange;
   /** Together, the "start here" presentations stay inside the cap when that is possible. */
   startWithinBudget: boolean;
-  /** Every in-mind product that was retrieved must appear in the result. */
-  includeInMind: boolean;
+  /** Every pinned product that was retrieved must appear in the result. */
+  includePinned: boolean;
   /** Every chosen topic with a candidate appears in the result. */
   coverTopics: boolean;
   /** One-order visitors see within-budget additions before the rest. */
@@ -183,10 +211,16 @@ export interface AtlasConstraints {
 
 /** What the model may know about the visitor. Nothing else is sent. */
 export interface AtlasNarrativeSignals {
+  /**
+   * The fields the visitor actually answered. Everything else below is a
+   * default, and neither the model nor the composer may present a default as
+   * something the visitor said.
+   */
+  asked: readonly AtlasFieldId[];
   topics: readonly DiscoveryAreaId[];
   functions: readonly ResearchFunctionId[];
   intent: AtlasIntent;
-  inMind: readonly string[];
+  pinned: readonly string[];
   experience: AtlasExperienceLevel;
   history: AtlasHistory;
   priorities: readonly AtlasPriority[];
@@ -241,8 +275,57 @@ export interface AtlasSubject {
   entryPrice: number | null;
   documented: boolean;
   referenceIds: readonly string[];
+  /** Approved, sourced statements of its public overview — ids, never text. */
+  evidence: readonly AtlasEvidenceRef[];
   /** Catalogue position, for deterministic tie-breaks. */
   order: number;
+}
+
+/**
+ * One approved statement a product's public overview makes, by id. The text
+ * is resolved per locale at assembly, from `content/overview`; the model sees
+ * ids and may point at them, and has nowhere to write a finding of its own.
+ */
+export interface AtlasEvidenceRef {
+  /** The statement id in the product's overview. */
+  id: string;
+  kind: "mechanism" | "research";
+  /** Research functions this statement backs. */
+  functions: readonly ResearchFunctionId[];
+  referenceIds: readonly string[];
+}
+
+/** Why a candidate is in the result — decided by code, never by the model. */
+export type AtlasReasonCode =
+  | "named-by-visitor"
+  | "policy-pin"
+  | "area-match"
+  | "function-match"
+  | "spans-areas"
+  | "signature"
+  | "documented"
+  | "referenced"
+  | "value"
+  | "within-budget"
+  | "over-budget"
+  | "unavailable"
+  | "catalogue-wide";
+
+export interface AtlasReason {
+  code: AtlasReasonCode;
+  /** The area or research-function id the reason is about, when it has one. */
+  ref: string | null;
+}
+
+/**
+ * Relevance, as the policy's scoring computed it. Deterministic and
+ * reproducible — not a model's self-reported confidence.
+ */
+export interface AtlasRelevance {
+  /** 1-based position among the candidates. */
+  rank: number;
+  score: number;
+  tier: "primary" | "secondary" | "supporting";
 }
 
 export interface AtlasCandidate extends AtlasSubject {
@@ -253,8 +336,13 @@ export interface AtlasCandidate extends AtlasSubject {
   bridges: boolean;
   /** The visitor's research functions this product is tagged with. */
   matchedFunctions: readonly ResearchFunctionId[];
-  /** The visitor named it. */
-  inMind: boolean;
+  /** Required in the result, and why. Null for an ordinary candidate. */
+  pin: AtlasPin | null;
+  /** Structured reasons for its place, in order of weight. */
+  reasons: readonly AtlasReason[];
+  /** Its evidence, statements backing the visitor's functions first. */
+  evidence: readonly AtlasEvidenceRef[];
+  relevance: AtlasRelevance;
   /** The presentation the result puts forward, chosen by the size preference. */
   suggestedVariantId: string | null;
   suggestedPrice: number | null;

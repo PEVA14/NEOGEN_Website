@@ -1,551 +1,1773 @@
 import type { AtlasQuestionnaire } from "@/domain/atlas/questionnaire";
 
 /**
- * ===========================================================================
- *  THE ATLAS QUESTIONNAIRE — THIS IS THE FILE TO EDIT.
- * ===========================================================================
+ * ATLAS QUESTIONNAIRE — adapted from Questionnaire.docx.
+ * Edit labels and options here in Spanish and English. Array order is display order.
+ * Keep IDs stable; bump version when a change invalidates existing saved answers.
  *
- * Every question a visitor is asked, its wording in both languages, its
- * options and their order live here and nowhere else. Adding, removing,
- * reordering or rewriting a question is a change to this file alone: no
- * component, no policy and no check needs to move with it.
+ * Goal details appear inline through visibleWhen; a separate option sheet would
+ * require a renderer change outside this content file.
  *
- * See `docs/ATLAS_QUESTIONNAIRE.md` for the full guide. The short version:
+ * The document names six dropdowns without supplying their choices. Editable
+ * defaults were added for training-type, injection-tolerance, daily-schedule,
+ * work-type, alcohol and caffeine. They use the existing single-select display.
  *
- *   GROUPS are the steps, in order, and the progress rail reads its names
- *   from `label`.
- *
- *   KINDS are `single-select`, `multi-select`, `toggle`, `number`, `range`,
- *   `short-text` and `long-text`. The renderer draws each one; `render` and
- *   `columns` choose between existing presentations of a select.
- *
- *   IDS are machine-readable and permanent. `id` is the answer's key, and an
- *   option's `id` is the stored answer — rewrite a `label` freely, but change
- *   an `id` only deliberately, and bump `version` when you do so saved drafts
- *   are discarded instead of restored wrong.
- *
- *   ROLE is what the answer is allowed to feed. `ATLAS_POLICY` (in
- *   `domain/atlas/policy.ts`) maps each role to the uses it permits, and the
- *   visitor is shown that mapping on the result page. A question with NO role
- *   is collected and echoed back, and can move nothing. Roles are optional and
- *   each may be filled once; drop a question and its role falls back to the
- *   default in `ROLE_DEFAULTS`.
- *
- *   OPTIONS are either `static` — written here, with ids and labels — or
- *   `registry`, resolved at render time from NEOGEN's own registries
- *   (`discovery-areas`, `published-products`, `research-functions`). Never
- *   copy a product, price, count or slug into this file: name the registry and
- *   the current facts are read for you.
- *
- *   VISIBILITY: `visibleWhen` shows a question only while a condition over
- *   EARLIER answers holds. `hideWithoutOptions` drops a registry question that
- *   currently has nothing to offer.
- *
- * WHAT MAY NOT BE ASKED HERE. Atlas does not select compounds from a person's
- * health, body, measurements or medication, and does not ask for a personal
- * outcome to match a compound to. A free-text note is screened for that
- * material and discarded whole when it appears (`domain/atlas/screen.ts`), and
- * `check:content` fails on dosing vocabulary anywhere in this file.
+ * These new answers have no advisor roles assigned. Connecting them to
+ * recommendation logic is a separate system change.
  */
 export const ATLAS_QUESTIONNAIRE: AtlasQuestionnaire = {
-  /* Bump when a change would make a stored draft wrong. */
-  version: "3",
+  version: "4",
   groups: [
-    /* ---- 01 Goals -------------------------------------------------------- */
     {
       id: "goals",
-      label: { es: "Objetivos", en: "Goals" },
-      title: { es: "¿Qué te trae a NEOGEN?", en: "What brings you to NEOGEN?" },
+      label: {
+        es: "Objetivos",
+        en: "Goals"
+      },
+      title: {
+        es: "Objetivos",
+        en: "Goals"
+      },
       lede: {
-        es: "Empecemos por lo que buscas. Estas respuestas definen qué productos te mostramos.",
-        en: "Let's start with what you're looking for. These answers decide which products we show you.",
+        es: "Selecciona tu objetivo y después lo que más te interesa.",
+        en: "Select your goal, then what interests you most."
       },
       questions: [
         {
-          id: "topics",
-          kind: "multi-select",
-          role: "topics",
-          required: true,
-          recap: true,
-          ranked: true,
-          min: 1,
-          max: 3,
-          render: "tiles",
-          shortLabel: { es: "Temas", en: "Topics" },
-          label: { es: "¿Qué temas te interesan?", en: "Which topics interest you?" },
-          hint: {
-            es: "Elige hasta tres, en orden de importancia.",
-            en: "Pick up to three, most important first.",
-          },
-          options: { kind: "registry", registry: "discovery-areas" },
-        },
-        {
-          id: "research-functions",
-          kind: "multi-select",
-          role: "research-functions",
-          recap: true,
-          max: 3,
-          columns: 3,
-          hideWithoutOptions: true,
-          shortLabel: { es: "Funciones de investigación", en: "Research functions" },
-          label: {
-            es: "¿Qué función te interesa investigar?",
-            en: "Which function do you want to research?",
-          },
-          hint: {
-            es: "Opcional. Hasta tres mecanismos o procesos, tal como los describen las fuentes publicadas. Sólo aparecen los que tienen compuestos con fuentes revisadas.",
-            en: "Optional. Up to three mechanisms or processes, as published sources describe them. Only those with source-reviewed compounds appear.",
-          },
-          options: { kind: "registry", registry: "research-functions" },
-        },
-        {
-          id: "intent",
+          id: "goal",
           kind: "single-select",
-          role: "intent",
-          recap: true,
-          default: "first-order",
-          columns: 3,
-          shortLabel: { es: "Objetivo", en: "Goal" },
-          label: { es: "¿Qué quieres lograr hoy?", en: "What do you want to get done today?" },
+          label: {
+            es: "¿Cuál es tu objetivo?",
+            en: "What is your goal?"
+          },
           options: {
             kind: "static",
             items: [
               {
-                id: "first-order",
-                label: { es: "Hacer mi primer pedido", en: "Place my first order" },
-                hint: {
-                  es: "Quiero saber exactamente por dónde empezar.",
-                  en: "I want to know exactly where to start.",
-                },
+                id: "weight-loss",
+                label: {
+                  es: "Pérdida de peso",
+                  en: "Weight loss"
+                }
               },
               {
-                id: "compare",
-                label: { es: "Comparar opciones", en: "Compare options" },
-                hint: {
-                  es: "Ver alternativas antes de decidir.",
-                  en: "See the alternatives before deciding.",
-                },
+                id: "body-composition",
+                label: {
+                  es: "Composición corporal",
+                  en: "Body composition"
+                }
               },
               {
-                id: "deepen",
-                label: { es: "Conocer a fondo un tema", en: "Go deep on one topic" },
-                hint: {
-                  es: "Ya sé qué me interesa; quiero ver todo lo que hay.",
-                  en: "I know what interests me; show me everything there is.",
-                },
+                id: "longevity",
+                label: {
+                  es: "Longevidad y salud celular",
+                  en: "Longevity and cellular health"
+                }
               },
               {
-                id: "cover-topics",
-                label: { es: "Cubrir varios temas", en: "Cover several topics" },
-                hint: {
-                  es: "Un pedido que abarque todo lo que me interesa.",
-                  en: "One order that spans everything I care about.",
-                },
+                id: "tissue-recovery",
+                label: {
+                  es: "Recuperación y reparación tisular",
+                  en: "Recovery and tissue repair"
+                }
               },
               {
-                id: "browse",
-                label: { es: "Sólo explorar", en: "Just exploring" },
-                hint: {
-                  es: "Conocer el catálogo sin prisa.",
-                  en: "Get to know the catalogue, no rush.",
-                },
+                id: "sleep",
+                label: {
+                  es: "Sueño y descanso",
+                  en: "Sleep and rest"
+                }
               },
-            ],
+              {
+                id: "cognition",
+                label: {
+                  es: "Función cognitiva",
+                  en: "Cognitive function"
+                }
+              },
+              {
+                id: "skin-hair",
+                label: {
+                  es: "Piel y cabello",
+                  en: "Skin and hair"
+                }
+              },
+              {
+                id: "sexual-health",
+                label: {
+                  es: "Libido y salud sexual",
+                  en: "Libido and sexual health"
+                }
+              },
+              {
+                id: "daily-wellbeing",
+                label: {
+                  es: "Bienestar y rendimiento diario",
+                  en: "Daily wellbeing and performance"
+                }
+              },
+              {
+                id: "immunity",
+                label: {
+                  es: "Inmunidad e inflamación",
+                  en: "Immunity and inflammation"
+                }
+              }
+            ]
           },
+          required: true,
+          recap: true
         },
         {
-          id: "products-in-mind",
-          kind: "multi-select",
-          role: "products-in-mind",
-          recap: true,
-          max: 3,
-          render: "search",
-          shortLabel: { es: "Productos en mente", en: "Products in mind" },
+          id: "goal-weight-loss",
+          kind: "single-select",
           label: {
-            es: "¿Ya tienes productos en mente?",
-            en: "Do you already have products in mind?",
+            es: "¿Qué te interesa más?",
+            en: "What interests you most?"
           },
-          hint: {
-            es: "Opcional. Hasta tres: Atlas los incluye y te muestra qué más hay cerca.",
-            en: "Optional. Up to three: Atlas includes them and shows you what else is close by.",
+          options: {
+            kind: "static",
+            items: [
+              {
+                id: "satiety",
+                label: {
+                  es: "Saciedad y control del apetito",
+                  en: "Satiety and appetite control"
+                }
+              },
+              {
+                id: "cravings",
+                label: {
+                  es: "Control de antojos",
+                  en: "Craving control"
+                }
+              },
+              {
+                id: "energy-metabolism",
+                label: {
+                  es: "Metabolismo energético",
+                  en: "Energy metabolism"
+                }
+              },
+              {
+                id: "insulin-sensitivity",
+                label: {
+                  es: "Sensibilidad a la insulina",
+                  en: "Insulin sensitivity"
+                }
+              },
+              {
+                id: "visceral-fat",
+                label: {
+                  es: "Reducción de grasa visceral",
+                  en: "Visceral fat reduction"
+                }
+              },
+              {
+                id: "lean-mass",
+                label: {
+                  es: "Preservación de masa magra",
+                  en: "Lean mass preservation"
+                }
+              }
+            ]
           },
-          options: { kind: "registry", registry: "published-products" },
+          shortLabel: {
+            es: "Pérdida de peso",
+            en: "Weight loss"
+          },
+          visibleWhen: {
+            question: "goal",
+            equals: "weight-loss"
+          },
+          recap: true
         },
-      ],
+        {
+          id: "goal-body-composition",
+          kind: "single-select",
+          label: {
+            es: "¿Qué te interesa más?",
+            en: "What interests you most?"
+          },
+          options: {
+            kind: "static",
+            items: [
+              {
+                id: "hypertrophy",
+                label: {
+                  es: "Hipertrofia y masa muscular",
+                  en: "Hypertrophy and muscle mass"
+                }
+              },
+              {
+                id: "strength",
+                label: {
+                  es: "Fuerza",
+                  en: "Strength"
+                }
+              },
+              {
+                id: "session-recovery",
+                label: {
+                  es: "Recuperación entre sesiones",
+                  en: "Recovery between sessions"
+                }
+              },
+              {
+                id: "muscular-endurance",
+                label: {
+                  es: "Resistencia muscular",
+                  en: "Muscular endurance"
+                }
+              },
+              {
+                id: "protein-synthesis",
+                label: {
+                  es: "Síntesis proteica",
+                  en: "Protein synthesis"
+                }
+              },
+              {
+                id: "gh-igf1",
+                label: {
+                  es: "Vías relacionadas con GH e IGF-1",
+                  en: "GH- and IGF-1-related pathways"
+                }
+              }
+            ]
+          },
+          shortLabel: {
+            es: "Composición corporal",
+            en: "Body composition"
+          },
+          visibleWhen: {
+            question: "goal",
+            equals: "body-composition"
+          },
+          recap: true
+        },
+        {
+          id: "goal-longevity",
+          kind: "single-select",
+          label: {
+            es: "¿Qué te interesa más?",
+            en: "What interests you most?"
+          },
+          options: {
+            kind: "static",
+            items: [
+              {
+                id: "mitochondria",
+                label: {
+                  es: "Salud mitocondrial",
+                  en: "Mitochondrial health"
+                }
+              },
+              {
+                id: "cellular-repair",
+                label: {
+                  es: "Reparación y mantenimiento celular",
+                  en: "Cellular repair and maintenance"
+                }
+              },
+              {
+                id: "oxidative-stress",
+                label: {
+                  es: "Estrés oxidativo",
+                  en: "Oxidative stress"
+                }
+              },
+              {
+                id: "inflammation",
+                label: {
+                  es: "Regulación de la inflamación",
+                  en: "Inflammation regulation"
+                }
+              },
+              {
+                id: "cellular-energy",
+                label: {
+                  es: "Metabolismo y energía celular",
+                  en: "Cellular metabolism and energy"
+                }
+              },
+              {
+                id: "cellular-aging",
+                label: {
+                  es: "Envejecimiento celular saludable",
+                  en: "Healthy cellular aging"
+                }
+              }
+            ]
+          },
+          shortLabel: {
+            es: "Longevidad y salud celular",
+            en: "Longevity and cellular health"
+          },
+          visibleWhen: {
+            question: "goal",
+            equals: "longevity"
+          },
+          recap: true
+        },
+        {
+          id: "goal-tissue-recovery",
+          kind: "single-select",
+          label: {
+            es: "¿Qué te interesa más?",
+            en: "What interests you most?"
+          },
+          options: {
+            kind: "static",
+            items: [
+              {
+                id: "muscle-recovery",
+                label: {
+                  es: "Recuperación muscular",
+                  en: "Muscle recovery"
+                }
+              },
+              {
+                id: "tendons",
+                label: {
+                  es: "Salud de tendones",
+                  en: "Tendon health"
+                }
+              },
+              {
+                id: "ligaments",
+                label: {
+                  es: "Salud de ligamentos",
+                  en: "Ligament health"
+                }
+              },
+              {
+                id: "joints",
+                label: {
+                  es: "Salud articular",
+                  en: "Joint health"
+                }
+              },
+              {
+                id: "tissue-repair",
+                label: {
+                  es: "Cicatrización y reparación de tejidos",
+                  en: "Wound healing and tissue repair"
+                }
+              },
+              {
+                id: "postoperative",
+                label: {
+                  es: "Recuperación postoperatoria",
+                  en: "Postoperative recovery"
+                }
+              }
+            ]
+          },
+          shortLabel: {
+            es: "Recuperación y reparación tisular",
+            en: "Recovery and tissue repair"
+          },
+          visibleWhen: {
+            question: "goal",
+            equals: "tissue-recovery"
+          },
+          recap: true
+        },
+        {
+          id: "goal-sleep",
+          kind: "single-select",
+          label: {
+            es: "¿Qué te interesa más?",
+            en: "What interests you most?"
+          },
+          options: {
+            kind: "static",
+            items: [
+              {
+                id: "falling-asleep",
+                label: {
+                  es: "Conciliar el sueño",
+                  en: "Falling asleep"
+                }
+              },
+              {
+                id: "staying-asleep",
+                label: {
+                  es: "Mantener el sueño",
+                  en: "Staying asleep"
+                }
+              },
+              {
+                id: "deep-sleep",
+                label: {
+                  es: "Sueño profundo",
+                  en: "Deep sleep"
+                }
+              },
+              {
+                id: "circadian-rhythm",
+                label: {
+                  es: "Ritmo circadiano",
+                  en: "Circadian rhythm"
+                }
+              },
+              {
+                id: "restorative-rest",
+                label: {
+                  es: "Descanso reparador",
+                  en: "Restorative rest"
+                }
+              },
+              {
+                id: "bedtime-relaxation",
+                label: {
+                  es: "Relajación antes de dormir",
+                  en: "Relaxation before bed"
+                }
+              }
+            ]
+          },
+          shortLabel: {
+            es: "Sueño y descanso",
+            en: "Sleep and rest"
+          },
+          visibleWhen: {
+            question: "goal",
+            equals: "sleep"
+          },
+          recap: true
+        },
+        {
+          id: "goal-cognition",
+          kind: "single-select",
+          label: {
+            es: "¿Qué te interesa más?",
+            en: "What interests you most?"
+          },
+          options: {
+            kind: "static",
+            items: [
+              {
+                id: "memory",
+                label: {
+                  es: "Memoria",
+                  en: "Memory"
+                }
+              },
+              {
+                id: "focus",
+                label: {
+                  es: "Enfoque y concentración",
+                  en: "Focus and concentration"
+                }
+              },
+              {
+                id: "mental-clarity",
+                label: {
+                  es: "Claridad mental",
+                  en: "Mental clarity"
+                }
+              },
+              {
+                id: "learning",
+                label: {
+                  es: "Aprendizaje y neuroplasticidad",
+                  en: "Learning and neuroplasticity"
+                }
+              },
+              {
+                id: "stress-anxiety",
+                label: {
+                  es: "Manejo del estrés y ansiedad",
+                  en: "Stress and anxiety management"
+                }
+              },
+              {
+                id: "neuroprotection",
+                label: {
+                  es: "Neuroprotección",
+                  en: "Neuroprotection"
+                }
+              }
+            ]
+          },
+          shortLabel: {
+            es: "Función cognitiva",
+            en: "Cognitive function"
+          },
+          visibleWhen: {
+            question: "goal",
+            equals: "cognition"
+          },
+          recap: true
+        },
+        {
+          id: "goal-skin-hair",
+          kind: "single-select",
+          label: {
+            es: "¿Qué te interesa más?",
+            en: "What interests you most?"
+          },
+          options: {
+            kind: "static",
+            items: [
+              {
+                id: "elasticity",
+                label: {
+                  es: "Elasticidad y firmeza",
+                  en: "Elasticity and firmness"
+                }
+              },
+              {
+                id: "wrinkles",
+                label: {
+                  es: "Arrugas y líneas de expresión",
+                  en: "Wrinkles and expression lines"
+                }
+              },
+              {
+                id: "skin-repair",
+                label: {
+                  es: "Cicatrización y reparación cutánea",
+                  en: "Wound healing and skin repair"
+                }
+              },
+              {
+                id: "hair-growth",
+                label: {
+                  es: "Crecimiento y salud capilar",
+                  en: "Hair growth and health"
+                }
+              },
+              {
+                id: "skin-tone",
+                label: {
+                  es: "Tono y apariencia de la piel",
+                  en: "Skin tone and appearance"
+                }
+              },
+              {
+                id: "skin-texture",
+                label: {
+                  es: "Textura de la piel",
+                  en: "Skin texture"
+                }
+              },
+              {
+                id: "pigmentation",
+                label: {
+                  es: "Pigmentación y melanogénesis",
+                  en: "Pigmentation and melanogenesis"
+                }
+              }
+            ]
+          },
+          shortLabel: {
+            es: "Piel y cabello",
+            en: "Skin and hair"
+          },
+          visibleWhen: {
+            question: "goal",
+            equals: "skin-hair"
+          },
+          recap: true
+        },
+        {
+          id: "goal-sexual-health",
+          kind: "single-select",
+          label: {
+            es: "¿Qué te interesa más?",
+            en: "What interests you most?"
+          },
+          options: {
+            kind: "static",
+            items: [
+              {
+                id: "libido",
+                label: {
+                  es: "Libido y deseo sexual",
+                  en: "Libido and sexual desire"
+                }
+              },
+              {
+                id: "arousal",
+                label: {
+                  es: "Excitación y respuesta sexual",
+                  en: "Arousal and sexual response"
+                }
+              },
+              {
+                id: "erectile-function",
+                label: {
+                  es: "Función eréctil",
+                  en: "Erectile function"
+                }
+              },
+              {
+                id: "satisfaction",
+                label: {
+                  es: "Satisfacción sexual",
+                  en: "Sexual satisfaction"
+                }
+              },
+              {
+                id: "sexual-wellbeing",
+                label: {
+                  es: "Bienestar sexual",
+                  en: "Sexual wellbeing"
+                }
+              },
+              {
+                id: "intimacy",
+                label: {
+                  es: "Intimidad y conexión",
+                  en: "Intimacy and connection"
+                }
+              }
+            ]
+          },
+          shortLabel: {
+            es: "Libido y salud sexual",
+            en: "Libido and sexual health"
+          },
+          visibleWhen: {
+            question: "goal",
+            equals: "sexual-health"
+          },
+          recap: true
+        },
+        {
+          id: "goal-daily-wellbeing",
+          kind: "single-select",
+          label: {
+            es: "¿Qué te interesa más?",
+            en: "What interests you most?"
+          },
+          options: {
+            kind: "static",
+            items: [
+              {
+                id: "vitality",
+                label: {
+                  es: "Energía y vitalidad",
+                  en: "Energy and vitality"
+                }
+              },
+              {
+                id: "stress-resilience",
+                label: {
+                  es: "Resistencia al estrés",
+                  en: "Stress resilience"
+                }
+              },
+              {
+                id: "mood",
+                label: {
+                  es: "Estado de ánimo",
+                  en: "Mood"
+                }
+              },
+              {
+                id: "energy-metabolism",
+                label: {
+                  es: "Metabolismo energético",
+                  en: "Energy metabolism"
+                }
+              },
+              {
+                id: "general-recovery",
+                label: {
+                  es: "Recuperación general",
+                  en: "General recovery"
+                }
+              },
+              {
+                id: "everyday-wellbeing",
+                label: {
+                  es: "Bienestar cotidiano",
+                  en: "Everyday wellbeing"
+                }
+              }
+            ]
+          },
+          shortLabel: {
+            es: "Bienestar y rendimiento diario",
+            en: "Daily wellbeing and performance"
+          },
+          visibleWhen: {
+            question: "goal",
+            equals: "daily-wellbeing"
+          },
+          recap: true
+        },
+        {
+          id: "goal-immunity",
+          kind: "single-select",
+          label: {
+            es: "¿Qué te interesa más?",
+            en: "What interests you most?"
+          },
+          options: {
+            kind: "static",
+            items: [
+              {
+                id: "immune-response",
+                label: {
+                  es: "Regulación de la respuesta inmune",
+                  en: "Immune response regulation"
+                }
+              },
+              {
+                id: "inflammation",
+                label: {
+                  es: "Modulación de la inflamación",
+                  en: "Inflammation modulation"
+                }
+              },
+              {
+                id: "innate-immunity",
+                label: {
+                  es: "Inmunidad innata",
+                  en: "Innate immunity"
+                }
+              },
+              {
+                id: "physiological-stress",
+                label: {
+                  es: "Recuperación frente al estrés fisiológico",
+                  en: "Recovery from physiological stress"
+                }
+              },
+              {
+                id: "intestinal-barrier",
+                label: {
+                  es: "Salud de la barrera intestinal",
+                  en: "Intestinal barrier health"
+                }
+              },
+              {
+                id: "immune-balance",
+                label: {
+                  es: "Equilibrio inmunitario",
+                  en: "Immune balance"
+                }
+              }
+            ]
+          },
+          shortLabel: {
+            es: "Inmunidad e inflamación",
+            en: "Immunity and inflammation"
+          },
+          visibleWhen: {
+            question: "goal",
+            equals: "immunity"
+          },
+          recap: true
+        }
+      ]
     },
-
-    /* ---- 02 About you ---------------------------------------------------- */
     {
       id: "you",
-      label: { es: "Sobre ti", en: "About you" },
-      title: { es: "Cuéntanos de ti", en: "Tell us about you" },
+      label: {
+        es: "Sobre ti",
+        en: "About you"
+      },
+      title: {
+        es: "Sobre ti",
+        en: "About you"
+      },
       lede: {
-        es: "Así ajustamos cuántos productos mostrarte y cómo explicártelos.",
-        en: "This decides how many products we show you and how we explain them.",
+        es: "Cuéntanos sobre ti y tu experiencia.",
+        en: "Tell us about yourself and your experience."
       },
       questions: [
         {
-          id: "first-name",
-          kind: "short-text",
-          role: "first-name",
-          maxLength: 40,
-          autoComplete: "given-name",
-          shortLabel: { es: "Nombre", en: "Name" },
-          label: { es: "¿Cómo te llamas?", en: "What's your name?" },
-          hint: {
-            es: "Opcional. Sólo lo usamos en esta página; no se envía a la IA.",
-            en: "Optional. Used only on this page; it is not sent to the AI.",
-          },
-          placeholder: { es: "Tu nombre", en: "Your name" },
-        },
-        {
-          id: "experience",
+          id: "age",
           kind: "single-select",
-          role: "experience",
-          recap: true,
-          default: "new",
-          columns: 3,
-          shortLabel: { es: "Experiencia", en: "Experience" },
           label: {
-            es: "¿Qué experiencia tienes con péptidos y productos como estos?",
-            en: "How much experience do you have with peptides and products like these?",
+            es: "Edad",
+            en: "Age"
           },
           options: {
             kind: "static",
             items: [
               {
-                id: "new",
-                label: { es: "Es mi primera vez", en: "This is my first time" },
-                hint: {
-                  es: "Prefiero empezar con algo sencillo.",
-                  en: "I'd rather start simple.",
-                },
+                id: "18-25",
+                label: {
+                  es: "18–25",
+                  en: "18–25"
+                }
               },
               {
-                id: "some",
-                label: { es: "Ya he comprado antes", en: "I've bought before" },
-                hint: { es: "Conozco lo básico.", en: "I know the basics." },
+                id: "26-35",
+                label: {
+                  es: "26–35",
+                  en: "26–35"
+                }
               },
               {
-                id: "experienced",
-                label: { es: "Tengo mucha experiencia", en: "I'm very experienced" },
-                hint: { es: "Muéstrame todo el detalle.", en: "Show me all the detail." },
+                id: "36-45",
+                label: {
+                  es: "36–45",
+                  en: "36–45"
+                }
               },
-            ],
-          },
+              {
+                id: "46-55",
+                label: {
+                  es: "46–55",
+                  en: "46–55"
+                }
+              },
+              {
+                id: "56-65",
+                label: {
+                  es: "56–65",
+                  en: "56–65"
+                }
+              },
+              {
+                id: "65+",
+                label: {
+                  es: "65+",
+                  en: "65+"
+                }
+              }
+            ]
+          }
         },
         {
-          id: "history",
+          id: "biological-sex",
           kind: "single-select",
-          role: "history",
-          default: "first-time",
-          render: "pills",
-          shortLabel: { es: "Con NEOGEN", en: "With NEOGEN" },
           label: {
-            es: "¿Has comprado en NEOGEN antes?",
-            en: "Have you ordered from NEOGEN before?",
+            es: "Sexo biológico",
+            en: "Biological sex"
           },
           options: {
             kind: "static",
             items: [
               {
-                id: "first-time",
-                label: { es: "Es mi primera vez en NEOGEN", en: "First time at NEOGEN" },
+                id: "male",
+                label: {
+                  es: "Masculino",
+                  en: "Male"
+                }
               },
               {
-                id: "returning",
-                label: { es: "Ya soy cliente", en: "I'm a returning customer" },
+                id: "female",
+                label: {
+                  es: "Femenino",
+                  en: "Female"
+                }
               },
-            ],
-          },
+              {
+                id: "undisclosed",
+                label: {
+                  es: "Prefiero no decir",
+                  en: "Prefer not to say"
+                }
+              }
+            ]
+          }
         },
         {
-          id: "priorities",
-          kind: "multi-select",
-          role: "priorities",
-          max: 2,
-          columns: 4,
-          shortLabel: { es: "Lo más importante", en: "What matters most" },
-          label: { es: "¿Qué es lo más importante para ti?", en: "What matters most to you?" },
-          hint: { es: "Elige hasta dos.", en: "Pick up to two." },
-          options: {
-            kind: "static",
-            items: [
-              {
-                id: "documentation",
-                label: { es: "Documentación disponible", en: "Available documentation" },
-                hint: {
-                  es: "Productos con documentos publicados primero.",
-                  en: "Products with published documents first.",
-                },
-              },
-              {
-                id: "price",
-                label: { es: "Buen precio", en: "Good price" },
-                hint: {
-                  es: "Las opciones más accesibles primero.",
-                  en: "The most accessible options first.",
-                },
-              },
-              {
-                id: "signature",
-                label: { es: "Productos insignia", en: "Signature products" },
-                hint: {
-                  es: "RETA, GLOW y GHK-Cu, la línea distintiva de NEOGEN.",
-                  en: "RETA, GLOW and GHK-Cu, NEOGEN's signature line.",
-                },
-              },
-              {
-                id: "overlap",
-                label: { es: "Que cubra varios temas", en: "Covers several topics" },
-                hint: {
-                  es: "Productos que están en más de uno de tus temas.",
-                  en: "Products that sit in more than one of your topics.",
-                },
-              },
-            ],
-          },
-        },
-        {
-          id: "explanation-style",
-          kind: "single-select",
-          role: "explanation-style",
-          default: "direct",
-          columns: 2,
-          shortLabel: { es: "Explicación", en: "Explanation" },
+          id: "weight-kg",
+          kind: "number",
           label: {
-            es: "¿Cómo prefieres que te lo expliquemos?",
-            en: "How should we explain it?",
+            es: "Peso (kg)",
+            en: "Weight (kg)"
           },
-          options: {
-            kind: "static",
-            items: [
-              {
-                id: "direct",
-                label: { es: "Directo y breve", en: "Short and direct" },
-                hint: { es: "Sólo lo esencial.", en: "Just the essentials." },
-              },
-              {
-                id: "detailed",
-                label: { es: "Con detalle", en: "In detail" },
-                hint: { es: "Todas las razones.", en: "Every reason." },
-              },
-            ],
-          },
-        },
-      ],
-    },
-
-    /* ---- 03 Preferences -------------------------------------------------- */
-    {
-      id: "preferences",
-      label: { es: "Preferencias", en: "Preferences" },
-      title: { es: "Tus preferencias", en: "Your preferences" },
-      lede: {
-        es: "Cómo quieres que sean los productos que te sugerimos.",
-        en: "What you want the products we suggest to be like.",
-      },
-      questions: [
-        {
-          id: "forms",
-          kind: "multi-select",
-          role: "forms",
-          render: "pills",
-          shortLabel: { es: "Formato", en: "Format" },
-          label: { es: "¿Tienes preferencia de formato?", en: "Any format preference?" },
-          hint: {
-            es: "Opcional. Déjalo vacío si te da igual.",
-            en: "Optional. Leave it empty if you don't mind.",
-          },
-          options: {
-            kind: "static",
-            items: [
-              { id: "solid", label: { es: "Polvo liofilizado", en: "Lyophilised powder" } },
-              { id: "solution", label: { es: "Solución", en: "Solution" } },
-              { id: "volume", label: { es: "Por volumen", en: "By volume" } },
-              { id: "iu", label: { es: "Unidades (UI)", en: "Units (IU)" } },
-              { id: "blend", label: { es: "Mezclas", en: "Blends" } },
-            ],
-          },
+          min: 1,
+          step: 0.1
         },
         {
-          id: "presentation-size",
-          kind: "single-select",
-          role: "presentation-size",
-          default: "no-preference",
-          columns: 3,
-          shortLabel: { es: "Tamaño", en: "Size" },
+          // Document requirement: display automatically calculated IMC / BMI
+          // after height: weight-kg / (height-cm / 100) ** 2.
+          // TODO: implement a derived, read-only result in the renderer; the
+          // existing content schema has no calculated field kind.
+          id: "height-cm",
+          kind: "number",
           label: {
-            es: "¿Qué tamaño de presentación prefieres?",
-            en: "Which presentation size do you prefer?",
+            es: "Altura (cm)",
+            en: "Height (cm)"
           },
-          options: {
-            kind: "static",
-            items: [
-              {
-                id: "smallest",
-                label: { es: "La más pequeña", en: "The smallest" },
-                hint: { es: "Para empezar con menos.", en: "To start with less." },
-              },
-              {
-                id: "largest",
-                label: { es: "La más grande", en: "The largest" },
-                hint: {
-                  es: "La mayor que quepa en tu presupuesto.",
-                  en: "The biggest that fits your budget.",
-                },
-              },
-              {
-                id: "no-preference",
-                label: { es: "Me da igual", en: "No preference" },
-                hint: { es: "Muéstrame la de entrada.", en: "Show me the entry one." },
-              },
-            ],
-          },
+          min: 1,
+          step: 0.1
         },
         {
-          id: "include-supplies",
-          kind: "toggle",
-          role: "include-supplies",
-          default: false,
-          shortLabel: { es: "Insumos", en: "Supplies" },
-          label: { es: "Incluir insumos", en: "Include supplies" },
-          hint: {
-            es: "Agua y otros insumos del catálogo, junto a tu selección.",
-            en: "Water and other catalogue supplies, alongside your selection.",
-          },
-        },
-      ],
-    },
-
-    /* ---- 04 Budget and context ------------------------------------------- */
-    {
-      id: "budget",
-      label: { es: "Presupuesto", en: "Budget" },
-      title: { es: "Presupuesto y contexto", en: "Budget and context" },
-      lede: {
-        es: "Comparamos tu presupuesto con los precios reales del catálogo.",
-        en: "We compare your budget against the catalogue's real prices.",
-      },
-      questions: [
-        {
-          id: "budget",
+          id: "physical-activity",
           kind: "single-select",
-          role: "budget-cap",
-          recap: true,
-          default: "open",
-          columns: 4,
-          shortLabel: { es: "Presupuesto", en: "Budget" },
-          label: { es: "¿Cuánto quieres invertir?", en: "How much do you want to spend?" },
+          label: {
+            es: "Actividad física",
+            en: "Physical activity"
+          },
           options: {
             kind: "static",
-            /* `value` is the MXN ceiling the policy applies; null is no cap. */
             items: [
               {
-                id: "open",
-                value: null,
-                label: { es: "Sin tope", en: "No cap" },
-                hint: { es: "Muéstrame todo.", en: "Show me everything." },
+                id: "sedentary",
+                label: {
+                  es: "Sedentario",
+                  en: "Sedentary"
+                }
               },
               {
-                id: "8k",
-                value: 8000,
-                label: { es: "Hasta $8,000 MXN", en: "Up to $8,000 MXN" },
-                hint: { es: "Un primer pedido.", en: "A first order." },
+                id: "light",
+                label: {
+                  es: "Ligera",
+                  en: "Light"
+                }
               },
               {
-                id: "20k",
-                value: 20000,
-                label: { es: "Hasta $20,000 MXN", en: "Up to $20,000 MXN" },
-                hint: { es: "Varios productos.", en: "Several products." },
+                id: "moderate",
+                label: {
+                  es: "Moderada",
+                  en: "Moderate"
+                }
               },
               {
-                id: "40k",
-                value: 40000,
-                label: { es: "Hasta $40,000 MXN", en: "Up to $40,000 MXN" },
-                hint: { es: "Un pedido amplio.", en: "A wide order." },
+                id: "very-active",
+                label: {
+                  es: "Muy activo",
+                  en: "Very active"
+                }
               },
-            ],
-          },
+              {
+                id: "athlete",
+                label: {
+                  es: "Atleta",
+                  en: "Athlete"
+                }
+              }
+            ]
+          }
         },
         {
-          id: "purchase-horizon",
+          id: "sleep-quality",
           kind: "single-select",
-          role: "purchase-horizon",
-          default: "one-order",
-          columns: 2,
-          shortLabel: { es: "Forma de compra", en: "How you buy" },
-          label: { es: "¿Cómo piensas comprar?", en: "How do you plan to buy?" },
+          label: {
+            es: "Calidad de sueño",
+            en: "Sleep quality"
+          },
           options: {
             kind: "static",
             items: [
               {
-                id: "one-order",
-                label: { es: "Todo en un pedido", en: "All in one order" },
-                hint: {
-                  es: "Lo que elija, lo compro de una vez.",
-                  en: "Whatever I pick, I buy at once.",
-                },
+                id: "excellent",
+                label: {
+                  es: "Excelente",
+                  en: "Excellent"
+                }
               },
               {
-                id: "over-time",
-                label: { es: "Poco a poco", en: "Bit by bit" },
-                hint: {
-                  es: "Empiezo con algo y sigo después.",
-                  en: "I'll start with something and continue later.",
-                },
+                id: "good",
+                label: {
+                  es: "Buena",
+                  en: "Good"
+                }
               },
-            ],
-          },
+              {
+                id: "fair",
+                label: {
+                  es: "Regular",
+                  en: "Fair"
+                }
+              },
+              {
+                id: "poor",
+                label: {
+                  es: "Mala",
+                  en: "Poor"
+                }
+              },
+              {
+                id: "very-poor",
+                label: {
+                  es: "Muy mala",
+                  en: "Very poor"
+                }
+              }
+            ]
+          }
         },
         {
-          id: "timing",
+          id: "stress",
           kind: "single-select",
-          role: "timing",
-          default: "no-rush",
-          columns: 2,
-          shortLabel: { es: "Para cuándo", en: "When" },
-          label: { es: "¿Para cuándo lo necesitas?", en: "When do you need it?" },
+          label: {
+            es: "Estrés",
+            en: "Stress"
+          },
           options: {
             kind: "static",
             items: [
               {
-                id: "soon",
-                label: { es: "Lo antes posible", en: "As soon as possible" },
-                hint: {
-                  es: "Prioriza lo disponible.",
-                  en: "Prioritise what's available.",
-                },
+                id: "low",
+                label: {
+                  es: "Bajo",
+                  en: "Low"
+                }
               },
               {
-                id: "no-rush",
-                label: { es: "Sin prisa", en: "No rush" },
-                hint: { es: "Puedo esperar.", en: "I can wait." },
+                id: "moderate",
+                label: {
+                  es: "Moderado",
+                  en: "Moderate"
+                }
               },
-            ],
-          },
+              {
+                id: "high",
+                label: {
+                  es: "Alto",
+                  en: "High"
+                }
+              },
+              {
+                id: "very-high",
+                label: {
+                  es: "Muy alto",
+                  en: "Very high"
+                }
+              }
+            ]
+          }
         },
         {
-          id: "note",
+          id: "peptide-experience",
+          kind: "single-select",
+          label: {
+            es: "Experiencia con péptidos",
+            en: "Experience with peptides"
+          },
+          options: {
+            kind: "static",
+            items: [
+              {
+                id: "none",
+                label: {
+                  es: "Sin experiencia — Primera vez con péptidos",
+                  en: "No experience — First time with peptides"
+                }
+              },
+              {
+                id: "beginner",
+                label: {
+                  es: "Principiante — He usado 1–2 compuestos",
+                  en: "Beginner — I have used 1–2 compounds"
+                }
+              },
+              {
+                id: "intermediate",
+                label: {
+                  es: "Intermedio — Experiencia con varios compuestos",
+                  en: "Intermediate — Experience with several compounds"
+                }
+              },
+              {
+                id: "advanced",
+                label: {
+                  es: "Avanzado — Usuario experimentado",
+                  en: "Advanced — Experienced user"
+                }
+              }
+            ]
+          }
+        },
+        {
+          id: "previous-compounds",
           kind: "long-text",
-          role: "free-note",
+          label: {
+            es: "¿Cuáles has usado?",
+            en: "Which ones have you used?"
+          },
           markOptional: true,
           maxLength: 400,
-          shortLabel: { es: "Nota", en: "Note" },
-          label: {
-            es: "¿Algo más que Atlas deba saber?",
-            en: "Anything else Atlas should know?",
-          },
           placeholder: {
-            es: "Por ejemplo: quiero empezar con algo de la línea insignia y dejar lo demás para mi siguiente pedido.",
-            en: "For example: I want to start with something from the signature line and leave the rest for my next order.",
+            es: "BPC-157, Retatrutida…",
+            en: "BPC-157, Retatrutide…"
           },
-          footnote: {
-            es: "Cuéntanos tus objetivos con tus palabras. Atlas no usa información de salud, peso ni medicamentos: si la nota la incluye, se descarta completa y el resto de tus respuestas se usa igual.",
-            en: "Tell us your goals in your own words. Atlas does not use health, weight or medication information: if the note includes it, the whole note is discarded and the rest of your answers are still used.",
-          },
+          visibleWhen: {
+            any: [
+              {
+                question: "peptide-experience",
+                equals: "beginner"
+              },
+              {
+                question: "peptide-experience",
+                equals: "intermediate"
+              },
+              {
+                question: "peptide-experience",
+                equals: "advanced"
+              }
+            ]
+          }
         },
-      ],
+        {
+          id: "administration-route",
+          kind: "single-select",
+          label: {
+            es: "Vía de administración preferida",
+            en: "Preferred route of administration"
+          },
+          options: {
+            kind: "static",
+            items: [
+              {
+                id: "subcutaneous",
+                label: {
+                  es: "Subcutánea — Vía subcutánea",
+                  en: "Subcutaneous — Subcutaneous route"
+                }
+              },
+              {
+                id: "oral",
+                label: {
+                  es: "Oral — Cápsulas o sublingual",
+                  en: "Oral — Capsules or sublingual"
+                }
+              },
+              {
+                id: "topical",
+                label: {
+                  es: "Tópica — Aplicación tópica",
+                  en: "Topical — Topical application"
+                }
+              },
+              {
+                id: "any",
+                label: {
+                  es: "Cualquiera — Sin preferencia de vía",
+                  en: "Any — No route preference"
+                }
+              }
+            ]
+          }
+        },
+        {
+          id: "protocol-duration",
+          kind: "single-select",
+          label: {
+            es: "Duración del protocolo",
+            en: "Protocol duration"
+          },
+          options: {
+            kind: "static",
+            items: [
+              {
+                id: "4-weeks",
+                label: {
+                  es: "4 semanas",
+                  en: "4 weeks"
+                }
+              },
+              {
+                id: "8-weeks",
+                label: {
+                  es: "8 semanas",
+                  en: "8 weeks"
+                }
+              },
+              {
+                id: "12-weeks",
+                label: {
+                  es: "12 semanas",
+                  en: "12 weeks"
+                }
+              },
+              {
+                id: "16-weeks",
+                label: {
+                  es: "16 semanas",
+                  en: "16 weeks"
+                }
+              }
+            ]
+          }
+        }
+      ]
     },
-  ],
+    {
+      id: "preferences",
+      label: {
+        es: "Preferencias y contexto",
+        en: "Preferences and context"
+      },
+      title: {
+        es: "Preferencias y contexto",
+        en: "Preferences and context"
+      },
+      lede: {
+        es: "Completa tu contexto y cualquier nota adicional.",
+        en: "Add your context and any additional notes."
+      },
+      questions: [
+        {
+          id: "health-conditions",
+          kind: "multi-select",
+          label: {
+            es: "¿Tienes alguna de estas condiciones?",
+            en: "Do you have any of these conditions?"
+          },
+          options: {
+            kind: "static",
+            items: [
+              {
+                id: "diabetes",
+                label: {
+                  es: "Diabetes",
+                  en: "Diabetes"
+                }
+              },
+              {
+                id: "hypertension",
+                label: {
+                  es: "Hipertensión",
+                  en: "Hypertension"
+                }
+              },
+              {
+                id: "heart-disease",
+                label: {
+                  es: "Enfermedad cardíaca",
+                  en: "Heart disease"
+                }
+              },
+              {
+                id: "thyroid",
+                label: {
+                  es: "Problemas de tiroides",
+                  en: "Thyroid problems"
+                }
+              },
+              {
+                id: "cancer-history",
+                label: {
+                  es: "Historial de cáncer",
+                  en: "History of cancer"
+                }
+              },
+              {
+                id: "autoimmune",
+                label: {
+                  es: "Enfermedades autoinmunes",
+                  en: "Autoimmune diseases"
+                }
+              },
+              {
+                id: "liver-kidney",
+                label: {
+                  es: "Problemas hepáticos/renales",
+                  en: "Liver/kidney problems"
+                }
+              },
+              {
+                id: "pregnancy-breastfeeding",
+                label: {
+                  es: "Embarazo/Lactancia",
+                  en: "Pregnancy/Breastfeeding"
+                }
+              },
+              {
+                id: "hormone-therapy",
+                label: {
+                  es: "Terapia hormonal actual",
+                  en: "Current hormone therapy"
+                }
+              },
+              {
+                id: "none",
+                label: {
+                  es: "Ninguna de las anteriores",
+                  en: "None of the above"
+                }
+              }
+            ]
+          }
+        },
+        {
+          id: "medications",
+          kind: "multi-select",
+          label: {
+            es: "¿Tomas algún medicamento?",
+            en: "Do you take any medication?"
+          },
+          options: {
+            kind: "static",
+            items: [
+              {
+                id: "none",
+                label: {
+                  es: "Ninguno",
+                  en: "None"
+                }
+              },
+              {
+                id: "blood-pressure",
+                label: {
+                  es: "Medicamentos para presión",
+                  en: "Blood pressure medication"
+                }
+              },
+              {
+                id: "diabetes",
+                label: {
+                  es: "Medicamentos para diabetes",
+                  en: "Diabetes medication"
+                }
+              },
+              {
+                id: "anticoagulants",
+                label: {
+                  es: "Anticoagulantes",
+                  en: "Anticoagulants"
+                }
+              },
+              {
+                id: "hormones",
+                label: {
+                  es: "Hormonas (testosterona, estrógenos)",
+                  en: "Hormones (testosterone, estrogens)"
+                }
+              },
+              {
+                id: "psychiatric",
+                label: {
+                  es: "Medicamentos psiquiátricos",
+                  en: "Psychiatric medication"
+                }
+              },
+              {
+                id: "immunosuppressants",
+                label: {
+                  es: "Inmunosupresores",
+                  en: "Immunosuppressants"
+                }
+              },
+              {
+                id: "other",
+                label: {
+                  es: "Otros (especificar)",
+                  en: "Other (please specify)"
+                }
+              }
+            ]
+          }
+        },
+        {
+          id: "other-medications",
+          kind: "long-text",
+          label: {
+            es: "¿Qué otros medicamentos tomas?",
+            en: "What other medications do you take?"
+          },
+          markOptional: true,
+          maxLength: 400,
+          placeholder: {
+            es: "Especifica los medicamentos…",
+            en: "Specify the medications…"
+          },
+          visibleWhen: {
+            question: "medications",
+            includes: "other"
+          }
+        },
+        {
+          id: "additional-notes",
+          kind: "long-text",
+          label: {
+            es: "Notas adicionales",
+            en: "Additional notes"
+          },
+          markOptional: true,
+          maxLength: 400,
+          placeholder: {
+            es: "Cualquier información relevante…",
+            en: "Any relevant information…"
+          }
+        }
+      ]
+    },
+    {
+      id: "lifestyle",
+      label: {
+        es: "Sobre ti: estilo de vida",
+        en: "About you: lifestyle"
+      },
+      title: {
+        es: "Sobre ti: estilo de vida",
+        en: "About you: lifestyle"
+      },
+      lede: {
+        es: "Cuéntanos sobre tu rutina y tus metas.",
+        en: "Tell us about your routine and goals."
+      },
+      questions: [
+        {
+          id: "current-frustrations",
+          kind: "long-text",
+          label: {
+            es: "¿Qué te frustra hoy de tu cuerpo o tu energía?",
+            en: "What frustrates you about your body or energy today?"
+          },
+          markOptional: true,
+          maxLength: 400,
+          placeholder: {
+            es: "Siempre tengo hambre en la noche; no recupero del gym; duermo pero amanezco cansado…",
+            en: "I am always hungry at night; I do not recover from the gym; I sleep but wake up tired…"
+          }
+        },
+        {
+          id: "ninety-day-goal",
+          kind: "long-text",
+          label: {
+            es: "Tu meta concreta a 90 días",
+            en: "Your specific 90-day goal"
+          },
+          markOptional: true,
+          maxLength: 400,
+          placeholder: {
+            es: "Bajar 8 kg; dormir 7 h corridas; recuperar libido…",
+            en: "Lose 8 kg; sleep 7 hours straight; regain libido…"
+          }
+        },
+        {
+          id: "training-type",
+          kind: "single-select",
+          label: {
+            es: "Tipo de entrenamiento",
+            en: "Training type"
+          },
+          options: {
+            kind: "static",
+            items: [
+              {
+                id: "none",
+                label: {
+                  es: "No entreno",
+                  en: "I do not train"
+                }
+              },
+              {
+                id: "strength",
+                label: {
+                  es: "Fuerza / pesas",
+                  en: "Strength / weights"
+                }
+              },
+              {
+                id: "cardio",
+                label: {
+                  es: "Cardio / resistencia",
+                  en: "Cardio / endurance"
+                }
+              },
+              {
+                id: "mixed",
+                label: {
+                  es: "Mixto",
+                  en: "Mixed"
+                }
+              },
+              {
+                id: "sports",
+                label: {
+                  es: "Deporte",
+                  en: "Sports"
+                }
+              },
+              {
+                id: "other",
+                label: {
+                  es: "Otro",
+                  en: "Other"
+                }
+              }
+            ]
+          }
+        },
+        {
+          id: "injection-tolerance",
+          kind: "single-select",
+          label: {
+            es: "Tolerancia a inyecciones",
+            en: "Tolerance for injections"
+          },
+          options: {
+            kind: "static",
+            items: [
+              {
+                id: "avoid",
+                label: {
+                  es: "Prefiero evitarlas",
+                  en: "I prefer to avoid them"
+                }
+              },
+              {
+                id: "low",
+                label: {
+                  es: "Baja",
+                  en: "Low"
+                }
+              },
+              {
+                id: "moderate",
+                label: {
+                  es: "Moderada",
+                  en: "Moderate"
+                }
+              },
+              {
+                id: "high",
+                label: {
+                  es: "Alta",
+                  en: "High"
+                }
+              }
+            ]
+          }
+        },
+        {
+          id: "daily-schedule",
+          kind: "single-select",
+          label: {
+            es: "Horario de vida",
+            en: "Daily schedule"
+          },
+          options: {
+            kind: "static",
+            items: [
+              {
+                id: "daytime",
+                label: {
+                  es: "Diurno",
+                  en: "Daytime"
+                }
+              },
+              {
+                id: "nighttime",
+                label: {
+                  es: "Nocturno",
+                  en: "Nighttime"
+                }
+              },
+              {
+                id: "rotating",
+                label: {
+                  es: "Turnos rotativos",
+                  en: "Rotating shifts"
+                }
+              },
+              {
+                id: "variable",
+                label: {
+                  es: "Variable",
+                  en: "Variable"
+                }
+              }
+            ]
+          }
+        },
+        {
+          id: "work-type",
+          kind: "single-select",
+          label: {
+            es: "Tipo de trabajo",
+            en: "Type of work"
+          },
+          options: {
+            kind: "static",
+            items: [
+              {
+                id: "seated",
+                label: {
+                  es: "Principalmente sentado",
+                  en: "Mostly seated"
+                }
+              },
+              {
+                id: "standing",
+                label: {
+                  es: "Principalmente de pie",
+                  en: "Mostly standing"
+                }
+              },
+              {
+                id: "physical",
+                label: {
+                  es: "Trabajo físico",
+                  en: "Physical work"
+                }
+              },
+              {
+                id: "mixed",
+                label: {
+                  es: "Mixto",
+                  en: "Mixed"
+                }
+              },
+              {
+                id: "not-working",
+                label: {
+                  es: "Actualmente no trabajo",
+                  en: "Not currently working"
+                }
+              }
+            ]
+          }
+        },
+        {
+          id: "alcohol",
+          kind: "single-select",
+          label: {
+            es: "Alcohol",
+            en: "Alcohol"
+          },
+          options: {
+            kind: "static",
+            items: [
+              {
+                id: "none",
+                label: {
+                  es: "No consumo",
+                  en: "I do not drink"
+                }
+              },
+              {
+                id: "occasional",
+                label: {
+                  es: "Ocasionalmente",
+                  en: "Occasionally"
+                }
+              },
+              {
+                id: "weekly",
+                label: {
+                  es: "Semanalmente",
+                  en: "Weekly"
+                }
+              },
+              {
+                id: "daily",
+                label: {
+                  es: "Diariamente",
+                  en: "Daily"
+                }
+              }
+            ]
+          }
+        },
+        {
+          id: "caffeine",
+          kind: "single-select",
+          label: {
+            es: "Cafeína (tazas/día)",
+            en: "Caffeine (cups/day)"
+          },
+          options: {
+            kind: "static",
+            items: [
+              {
+                id: "0",
+                label: {
+                  es: "0",
+                  en: "0"
+                }
+              },
+              {
+                id: "1",
+                label: {
+                  es: "1",
+                  en: "1"
+                }
+              },
+              {
+                id: "2",
+                label: {
+                  es: "2",
+                  en: "2"
+                }
+              },
+              {
+                id: "3",
+                label: {
+                  es: "3",
+                  en: "3"
+                }
+              },
+              {
+                id: "4",
+                label: {
+                  es: "4",
+                  en: "4"
+                }
+              },
+              {
+                id: "5-plus",
+                label: {
+                  es: "5 o más",
+                  en: "5 or more"
+                }
+              }
+            ]
+          }
+        },
+        {
+          id: "main-priority",
+          kind: "single-select",
+          label: {
+            es: "Tu prioridad real (¿qué pesa más?)",
+            en: "Your real priority (what matters most?)"
+          },
+          options: {
+            kind: "static",
+            items: [
+              {
+                id: "aesthetics",
+                label: {
+                  es: "Estética",
+                  en: "Aesthetics"
+                }
+              },
+              {
+                id: "performance",
+                label: {
+                  es: "Rendimiento",
+                  en: "Performance"
+                }
+              },
+              {
+                id: "health",
+                label: {
+                  es: "Salud",
+                  en: "Health"
+                }
+              },
+              {
+                id: "balanced",
+                label: {
+                  es: "Balanceado",
+                  en: "Balanced"
+                }
+              }
+            ]
+          }
+        },
+        {
+          id: "injuries",
+          kind: "long-text",
+          label: {
+            es: "Lesiones activas o recientes",
+            en: "Active or recent injuries"
+          },
+          markOptional: true,
+          maxLength: 400,
+          placeholder: {
+            es: "Tendinopatía de rodilla, lesión lumbar, hombro…",
+            en: "Knee tendinopathy, lower back injury, shoulder…"
+          }
+        }
+      ]
+    }
+  ]
 };

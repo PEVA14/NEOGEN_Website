@@ -179,7 +179,7 @@ const en: Dictionary = {
       },
       ledger: {
         title: "How Atlas used your answers",
-        lede: "Every answer, and what Atlas did with it.",
+        lede: "Every answer, and what Atlas did with it. Anything not used to choose products never leaves your device.",
         question: "Question",
         answer: "Your answer",
         used: "Used to",
@@ -189,16 +189,45 @@ const en: Dictionary = {
         yes: "Yes",
         no: "No",
         uses: {
-          selection: "Choose products",
-          ranking: "Order them",
-          explanation: "Explain them to you",
+          discovery: "Choose and order products",
+          "research-context": "Choose which research to show you",
+          personalization: "Explain the selection to you",
+          filtering: "Set how many and which",
+          recap: "Show it back to you",
           presentation: "Shape this page",
         },
         withheld: {
+          health:
+            "Health and medication: Atlas does not choose products from this, and it never leaves your device.",
+          body: "Body data: Atlas does not choose products from this, and it never leaves your device.",
+          lifestyle:
+            "Habits: Atlas does not choose products from this, and it never leaves your device.",
+          administration:
+            "How and for how long something would be used: Atlas gives no instructions for use. It never leaves your device.",
+          "personal-outcome":
+            "Personal outcome: Atlas does not match products to personal outcomes. It never leaves your device.",
+          "use-history":
+            "Use history: Atlas does not choose products from this, and it never leaves your device.",
+          unbound: "Not assigned a use yet, so it never leaves your device.",
           "health-note":
             "Your note included health topics, so it was discarded in full before your selection was prepared. All your other answers were used.",
           "name-private": "Used on this page only; never sent to the AI.",
         },
+      },
+      reasons: {
+        "named-by-visitor": "You named it",
+        "policy-pin": "Included by Atlas policy",
+        "area-match": "In {ref}",
+        "function-match": "Tagged with {ref}",
+        "spans-areas": "Spans several of your topics",
+        signature: "Signature line",
+        documented: "Publicly documented",
+        referenced: "Published sources",
+        value: "Accessible entry price",
+        "within-budget": "Within your budget",
+        "over-budget": "Over your budget",
+        unavailable: "Unavailable for now",
+        "catalogue-wide": "Catalogue highlight",
       },
       empty: {
         title: "No products found",
@@ -226,11 +255,14 @@ const en: Dictionary = {
         "cover-topics": "{topics} in a single order",
         browse: "A tour of {topics}",
       },
+      headlineArea: "Your selection in {topic}",
+      headlineCatalogue: "A selection from the NEOGEN catalogue",
       summary:
         "Start with {start}. After that, consider {more} more products. We chose them for {reasons}.",
       summaryNoMore: "Start with {start}. We chose it for {reasons}.",
       reasons: {
-        topics: "the order of your topics",
+        topics: "the catalogue topic that matches your goal",
+        catalogue: "the signature line and the documentation available",
         inMind: "the products you already had in mind",
         budget: "your budget",
         priorities: {
@@ -240,8 +272,14 @@ const en: Dictionary = {
           overlap: "covering several of your topics",
         },
       },
-      aboutYou:
-        "{experience} and you want to {intent}, with {topics} as your priority. You're looking for options {budget}, {horizon}.",
+      aboutYou: {
+        topics: "we started from {topics}, the catalogue topic that matches your goal.",
+        catalogue:
+          "your goal doesn't match a single catalogue topic, so we started from the whole catalogue.",
+        experience: "{experience}.",
+        intent: "you want to {intent}.",
+        budget: "you're looking for options {budget}, {horizon}.",
+      },
       experience: {
         new: "this is your first time with products like these",
         some: "you've bought products like these before",
@@ -262,6 +300,8 @@ const en: Dictionary = {
       },
       why: {
         inMind: "You had it in mind.",
+        policy: "Atlas policy includes it.",
+        catalogue: "It's one of the catalogue's highlights.",
         primary: "It's in {topic}, your main topic.",
         secondary: "It's in {topic}, another of your topics.",
         outside: "You picked it even though it sits outside your topics.",

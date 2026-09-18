@@ -52,14 +52,14 @@ export function effectiveStart(
 
 /**
  * The most "more" picks a result may carry: the policy's maximum, stretched
- * only as far as required picks (named products, uncovered topics) need.
+ * only as far as required picks (pinned products, uncovered topics) need.
  */
 export function moreAllowance(
   retrieval: Pick<AtlasRetrieval, "candidates" | "areas">,
   constraints: AtlasConstraints,
 ): number {
   const required =
-    (constraints.includeInMind ? retrieval.candidates.filter((c) => c.inMind).length : 0) +
+    (constraints.includePinned ? retrieval.candidates.filter((c) => c.pin).length : 0) +
     (constraints.coverTopics ? retrieval.areas.length : 0);
   return Math.max(constraints.more.max, Math.min(required, constraints.total.max - 1));
 }
@@ -72,7 +72,7 @@ export function planAtlas(
   const cap = retrieval.budgetCap;
   const topics = retrieval.areas.map((a) => a.id);
 
-  /* START: named products first, then by score, while the running total fits. */
+  /* START: pinned products first, then by score, while the running total fits. */
   const { min: startMin, enforceBudget } = effectiveStart(retrieval, constraints);
   const fill = (order: readonly AtlasCandidate[]) => {
     const picked: AtlasCandidate[] = [];
@@ -86,7 +86,7 @@ export function planAtlas(
     }
     return picked;
   };
-  const byScore = [...ordered.filter((c) => c.inMind), ...ordered.filter((c) => !c.inMind)];
+  const byScore = [...ordered.filter((c) => c.pin), ...ordered.filter((c) => !c.pin)];
   let start = fill(byScore);
   /* An expensive first pick can crowd out the minimum: start from the cheapest instead. */
   if (start.length < startMin) {
@@ -101,7 +101,7 @@ export function planAtlas(
     if (!start.includes(candidate)) start.push(candidate);
   }
 
-  /* MORE: named products left over, uncovered topics, then by score. */
+  /* MORE: pinned products left over, uncovered topics, then by score. */
   const rest = ordered.filter((c) => !start.includes(c));
   const byPreference = constraints.moreWithinBudgetFirst
     ? [
@@ -110,7 +110,7 @@ export function planAtlas(
       ]
     : rest;
 
-  const more: AtlasCandidate[] = byPreference.filter((c) => c.inMind);
+  const more: AtlasCandidate[] = byPreference.filter((c) => c.pin);
   const chosen = () => [...start, ...more];
   if (constraints.coverTopics) {
     for (const topic of topics) {

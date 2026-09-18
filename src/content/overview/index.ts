@@ -164,6 +164,44 @@ export function publicFunctions(
   return [...new Set(ids)];
 }
 
+/**
+ * A product's approved statements BY ID — the evidence Atlas may point at.
+ *
+ * Only statements public in EVERY locale, so an id the model cites resolves
+ * whichever language the page renders in. Each carries the research functions
+ * it backs and its public reference ids; the text is resolved at render time
+ * by `publicOverview`, never handed around as a string to be paraphrased.
+ */
+export function publicStatementRefs(
+  slug: string,
+  deps: Deps = DEFAULT_DEPS,
+): readonly {
+  id: string;
+  kind: "mechanism" | "research";
+  functions: readonly ResearchFunctionId[];
+  referenceIds: readonly string[];
+}[] {
+  const overview = deps.overviews[slug];
+  const es = publicOverview(slug, "es", deps);
+  const en = publicOverview(slug, "en", deps);
+  if (!overview || !es || !en) return [];
+  const inEn = new Set([...en.mechanismNotes, ...en.researchContext].map((s) => s.id));
+  const tagged = (id: string) =>
+    (overview.functions ?? [])
+      .filter((tag) => tag.statement === id && RESEARCH_FUNCTION_IDS.includes(tag.id))
+      .map((tag) => tag.id);
+  const rows = (list: readonly PublicStatement[], kind: "mechanism" | "research") =>
+    list
+      .filter((s) => inEn.has(s.id))
+      .map((s) => ({
+        id: s.id,
+        kind,
+        functions: [...new Set(tagged(s.id))],
+        referenceIds: s.references.map((r) => r.id),
+      }));
+  return [...rows(es.mechanismNotes, "mechanism"), ...rows(es.researchContext, "research")];
+}
+
 /** Every reference id a product's public overview cites. */
 export function citedReferenceIds(slug: string, deps: Deps = DEFAULT_DEPS): readonly string[] {
   const ids = new Set<string>();

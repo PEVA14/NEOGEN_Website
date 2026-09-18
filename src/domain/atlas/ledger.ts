@@ -1,27 +1,25 @@
-import { ATLAS_POLICY } from "./policy";
+import { fieldOf, specOf } from "./fields";
 import { answerSummary, allQuestions, questionVisible } from "./questionnaire";
 
 import type { AtlasAnswers, AtlasQuestionnaireView } from "./questionnaire";
-import type { AtlasResultLedgerEntry } from "./result";
+import type { AtlasResultLedgerEntry, AtlasResultRecapEntry } from "./result";
 
 /**
  * THE LEDGER — every question, what the visitor answered, and what Atlas was
  * allowed to do with it.
  *
- * Built from three inputs and nothing else: the resolved questionnaire (labels
- * and options), the answers, and `ATLAS_POLICY` (role → permitted uses). So a
- * new question appears in the ledger the moment it appears in the
- * questionnaire, with no entry to register and no result-page branch to add,
- * and a question with no role shows honestly as collected but unused.
+ * Built IN THE BROWSER, from the resolved questionnaire, the visitor's own
+ * answers and the field table (`fields.ts`). It has to be: withheld answers
+ * never leave the device, so only the device can show them back. The server
+ * contributes one per-request fact, whether the note was discarded.
  *
- * WITHHOLDINGS are shown, never hidden: the name never reaches the model, and
- * a note carrying health detail is discarded whole (the policy's decision,
- * passed in as `noteDiscarded`).
+ * A new question appears here the moment it appears in the questionnaire. If
+ * `fields.ts` does not bind it, it shows honestly as withheld (`unbound`).
  */
 export interface AtlasLedgerCopy {
   yes: string;
   no: string;
-  /** Stands in for a note's text, which is never echoed back. */
+  /** Stands in for free text, which is never echoed back. */
   noteGiven: string;
 }
 
@@ -37,40 +35,46 @@ export function buildAtlasLedger(
     if (!questionVisible(question, answers)) continue;
     const raw = answers[question.id];
     const summary = answerSummary(question, raw, copy);
-    /* A long note has no echo, so its own presence is the answer. */
+    /* Free text has no echo, so its own presence is the answer. */
     const answered =
       question.kind === "long-text"
         ? typeof raw === "string" && raw.trim().length > 0
         : summary !== null;
-    const withheld =
-      question.role === "first-name" && answered
-        ? ("name-private" as const)
-        : question.role === "free-note" && noteDiscarded
-          ? ("health-note" as const)
-          : null;
+    const spec = specOf(question.id);
+    const discarded = answered && noteDiscarded && fieldOf(question.id) === "context-note";
+    const withheld = discarded ? "health-note" : spec.withheld;
 
     entries.push({
       question: question.id,
+      field: fieldOf(question.id),
       label: question.shortLabel,
       answer: answered ? (summary ?? copy.noteGiven) : null,
       answered,
-      uses:
-        answered && question.role && withheld !== "health-note" ? ATLAS_POLICY[question.role] : [],
-      withheld,
+      uses: answered && !discarded ? spec.uses : [],
+      withheld: answered ? withheld : null,
     });
   }
 
   return entries;
 }
 
-/** The answers echoed as chips above the result. Questions opt in with `recap`. */
+/**
+ * The answers echoed as chips above the result: questions the content marks
+ * `recap` AND whose field permits it. A withheld health answer is never
+ * echoed, whatever the content says.
+ */
 export function atlasRecap(
   view: AtlasQuestionnaireView,
   answers: AtlasAnswers,
   copy: AtlasLedgerCopy,
-): readonly { question: string; label: string; answer: string }[] {
+): readonly AtlasResultRecapEntry[] {
   return allQuestions(view)
-    .filter((question) => question.recap && questionVisible(question, answers))
+    .filter(
+      (question) =>
+        question.recap &&
+        specOf(question.id).uses.includes("recap") &&
+        questionVisible(question, answers),
+    )
     .map((question) => ({
       question: question.id,
       label: question.shortLabel,

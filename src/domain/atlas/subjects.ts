@@ -1,4 +1,4 @@
-import type { AtlasSubject } from "./types";
+import type { AtlasEvidenceRef, AtlasSubject } from "./types";
 import type { ResearchFunctionId } from "@/content/functions";
 import type { Availability } from "@/data/commerce";
 import type { Product } from "@/data/catalog";
@@ -19,6 +19,8 @@ export interface AtlasSubjectDeps {
   functions: (slug: string) => readonly ResearchFunctionId[];
   documented: (product: Product) => boolean;
   references: (slug: string) => readonly string[];
+  /** Approved statements by id — `publicStatementRefs` on the server. */
+  evidence: (slug: string) => readonly AtlasEvidenceRef[];
 }
 
 export function atlasSubjectsFrom(
@@ -47,6 +49,7 @@ export function atlasSubjectsFrom(
       entryPrice: amounts.length > 0 ? Math.min(...amounts) : null,
       documented: deps.documented(product),
       referenceIds: deps.references(product.slug),
+      evidence: deps.evidence(product.slug),
       order,
     };
   });

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { publicFunctions } from "@/content/overview";
+import { publicFunctions, publicStatementRefs } from "@/content/overview";
 import { referencesForProduct } from "@/content/research";
 import { publishedProducts } from "@/data/catalog";
 import { getAvailability, getPrices } from "@/data/commerce";
@@ -14,7 +14,8 @@ import { publicEvidenceIndex } from "@/domain/quality";
  * One pass over the existing registries — no new product, price, evidence or
  * reference store. Prices come from the commerce layer, areas from the approved
  * assignments, documentation from the evidence resolver, references from the
- * research index (already filtered to public records). The mapping itself is
+ * research index (already filtered to public records), and approved statements
+ * — by id — from the overview registry. The mapping itself is
  * the pure `atlasSubjectsFrom`, which `check:atlas` runs against the same
  * registries.
  */
@@ -32,5 +33,6 @@ export async function atlasSubjects(): Promise<readonly AtlasSubject[]> {
     functions: (slug) => publicFunctions(slug),
     documented: (product) => publicEvidenceIndex([product]).length > 0,
     references: (slug) => referencesForProduct(slug).map((reference) => reference.id),
+    evidence: (slug) => publicStatementRefs(slug),
   });
 }

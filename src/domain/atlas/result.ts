@@ -1,4 +1,12 @@
-import type { AtlasDestination, AtlasStyle, AtlasUse, AtlasWithheld } from "./types";
+import type {
+  AtlasDestination,
+  AtlasFieldId,
+  AtlasReasonCode,
+  AtlasRelevance,
+  AtlasStyle,
+  AtlasUse,
+  AtlasWithheld,
+} from "./types";
 import type { Money } from "@/data/commerce";
 import type { DiscoveryAreaId } from "@/data/discovery";
 
@@ -10,6 +18,12 @@ import type { DiscoveryAreaId } from "@/data/discovery";
  * the composer), and every other field is READ from a registry at request
  * time. The browser receives both already joined, and the UI contains no
  * recommendation rule: it renders what this structure says.
+ *
+ * A PRODUCT CARRIES ITS OWN CASE: where it came from (`source`), the
+ * structured reasons it is there, the approved evidence it rests on and its
+ * relevance. All four are computed or resolved on the server from registry
+ * facts, so a future policy that returns specific products with reasons fits
+ * this shape as it is.
  */
 
 export type AtlasMode =
@@ -41,14 +55,40 @@ export interface AtlasResultSuggestion {
   priceLabel: string;
 }
 
+/** Why a product is in the result: a code for machines, a label for people. */
+export interface AtlasResultReason {
+  code: AtlasReasonCode;
+  /** The area or research function it concerns, when it has one. */
+  ref: string | null;
+  label: string;
+}
+
+/** One approved, sourced statement, resolved from `content/overview`. */
+export interface AtlasResultEvidence {
+  id: string;
+  kind: "mechanism" | "research";
+  text: string;
+  references: readonly { id: string; title: string; href: string | null }[];
+}
+
 export interface AtlasResultProduct {
   slug: string;
   name: string;
   href: string;
   list: AtlasPickList;
   why: string | null;
-  /** The visitor named this product. */
+  /**
+   * How it entered the result: the visitor named it, a policy rule required
+   * it, retrieval scored it, or it is a supply the visitor asked for.
+   */
+  source: "visitor" | "policy" | "retrieval" | "supply";
+  /** The visitor named this product. Kept for the card's badge. */
   inMind: boolean;
+  reasons: readonly AtlasResultReason[];
+  /** Model-chosen statements first (validated), then the rest, all approved. */
+  evidence: readonly AtlasResultEvidence[];
+  /** Null for supplies, which are not scored. */
+  relevance: AtlasRelevance | null;
   world: string | null;
   worldLabel: string | null;
   areas: readonly { id: DiscoveryAreaId; label: string }[];
@@ -104,15 +144,14 @@ export interface AtlasResultBudget {
 }
 
 /**
- * One question: what the visitor answered and what Atlas did with it.
- *
- * Both the question's own wording and the answer's display text arrive
- * resolved, so the result page renders a ledger of any questionnaire without
- * knowing which questions exist.
+ * One question: what the visitor answered and what Atlas did with it. Built in
+ * the browser (`buildAtlasLedger`), because withheld answers never leave it.
  */
 export interface AtlasResultLedgerEntry {
   /** The question's stable id. */
   question: string;
+  /** The profile field it fills; null when unbound. */
+  field: AtlasFieldId | null;
   /** The question as the visitor read it. */
   label: string;
   /** Display text of the answer, or null when skipped. */
@@ -153,8 +192,6 @@ export interface AtlasResultView {
     /** The model flagged health content that the screen did not catch. */
     healthMentioned: boolean;
   };
-  ledger: readonly AtlasResultLedgerEntry[];
-  recap: readonly AtlasResultRecapEntry[];
   references: readonly { id: string; title: string; href: string | null }[];
   documentation: { publicRecords: number; modelHref: string; explorerHref: string | null };
   commerce: { bagEnabled: boolean; localeTag: string };

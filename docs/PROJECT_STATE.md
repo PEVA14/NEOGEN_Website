@@ -1,6 +1,7 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-09-17**, after the Atlas questionnaire system (§8i).
+Last updated **2026-09-17**, after the Atlas field map for the owner's
+questionnaire v4 (§8k).
 
 This file is the memory of the project for a new session. It records what is
 not derivable from the code: where the phases stand, how the owner runs the
@@ -34,6 +35,7 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 | `d1300b1`   | NEOGEN Atlas: questionnaire → retrieval → AI adapter → validated map (§8h)                                                      |
 | `d3a9e46`   | Atlas part 1 + homepage index                                                                                                   |
 | _this_      | Sourced compound profiles, the research-function axis, and the data-driven questionnaire system (§8i)                           |
+| _this_      | Atlas understands the owner's questionnaire v4: field map, transmission boundary, pins, evidence, relevance (§8k)               |
 
 **Phase 12.1 is complete. Phase 13 has not been started or approved.** Do not
 begin it without a brief from the owner.
@@ -177,6 +179,12 @@ also encoded in `src/config/site.ts`; anything undecided there is `null`.
    the 2025 LFPDPPP — no vendor offers a Mexico region. Orders, drafts and the
    notification outbox are in-memory today.
 8. **Email provider** and the internal operations destination (inbox or chat).
+8a. **Atlas questionnaire v4 asks for sensitive data** (§8k). None of it leaves
+   the browser and none of it is used, but asking still needs counsel on the
+   privacy notice and consent for datos sensibles (health, sexual health), and
+   the classification review should see the public administration wording
+   ("vía de administración", "subcutánea", "tolerancia a inyecciones",
+   "duración del protocolo").
 
 **Evidence and content**
 
@@ -808,6 +816,74 @@ real 404 and nothing links it. `check:output` asserts both directions.
 nervous and endocrine, immunity, cell biology) because 35 flat checkboxes had
 stopped being readable. Content declares the groups; the renderer partitions on
 them in arrival order.
+
+## 8k. Atlas understands the owner's questionnaire (v4)
+
+**The owner rewrote the questionnaire** (`src/content/atlas/questionnaire.ts`,
+version 4, from their Questionnaire.docx) and asked that it be treated as
+owner-authored: **do not rewrite, sanitize, rename or remove its questions or
+answers.** It now asks a goal and a goal-specific follow-up, body data, peptide
+experience, route/duration/injection tolerance, health conditions and
+medications, lifestyle, and free-text frustrations, 90-day goal and injuries.
+The owner asked for the policy boundary to be kept for inputs Atlas will not
+use, with those inputs represented and marked, not removed.
+
+**What was built.**
+
+- `src/domain/atlas/fields.ts` — the one file that names question ids. Binds
+  each question to a profile field, gives each field its permitted uses
+  (discovery / research-context / personalization / filtering / recap /
+  presentation) or its withholding reason, and translates option ids
+  (`GOAL_AREAS`, `EXPERIENCE_LEVELS`). Per-question `role` is gone from the
+  schema; the owner's file never needs one.
+- `src/domain/atlas/profile.ts` — answers → `AtlasProfile` in the pipeline's
+  own terms. Withheld fields appear by name and reason with **no value slot**.
+  Defaults are marked `default`, and neither the prompt nor the composer
+  describes a default as the visitor's choice.
+- **Withheld means never sent.** The browser posts only transmittable answers,
+  the route strips again and validates `transmittedView`; the ledger and recap
+  are built in the browser, which is the only place the withheld answers are.
+- Result products carry `source`, structured `reasons`, `evidence` (approved
+  statement ids resolved to text and references from `content/overview`) and
+  a deterministic `relevance`. `policyPins()` is the seam for a future policy
+  that names specific products; pins travel through retrieval, the prompt, the
+  validator (`missing_pinned`) and the card. The model may cite a product's own
+  statement ids (`unknown_evidence` otherwise) and writes no fact.
+
+**The classification, and why.**
+
+| Used                 | As                                                                                                                                                      |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `goal`               | its catalogue area (the menu's own section); the model gets the area id, never the goal's words. `daily-wellbeing` has no single area → whole catalogue |
+| `peptide-experience` | catalogue complexity: how many to start with, single compounds first                                                                                    |
+| `additional-notes`   | model context, after the health screen                                                                                                                  |
+
+Everything else is withheld: the goal follow-ups (personal outcome — recap
+only), body data, route/duration/injection tolerance (administration), health
+conditions/medications/injuries (health), lifestyle, frustrations/90-day
+goal/main priority (personal outcome), previous compounds (use history). The
+line is the one `atlas-no-health-intake` recorded: Atlas does not select a
+compound from a person's health, body or a specific personal outcome. Mapping
+the goal to its catalogue section is the same granularity the old topic
+question had.
+
+**The two questionnaire checks changed meaning, not strength.** `check:content`
+used to fail if the questionnaire ASKED about outcomes or used dosing words;
+the owner now asks, so it fails if such a question is BOUND to a decision field
+(the goal is allowed only as a translated option id). `check:atlas` sweeps
+every withheld question through every option and canary text and proves the
+policy, retrieval, plan and the model's exact prompt do not change. Three
+deliberate mutations (a health field made a discovery input, a follow-up leaked
+into the profile, the browser sending everything) each failed the gates.
+
+**Left for the owner.**
+
+- The owner's file has a TODO for a derived BMI display; not built (it is a
+  body-data computation, and the schema has no derived kind).
+- `goal` has no `shortLabel`, so its recap chip reads the full question.
+- The owner's file is not Prettier-formatted; left exactly as authored.
+  `format:check` is not part of `npm run check`.
+- Privacy/regulatory item 8a in §6.
 
 ## 9. Recommendation for Phase 13 (not approved)
 

@@ -23,22 +23,36 @@ import type {
  *
  * It reads the same narrative signals the model is given (so it can say why a
  * product connects to the visitor's answers) and renders the deterministic
- * plan, producing the same `AtlasGeneration` the model does. It passes through
+ * plan, producing the same `AtlasGeneration` the model does. It speaks only
+ * of what the visitor ANSWERED (`narrative.asked`): a default is never
+ * described back to them as their choice. It passes through
  * the same validator, which `check:atlas` proves for every test profile.
  */
 
 export interface AtlasComposeCopy {
   and: string;
   headline: Readonly<Record<AtlasIntent, string>>;
+  /** When the visitor was not asked what they want to get done. */
+  headlineArea: string;
+  /** When no area applies and the catalogue as a whole was the pool. */
+  headlineCatalogue: string;
   summary: string;
   summaryNoMore: string;
   reasons: {
     topics: string;
+    catalogue: string;
     inMind: string;
     budget: string;
     priorities: Readonly<Record<AtlasPriority, string>>;
   };
-  aboutYou: string;
+  /** One sentence per answered field; only the answered ones are joined. */
+  aboutYou: {
+    topics: string;
+    catalogue: string;
+    experience: string;
+    intent: string;
+    budget: string;
+  };
   experience: Readonly<Record<AtlasExperienceLevel, string>>;
   intent: Readonly<Record<AtlasIntent, string>>;
   budgetOpen: string;
@@ -46,6 +60,8 @@ export interface AtlasComposeCopy {
   horizon: Readonly<Record<AtlasHorizon, string>>;
   why: {
     inMind: string;
+    policy: string;
+    catalogue: string;
     primary: string;
     secondary: string;
     outside: string;
@@ -96,6 +112,7 @@ const sentence = (text: string) =>
 
 export function composeAtlasGeneration(input: AtlasComposeInput): AtlasGeneration {
   const { narrative, retrieval, plan, copy, topicLabel, destinationLabel } = input;
+  const asked = (field: AtlasNarrativeSignals["asked"][number]) => narrative.asked.includes(field);
   const topicNames = narrative.topics.map(topicLabel);
   const picked = [...plan.start, ...plan.more];
   const listOf = (items: readonly string[]) => list(items, copy.and);
@@ -109,9 +126,15 @@ export function composeAtlasGeneration(input: AtlasComposeInput): AtlasGeneratio
   const why = (candidate: AtlasCandidate, list: "start" | "more") => {
     const primary = candidate.matchedAreas[0];
     const parts = [
-      candidate.inMind ? copy.why.inMind : null,
+      candidate.pin?.source === "visitor"
+        ? copy.why.inMind
+        : candidate.pin?.source === "policy"
+          ? copy.why.policy
+          : null,
       primary === undefined
-        ? copy.why.outside
+        ? narrative.topics.length === 0
+          ? copy.why.catalogue
+          : copy.why.outside
         : fill(primary === narrative.topics[0] ? copy.why.primary : copy.why.secondary, {
             topic: topicLabel(primary),
           }),
@@ -141,8 +164,8 @@ export function composeAtlasGeneration(input: AtlasComposeInput): AtlasGeneratio
     return parts.filter((p): p is string => p !== null).join(" ");
   };
   const reasons = [
-    copy.reasons.topics,
-    ...(narrative.inMind.length > 0 ? [copy.reasons.inMind] : []),
+    narrative.topics.length > 0 ? copy.reasons.topics : copy.reasons.catalogue,
+    ...(narrative.pinned.length > 0 ? [copy.reasons.inMind] : []),
     ...narrative.priorities.map((p) => copy.reasons.priorities[p]),
     ...(narrative.budgetCap !== null ? [copy.reasons.budget] : []),
   ];
@@ -183,28 +206,50 @@ export function composeAtlasGeneration(input: AtlasComposeInput): AtlasGeneratio
   const names = (items: readonly AtlasCandidate[]) => listOf(items.map((c) => c.name));
 
   return {
-    headline: fill(copy.headline[narrative.intent], {
-      topic: topicNames[0] ?? "",
-      topics: listOf(topicNames),
-    }),
+    headline:
+      topicNames.length === 0
+        ? copy.headlineCatalogue
+        : fill(asked("intent") ? copy.headline[narrative.intent] : copy.headlineArea, {
+            topic: topicNames[0],
+            topics: listOf(topicNames),
+          }),
     summary: fill(plan.more.length > 0 ? copy.summary : copy.summaryNoMore, {
       start: names(plan.start),
       more: plan.more.length,
       reasons: listOf(reasons),
     }),
-    aboutYou: sentence(
-      fill(copy.aboutYou, {
-        experience: copy.experience[narrative.experience],
-        intent: copy.intent[narrative.intent],
-        topics: listOf(topicNames),
-        budget: narrative.budgetCap === null ? copy.budgetOpen : copy.budgetSet,
-        horizon: copy.horizon[narrative.horizon],
-      }),
-    ),
-    start: plan.start.map((c) => ({ slug: c.slug, why: why(c, "start") })),
+    aboutYou: [
+      topicNames.length > 0
+        ? fill(copy.aboutYou.topics, { topics: listOf(topicNames) })
+        : copy.aboutYou.catalogue,
+      asked("experience")
+        ? fill(copy.aboutYou.experience, { experience: copy.experience[narrative.experience] })
+        : null,
+      asked("intent")
+        ? fill(copy.aboutYou.intent, { intent: copy.intent[narrative.intent] })
+        : null,
+      asked("budget")
+        ? fill(copy.aboutYou.budget, {
+            budget: narrative.budgetCap === null ? copy.budgetOpen : copy.budgetSet,
+            horizon: copy.horizon[narrative.horizon],
+          })
+        : null,
+    ]
+      .filter((part): part is string => part !== null)
+      .map(sentence)
+      .join(" "),
+    start: plan.start.map((c) => ({
+      slug: c.slug,
+      why: why(c, "start"),
+      evidence: c.evidence.slice(0, 1).map((e) => e.id),
+    })),
     more: [
-      ...plan.more.map((c) => ({ slug: c.slug, why: why(c, "more") })),
-      ...retrieval.supplies.map((c) => ({ slug: c.slug, why: copy.why.supply })),
+      ...plan.more.map((c) => ({
+        slug: c.slug,
+        why: why(c, "more"),
+        evidence: c.evidence.slice(0, 1).map((e) => e.id),
+      })),
+      ...retrieval.supplies.map((c) => ({ slug: c.slug, why: copy.why.supply, evidence: [] })),
     ],
     topics: retrieval.areas.map((stat) => {
       const inResult = picked.filter((c) => c.matchedAreas.includes(stat.id)).length;

@@ -22,10 +22,10 @@ import type { LocalizedText } from "@/content/lifecycle";
  *    registries at render time, so no price, slug or count is ever duplicated
  *    into questionnaire content.
  *
- * WHAT A QUESTION MAY INFLUENCE is still the policy's decision alone. A
- * question declares a `role`; `ATLAS_POLICY` maps that role to its permitted
- * uses. A question with no role is collected and shown back to the visitor and
- * can move nothing.
+ * WHAT A QUESTION MAY INFLUENCE is not declared here, nor in the content. One
+ * system file, `domain/atlas/fields.ts`, binds each question id to a profile
+ * field and gives every field its permitted uses. A question it does not bind
+ * is withheld: collected, shown back to the visitor, never sent, never used.
  */
 
 /** Every interaction the renderer knows how to draw. */
@@ -43,32 +43,6 @@ export type AtlasQuestionKind =
  */
 export type AtlasQuestionRender = "cards" | "pills" | "tiles" | "search";
 
-/**
- * What an answer is ALLOWED to feed. The policy owns the mapping from role to
- * use; the questionnaire only says which role a question plays.
- *
- * A role may be filled by at most one question. Drop the question that fills a
- * role and the profile falls back to that role's documented default, so the
- * advisor keeps working with fewer questions.
- */
-export type AtlasRole =
-  | "topics"
-  | "research-functions"
-  | "intent"
-  | "products-in-mind"
-  | "first-name"
-  | "experience"
-  | "history"
-  | "priorities"
-  | "explanation-style"
-  | "forms"
-  | "presentation-size"
-  | "include-supplies"
-  | "budget-cap"
-  | "purchase-horizon"
-  | "timing"
-  | "free-note";
-
 /** Registry-backed option lists. The registry is read at render time. */
 export type AtlasRegistrySource = "discovery-areas" | "published-products" | "research-functions";
 
@@ -78,8 +52,8 @@ export interface AtlasOptionSpec {
   label: LocalizedText;
   hint?: LocalizedText;
   /**
-   * A number the role consumes — today only `budget-cap`, where it is the MXN
-   * ceiling and `null` means no ceiling. Never a price read from a product.
+   * A number the bound profile field consumes — e.g. an MXN budget ceiling,
+   * where `null` means no ceiling. Never a price read from a product.
    */
   value?: number | null;
 }
@@ -119,7 +93,6 @@ interface QuestionBase {
    * reads as nagging.
    */
   markOptional?: boolean;
-  role?: AtlasRole;
   /** Shown only while this holds. */
   visibleWhen?: AtlasCondition;
   /** Echo this answer in the result's "what we understood" summary. */
@@ -162,7 +135,8 @@ export interface ToggleQuestion extends QuestionBase {
 export interface NumberQuestion extends QuestionBase {
   kind: "number";
   min: number;
-  max: number;
+  /** Optional: a number field may be open-ended above its floor. */
+  max?: number;
   step?: number;
   default?: number;
   unit?: LocalizedText;
@@ -256,13 +230,11 @@ export type AtlasSchemaIssueCode =
   | "duplicate_question_id"
   | "duplicate_group_id"
   | "duplicate_option_id"
-  | "duplicate_role"
   | "condition_unknown_question"
   | "condition_forward_reference"
   | "default_not_an_option"
   | "bad_bounds"
-  | "registry_source_unknown"
-  | "role_kind_mismatch";
+  | "registry_source_unknown";
 
 export interface AtlasSchemaIssue {
   code: AtlasSchemaIssueCode;

@@ -6,18 +6,8 @@ import { isPublishable, publishedProducts } from "@/data/catalog";
 import { formatPrice, getPrices } from "@/data/commerce";
 import { productsInArea, publicAreas, publicAreasFor } from "@/data/discovery";
 import {
-  atlasExperienceLevels,
-  atlasForms,
-  atlasHistories,
-  atlasHorizons,
-  atlasIntents,
-  atlasPriorities,
-  atlasSizes,
-  atlasStyles,
-  atlasTimings,
   buildQuestionnaireView,
   type AtlasOptionResolver,
-  type AtlasProfileVocabularies,
   type AtlasQuestionnaireView,
 } from "@/domain/atlas";
 import { localeTags, type Locale } from "@/i18n/config";
@@ -40,19 +30,6 @@ import { offeredResearchFunctions } from "./functions";
  * approved, sourced tag. Questionnaire content names the registry and nothing
  * else.
  */
-
-/** The closed vocabularies the policy recognises, for role mapping. */
-export const ATLAS_VOCABULARIES: AtlasProfileVocabularies = {
-  intents: atlasIntents,
-  experience: atlasExperienceLevels,
-  histories: atlasHistories,
-  priorities: atlasPriorities,
-  styles: atlasStyles,
-  forms: atlasForms,
-  sizes: atlasSizes,
-  horizons: atlasHorizons,
-  timings: atlasTimings,
-};
 
 export async function atlasQuestionnaireView(locale: Locale): Promise<AtlasQuestionnaireView> {
   const dict = await getDictionary(locale);
