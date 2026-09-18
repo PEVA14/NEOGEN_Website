@@ -795,6 +795,15 @@ and three batch-5 sentences were reworded rather than the guard loosened —
 "frecuencia de pulsos" became "número de pulsos por hora", "ciclo día-noche"
 became "ritmo día-noche".
 
+**The reference index has its own route.** Approving batches 4 and 5 put all
+74 records on the Research Hub and made it 24,000px tall on desktop, 43,500px
+on a phone. The hub now shows the six most recent and links
+`/investigacion/referencias`, which lists every source grouped by year with the
+compounds that cite it — the derivation read from the other end. The route is
+gated the same way the documentation explorer is: `generateStaticParams` emits
+it only while a public reference is cited, so with an empty registry it is a
+real 404 and nothing links it. `check:output` asserts both directions.
+
 **The Atlas function question is grouped** (metabolism, tissue and repair,
 nervous and endocrine, immunity, cell biology) because 35 flat checkboxes had
 stopped being readable. Content declares the groups; the renderer partitions on

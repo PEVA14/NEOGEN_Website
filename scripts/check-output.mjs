@@ -15,7 +15,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import { publicAreaOverview } from "../src/content/areas/index.ts";
-import { areaResearch } from "../src/content/research.ts";
+import { areaResearch, researchReferenceIndex } from "../src/content/research.ts";
 import { publishedProducts } from "../src/data/catalog/index.ts";
 import { productsInArea, publicAreas } from "../src/data/discovery/index.ts";
 import { featuredInArea, relatedAreas } from "../src/domain/discovery/index.ts";
@@ -352,6 +352,28 @@ if (publicEvidenceIndex(publishedProducts).length === 0) {
     if (/[\\/]investigacion[\\/]calidad/.test(file)) {
       fail("the documentation explorer was published with no public document", file);
     }
+  }
+}
+
+/* The reference index exists only once a public reference is cited. */
+{
+  const indexFiles = htmlFiles.filter((file) => /[\\/]investigacion[\\/]referencias/.test(file));
+  const cited = researchReferenceIndex().length;
+  if (cited === 0 && indexFiles.length > 0) {
+    fail("the reference index was published with no cited reference", indexFiles[0]);
+  }
+  if (cited > 0 && indexFiles.length === 0) {
+    fail("references are cited but the reference index was not published", `${cited} cited`);
+  }
+  /* And the hub links it exactly when it exists. */
+  const linked = htmlFiles.filter((file) =>
+    /href="\/(?:es|en)\/investigacion\/referencias"/.test(readFileSync(file, "utf8")),
+  );
+  if (cited === 0 && linked.length > 0) {
+    fail("a page links the reference index while it 404s", linked.slice(0, 3).join(", "));
+  }
+  if (cited > 0 && linked.length === 0) {
+    fail("the reference index exists but nothing links it", `${cited} cited`);
   }
 }
 

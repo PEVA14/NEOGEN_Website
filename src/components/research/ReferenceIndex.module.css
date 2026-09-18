@@ -1,0 +1,179 @@
+/*
+ * THE REFERENCE INDEX — the citation rail's register, one level wider.
+ *
+ * Same hanging bracketed index and same type as `CitationRail`, because it is
+ * the same record seen from the other side; what it adds is a third track for
+ * the compounds that cite each source. Years are hairline dividers rather than
+ * headings: the reader is scanning, not reading sections.
+ */
+.index {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+.year {
+  display: flex;
+  flex-direction: column;
+}
+
+.yearLabel {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding-block-end: var(--space-2xs);
+  border-block-end: 1px solid var(--border-strong);
+  color: var(--ink-primary);
+  letter-spacing: var(--tracking-label);
+  font-variant-numeric: tabular-nums;
+}
+
+.yearCount {
+  color: var(--ink-muted);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  border-block-start: 1px solid var(--border-subtle);
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: 3.5rem minmax(0, 1fr);
+  padding-block: var(--space-md);
+}
+
+.row:first-child {
+  border-block-start: 0;
+}
+
+@media (min-width: 60rem) {
+  .row {
+    grid-template-columns: 3.5rem minmax(0, 1fr) 16rem;
+  }
+}
+
+.position {
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--tracking-label);
+  padding-block-start: 0.2rem;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+  min-inline-size: 0;
+}
+
+.meta {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.title {
+  color: var(--ink-primary);
+  font-size: var(--text-base);
+  line-height: var(--leading-snug);
+  margin: 0;
+  max-inline-size: 70ch;
+  text-wrap: pretty;
+}
+
+.authors {
+  color: var(--ink-secondary);
+  font-size: var(--text-sm);
+  margin: 0;
+}
+
+.ids {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs) var(--space-md);
+  margin-block-start: var(--space-2xs);
+}
+
+.id {
+  color: var(--ink-muted);
+}
+
+.open {
+  color: var(--ink-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  line-height: 2.75rem;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-transform: uppercase;
+  text-underline-offset: 0.25em;
+}
+
+.open:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}
+
+.externalMark {
+  font-size: 0.8em;
+}
+
+/* The third track: who cites this. */
+.cited {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  grid-column: 2 / -1;
+}
+
+@media (min-width: 60rem) {
+  .cited {
+    grid-column: 3;
+    padding-inline-start: var(--space-md);
+    border-inline-start: 1px solid var(--border-subtle);
+  }
+}
+
+.citedLabel {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.compounds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs) var(--space-sm);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.compound {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 2.75rem;
+  margin-block: -0.625rem;
+  font-size: var(--text-sm);
+  color: var(--ink-primary);
+  text-decoration: none;
+  border-block-end: 1px solid var(--border-default);
+}
+
+.compound:hover {
+  border-block-end-color: var(--ink-primary);
+}
+
+.compound:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}

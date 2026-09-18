@@ -45,6 +45,8 @@ export const routes = {
    * public document resolves — see the page for why.
    */
   qualityExplorer: "/investigacion/calidad",
+  /** The whole reference registry, read from both ends. Exists once one does. */
+  researchReferences: "/investigacion/referencias",
   article: (slug: string) => `/investigacion/${slug}`,
   /**
    * NEOGEN Atlas — the personal research map. A tool that crosses the

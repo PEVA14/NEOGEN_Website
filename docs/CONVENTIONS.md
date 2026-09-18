@@ -502,8 +502,13 @@ and the Research Hub all read that derivation. There is no second list of
 
 **Gated routes 404 honestly.** The documentation explorer
 (`/investigacion/calidad`) renders in development as a labelled architectural
-view and does not exist in production until a public document resolves. Links
-to it are rendered under the same condition.
+view and does not exist in production until a public document resolves. The
+reference index (`/investigacion/referencias`) exists only while a public
+reference is cited. Both are slugs of `investigacion/[slug]` with
+`dynamicParams = false`, because a static route calling `notFound()` beneath
+`[locale]` bakes a 200 — the soft-404 this codebase has already been bitten by
+twice. Links to either are rendered under the same condition, and
+`check:output` asserts the route and its links appear together or not at all.
 
 **Notifications are provider-independent and cannot fail an order.** The order
 domain does not import them. `server/notifications.ts` builds structured

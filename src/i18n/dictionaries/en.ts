@@ -26,6 +26,8 @@ const en: Dictionary = {
         "{name} — {classification}. Presentations: {presentations}. NEOGEN Mexico catalogue.",
       catalog:
         "{count} research compounds across four categories: metabolic, peptides, blends and solvents. NEOGEN Mexico catalogue.",
+      researchReferences:
+        "The full index of sources cited across NEOGEN: every reference with its identifiers and the compounds whose profile cites it.",
       qualityExplorer:
         "NEOGEN quality documentation, tied to the exact presentation and lot each document examines.",
       research:
@@ -769,6 +771,18 @@ const en: Dictionary = {
   research: {
     title: "NEOGEN Research",
     articleTitle: "Article",
+    /* The reference index page: /investigacion/referencias */
+    references: {
+      index: "01",
+      label: "References",
+      qualifier: "Full index",
+      title: "Reference index",
+      lede: "Every source behind a statement on a compound's page, grouped by year. Each one lists the compounds that cite it.",
+      countLabel: "References",
+      compoundsLabel: "Compounds citing",
+      citedBy: "Cited by",
+      backToHub: "Back to NEOGEN Research",
+    },
     hub: {
       index: "01",
       label: "Research",
@@ -822,6 +836,9 @@ const en: Dictionary = {
         empty:
           "No references are published. A reference appears here when a verified source supports a statement on a compound's page.",
         citedBy: "Cited on",
+        /* "See all 74 references" */
+        all: "See all {n} references",
+        showing: "The {n} most recent",
       },
     },
   },

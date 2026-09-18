@@ -110,6 +110,12 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
 
   const hasPublicDocuments = publicEvidenceIndex(publishedProducts).length > 0;
   const referenceIndex = researchReferenceIndex();
+  /* Six is the most that reads as a sample rather than a truncated list. */
+  const referencePreview = referenceIndex.slice(0, 6);
+  const fill = (template: string, values: Record<string, number | string>) =>
+    template.replace(/\{(\w+)\}/g, (match, key: string) =>
+      key in values ? String(values[key]) : match,
+    );
 
   return (
     <>
@@ -194,14 +200,27 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
             </Body>
           ) : (
             <>
+              {/*
+               * A preview, not the registry. The hub is a map; the full index
+               * has its own route, because 74 records rendered in full made
+               * this page forty screens long on a phone.
+               */}
+              <Mono size="2xs" className="mb-(--space-sm) block text-(--ink-muted) uppercase">
+                {fill(hub.references.showing, { n: referencePreview.length })}
+              </Mono>
               <CitationRail
-                references={referenceIndex.map((e) => e.reference)}
+                references={referencePreview.map((e) => e.reference)}
                 copy={dict.citations}
               />
-              <Mono size="2xs" className="mt-(--space-sm) block text-(--ink-muted)">
-                {hub.references.citedBy} —{" "}
-                {[...new Set(referenceIndex.flatMap((e) => e.products))].length}
-              </Mono>
+              <div className="mt-(--space-lg) flex flex-wrap items-baseline gap-x-(--space-xl) gap-y-(--space-sm)">
+                <TextLink href={path(routes.researchReferences)}>
+                  {fill(hub.references.all, { n: referenceIndex.length })}
+                </TextLink>
+                <Mono size="2xs" className="text-(--ink-muted)">
+                  {hub.references.citedBy} —{" "}
+                  {[...new Set(referenceIndex.flatMap((e) => e.products))].length}
+                </Mono>
+              </div>
             </>
           )}
         </Container>

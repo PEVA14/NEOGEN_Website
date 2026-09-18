@@ -29,6 +29,8 @@ const es = {
         "{name} — {classification}. Presentaciones: {presentations}. Catálogo NEOGEN México.",
       catalog:
         "{count} compuestos de investigación en cuatro categorías: metabólicos, péptidos, mezclas y disolventes. Catálogo NEOGEN México.",
+      researchReferences:
+        "Índice completo de las fuentes citadas en NEOGEN: cada referencia con sus identificadores y los compuestos cuya ficha la cita.",
       qualityExplorer:
         "Documentación de calidad de NEOGEN, vinculada a la presentación y al lote exactos que examina.",
       research:
@@ -859,6 +861,18 @@ const es = {
   research: {
     title: "NEOGEN Research",
     articleTitle: "Artículo",
+    /* The reference index page: /investigacion/referencias */
+    references: {
+      index: "01",
+      label: "Referencias",
+      qualifier: "Índice completo",
+      title: "Índice de referencias",
+      lede: "Todas las fuentes que respaldan una afirmación en la ficha de un compuesto, agrupadas por año. Cada una indica qué compuestos la citan.",
+      countLabel: "Referencias",
+      compoundsLabel: "Compuestos que citan",
+      citedBy: "Citada por",
+      backToHub: "Volver a NEOGEN Research",
+    },
     /*
      * An index and an evidence model, not a blog. Every section below shows
      * something that exists — areas, compounds, the rules documentation
@@ -918,6 +932,9 @@ const es = {
         empty:
           "No hay referencias publicadas. Una referencia aparece aquí cuando una fuente verificada respalda una afirmación en la página de un compuesto.",
         citedBy: "Citada en",
+        /* "Ver las 74 referencias" */
+        all: "Ver las {n} referencias",
+        showing: "Las {n} más recientes",
       },
     },
   },

@@ -2,6 +2,7 @@ import { routes } from "@/config/routes";
 import { siteConfig } from "@/config/site";
 import { publishedProducts } from "@/data/catalog";
 import { publicPolicies } from "@/content/policies";
+import { researchReferenceIndex } from "@/content/research";
 import { publicEvidenceIndex } from "@/domain/quality";
 import { publicAreas } from "@/data/discovery";
 import { localeTags } from "@/i18n/config";
@@ -45,6 +46,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...publicPolicies().map((policy) => routes.policy(policy.slug)),
     /* The documentation explorer exists only once a public document does. */
     ...(publicEvidenceIndex(publishedProducts).length > 0 ? [routes.qualityExplorer] : []),
+    /* The reference index exists only once a public reference is cited. */
+    ...(researchReferenceIndex().length > 0 ? [routes.researchReferences] : []),
   ];
 
   return paths.flatMap((path) =>
