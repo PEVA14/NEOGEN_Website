@@ -115,3 +115,33 @@
     scroll-behavior: smooth;
   }
 }
+
+/*
+ * THE BRAND MARK LANDS. On a page that opens on the poster-scale NEOGEN
+ * (`[data-hero-condense]`, the homepage hero), the header's wordmark starts
+ * absent and lands as the poster mark condenses on scroll. The two are one
+ * gesture: the brand introduction becomes the interface. Everywhere else the
+ * header is untouched; reduced motion and browsers without scroll timelines
+ * keep the header wordmark as it always was. From 48rem only: on a phone the
+ * poster mark is small and the header's corner would simply read as empty.
+ */
+@media (prefers-reduced-motion: no-preference) and (min-width: 48rem) {
+  @supports (animation-timeline: scroll()) {
+    body:has([data-hero-condense]) [data-brand-mark] {
+      animation: brand-mark-land linear both;
+      animation-timeline: scroll(root);
+      animation-range: 14vh 40vh;
+    }
+  }
+}
+
+@keyframes brand-mark-land {
+  from {
+    opacity: 0;
+    transform: translateY(40%);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

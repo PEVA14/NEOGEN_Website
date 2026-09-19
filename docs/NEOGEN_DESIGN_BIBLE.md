@@ -162,15 +162,42 @@ photography.
 
 ## Homepage
 
-Priority (V1): **brand impact → product → discovery**, with every Experience
-moment resolving into commerce.
+Priority (V1): **brand → exploration → products → experience → discovery →
+trust → products.** The brand introduction hands over to the store; every
+Experience moment resolves into commerce; the page ends in the catalogue.
 
-Sequence (V1): 1. Hero 2. Flagship compounds 3. Catalogue shelf (count, shop
-by area, one entry product per area) 4. RETA cinematic → RETA commerce
-5. Explore by area 6. GLOW → GLOW commerce 7. Evidence, counted 8. GHK-Cu →
-GHK-Cu commerce 9. Footer. The original sequence (What is NEOGEN, Quality
-model, Products last) is superseded; the documentation model lives on the
-Research Hub.
+Sequence (V1, homepage pass of 2026-09-18, awaiting owner review):
+
+1. **Hero:** the oversized NEOGEN poster and the RETA object. On scroll (from
+   48rem, motion allowed) the poster mark condenses toward the header, and
+   the header's wordmark lands in its place.
+2. **Explora NEOGEN** (gateway): doors into what exists, each shown by what
+   it holds:
+   - the catalogue, by a real product still and its lowest price;
+   - research, by its counts and latest citations;
+   - the areas, by their eight signs;
+   - a search;
+   - the three worlds.
+
+   A documentation door appears only once a public document exists. There is
+   no Atlas.
+3. **Tres mundos:** the flagships on their world grounds, each with name,
+   range, price and one action.
+4. **Collection:** the eight area tiles (the /productos idiom) rising out of
+   the charcoal band.
+5. **RETA:** cinematic, resolving into RETA commerce.
+6. **Explora por área:** tabs, with the section taking the chosen area's own
+   wash and hue, and four more products per area.
+7. **GLOW:** resolving into GLOW commerce.
+8. **Evidence,** counted.
+9. **GHK-Cu:** resolving into GHK-Cu commerce.
+10. **Más del catálogo:** ten products across the areas, then the whole
+    catalogue as the final action.
+
+Colour steps up in stages: the neutral NEOGEN UI, then an area's own
+atmosphere (an area is never collapsed into one shared beige), then a
+flagship world. Areas stay washes and marks; only the worlds get dark,
+saturated grounds.
 
 Hero is Experience Mode. It establishes NEOGEN, uses 3D only when
 composition benefits, and maintains a clear path into the site.

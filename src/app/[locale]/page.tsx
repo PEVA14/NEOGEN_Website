@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { AreaShelf } from "@/components/catalog/Storefront";
 import {
   GlowMoment,
   Hero,
@@ -8,54 +9,47 @@ import {
   type HeroCopy,
   type RetaExperienceCopy,
 } from "@/components/experience";
-import { SectionHeader } from "@/components/layout";
-import { Container, Section } from "@/components/primitives";
-import { CatalogIndex, CompoundRail, DiscoveryGrid, ProductCard, TextLink } from "@/components/ui";
-import { ScienceBand, ShelfAreas } from "@/components/home";
-import { publicOverview } from "@/content/overview";
-import { researchReferenceIndex } from "@/content/research";
-import { cardDetails, cardDetailsCopy } from "@/server/catalog";
+import { AreaExplorer, ClosingShelf, HomeGateway, ScienceBand, WorldBand } from "@/components/home";
 import { routes } from "@/config/routes";
-import { worldIds, type WorldId } from "@/config/worlds";
-import { isLocale, localeTags } from "@/i18n/config";
-import { isPublishable, presentationRange, products, publishedProducts } from "@/data/catalog";
-import { formatPrice, getPrices } from "@/data/commerce";
-import { productsInArea, publicAreas, publicAreasFor } from "@/data/discovery";
+import { getWorld, type WorldId } from "@/config/worlds";
+import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/getDictionary";
-import { alternates } from "@/lib/alternates";
 import { localizePath } from "@/i18n/routing";
+import { alternates } from "@/lib/alternates";
+import { homeData } from "@/server/home";
 
 import type { Metadata } from "next";
 
 /**
- * HOME.
+ * HOME — the brand, then the store opening up beneath it.
  *
- *   Hero (Impact) → 01 Hub (Quiet, on the hero's dark) → 02 Evolution (Quiet)
- *   → RETA (Impact) → 03 Discovery (Quiet) → GLOW (Impact)
- *   → 04 Research + 05 Quality (Quiet) → GHK-Cu (Impact) → 06 Products (Quiet)
+ *   Hero            Experience  the poster NEOGEN; on scroll it condenses into
+ *                               the header's wordmark
+ *   01 Explora      Quiet       the gateway: six doors into what exists
+ *   02 Insignia     Dark        the three worlds, each resolving into commerce
+ *   03 Colección    Dark→paper  eight areas, each shown by its entry product
+ *   RETA            Impact      the object, resolving into RETA
+ *   04 Por área     Area wash   a category's atmosphere and four more products
+ *   GLOW            Impact      light, resolving into GLOW
+ *   05 Evidencia    Quiet       counted, sourced, brief
+ *   GHK-Cu          Impact      material, resolving into GHK-Cu
+ *   06 Catálogo     Quiet       ten more products, then the whole catalogue
  *
- * Cards on this page carry the reveal (CONVENTIONS §16). A commerce layer was
- * trialled here on 2026-09-15; the owner kept none of it on the homepage —
- * the matrix became the catalogue's register view, the ticker and flagship
- * shop are parked in `components/storefront`, the price spectrum was removed.
+ * brand → exploration → products → experience → discovery → trust → products.
  *
- * Two structural rules from the reference set are load-bearing:
+ * THE UI STAYS QUIET; THE PRODUCTS GET LOUD. Colour arrives in steps: the
+ * neutral NEOGEN interface, then an area's own wash (never one beige for every
+ * generic product), then a flagship world. RETA blue, GLOW amber and GHK-Cu
+ * copper stay the strongest moments on the page.
  *
- *  1. ONLY QUIET SECTIONS ARE NUMBERED. Experience beats carry a mono eyebrow
- *     and sit outside the spine, so they read as interruptions in the
- *     informational structure rather than entries in it.
+ * EVERYTHING IS READ FROM THE REGISTRIES (`server/home`): counts, prices,
+ * presentations, the products on every shelf and the rule that picked them.
+ * Media is what exists — the approved studio stills and, where none exists,
+ * the drawn product object. No badge, review, discount, stock level or claim
+ * appears anywhere. Atlas is V2 and is not linked.
  *
- *  2. NO TWO IMPACT SECTIONS ARE ADJACENT. Every world is separated by Quiet
- *     material, which is what makes the worlds land at all.
- *
- * The three worlds use DIFFERENT mechanisms — object choreography, luminance,
- * material strata — so the page never repeats one trick three times.
- *
- * COPY IS PRODUCT COPY. It describes the compounds and their material
- * environments, in the voice of the reference set. Where the reference states a
- * receptor mechanism, a formulation, a purity grade or a lot number, the FIELD
- * is reproduced and the VALUE is an explicit placeholder — none of it is
- * verified (CLAUDE.md regulatory guardrail, CONVENTIONS §8).
+ * Two structural rules from the reference set still hold: only Quiet sections
+ * are numbered, and no two Impact sections are adjacent.
  */
 export async function generateMetadata({
   params,
@@ -73,292 +67,148 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   if (!isLocale(locale)) notFound();
   const dict = await getDictionary(locale);
   const home = dict.home;
-
+  const from = dict.products.catalog.from;
   const path = (to: string) => localizePath(to, locale);
 
-  /*
-   * DISCOVERY ENTRIES — the homepage's product-discovery section.
-   *
-   * Everything on a panel is read off the registry: how many compounds are in
-   * the area, which recognisable ones to name, and the cheapest way in. The
-   * examples are the three CHEAPEST publishable products in the area, which
-   * is both a defensible rule and the commercially useful one — a customer
-   * scanning categories is looking for an entry point, not a flagship.
-   */
-  const areas = publicAreas();
-  const areaProducts = areas.map((area) => ({ area, items: productsInArea(area.id) }));
-  /* The catalogue's real size, for the rail's tail card. Derived, never typed. */
-  const publishedCount = publishedProducts.length;
-  const areaPriceMap = await getPrices(
-    areaProducts.flatMap(({ items }) => items.flatMap((p) => p.variants.map((v) => v.id))),
-  );
-  const cheapestIn = (product: (typeof products)[number]) =>
-    product.variants
-      .map((v) => areaPriceMap.get(v.id))
-      .filter((m): m is NonNullable<typeof m> => Boolean(m))
-      .sort((a, b) => a.amount - b.amount)[0] ?? null;
-
-  const discoveryEntries = areaProducts.map(({ area, items }) => {
-    const ranked = items
-      .map((product) => ({ product, price: cheapestIn(product) }))
-      .filter((row) => row.price)
-      .sort((a, b) => a.price!.amount - b.price!.amount);
-    return {
-      id: area.id,
-      index: String(area.order).padStart(2, "0"),
-      short: dict.discovery.areas[area.id].short,
-      title: dict.discovery.areas[area.id].title,
-      body: dict.discovery.areas[area.id].body,
-      href: path(routes.area(area.slug)),
-      count: items.length,
-      examples: ranked.slice(0, 3).map((row) => row.product.name),
-      from: ranked[0]?.price ? formatPrice(ranked[0].price, localeTags[locale]) : null,
-    };
-  });
-
-  /*
-   * THE RAIL — one compound per area, cheapest first, then the rest of the
-   * catalogue behind a tail card.
-   *
-   * Taking the cheapest publishable product in each area gives a dozen cards
-   * that are genuinely spread across the catalogue rather than twelve
-   * metabolic compounds, and "cheapest" is the same defensible entry-point
-   * rule the discovery panels already use. Everything is read from the
-   * registry; nothing here is curated by hand.
-   */
-  const railProducts = areaProducts
-    .map(({ area, items }) => {
-      const cheapest = items
-        .map((product) => ({ product, price: cheapestIn(product) }))
-        .filter((row) => row.price)
-        .sort((a, b) => a.price!.amount - b.price!.amount)[0];
-      return cheapest ? { area, ...cheapest } : null;
-    })
-    .filter((row): row is NonNullable<typeof row> => row !== null);
-
-  /* Every published price, once, for the card reveals on this page. */
-  const allPrices = await getPrices(publishedProducts.flatMap((p) => p.variants.map((v) => v.id)));
-  const detailsCopy = cardDetailsCopy(dict);
-  const detailsFor = (product: (typeof products)[number]) =>
-    cardDetails(product, { locale, dict, prices: allPrices });
+  const data = await homeData(locale);
+  const areaLabel = (id: keyof typeof dict.discovery.areas) => dict.discovery.areas[id].short;
 
   const heroCopy: HeroCopy = { ...home.hero, ctaHref: path(routes.products) };
 
-  const reta = home.reta;
   /*
-   * THE FLAGSHIPS, FROM THE REGISTRY.
-   *
-   * This section used to iterate `worldIds` and read names and slugs off
-   * `config/worlds` — a second source of truth for product identity, which the
-   * world config's own header forbids ("no product claims, prices, specs or
-   * availability here"). A world is a property some products have; it is not
-   * where products live. Iterating the registry means a flagship that loses
-   * its world, changes its name or becomes unpublishable cannot leave a stale
-   * card behind.
-   *
-   * "From" prices are batched through `getPrices`, which resolves locally today
-   * and over a network later; the call shape does not change.
-   */
-  const flagships = worldIds
-    .map((id) => products.find((product) => product.world === id && isPublishable(product)))
-    .filter((product): product is NonNullable<typeof product> => Boolean(product));
-
-  const priceMap = await getPrices(flagships.flatMap((p) => p.variants.map((v) => v.id)));
-  const fromPrice = (product: (typeof flagships)[number]) => {
-    const cheapest = product.variants
-      .map((v) => priceMap.get(v.id))
-      .filter((m): m is NonNullable<typeof m> => Boolean(m))
-      .sort((a, b) => a.amount - b.amount)[0];
-    return cheapest ? formatPrice(cheapest, localeTags[locale]) : null;
-  };
-  const relatedPrices = new Map(flagships.map((p) => [p.world as WorldId, fromPrice(p)]));
-
-  /*
-   * WHERE EACH EXPERIENCE MOMENT RESOLVES. A moment used to end in three
-   * annotation rows (presentations, category, "from"); it now ends in the
-   * product itself — name, range, price and one action into its page. Every
-   * value is read from the registry.
+   * WHERE EACH EXPERIENCE MOMENT RESOLVES: the product itself — name, range,
+   * price and one action into its page — read from the same registry data as
+   * every shelf.
    */
   const commerceFor = (world: WorldId, cta: string) => {
-    const p = flagships.find((item) => item.world === world);
+    const p = data.flagships.find((item) => item.world === world);
     if (!p) return null;
-    return {
-      name: p.name,
-      range: presentationRange(p),
-      price: relatedPrices.get(world) ?? null,
-      priceFrom: dict.products.catalog.from,
-      href: path(routes.product(p.slug)),
-      cta,
-    };
+    return { name: p.name, range: p.range, price: p.price, priceFrom: from, href: p.href, cta };
   };
-  const retaCommerce = commerceFor("reta", reta.cta);
+  const retaCommerce = commerceFor("reta", home.reta.cta);
   const glowProduct = commerceFor("glow", home.glow.cta);
   const ghkProduct = commerceFor("ghk-cu", home.ghkcu.cta);
 
   const retaCopy: RetaExperienceCopy = {
-    beats: reta.beats.map((beat, index) => ({
+    beats: home.reta.beats.map((beat, index) => ({
       eyebrow: beat.eyebrow,
       statement: beat.statement,
       body: beat.body,
       // The sequence resolves from product statement into the product itself.
-      commerce: index === reta.beats.length - 1 ? (retaCommerce ?? undefined) : undefined,
+      commerce: index === home.reta.beats.length - 1 ? (retaCommerce ?? undefined) : undefined,
     })),
-    vialAlt: reta.vialAlt,
-    loadingLabel: reta.loadingLabel,
-    staticLabel: reta.staticLabel,
-    progressLabel: reta.progressLabel,
+    vialAlt: home.reta.vialAlt,
+    loadingLabel: home.reta.loadingLabel,
+    staticLabel: home.reta.staticLabel,
+    progressLabel: home.reta.progressLabel,
   };
 
-  /* Evidence, counted from the registries — never typed. */
-  const sourcedProfiles = publishedProducts.filter((p) => publicOverview(p.slug, locale)).length;
-  const publicReferences = researchReferenceIndex().length;
+  const catalogPath = path(routes.products);
 
-  const flagshipCard = (product: (typeof flagships)[number], position: number) => (
-    <ProductCard
-      slug={product.slug}
-      world={product.world}
-      worldLabel={product.world ? home.products.worldLabels[product.world] : undefined}
-      areaId={publicAreasFor(product.slug)[0]?.id ?? null}
-      name={product.name}
-      subtitle={product.subtitle}
-      href={path(routes.product(product.slug))}
-      price={fromPrice(product)}
-      priceFrom={dict.products.catalog.from}
-      presentationRange={presentationRange(product)}
-      presentations={product.variants.length}
-      index={String(position + 1).padStart(2, "0")}
-      ctaLabel={home.products.cta}
-      format="flagship"
-      details={detailsFor(product)}
-      detailsCopy={detailsCopy}
-    />
-  );
-
-  /*
-   * V1 COMMERCIAL RHYTHM — the UI stays quiet, the products get loud.
-   *
-   *   Hero                  Impact — the brand, the object, one way in
-   *   01 Flagships          the three products with a world, as products
-   *   02 Catalogue shelf    abundance: an entry compound per area, the count,
-   *                         every area one tap away
-   *   RETA                  Impact → resolves into RETA's price and page
-   *   03 Areas              discovery by area, each with its entry price
-   *   GLOW                  Impact → resolves into GLOW
-   *   04 Evidence           science elevates commerce: counted, brief
-   *   GHK-Cu                Impact → resolves into GHK-Cu
-   *
-   * Removed from V1's homepage: the hub (its Atlas card is V2 and its index
-   * duplicated the shelf), the "creative evolution" spread (a brand note, not
-   * a reason to buy) and the four-row documentation wall (true, but it made
-   * the store look empty — the model lives on the Research Hub).
-   */
   return (
     <>
       <Hero copy={heroCopy} />
 
-      <Section mode="quiet" aria-labelledby="products-title">
-        <Container width="full">
-          <SectionHeader
-            index={home.products.index}
-            label={home.products.label}
-            title={home.products.title}
-            id="products-title"
-            action={<TextLink href={path(routes.products)}>{home.products.action}</TextLink>}
-          />
-          {/* Three across on a wide screen; a swiped row on a phone, where three
-              full-width dark cards stacked were 1,600px of scroll. */}
-          <div className="-mx-(--gutter) flex snap-x snap-mandatory scroll-px-(--gutter) [scrollbar-width:none] gap-(--space-sm) overflow-x-auto px-(--gutter) md:mx-0 md:grid md:grid-cols-3 md:gap-(--gutter) md:overflow-visible md:px-0">
-            {flagships.map((product, position) => (
-              <div key={product.id} className="flex shrink-0 basis-[82%] snap-start md:basis-auto">
-                {flagshipCard(product, position)}
-              </div>
-            ))}
-          </div>
-        </Container>
-      </Section>
+      <HomeGateway
+        copy={home.gateway}
+        data={{
+          counts: data.counts,
+          lowestPrice: data.lowestPrice,
+          productsImage: data.catalogFace?.image ?? null,
+          productsFallback: data.catalogFace
+            ? {
+                name: data.catalogFace.name,
+                range: data.catalogFace.range,
+                areaId: data.catalogFace.areaId,
+              }
+            : null,
+          areas: data.areas.map((area) => ({ id: area.id, label: areaLabel(area.id) })),
+          worlds: data.flagships.map((f) => ({
+            world: f.world,
+            label: getWorld(f.world).label,
+            href: f.href,
+            price: f.price,
+          })),
+          recentReferences: data.recentReferences,
+          links: {
+            catalog: catalogPath,
+            areas: "#coleccion",
+            research: data.links.research,
+            explorer: data.links.explorer,
+          },
+        }}
+      />
 
-      <Section mode="quiet" aria-labelledby="shelf-title" className="pt-0">
-        <Container width="full">
-          <SectionHeader
-            index={home.shelf.index}
-            label={home.shelf.label}
-            title={home.shelf.title.replace("{n}", String(publishedCount))}
-            id="shelf-title"
-            lede={home.shelf.lede}
-            action={<TextLink href={path(routes.products)}>{home.shelf.action}</TextLink>}
-          />
-          <ShelfAreas
-            label={home.shelf.areasLabel}
-            areas={discoveryEntries.map((entry) => ({
-              id: entry.id,
-              name: entry.short,
-              count: entry.count,
-              href: entry.href,
-            }))}
-          />
-          <CompoundRail
-            total={publishedCount}
-            href={path(routes.products)}
-            copy={{
-              label: home.research.railLabel,
-              tailLabel: home.research.tailLabel,
-              tailAction: home.research.tailAction,
-            }}
-            items={railProducts.map(({ area, product, price }) => ({
-              slug: product.slug,
-              world: product.world,
-              worldLabel: product.world ? home.products.worldLabels[product.world] : undefined,
-              areaId: area.id,
-              eyebrow: dict.discovery.areas[area.id].short,
-              name: product.name,
-              subtitle: product.subtitle,
-              href: path(routes.product(product.slug)),
-              price: price ? formatPrice(price, localeTags[locale]) : null,
-              priceFrom: dict.products.catalog.from,
-              presentationRange: presentationRange(product),
-              presentations: product.variants.length,
-              ctaLabel: home.products.cta,
-              details: detailsFor(product),
-              detailsCopy,
-            }))}
-          />
-        </Container>
-      </Section>
+      <WorldBand
+        copy={{
+          index: home.worlds.index,
+          label: home.worlds.label,
+          title: home.worlds.title,
+          lede: home.worlds.lede,
+          action: home.worlds.action,
+          actionHref: catalogPath,
+          from,
+        }}
+        panels={data.flagships.map((f) => ({
+          world: f.world,
+          brand: getWorld(f.world).label,
+          worldLabel: home.products.worldLabels[f.world],
+          tagline: home.worlds.taglines[f.world],
+          name: f.name,
+          href: f.href,
+          range: f.range,
+          price: f.price,
+          image: f.image,
+        }))}
+      />
+
+      <AreaShelf
+        id="coleccion"
+        allHref={catalogPath}
+        areas={data.areas.map((area) => ({
+          id: area.id,
+          href: area.href,
+          label: areaLabel(area.id),
+          count: area.count,
+          entry: area.entry ? { name: area.entry.name, range: area.entry.range } : null,
+          price: area.entry?.price ?? null,
+        }))}
+        copy={{
+          index: home.collection.index,
+          label: home.collection.label,
+          title: home.collection.title
+            .replace("{n}", String(data.counts.products))
+            .replace("{areas}", String(data.counts.areas)),
+          count: home.collection.count,
+          from,
+          all: home.collection.action,
+        }}
+      />
 
       {/* Impact — the object, resolving into RETA. */}
       <RetaExperience copy={retaCopy} />
 
-      <Section mode="quiet" aria-labelledby="catalog-title">
-        <Container width="full">
-          <SectionHeader
-            index={home.catalog.index}
-            label={home.catalog.label}
-            title={home.catalog.title}
-            id="catalog-title"
-            action={<TextLink href={path(routes.products)}>{home.catalog.action}</TextLink>}
-          />
-          {discoveryEntries.length > 0 ? (
-            <DiscoveryGrid
-              entries={discoveryEntries}
-              copy={{
-                countLabel: dict.discovery.countLabel,
-                from: dict.products.catalog.from,
-                enter: home.catalog.categories[0].link,
-              }}
-            />
-          ) : (
-            <CatalogIndex
-              entries={home.catalog.categories.map((category) => ({
-                index: category.index,
-                title: category.title,
-                body: category.body,
-                href: path(routes.products),
-                linkLabel: category.link,
-              }))}
-            />
-          )}
-        </Container>
-      </Section>
+      <AreaExplorer
+        copy={{ ...home.explorer, cta: home.products.cta }}
+        areas={data.areas.map((area) => ({
+          id: area.id,
+          short: areaLabel(area.id),
+          title: dict.discovery.areas[area.id].title,
+          body: dict.discovery.areas[area.id].body,
+          href: area.href,
+          count: area.count,
+          price: area.entry?.price ?? null,
+          products: area.shelf.map((p) => ({
+            slug: p.slug,
+            name: p.name,
+            href: p.href,
+            world: p.world,
+            range: p.range,
+            presentations: p.presentations,
+            price: p.price,
+          })),
+        }))}
+      />
 
       {/* Impact — light, resolving into GLOW. */}
       {glowProduct ? (
@@ -378,14 +228,14 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         title={home.science.title}
         lede={home.science.lede}
         stats={[
-          { value: sourcedProfiles, label: home.science.profiles },
-          { value: publicReferences, label: home.science.references },
-          { value: publicAreas().length, label: home.science.areas },
+          { value: data.counts.profiles, label: home.science.profiles },
+          { value: data.counts.references, label: home.science.references },
+          { value: data.counts.areas, label: home.science.areas },
         ]}
         actions={[
-          { href: path(routes.research), label: home.science.action },
-          ...(publicReferences > 0
-            ? [{ href: path(routes.researchReferences), label: home.science.referencesAction }]
+          { href: data.links.research, label: home.science.action },
+          ...(data.links.references
+            ? [{ href: data.links.references, label: home.science.referencesAction }]
             : []),
         ]}
       />
@@ -401,6 +251,14 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           }}
         />
       ) : null}
+
+      <ClosingShelf
+        copy={{ ...home.closing, from, cta: home.products.cta }}
+        items={data.closing}
+        areaLabels={Object.fromEntries(data.areas.map((a) => [a.id, areaLabel(a.id)]))}
+        counts={data.counts}
+        href={catalogPath}
+      />
     </>
   );
 }

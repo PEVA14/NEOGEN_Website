@@ -1,0 +1,180 @@
+/*
+ * THE CLOSING SHELF — the catalogue once more, then the whole of it.
+ */
+
+.closing {
+  padding-block: var(--section-pad-record);
+  background: var(--surface-base);
+}
+
+.head {
+  display: grid;
+  gap: var(--space-2xs) var(--space-xl);
+  align-items: end;
+  padding-block-start: var(--space-sm);
+  margin-block-end: var(--space-lg);
+  border-block-start: 1px solid var(--border-default);
+}
+
+@media (min-width: 64rem) {
+  .head {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  }
+  .lede {
+    justify-self: end;
+    text-align: end;
+  }
+}
+
+.index {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.index span {
+  color: var(--ink-muted);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-4xl);
+  line-height: 0.9;
+  letter-spacing: var(--tracking-display);
+  text-transform: uppercase;
+}
+
+.lede {
+  margin: 0;
+  max-inline-size: 40ch;
+  color: var(--ink-secondary);
+  font-size: var(--text-base);
+  line-height: var(--leading-snug);
+}
+
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-xs);
+}
+
+@media (min-width: 48rem) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 64rem) {
+  .grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+.item {
+  display: flex;
+  min-inline-size: 0;
+}
+
+/* A phone gets six: two rows of the catalogue's grid, then the way in. */
+@media (max-width: 47.999rem) {
+  .item:nth-child(n + 7) {
+    display: none;
+  }
+}
+
+/* Three across on a tablet: nine, so the last row is full. */
+@media (min-width: 48rem) and (max-width: 63.999rem) {
+  .item:nth-child(n + 10) {
+    display: none;
+  }
+}
+
+/* --- The whole catalogue ------------------------------------------------- */
+
+.all {
+  display: grid;
+  gap: var(--space-2xs) var(--space-xl);
+  align-items: end;
+  margin-block-start: var(--space-md);
+  padding: var(--space-lg);
+  background: var(--neogen-charcoal);
+  color: var(--neogen-paper);
+  text-decoration: none;
+}
+
+@media (min-width: 64rem) {
+  .all {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: var(--space-xl) var(--space-lg);
+  }
+}
+
+.all:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+.allTitle {
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-5xl);
+  line-height: 0.86;
+  letter-spacing: var(--tracking-display);
+  text-transform: uppercase;
+}
+
+.allBody {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--neogen-paper) 72%, var(--neogen-charcoal));
+}
+
+@media (min-width: 64rem) {
+  .allBody {
+    grid-column: 1;
+  }
+  .allAction {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+}
+
+.allAction {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-block-size: 3.25rem;
+  margin-block-start: var(--space-sm);
+  padding-inline: var(--space-lg);
+  background: var(--neogen-paper);
+  color: var(--neogen-charcoal);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: gap var(--motion-duration-base) var(--ease-standard);
+}
+
+.all:hover .allAction {
+  gap: var(--space-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .allAction {
+    transition: none;
+  }
+}

@@ -638,7 +638,7 @@ const es = {
      * registros: perfiles con fuentes y referencias públicas.
      */
     science: {
-      index: "04",
+      index: "05",
       label: "Evidencia",
       title: "Cada perfil, con su fuente",
       lede: "Los perfiles de compuesto de NEOGEN citan literatura publicada: autores, revista, DOI. Nada se afirma sin una referencia que pueda abrirse.",
@@ -649,6 +649,88 @@ const es = {
       referencesAction: "Ver las referencias",
     },
 
+    /**
+     * V1 HOMEPAGE — the store opening up after the brand introduction.
+     * Every figure in these strings is filled from the registry; nothing here
+     * states a claim, a promise or a popularity signal.
+     */
+    gateway: {
+      index: "01",
+      label: "Explora",
+      title: "Explora NEOGEN",
+      lede: "Compuestos, áreas e investigación. Elige por dónde entrar.",
+      aside: "Ciencia. Productos. Catálogo.",
+      products: {
+        name: "Productos",
+        body: "El catálogo completo, cada compuesto con su escala de presentaciones y su precio.",
+        facts: "{products} compuestos · {presentations} presentaciones",
+        from: "Desde",
+      },
+      research: {
+        name: "Investigación",
+        body: "Perfiles de compuesto con fuentes publicadas, organizados por área.",
+        profiles: "Perfiles con fuentes",
+        references: "Referencias",
+      },
+      areas: {
+        name: "Por área",
+        body: "{n} entradas al catálogo.",
+      },
+      search: {
+        name: "Buscar",
+        label: "Buscar un compuesto",
+        placeholder: "Ej. BPC157, 10 mg",
+        submit: "Buscar",
+      },
+      worlds: {
+        name: "Insignia",
+        body: "Tres compuestos, tres entornos.",
+      },
+      quality: {
+        name: "Calidad",
+        body: "Documentación pública por presentación.",
+      },
+    },
+    worlds: {
+      index: "02",
+      label: "Insignia",
+      title: "Tres mundos",
+      lede: "Tres compuestos con su propio entorno, y una colección más amplia detrás.",
+      action: "Catálogo completo",
+      taglines: {
+        reta: "El entorno se vuelve precisión.",
+        glow: "El entorno se vuelve luz.",
+        "ghk-cu": "El entorno se vuelve materia.",
+      },
+      view: "Ver {name}",
+    },
+    collection: {
+      index: "03",
+      label: "Colección",
+      title: "{n} compuestos. {areas} áreas.",
+      action: "Ver todo el catálogo",
+      count: "{n} compuestos",
+      from: "Desde",
+    },
+    explorer: {
+      index: "04",
+      label: "Áreas",
+      title: "Explora por área",
+      tabsLabel: "Áreas del catálogo",
+      count: "{n} compuestos",
+      from: "Desde",
+      enter: "Ver el área",
+      all: "Los {n} compuestos del área",
+    },
+    closing: {
+      index: "06",
+      label: "Catálogo",
+      title: "Más del catálogo",
+      lede: "Una selección que recorre las ocho áreas, ordenada por precio de entrada.",
+      allTitle: "Todo el catálogo",
+      allBody: "{products} compuestos y {presentations} presentaciones, cada una con su precio.",
+      action: "Ver los {n} compuestos",
+    },
     products: {
       index: "01",
       label: "Insignia",

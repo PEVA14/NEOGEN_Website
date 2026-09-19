@@ -69,7 +69,11 @@ export function Hero({ copy }: { copy: HeroCopy }) {
          * read as a crop of something larger.
          */}
         <div className={styles.wordmarkLayer} aria-hidden="true">
-          <span className={styles.wordmark}>{copy.title}</span>
+          {/* `data-hero-condense`: on scroll the mark condenses and the header's
+              wordmark lands in its place (motion.css). Cinematic tier. */}
+          <span className={styles.wordmark} data-hero-condense="" data-motion="cinematic">
+            {copy.title}
+          </span>
         </div>
 
         {/* Layer 2 — the product, overlapping the wordmark. */}

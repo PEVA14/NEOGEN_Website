@@ -592,7 +592,7 @@ const en: Dictionary = {
     },
 
     science: {
-      index: "04",
+      index: "05",
       label: "Evidence",
       title: "Every profile, with its source",
       lede: "NEOGEN's compound profiles cite published literature: authors, journal, DOI. Nothing is stated without a reference that can be opened.",
@@ -603,6 +603,88 @@ const en: Dictionary = {
       referencesAction: "View the references",
     },
 
+    /**
+     * V1 HOMEPAGE — the store opening up after the brand introduction.
+     * Every figure in these strings is filled from the registry; nothing here
+     * states a claim, a promise or a popularity signal.
+     */
+    gateway: {
+      index: "01",
+      label: "Explore",
+      title: "Explore NEOGEN",
+      lede: "Compounds, areas and research. Choose where to begin.",
+      aside: "Science. Products. Catalogue.",
+      products: {
+        name: "Products",
+        body: "The full catalogue, every compound with its presentation ladder and its price.",
+        facts: "{products} compounds · {presentations} presentations",
+        from: "From",
+      },
+      research: {
+        name: "Research",
+        body: "Compound profiles with published sources, organised by area.",
+        profiles: "Sourced profiles",
+        references: "References",
+      },
+      areas: {
+        name: "By area",
+        body: "{n} ways into the catalogue.",
+      },
+      search: {
+        name: "Search",
+        label: "Search for a compound",
+        placeholder: "e.g. BPC157, 10 mg",
+        submit: "Search",
+      },
+      worlds: {
+        name: "Signature",
+        body: "Three compounds, three environments.",
+      },
+      quality: {
+        name: "Quality",
+        body: "Public documentation per presentation.",
+      },
+    },
+    worlds: {
+      index: "02",
+      label: "Signature",
+      title: "Three worlds",
+      lede: "Three compounds with their own environment, and a broader collection behind them.",
+      action: "Full catalogue",
+      taglines: {
+        reta: "The environment becomes precision.",
+        glow: "The environment becomes light.",
+        "ghk-cu": "The environment becomes material.",
+      },
+      view: "View {name}",
+    },
+    collection: {
+      index: "03",
+      label: "Collection",
+      title: "{n} compounds. {areas} areas.",
+      action: "View the whole catalogue",
+      count: "{n} compounds",
+      from: "From",
+    },
+    explorer: {
+      index: "04",
+      label: "Areas",
+      title: "Explore by area",
+      tabsLabel: "Catalogue areas",
+      count: "{n} compounds",
+      from: "From",
+      enter: "View the area",
+      all: "All {n} compounds in the area",
+    },
+    closing: {
+      index: "06",
+      label: "Catalogue",
+      title: "More from the catalogue",
+      lede: "A selection across all eight areas, ordered by entry price.",
+      allTitle: "The whole catalogue",
+      allBody: "{products} compounds and {presentations} presentations, each with its price.",
+      action: "View all {n} compounds",
+    },
     products: {
       index: "01",
       label: "Flagship",

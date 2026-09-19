@@ -45,6 +45,7 @@ export function SiteHeader({ locale, dict }: SiteHeaderProps) {
           <Link
             href={localizePath(routes.home, locale)}
             className={`neogen-display text-xl tracking-(--tracking-tight) ${styles.wordmark}`}
+            data-brand-mark=""
           >
             <span aria-hidden="true" className={styles.wordmarkDot} />
             {dict.meta.siteName}

@@ -102,6 +102,31 @@
   margin-inline-start: -0.06em;
 }
 
+/*
+ * THE CONDENSE. As the visitor scrolls, the poster-scale mark shrinks toward
+ * the header's corner and fades while the header's own wordmark lands
+ * (motion.css): the brand introduction hands over to the interface instead of
+ * simply scrolling away. Scroll-linked, so it is cinematic tier — reduced
+ * motion and browsers without scroll timelines keep the static poster.
+ */
+@media (prefers-reduced-motion: no-preference) and (min-width: 48rem) {
+  @supports (animation-timeline: scroll()) {
+    .wordmark {
+      transform-origin: 0% 50%;
+      animation: condense linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 42vh;
+    }
+  }
+}
+
+@keyframes condense {
+  to {
+    transform: translateY(-18%) scale(0.22);
+    opacity: 0;
+  }
+}
+
 /* --- 2. Canvas ----------------------------------------------------------- */
 
 .stage {

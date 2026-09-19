@@ -157,13 +157,20 @@ export function StoreMasthead({
 export function AreaShelf({
   areas,
   copy,
+  allHref = "#catalogo",
+  id,
 }: {
   areas: readonly StoreArea[];
   copy: { index: string; label: string; title: string; count: string; from: string; all: string };
+  /** Where "see all" goes. The storefront scrolls to its own collection; the
+      homepage opens the catalogue. */
+  allHref?: string;
+  /** Anchor for the section, so another part of the page can point at it. */
+  id?: string;
 }) {
   if (areas.length === 0) return null;
   return (
-    <section className={styles.areas} aria-labelledby="store-areas-title">
+    <section className={styles.areas} aria-labelledby="store-areas-title" id={id}>
       {/*
        * THE HANDOFF. The area heading stays on the masthead's charcoal and the
        * tiles rise out of it onto the paper: the dark store front hands the
@@ -176,7 +183,7 @@ export function AreaShelf({
             label={copy.label}
             title={copy.title}
             id="store-areas-title"
-            action={{ href: "#catalogo", label: copy.all }}
+            action={{ href: allHref, label: copy.all }}
           />
         </Container>
       </div>
@@ -249,7 +256,7 @@ export function StoreSectionHead({
       </h2>
       {action ? (
         <a href={action.href} className={styles.sectionAction}>
-          {action.label} <span aria-hidden="true">↓</span>
+          {action.label} <span aria-hidden="true">{action.href.startsWith("#") ? "↓" : "→"}</span>
         </a>
       ) : null}
     </header>

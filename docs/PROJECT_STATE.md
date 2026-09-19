@@ -30,6 +30,8 @@ Read order for a fresh session: `CLAUDE.md` → this file →
     It is not propagated across the catalogue; GLOW and GHK-Cu have no studio
     rigs yet.
   - The owner moved on to other work. Ask before resuming product media.
+- **Homepage pass (§8s) is awaiting the owner's visual review.** Do not
+  propagate its direction to other pages until approved.
 - **Nothing else is approved to start.** The V1 audit ledger (§8p) lists open
   items. Ask before picking one up.
 - **Figma** (claude.ai connector, the owner's account): file
@@ -82,7 +84,8 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 | `87b0b5d`   | Atlas hidden for V1 by one feature flag: nav, footer and sitemap entries removed (§8m)                                          |
 | `5e76e06`   | PDP record pass: record rhythm, alternating grounds, research folded into the profile, swiped related shelves (§8o)             |
 | `81ff312`   | The /productos storefront: masthead, area shelf, store card, paging (§8q)                                                       |
-| _this_      | Storefront follow-ups (§8q) and the product-media studio: RETA still, neutral prototype (§8r)                                   |
+| `1ebbc21`   | Storefront follow-ups (§8q) and the product-media studio: RETA still, neutral prototype (§8r)                                   |
+| _this_      | Homepage pass: condensing hero, gateway, three worlds, area explorer, closing shelf (§8s)                                       |
 
 **Current priority (owner, 2026-09-17): V1 completion.** Make NEOGEN V1 as
 complete, polished and commercially effective as possible with the
@@ -1348,6 +1351,90 @@ unchanged.
 - **Label placeholders.** The label texture's side panels carry the asset's own
   "[LOT] [PRODUCT ID] [FORMAT]" placeholders. They are invisible at the front
   view; any turned view would show them.
+
+## 8s. Homepage pass: the store opening up (awaiting owner review)
+
+**Owner direction (2026-09-18).** Redesign the homepage in the /productos
+commerce language, and keep the giant black NEOGEN opening. The visitor
+should understand early how much there is to explore: the EXOMA idea
+functionally, not visually. Stronger ecommerce presence throughout;
+predominantly black and cream; colour in stages (neutral UI → area
+atmosphere → flagship world). Out of scope: /productos (except safe shared
+fixes), Atlas, 3D and modelling, backend. **Stop for visual review; do not
+propagate.**
+
+**Composition** (`src/app/[locale]/page.tsx`, data in `src/server/home.ts`):
+
+1. **Hero**, unchanged except for the condense. On scroll, from 48rem and
+   with motion allowed, the poster mark shrinks toward the header's corner
+   and fades (`Hero.module.css`), while the header's wordmark lands
+   (`motion.css`, `body:has([data-hero-condense]) [data-brand-mark]`). Both
+   use CSS scroll timelines only; without support, the static poster and the
+   normal header stay.
+2. **01 Explora NEOGEN** (`HomeGateway`):
+   - The catalogue door is shown by `catalogFace`, the first non-flagship
+     product with a real still (today Semaglutide's studio still), with counts
+     and the lowest price.
+   - The research door is charcoal, with the profile and reference counts and
+     the three latest citations.
+   - The areas door shows the eight `AreaIcon` signs in their hues.
+   - Search is a plain GET form to `/productos?q=`.
+   - The worlds door has three world chips with prices.
+   - A documentation door renders only once `publicEvidenceIndex` is
+     non-empty. A separate references door was tried and removed: it repeated
+     the research door's count.
+3. **02 Tres mundos** (`WorldBand`), on charcoal. Each flagship sits on its
+   world palette with its brand name at poster scale, the world tagline, the
+   object, and name, range, price and action. RETA uses its approved studio
+   still; GLOW and GHK-Cu use the drawn object (no still exists). On phones,
+   a swiped row.
+4. **03 Colección:** the storefront's `AreaShelf`, reused. It gained optional
+   `allHref` and `id` props; /productos keeps its defaults. The tiles rise out
+   of the charcoal band.
+5. **RETA**, unchanged.
+6. **04 Explora por área** (`AreaExplorer`, client tabs). The section takes
+   the selected area's `--area-wash` with its hue pooled in one corner. Each
+   area shows its title, body, count, entry price and "Ver el área", plus the
+   next four products by entry price as store cards and a count door on
+   `--area-deep`. Every panel is in the server HTML, and inactive panels are
+   `hidden`.
+7. **GLOW**, unchanged.
+8. **05 Evidencia**, the existing `ScienceBand`, now fed from `homeData`.
+9. **GHK-Cu**, unchanged.
+10. **06 Más del catálogo** (`ClosingShelf`): ten store cards, one area per
+    round by entry price, skipping everything shown above; then a charcoal
+    "Todo el catálogo" block. Phones show six (2-up), tablets nine.
+
+**Selection rules** (all in `server/home.ts`):
+
+- The flagships are excluded from the shelves.
+- An area's entry is its cheapest priced product.
+- An area's shelf is its next four, excluding worlds.
+- The closing shelf is round-robin across areas, never repeating anything
+  shown above.
+
+**Removed from the homepage:** the flagship `ProductCard` row (replaced by
+the world band), `ShelfAreas` (deleted), `CompoundRail`, `DiscoveryGrid` and
+the `CatalogIndex` fallback. The last three still exist in `components/ui`,
+unused. `NeogenHub` and `server/hub.ts` are still unused too, as before.
+
+**Assets.** No molecular mark exists anywhere in the repo, so none is used
+and none was invented. The only real product images are the RETA and
+Semaglutide studio stills; everything else is the drawn product object.
+
+**Verified.** Every gate passes. axe WCAG A/AA shows 0 violations, and
+horizontal overflow is 0, on `/es`, `/en`, `/es/productos` and an area page,
+at 375 and 1440. The explorer tabs were tested by click, arrow keys and End:
+focus follows, and the ground changes per area. Heights: desktop 10,900 →
+11,500px, phone about 11,400 → 11,500px, with far more product on the page.
+
+**Open for the owner**
+
+- Whether the header wordmark should be absent at the very top of the
+  homepage on desktop (the condense), or present from the start.
+- Whether the area tiles (03) and the explorer (04) are both wanted, or one
+  should absorb the other.
+- The molecular mark, if one exists outside the repo.
 
 ## 9. Recommendation for Phase 13 (not approved)
 
