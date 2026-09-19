@@ -89,18 +89,46 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const glowProduct = commerceFor("glow", home.glow.cta);
   const ghkProduct = commerceFor("ghk-cu", home.ghkcu.cta);
 
+  /*
+   * RETA's facts: labelled, plain, and read from the registry — its area, its
+   * pack, every presentation with its own price.
+   */
+  const reta = data.flagships.find((item) => item.world === "reta");
+  const facts = home.reta.facts;
+  const retaArea = reta?.primaryArea ? dict.discovery.areas[reta.primaryArea].short : null;
   const retaCopy: RetaExperienceCopy = {
-    beats: home.reta.beats.map((beat, index) => ({
-      eyebrow: beat.eyebrow,
-      statement: beat.statement,
-      body: beat.body,
-      // The sequence resolves from product statement into the product itself.
-      commerce: index === home.reta.beats.length - 1 ? (retaCommerce ?? undefined) : undefined,
-    })),
+    eyebrow: home.reta.eyebrow,
+    title: home.reta.title,
+    subtitle: reta?.name ?? home.reta.subtitle,
+    lede: home.reta.lede,
+    facts: [
+      [
+        {
+          label: facts.what.label,
+          title: facts.what.title,
+          body: (reta?.pack ? facts.what.body : facts.what.bodyNoPack)
+            .replace("{area}", retaArea ?? "")
+            .replace("{pack}", String(reta?.pack ?? "")),
+        },
+        { label: facts.packaging.label, title: facts.packaging.title, body: facts.packaging.body },
+      ],
+      [
+        {
+          label: facts.presentations.label,
+          title: facts.presentations.title.replace("{n}", String(reta?.ladder.length ?? 0)),
+          ladder: reta?.ladder ?? [],
+        },
+        {
+          label: facts.documentation.label,
+          title: facts.documentation.title,
+          body: facts.documentation.body,
+        },
+      ],
+    ],
+    commerce: retaCommerce ?? undefined,
     vialAlt: home.reta.vialAlt,
     loadingLabel: home.reta.loadingLabel,
     staticLabel: home.reta.staticLabel,
-    progressLabel: home.reta.progressLabel,
   };
 
   const catalogPath = path(routes.products);
@@ -122,12 +150,34 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 areaId: data.catalogFace.areaId,
               }
             : null,
-          areas: data.areas.map((area) => ({ id: area.id, label: areaLabel(area.id) })),
+          areas: data.areas.map((area) => ({
+            id: area.id,
+            label: areaLabel(area.id),
+            count: area.count,
+            href: area.href,
+          })),
           worlds: data.flagships.map((f) => ({
             world: f.world,
             label: getWorld(f.world).label,
+            name: f.name,
+            range: f.range,
             href: f.href,
             price: f.price,
+            image: f.image,
+          })),
+          /* Real searches: each area's entry compound, straight to its results. */
+          suggestions: [
+            ...new Set(
+              data.areas.flatMap((area) =>
+                area.entry && !area.entry.world ? [area.entry.name] : [],
+              ),
+            ),
+          ]
+            .slice(0, 6)
+            .map((name) => ({ label: name, href: `${catalogPath}?q=${encodeURIComponent(name)}` })),
+          strengths: data.strengths.map((label) => ({
+            label,
+            href: `${catalogPath}?q=${encodeURIComponent(label)}`,
           })),
           recentReferences: data.recentReferences,
           links: {

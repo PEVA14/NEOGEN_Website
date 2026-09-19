@@ -161,7 +161,7 @@ export default async function ProductPage({
     String(references.findIndex((r) => r.id === id) + 1).padStart(2, "0");
   const worldStatement = world
     ? world.id === "reta"
-      ? dict.home.reta.beats[0].statement
+      ? dict.home.reta.statement
       : world.id === "glow"
         ? dict.home.glow.statement
         : dict.home.ghkcu.statement

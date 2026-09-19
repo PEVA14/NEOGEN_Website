@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useRef, type ReactNode } from "react";
 
 import type { WorldEnvironment } from "@/config/worlds";
 import type { ProductImage } from "@/content/media";
@@ -31,24 +31,23 @@ interface RetaStageProps {
   posterAlt: string;
   loadingLabel: string;
   staticLabel: string;
-  /** How many copy beats the overlay contains. */
-  beatCount: number;
-  /** Server-rendered copy, composed around the product. */
+  /** Server-rendered copy, laid out around the product by the stylesheet. */
   children: ReactNode;
 }
 
 /**
- * The pinned RETA composition.
+ * The RETA scene — scrolled INTO, never pinned.
  *
- * A tall track with a sticky, full-viewport child. The canvas fills that
- * viewport edge to edge and the copy overlays it, so the product is not parked
- * in a layout column — typography composes around it, and the environment runs
- * continuously across the screen.
+ * An ordinary block in the page flow. The canvas fills the whole scene behind
+ * the copy, so the world's environment runs edge to edge and the vial stands
+ * in the middle; the server-rendered copy is laid out around it by the
+ * stylesheet's grid.
  *
- * The active beat is COARSE React state: it changes about three times per pass,
- * not per frame, and is derived from the SAME scroll listener that feeds the 3D
- * progress ref. Copy stays server-rendered; only a `data-beat` attribute
- * changes, and CSS does the rest.
+ * The drive is "through" progress — 0 as the scene's top enters the bottom of
+ * the viewport, 1 as its bottom leaves the top — so the vial's arrival
+ * (`choreography.ts`) plays as the reader scrolls in and settles while the
+ * scene is centred. There is no coarse beat state any more: nothing on the
+ * page is hidden behind a scroll position.
  */
 export function RetaStage({
   modelPath,
@@ -57,7 +56,6 @@ export function RetaStage({
   posterAlt,
   loadingLabel,
   staticLabel,
-  beatCount,
   children,
 }: RetaStageProps) {
   const track = useRef<HTMLDivElement>(null);
@@ -66,20 +64,18 @@ export function RetaStage({
   /*
    * THE TURNTABLE'S DRIVE.
    *
-   * Listeners sit on the pinned viewport, not the track: the track is three
-   * viewports tall, so half of it is off screen and a cursor there is nowhere
-   * near the object. A cached rect, re-read on entry, rather than a
-   * measurement per move — the stage does not resize mid-traverse.
+   * Listeners sit on the whole scene: the vial stands in its middle, and a
+   * cursor anywhere over the environment turns it. A cached rect, re-read on
+   * entry, rather than a measurement per move.
    *
    * Refs, never state: this updates on every pointer move and the Canvas
    * subtree must not re-render for it.
    */
-  const frame = useRef<HTMLDivElement>(null);
   const pointer = useRef<PointerState>({ x: 0, y: 0, active: false, turn: 0 });
   const finePointer = useFinePointer();
 
   useEffect(() => {
-    const node = frame.current;
+    const node = track.current;
     // No cursor to answer on touch, and nothing should turn for a reader who
     // asked for stillness.
     if (!node || !finePointer || reducedMotion) return;
@@ -136,70 +132,50 @@ export function RetaStage({
     };
   }, [finePointer, reducedMotion]);
 
-  const [beat, setBeat] = useState(0);
-
-  // Derives the active beat without a second scroll listener. Called from the
-  // progress hook's rAF, and only commits when the index actually changes.
-  const onSample = useCallback(
-    (value: number) => {
-      const next = Math.min(beatCount - 1, Math.floor(value * beatCount));
-      setBeat((current) => (current === next ? current : next));
-    },
-    [beatCount],
-  );
-
-  const progress = useSectionProgress(track, { mode: "pinned", onSample });
+  const progress = useSectionProgress(track, { mode: "through" });
 
   const fallback = <VialFallback poster={poster} diagramLabel={posterAlt} label={staticLabel} />;
 
   return (
-    <div ref={track} className={styles.track} data-tier={tier}>
+    <div ref={track} className={styles.scene} data-tier={tier}>
       <div
-        ref={frame}
-        className={styles.viewport}
-        // Drives which copy beat is lit. Under reduced motion the stylesheet
-        // ignores this and shows every beat at once.
-        data-beat={beat}
+        className={styles.canvasLayer}
+        // Cinematic tier: motion.css neutralises anything under this
+        // attribute when the user prefers reduced motion (CONVENTIONS §4).
+        data-motion="cinematic"
+        role="img"
+        aria-label={posterAlt}
       >
-        <div
-          className={styles.canvasLayer}
-          // Cinematic tier: motion.css neutralises anything under this
-          // attribute when the user prefers reduced motion (CONVENTIONS §4).
-          data-motion="cinematic"
-          role="img"
-          aria-label={posterAlt}
-        >
-          {canRender3D && modelPath && palette ? (
-            <CanvasErrorBoundary fallback={fallback}>
-              <Suspense
-                fallback={
-                  <VialFallback
-                    poster={poster}
-                    diagramLabel={posterAlt}
-                    label={loadingLabel}
-                    loading
-                  />
-                }
-              >
-                <RetaCanvas
-                  modelPath={modelPath}
-                  environment={environment}
-                  palette={palette}
-                  progress={progress}
-                  reducedMotion={reducedMotion}
-                  tier={tier}
-                  variant="sequence"
-                  pointer={finePointer ? pointer : undefined}
+        {canRender3D && modelPath && palette ? (
+          <CanvasErrorBoundary fallback={fallback}>
+            <Suspense
+              fallback={
+                <VialFallback
+                  poster={poster}
+                  diagramLabel={posterAlt}
+                  label={loadingLabel}
+                  loading
                 />
-              </Suspense>
-            </CanvasErrorBoundary>
-          ) : (
-            fallback
-          )}
-        </div>
-
-        <div className={styles.overlay}>{children}</div>
+              }
+            >
+              <RetaCanvas
+                modelPath={modelPath}
+                environment={environment}
+                palette={palette}
+                progress={progress}
+                reducedMotion={reducedMotion}
+                tier={tier}
+                variant="sequence"
+                pointer={finePointer ? pointer : undefined}
+              />
+            </Suspense>
+          </CanvasErrorBoundary>
+        ) : (
+          fallback
+        )}
       </div>
+
+      {children}
     </div>
   );
 }

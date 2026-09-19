@@ -12,7 +12,7 @@ import { Backdrop } from "./Backdrop";
 import {
   CAMERA_Z,
   poseTrack,
-  RESTING_PROGRESS,
+  restingProgress,
   sampleTrack,
   type StageVariant,
 } from "./choreography";
@@ -138,7 +138,7 @@ function StudioLights({
     const light = rimLight.current;
     if (!light) return;
 
-    const at = reducedMotion ? RESTING_PROGRESS : progress.current;
+    const at = reducedMotion ? restingProgress(variant) : progress.current;
     const target = sampleTrack(at, track.rimIntensity);
 
     light.intensity = reducedMotion ? target : MathUtils.damp(light.intensity, target, 3, delta);
@@ -159,7 +159,7 @@ function StudioLights({
         position={RIG.rim.position}
         width={RIG.rim.width}
         height={RIG.rim.height}
-        intensity={sampleTrack(RESTING_PROGRESS, track.rimIntensity)}
+        intensity={sampleTrack(restingProgress(variant), track.rimIntensity)}
         color={palette.accent}
       />
       {/* Neutral front-right fill. Colourless, so the body of the glass has a

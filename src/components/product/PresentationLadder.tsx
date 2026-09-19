@@ -36,25 +36,33 @@ export function PresentationLadder({
   /** "× {n} viales" */
   packLabel: string;
 }) {
+  /*
+   * The ladder can be wider than its column (seven strengths at tablet width),
+   * so it scrolls sideways. A scroll region has to be reachable from the
+   * keyboard (WCAG 2.1.1, axe `scrollable-region-focusable`): the wrapper is
+   * the focusable, labelled scroller and the list stays a plain list.
+   */
   return (
-    <ol className={styles.ladder} aria-label={label}>
-      {steps.map((step, index) => (
-        <li key={`${step.value}-${step.unit}-${index}`} className={styles.step}>
-          <Mono size="2xs" className={styles.index} aria-hidden="true">
-            P-{String(index + 1).padStart(2, "0")}
-          </Mono>
-          <span className={styles.figure}>
-            <span className={styles.value}>{step.value}</span>
-            <span className={styles.unit}>{step.unit}</span>
-          </span>
-          {step.vials !== null ? (
-            <Mono size="2xs" className={styles.pack}>
-              {packLabel.replace("{n}", String(step.vials))}
+    <div className={styles.scroller} tabIndex={0} role="group" aria-label={label}>
+      <ol className={styles.ladder} aria-label={label}>
+        {steps.map((step, index) => (
+          <li key={`${step.value}-${step.unit}-${index}`} className={styles.step}>
+            <Mono size="2xs" className={styles.index} aria-hidden="true">
+              P-{String(index + 1).padStart(2, "0")}
             </Mono>
-          ) : null}
-        </li>
-      ))}
-    </ol>
+            <span className={styles.figure}>
+              <span className={styles.value}>{step.value}</span>
+              <span className={styles.unit}>{step.unit}</span>
+            </span>
+            {step.vials !== null ? (
+              <Mono size="2xs" className={styles.pack}>
+                {packLabel.replace("{n}", String(step.vials))}
+              </Mono>
+            ) : null}
+          </li>
+        ))}
+      </ol>
+    </div>
   );
 }
 

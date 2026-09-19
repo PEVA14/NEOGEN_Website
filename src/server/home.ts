@@ -6,6 +6,7 @@ import { commerceStill, type ProductImage } from "@/content/media";
 import { publicOverview } from "@/content/overview";
 import { researchReferenceIndex } from "@/content/research";
 import {
+  formatStrength,
   isPublishable,
   presentationRange,
   products,
@@ -85,9 +86,22 @@ export interface HomeData {
    * model), else the first area's entry product, drawn.
    */
   catalogFace: HomeProduct | null;
-  flagships: readonly (HomeProduct & { world: WorldId })[];
+  flagships: readonly (HomeProduct & {
+    world: WorldId;
+    /** Every presentation with its own price, smallest first. */
+    ladder: readonly { label: string; price: string | null }[];
+    /** Vials per pack when every presentation shares one, else null. */
+    pack: number | null;
+    /** The flagship's first public discovery area. */
+    primaryArea: DiscoveryAreaId | null;
+  })[];
   areas: readonly HomeArea[];
   closing: readonly HomeProduct[];
+  /**
+   * The strengths the catalogue carries most often ("10 mg"), as searches to
+   * try: a fact about the catalogue's shape, not a popularity signal.
+   */
+  strengths: readonly string[];
   /** The three most recent cited references, as a bibliography preview. */
   recentReferences: readonly { title: string; publication: string | null; year: number | null }[];
   links: {
@@ -191,6 +205,20 @@ export async function homeData(locale: Locale): Promise<HomeData> {
     ? toItem(withImage, publicAreasFor(withImage.slug)[0]?.id ?? null)
     : (areas[0]?.entry ?? null);
 
+  const strengthCounts = new Map<string, number>();
+  for (const product of published) {
+    for (const variant of product.variants) {
+      if (variant.strength.kind !== "solid") continue;
+      const label = formatStrength(variant.strength);
+      strengthCounts.set(label, (strengthCounts.get(label) ?? 0) + 1);
+    }
+  }
+  const strengths = [...strengthCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([label]) => label)
+    .sort((a, b) => parseFloat(a) - parseFloat(b));
+
   const referenceIndex = researchReferenceIndex();
   const references = referenceIndex.length;
 
@@ -204,12 +232,26 @@ export async function homeData(locale: Locale): Promise<HomeData> {
     },
     lowestPrice: lowest ? formatPrice(lowest, tag) : null,
     catalogFace,
-    flagships: flagships.map((p) => ({
-      ...toItem(p, null),
-      world: p.world,
-    })),
+    flagships: flagships.map((p) => {
+      const packs = new Set(p.variants.map((v) => v.vials ?? null));
+      const only = packs.size === 1 ? [...packs][0] : null;
+      return {
+        ...toItem(p, null),
+        world: p.world,
+        ladder: p.variants.map((v) => {
+          const price = prices.get(v.id) ?? null;
+          return {
+            label: formatStrength(v.strength),
+            price: price ? formatPrice(price, tag) : null,
+          };
+        }),
+        pack: typeof only === "number" ? only : null,
+        primaryArea: publicAreasFor(p.slug)[0]?.id ?? null,
+      };
+    }),
     areas,
     closing,
+    strengths,
     recentReferences: referenceIndex.slice(0, 3).map(({ reference }) => ({
       title: reference.title,
       publication: reference.publication,

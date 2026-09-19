@@ -81,51 +81,47 @@ export interface PoseTrack {
  * The diagonal never resolves to vertical: `rotationZ` holds ~-15 degrees, so
  * the object reads as a considered attitude rather than standing up straight.
  */
+/*
+ * THE RETA SCENE — an arrival, driven by "through" progress.
+ *
+ * The section is scrolled INTO, not pinned (owner direction, 2026-09-18), so
+ * progress runs 0 → 1 as the scene crosses the viewport and 0.5 is the scene
+ * centred. Five stops:
+ *
+ *   0     entering   low, far, small, turned away and steeply tilted
+ *   0.25  rising     coming up and round
+ *   0.5   presented  centred, full size, label to the reader
+ *   0.75  held       the same pose, so the reading moment is still
+ *   1     leaving    easing back a little as the next section arrives
+ *
+ * The passive turn and the cursor's turntable are added on top of this.
+ */
 const FULL: PoseTrack = {
-  offsetX: [0, 0, 0, 0],
-  offsetY: [0, 0, 0, 0],
-  offsetZ: [0, 0, 0, 0],
-  // Apparent size is scale / (CAMERA_Z - offsetZ). At this distance 1.0 filled
-  // roughly half the frame height; this lands near a third of it, which is the
-  // proportion the figma frames the vial at — an object inside the
-  // composition rather than the composition itself.
-  scale: [0.66, 0.66, 0.66, 0.66],
-  // The base attitude only. The passive turn and the cursor's accumulated
-  // travel are added on top of this, per frame.
-  rotationY: [0, 0, 0, 0],
-  rotationZ: [-0.26, -0.26, -0.26, -0.26],
-  rotationX: [-0.05, -0.05, -0.05, -0.05],
-  rimIntensity: [8, 10, 12, 7],
+  offsetX: [0, 0, 0, 0, 0],
+  // Presented slightly below centre, so the cap clears the title block.
+  offsetY: [-0.4, -0.2, -0.09, -0.09, -0.04],
+  offsetZ: [-1.4, -0.45, 0, 0, -0.25],
+  // Apparent size is scale / (CAMERA_Z - offsetZ); 1.0 fills about half the
+  // frame height, so 0.8 presents the vial at ~40% of the scene.
+  scale: [0.48, 0.7, 0.8, 0.8, 0.75],
+  rotationY: [-2.4, -1, 0, 0, 0.45],
+  rotationZ: [-0.72, -0.45, -0.22, -0.22, -0.3],
+  rotationX: [0.28, 0.1, -0.05, -0.05, -0.1],
+  rimIntensity: [3, 9, 13, 12, 7],
 };
 
-/*
- * COMPACT — the same turntable, composed for a portrait frame.
- *
- * Lifted above centre because the copy owns the lower half of a phone screen,
- * and smaller again: the same world scale reads much larger in a narrow frame.
- * There is no pointer here — `useFinePointer` is false on touch — so the
- * passive turn is the whole of the motion, which is also why it never needs to
- * compete with a cursor for the same axis.
- */
+/* Phones: the canvas is only the vial's own band, so the scales are larger. */
 const COMPACT: PoseTrack = {
-  offsetX: [0, 0, 0, 0],
-  offsetY: [0.12, 0.12, 0.12, 0.12],
-  offsetZ: [0, 0, 0, 0],
-  scale: [0.52, 0.52, 0.52, 0.52],
-  rotationY: [0, 0, 0, 0],
-  rotationZ: [-0.24, -0.24, -0.24, -0.24],
-  rotationX: [-0.04, -0.04, -0.04, -0.04],
-  rimIntensity: [8, 10, 12, 7],
+  offsetX: [0, 0, 0, 0, 0],
+  offsetY: [-0.3, -0.1, 0, 0, 0.04],
+  offsetZ: [-1.2, -0.4, 0, 0, -0.2],
+  scale: [0.9, 1.25, 1.45, 1.45, 1.35],
+  rotationY: [-2.2, -0.9, 0, 0, 0.4],
+  rotationZ: [-0.6, -0.4, -0.2, -0.2, -0.26],
+  rotationX: [0.24, 0.08, -0.04, -0.04, -0.08],
+  rimIntensity: [3, 9, 13, 12, 7],
 };
 
-/*
- * HERO — the brand's first beat, deliberately QUIETER than the RETA sequence.
- *
- * Two stops, one slow arc, no crop-and-return: the homepage must not open on
- * its own climax. The vial is large and tilted enough to be the composition's
- * anchor and to overlap the wordmark, but it resolves rather than performs.
- * The deep four-state choreography belongs to RETA, further down.
- */
 const HERO_FULL: PoseTrack = {
   // Right of centre, so the wordmark's opening letters stay legible and the
   // vial crosses its second half rather than burying the whole mark.
@@ -202,6 +198,14 @@ export function poseTrack(tier: StageTier, variant: StageVariant = "sequence"): 
  * motion removes the movement, never the product.
  */
 export const RESTING_PROGRESS = 0.05;
+
+/**
+ * The resolved frame per variant. The RETA scene's strongest pose is its
+ * middle — presented, facing the reader — so reduced motion holds that.
+ */
+export function restingProgress(variant: StageVariant): number {
+  return variant === "sequence" ? 0.5 : RESTING_PROGRESS;
+}
 
 /**
  * Camera distance. Fixed, with framing driven by the vial's own scale track.

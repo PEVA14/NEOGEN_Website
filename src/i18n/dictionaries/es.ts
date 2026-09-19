@@ -486,46 +486,45 @@ const es = {
     reta: {
       cta: "Ver RETA",
       /*
-       * Copia de producto, no comentario sobre el sistema de diseño.
+       * RETA EN LA PORTADA — hechos con etiqueta, no poesía.
        *
-       * Describe el compuesto y su entorno material. NO describe mecanismos
-       * farmacológicos, acción molecular, pureza ni lote: esos campos existen
-       * como ESTRUCTURA con marcador de posición hasta que haya datos
-       * verificados (CLAUDE.md, CONVENTIONS §8).
+       * Cada bloque dice una cosa comprobable: qué es, cómo se vende, cómo
+       * es el envase y qué se publica. Las cifras (área, presentaciones,
+       * precios, viales) se leen del registro. Nada describe mecanismos,
+       * efectos, pureza ni lote (CLAUDE.md, CONVENTIONS §8).
        */
-      eyebrow: "Retatrutide — compuesto de investigación",
-      beats: [
-        {
-          eyebrow: "Producto insignia",
-          statement: "El entorno se vuelve precisión.",
-          body: "Matriz molecular insignia. La luz azul fría define las refracciones del vidrio y las superficies geométricas, creando un entorno de precisión óptica.",
+      eyebrow: "Compuesto insignia · Precisión",
+      title: "RETA",
+      subtitle: "Retatrutide Research",
+      lede: "El primero de los tres compuestos insignia de NEOGEN, presentado en su propio entorno.",
+      /** La frase del mundo: la usa también la página del producto. */
+      statement: "El entorno se vuelve precisión.",
+      facts: {
+        what: {
+          label: "Qué es",
+          title: "Retatrutide, para investigación",
+          body: "Un compuesto de investigación del área {area}, vendido en empaques de {pack} viales.",
+          bodyNoPack: "Un compuesto de investigación del área {area}.",
         },
-        {
-          eyebrow: "Material",
-          statement: "Vidrio claro, luz controlada.",
-          body: "Vidrio farmacéutico transparente, sello de aluminio satinado y etiqueta de papel técnico. Cada superficie responde a una fuente de luz distinta.",
+        packaging: {
+          label: "El envase",
+          title: "Vidrio claro, sello de aluminio",
+          body: "Vidrio transparente, sello de aluminio satinado y una etiqueta técnica con el nombre del compuesto.",
         },
-        {
-          eyebrow: "Especificación",
-          statement: "Documentación antes que promesa.",
-          body: "Un análisis se publica con su emisor, su fecha y la presentación exacta que examina. Nada se afirma antes de que exista el documento.",
+        presentations: {
+          label: "Presentaciones",
+          title: "{n} concentraciones, cada una con su precio",
         },
-        {
-          eyebrow: "Disponibilidad",
-          statement: "RETA — Retatrutide Research.",
-          body: "El primero de los tres compuestos insignia de NEOGEN.",
+        documentation: {
+          label: "Documentación",
+          title: "Documentos antes que promesas",
+          body: "Cada análisis se publica con su emisor, su fecha y la presentación exacta que examina. Nada se afirma antes de que exista el documento.",
         },
-      ],
-      specs: {
-        presentation: "Presentaciones",
-        category: "Categoría",
-        from: "Desde",
       },
       vialAlt:
         "Vial de vidrio NEOGEN con etiqueta RETA, inclinado en un entorno oscuro con luz azul.",
       loadingLabel: "Cargando modelo",
       staticLabel: "Vista estática",
-      progressLabel: "Secuencia",
     },
 
     catalog: {
@@ -671,16 +670,23 @@ const es = {
         body: "Perfiles de compuesto con fuentes publicadas, organizados por área.",
         profiles: "Perfiles con fuentes",
         references: "Referencias",
+        areas: "Áreas",
+        latest: "Últimas referencias",
       },
       areas: {
         name: "Por área",
         body: "{n} entradas al catálogo.",
+        all: "Ver las áreas",
+        count: "{n} compuestos",
       },
       search: {
         name: "Buscar",
         label: "Buscar un compuesto",
         placeholder: "Ej. BPC157, 10 mg",
         submit: "Buscar",
+        try: "Prueba",
+        byStrength: "Por concentración",
+        index: "{products} compuestos · {presentations} presentaciones en el índice",
       },
       worlds: {
         name: "Insignia",

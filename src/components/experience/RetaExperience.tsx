@@ -1,5 +1,4 @@
 import { Section } from "@/components/primitives";
-import { Body, Display, Eyebrow, Mono } from "@/components/typography";
 import { getWorld } from "@/config/worlds";
 import { mediaForWorld } from "@/content";
 
@@ -7,42 +6,74 @@ import { MomentCommerce, type MomentCommerceProps } from "./MomentCommerce";
 import { RetaStage } from "./RetaStage";
 import styles from "./RetaExperience.module.css";
 
-export interface RetaBeat {
-  eyebrow?: string;
-  statement: string;
+/** One labelled fact beside the vial. */
+export interface RetaFact {
+  label: string;
+  title: string;
   body?: string;
-  /** Technical annotations. Key/value pairs — never invented product data. */
-  annotations?: { key: string; value: string }[];
-  /** Where the sequence resolves: the product, its price, one action. */
-  commerce?: MomentCommerceProps;
+  /** Presentations with their own prices, when the fact is the ladder. */
+  ladder?: readonly { label: string; price: string | null }[];
 }
 
 export interface RetaExperienceCopy {
-  beats: RetaBeat[];
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  lede: string;
+  /** Two facts either side of the vial: [left, right]. */
+  facts: readonly [readonly RetaFact[], readonly RetaFact[]];
+  /** Where the scene resolves: the price and one action. */
+  commerce?: MomentCommerceProps;
   vialAlt: string;
   loadingLabel: string;
   staticLabel: string;
-  /** Accessible name for the sequence position readout. */
-  progressLabel: string;
 }
 
 /**
- * RETA Experience — the first product world, as a pinned scroll composition.
+ * RETA — the first product world, as a scene you scroll INTO.
  *
- * "The environment becomes precision." The section carries `data-world="reta"`,
- * the only sanctioned scope for a world (CONVENTIONS §3): surfaces, ink,
- * borders and `--accent` flip inside this element and nowhere else.
+ * It used to be a 300vh pinned track whose copy beats swapped over a fixed
+ * canvas. Owner direction (2026-09-18): no sticking. It is now an ordinary
+ * section: the world's environment full bleed, the vial standing in the
+ * middle, labelled facts on either side and the price at its foot. The drama
+ * is in the arrival — as the section scrolls through the viewport the vial
+ * rises, grows and swings round to face the reader, the light blooms behind
+ * it and the columns slide in (`RetaStage`, `choreography.ts`, and CSS view
+ * timelines here). Nothing waits on the scroll: every fact is readable in
+ * the server HTML and at rest.
  *
- * This stays a Server Component — only the stage crosses the client boundary,
- * so every heading, sentence and annotation is in the HTML whether or not any
- * 3D ever loads.
+ * The copy is plain on purpose: what it is, how it is sold, the packaging and
+ * what gets published, each a label and a sentence — figures from the
+ * registry, no mechanism or effect.
  *
- * `padded={false}` because a pinned full-viewport composition owns its own
- * vertical rhythm; section padding would add dead scroll before the pin.
+ * `data-world="reta"` scopes the palette (CONVENTIONS §3).
  */
 export function RetaExperience({ copy }: { copy: RetaExperienceCopy }) {
   const world = getWorld("reta");
   const media = mediaForWorld("reta");
+  const [left, right] = copy.facts;
+
+  const fact = (item: RetaFact, n: number) => {
+    return (
+      <div key={item.label} className={styles.fact}>
+        <p className={styles.factLabel}>
+          <span className={styles.factIndex}>{String(n).padStart(2, "0")}</span> {item.label}
+        </p>
+        <h3 className={styles.factTitle}>{item.title}</h3>
+        {item.body ? <p className={styles.factBody}>{item.body}</p> : null}
+        {item.ladder ? (
+          <ul className={styles.ladder}>
+            {item.ladder.map((step) => (
+              <li key={step.label} className={styles.step}>
+                <span className={styles.stepLabel}>{step.label}</span>
+                {step.price ? <span className={styles.stepPrice}>{step.price}</span> : null}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+    );
+  };
 
   return (
     <Section
@@ -51,27 +82,8 @@ export function RetaExperience({ copy }: { copy: RetaExperienceCopy }) {
       padded={false}
       id="reta"
       aria-labelledby="reta-title"
-      // NOTE: no `overflow-hidden` here. An overflow-clipping ancestor becomes
-      // the containing block for `position: sticky` and would break the pin.
+      className={styles.section}
     >
-      {/*
-       * Without JavaScript, `data-beat` is still in the server-rendered HTML,
-       * so a `:not([data-beat])` selector could never restore the hidden beats.
-       * This releases the pin and lays every beat out in flow instead, so a
-       * sighted visitor with JS disabled gets all three — not one of three.
-       */}
-      <noscript>
-        <style>{`
-          .${styles.track} { block-size: auto; }
-          .${styles.viewport} { position: static; block-size: auto; min-block-size: 100dvh; }
-          .${styles.overlay} { display: flex; flex-direction: column; justify-content: center;
-                               gap: var(--space-2xl); padding-block: var(--space-4xl); }
-          .${styles.beat} { grid-column: auto; grid-row: auto; align-self: auto;
-                            opacity: 1; transform: none; pointer-events: auto; }
-          .${styles.readout} { display: none; }
-        `}</style>
-      </noscript>
-
       <RetaStage
         modelPath={media.model}
         environment={world.environment}
@@ -79,52 +91,29 @@ export function RetaExperience({ copy }: { copy: RetaExperienceCopy }) {
         posterAlt={copy.vialAlt}
         loadingLabel={copy.loadingLabel}
         staticLabel={copy.staticLabel}
-        beatCount={copy.beats.length}
       >
-        {copy.beats.map((beat, index) => (
-          <div key={beat.statement} className={styles.beat} data-beat-index={index}>
-            {beat.eyebrow ? <Eyebrow>{beat.eyebrow}</Eyebrow> : null}
+        <header className={styles.head}>
+          <p className={styles.eyebrow}>{copy.eyebrow}</p>
+          <h2 id="reta-title" className={styles.title}>
+            {copy.title}
+          </h2>
+          <p className={styles.subtitle}>{copy.subtitle}</p>
+          <p className={styles.lede}>{copy.lede}</p>
+        </header>
 
-            <Display
-              // Only the first beat carries the section's heading identity;
-              // the rest are peers, so heading order stays correct.
-              as={index === 0 ? "h2" : "p"}
-              id={index === 0 ? "reta-title" : undefined}
-              size="4xl"
-              className={styles.statement}
-            >
-              {beat.statement}
-            </Display>
-
-            {beat.body ? <Body size="lg">{beat.body}</Body> : null}
-
-            {beat.annotations ? (
-              <dl className={styles.annotations}>
-                {beat.annotations.map((item) => (
-                  <div key={item.key} className={styles.annotation}>
-                    <Mono as="dt" size="2xs" className={styles.annotationKey}>
-                      {item.key}
-                    </Mono>
-                    <Mono as="dd" size="xs" className={styles.annotationValue}>
-                      {item.value}
-                    </Mono>
-                  </div>
-                ))}
-              </dl>
-            ) : null}
-
-            {beat.commerce ? <MomentCommerce {...beat.commerce} showName={false} /> : null}
-          </div>
-        ))}
-
-        {/* Position in the sequence. Decorative reinforcement of scroll state —
-            the copy itself is never gated behind it. */}
-        <div className={styles.readout} aria-hidden="true">
-          <Mono size="2xs">{copy.progressLabel}</Mono>
-          <span className={styles.readoutTrack}>
-            <span className={styles.readoutFill} />
-          </span>
+        <div className={`${styles.column} ${styles.left}`}>
+          {left.map((item, i) => fact(item, i + 1))}
         </div>
+        <div className={styles.vialSpace} aria-hidden="true" />
+        <div className={`${styles.column} ${styles.right}`}>
+          {right.map((item, i) => fact(item, left.length + i + 1))}
+        </div>
+
+        {copy.commerce ? (
+          <div className={styles.foot}>
+            <MomentCommerce {...copy.commerce} />
+          </div>
+        ) : null}
       </RetaStage>
     </Section>
   );

@@ -12,7 +12,7 @@ import {
   IDLE_FLOAT,
   IDLE_ROTATION,
   poseTrack,
-  RESTING_PROGRESS,
+  restingProgress,
   sampleTrack,
   type StageVariant,
 } from "./choreography";
@@ -399,7 +399,7 @@ export function VialModel({
       // The resolved frame — the composition at its strongest, held still.
       // Assigned directly rather than damped so it is correct on frame one,
       // which matters because `frameloop="demand"` renders exactly one.
-      const pose = applyPose(RESTING_PROGRESS, null);
+      const pose = applyPose(restingProgress(variant), null);
       node.position.set(pose.x, pose.y, pose.z);
       node.rotation.set(pose.rotX, pose.rotY, pose.rotZ);
       node.scale.setScalar(pose.scale);

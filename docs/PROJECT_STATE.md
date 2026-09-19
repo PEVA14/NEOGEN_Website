@@ -1428,6 +1428,44 @@ at 375 and 1440. The explorer tabs were tested by click, arrow keys and End:
 focus follows, and the ground changes per area. Heights: desktop 10,900 →
 11,500px, phone about 11,400 → 11,500px, with far more product on the page.
 
+**Owner review round 1 (2026-09-18)**
+
+- **Gateway doors reworked.** At wider viewports the four small doors had
+  looked cramped and empty. Each door now composes by its own width
+  (`container-type: inline-size`):
+  - Research is a charcoal reading room: bold condensed counts (profiles,
+    references, areas) and the three latest citations, split into two
+    columns when the door is wide.
+  - By area is a directory: eight hue-coded tiles (sign, name, count), each
+    linking to its area page.
+  - Search has a single-line rail of real compounds to try (each area's
+    entry product) and a joined scale of the catalogue's most common strengths
+    (`homeData().strengths`, counted from the variants), each linking to its
+    `?q=` results, closed by an index line.
+  - Signature is three small stages with each flagship standing in its world.
+
+  On tablets the order is Search before Areas and Signature, so the grid has
+  no holes.
+
+- **RETA scene, unpinned.** The 300vh sticky track with swapping beats is
+  gone. `RetaExperience` is now an ordinary section: the head (RETA,
+  Retatrutide Research, one line), four labelled facts either side of the
+  vial, and the commerce at its foot.
+  - The facts are what it is (area and pack from the registry), the
+    packaging, the seven presentations with their real prices, and the
+    documentation rule.
+  - The vial's pose follows "through" progress (`choreography.ts`: it
+    arrives low, far and turned away, is presented at mid-scene, then eases
+    back). The light blooms and the columns slide in on CSS view timelines.
+  - Reduced motion holds the presented pose (`restingProgress("sequence")`).
+  - On phones it stacks, with the canvas as a feathered full-bleed band.
+  - The old beats copy was replaced by `home.reta.facts`. The product page's
+    world line now reads `home.reta.statement`.
+- **Accessibility fix (pre-existing).** `PresentationLadder` scrolls
+  sideways at tablet width and was not keyboard-reachable (axe
+  `scrollable-region-focusable`). It now scrolls inside a focusable,
+  labelled wrapper.
+
 **Open for the owner**
 
 - Whether the header wordmark should be absent at the very top of the

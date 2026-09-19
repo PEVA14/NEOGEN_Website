@@ -6,15 +6,25 @@
  * be unable to reach (axe `scrollable-region-focusable`, found on a
  * four-step ladder at 375px). The same rule the area spread already follows.
  */
+.scroller {
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.scroller:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}
+
 .ladder {
   border-block-start: 1px solid var(--border-default);
   display: flex;
   gap: 0;
   list-style: none;
   margin: 0;
-  overflow-x: auto;
   padding: 0;
-  scrollbar-width: thin;
+  inline-size: max-content;
+  min-inline-size: 100%;
 }
 
 .step {

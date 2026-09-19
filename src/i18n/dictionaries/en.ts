@@ -469,39 +469,46 @@ const en: Dictionary = {
 
     reta: {
       cta: "View RETA",
-      eyebrow: "Retatrutide — research compound",
-      beats: [
-        {
-          eyebrow: "Flagship product",
-          statement: "The environment becomes precision.",
-          body: "Flagship molecular matrix. Cold blue light defines glass refractions and geometric surfaces, creating an environment of optical precision.",
+      /*
+       * RETA ON THE HOMEPAGE — labelled facts, not poetry.
+       *
+       * Every block says one checkable thing: what it is, how it is sold, what
+       * the packaging is and what gets published. Figures (area,
+       * presentations, prices, vials) are read from the registry. Nothing
+       * describes mechanisms, effects, purity or lots (CLAUDE.md,
+       * CONVENTIONS §8).
+       */
+      eyebrow: "Signature compound · Precision",
+      title: "RETA",
+      subtitle: "Retatrutide Research",
+      lede: "The first of NEOGEN's three signature compounds, shown in its own environment.",
+      /** The world's line: the product page uses it too. */
+      statement: "The environment becomes precision.",
+      facts: {
+        what: {
+          label: "What it is",
+          title: "Retatrutide, for research",
+          body: "A research compound in the {area} area, sold in packs of {pack} vials.",
+          bodyNoPack: "A research compound in the {area} area.",
         },
-        {
-          eyebrow: "Material",
-          statement: "Clear glass, controlled light.",
-          body: "Transparent pharmaceutical glass, satin aluminium seal and a technical paper label. Every surface answers to a different light source.",
+        packaging: {
+          label: "The packaging",
+          title: "Clear glass, aluminium seal",
+          body: "Transparent glass, a satin aluminium seal and a technical label carrying the compound's name.",
         },
-        {
-          eyebrow: "Specification",
-          statement: "Documentation before promise.",
-          body: "An analysis is published with its issuer, its date and the exact presentation it examines. Nothing is claimed before the document exists.",
+        presentations: {
+          label: "Presentations",
+          title: "{n} strengths, each with its own price",
         },
-        {
-          eyebrow: "Availability",
-          statement: "RETA — Retatrutide Research.",
-          body: "The first of NEOGEN's three flagship compounds.",
+        documentation: {
+          label: "Documentation",
+          title: "Documents before promises",
+          body: "Every analysis is published with its issuer, its date and the exact presentation it examines. Nothing is claimed before the document exists.",
         },
-      ],
-      specs: {
-        presentation: "Presentations",
-        category: "Category",
-        from: "From",
       },
-      vialAlt:
-        "NEOGEN glass vial with a RETA label, tilted in a dark environment lit with blue light.",
+      vialAlt: "NEOGEN glass vial labelled RETA, tilted in a dark environment with blue light.",
       loadingLabel: "Loading model",
       staticLabel: "Static view",
-      progressLabel: "Sequence",
     },
 
     catalog: {
@@ -625,16 +632,23 @@ const en: Dictionary = {
         body: "Compound profiles with published sources, organised by area.",
         profiles: "Sourced profiles",
         references: "References",
+        areas: "Areas",
+        latest: "Latest references",
       },
       areas: {
         name: "By area",
         body: "{n} ways into the catalogue.",
+        all: "See the areas",
+        count: "{n} compounds",
       },
       search: {
         name: "Search",
         label: "Search for a compound",
         placeholder: "e.g. BPC157, 10 mg",
         submit: "Search",
+        try: "Try",
+        byStrength: "By strength",
+        index: "{products} compounds · {presentations} presentations indexed",
       },
       worlds: {
         name: "Signature",
