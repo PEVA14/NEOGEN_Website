@@ -21,6 +21,9 @@
  *   --area-deep   the INVERTED ground, for panels that go dark. Paper sits on
  *                 it. Added in Phase 12 so an area can compose in two
  *                 registers instead of only ever being a pale rectangle.
+ *   --area-hue    the area's own colour at full strength, for small marks
+ *                 only — a symbol, a rule. Never text, never a ground.
+ *                 Added for the storefront's area tiles (2026-09-18).
  *
  * All four are `color-mix` over the paper, graphite and charcoal already in
  * `tokens.css`, so a re-theme of the neutrals carries.
@@ -29,6 +32,7 @@
  */
 
 [data-area] {
+  --area-hue: var(--neogen-graphite);
   --area-wash: var(--neogen-warm-stone);
   --area-line: var(--border-default);
   --area-ink: var(--ink-muted);
@@ -37,6 +41,7 @@
 
 /* Metabolic — cool, clinical, the most technical of the eight. */
 [data-area="metabolic"] {
+  --area-hue: #4a6fa5;
   --area-wash: color-mix(in oklab, var(--neogen-paper) 84%, #4a6fa5);
   --area-line: color-mix(in oklab, var(--border-default) 55%, #4a6fa5);
   --area-ink: color-mix(in oklab, var(--ink-muted) 62%, #2f4d78);
@@ -45,6 +50,7 @@
 
 /* Recovery — tissue, warmth without sweetness. */
 [data-area="recovery"] {
+  --area-hue: #b07a5a;
   --area-wash: color-mix(in oklab, var(--neogen-paper) 84%, #b07a5a);
   --area-line: color-mix(in oklab, var(--border-default) 55%, #b07a5a);
   --area-ink: color-mix(in oklab, var(--ink-muted) 62%, #7a4d33);
@@ -53,22 +59,25 @@
 
 /* Longevity — deep, mineral, the quietest. */
 [data-area="longevity"] {
+  --area-hue: #4f6b5c;
   --area-wash: color-mix(in oklab, var(--neogen-paper) 85%, #4f6b5c);
   --area-line: color-mix(in oklab, var(--border-default) 55%, #4f6b5c);
   --area-ink: color-mix(in oklab, var(--ink-muted) 62%, #33473c);
   --area-deep: color-mix(in oklab, var(--neogen-charcoal) 85%, #4f6b5c);
 }
 
-/* Growth — graphite, structural. */
+/* Growth — deep teal: structural, and distinct from longevity's green. */
 [data-area="growth"] {
-  --area-wash: color-mix(in oklab, var(--neogen-paper) 82%, var(--neogen-graphite));
-  --area-line: color-mix(in oklab, var(--border-default) 60%, var(--neogen-graphite));
-  --area-ink: color-mix(in oklab, var(--ink-muted) 68%, var(--neogen-charcoal));
-  --area-deep: var(--neogen-charcoal);
+  --area-hue: #2e7f86;
+  --area-wash: color-mix(in oklab, var(--neogen-paper) 84%, #2e7f86);
+  --area-line: color-mix(in oklab, var(--border-default) 55%, #2e7f86);
+  --area-ink: color-mix(in oklab, var(--ink-muted) 62%, #1d5459);
+  --area-deep: color-mix(in oklab, var(--neogen-charcoal) 84%, #2e7f86);
 }
 
 /* Skin — the amber the GLOW world owns, held back from it. */
 [data-area="skin"] {
+  --area-hue: #c79a4e;
   --area-wash: color-mix(in oklab, var(--neogen-paper) 82%, #c79a4e);
   --area-line: color-mix(in oklab, var(--border-default) 52%, #c79a4e);
   --area-ink: color-mix(in oklab, var(--ink-muted) 60%, #8a6524);
@@ -77,6 +86,7 @@
 
 /* Neuro — indigo, low saturation. */
 [data-area="neuro"] {
+  --area-hue: #5b5a8f;
   --area-wash: color-mix(in oklab, var(--neogen-paper) 84%, #5b5a8f);
   --area-line: color-mix(in oklab, var(--border-default) 55%, #5b5a8f);
   --area-ink: color-mix(in oklab, var(--ink-muted) 62%, #3c3b66);
@@ -85,18 +95,20 @@
 
 /* Hormonal — oxide, restrained. */
 [data-area="hormonal"] {
+  --area-hue: #a5605a;
   --area-wash: color-mix(in oklab, var(--neogen-paper) 84%, #a5605a);
   --area-line: color-mix(in oklab, var(--border-default) 55%, #a5605a);
   --area-ink: color-mix(in oklab, var(--ink-muted) 62%, #713a35);
   --area-deep: color-mix(in oklab, var(--neogen-charcoal) 85%, #a5605a);
 }
 
-/* Materials — the most neutral of all: these are consumables, not compounds. */
+/* Materials — olive: a lab-bench tone for consumables, not compounds. */
 [data-area="materials"] {
-  --area-wash: color-mix(in oklab, var(--neogen-paper) 88%, var(--neogen-graphite));
-  --area-line: var(--border-strong);
-  --area-ink: var(--ink-secondary);
-  --area-deep: var(--neogen-graphite);
+  --area-hue: #7c7f3a;
+  --area-wash: color-mix(in oklab, var(--neogen-paper) 84%, #7c7f3a);
+  --area-line: color-mix(in oklab, var(--border-default) 55%, #7c7f3a);
+  --area-ink: color-mix(in oklab, var(--ink-muted) 62%, #4f5124);
+  --area-deep: color-mix(in oklab, var(--neogen-charcoal) 85%, #7c7f3a);
 }
 
 /*

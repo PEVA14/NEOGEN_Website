@@ -20,6 +20,7 @@ export const NO_MEDIA: ProductMedia = {
   detail: null,
   packaging: null,
   poster: null,
+  studio: null,
   model: null,
 };
 
@@ -106,4 +107,14 @@ export function galleryImages(
     ...(media.detail ? [{ role: "detail" as const, image: media.detail }] : []),
     ...(media.packaging ? [{ role: "packaging" as const, image: media.packaging }] : []),
   ];
+}
+
+/**
+ * The still a COMMERCE surface (the store card) shows: a photograph when one
+ * exists, otherwise a studio render of the product's own model, otherwise
+ * nothing — and the caller draws the product object.
+ */
+export function commerceStill(slug: string): ProductImage | null {
+  const media = productMedia(slug);
+  return media.primary ?? media.studio;
 }

@@ -1,14 +1,16 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import type React from "react";
 
 import { Container } from "@/components/primitives";
-import { SpecimenPlate } from "@/components/ui";
+import { AreaIcon, SpecimenPlate } from "@/components/ui";
 
 import { StoreSearch } from "./StoreSearch";
 import styles from "./Storefront.module.css";
 
 import type { WorldId } from "@/config/worlds";
+import type { ProductImage } from "@/content/media";
 import type { DiscoveryAreaId } from "@/data/discovery";
 
 /**
@@ -34,6 +36,8 @@ export interface StoreSignature {
   worldLabel: string;
   range: string;
   price: string | null;
+  /** The product's commerce still — a studio render of its model — when one exists. */
+  image: ProductImage | null;
 }
 
 export interface StoreArea {
@@ -100,12 +104,24 @@ export function StoreMasthead({
                   <li key={item.slug} className={styles.signatureItem}>
                     <Link href={item.href} className={styles.signature} data-world={item.world}>
                       <span className={styles.signatureMedia}>
-                        <SpecimenPlate
-                          areaId={null}
-                          world={item.world}
-                          name={item.name}
-                          annotation={item.range}
-                        />
+                        {item.image ? (
+                          <Image
+                            src={item.image.src}
+                            alt={item.image.alt}
+                            width={item.image.width}
+                            height={item.image.height}
+                            sizes="(min-width: 64rem) 20rem, 60vw"
+                            className={styles.signatureImage}
+                            priority
+                          />
+                        ) : (
+                          <SpecimenPlate
+                            areaId={null}
+                            world={item.world}
+                            name={item.name}
+                            annotation={item.range}
+                          />
+                        )}
                       </span>
                       <span className={styles.signatureBody}>
                         <span className={styles.signatureWorld}>{item.worldLabel}</span>
@@ -148,19 +164,29 @@ export function AreaShelf({
   if (areas.length === 0) return null;
   return (
     <section className={styles.areas} aria-labelledby="store-areas-title">
+      {/*
+       * THE HANDOFF. The area heading stays on the masthead's charcoal and the
+       * tiles rise out of it onto the paper: the dark store front hands the
+       * visitor to the shelves instead of stopping at a hard edge.
+       */}
+      <div className={styles.areasBand} data-surface="dark">
+        <Container width="full">
+          <StoreSectionHead
+            index={copy.index}
+            label={copy.label}
+            title={copy.title}
+            id="store-areas-title"
+            action={{ href: "#catalogo", label: copy.all }}
+          />
+        </Container>
+      </div>
       <Container width="full">
-        <StoreSectionHead
-          index={copy.index}
-          label={copy.label}
-          title={copy.title}
-          id="store-areas-title"
-          action={{ href: "#catalogo", label: copy.all }}
-        />
         <ul className={styles.areaList}>
           {areas.map((area, i) => (
             <li key={area.id} className={styles.areaItem} data-area={area.id}>
               <Link href={area.href} className={styles.area}>
                 <span className={styles.areaHead}>
+                  <AreaIcon id={area.id} className={styles.areaIcon} />
                   <span className={styles.areaIndex}>{String(i + 1).padStart(2, "0")}</span>
                   <span className={styles.areaName}>{area.label}</span>
                   <span className={styles.areaCount}>

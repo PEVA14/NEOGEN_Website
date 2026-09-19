@@ -47,6 +47,8 @@
   gap: var(--space-lg);
   padding: var(--space-md);
   border: 1px solid var(--area-line, var(--border-subtle));
+  /* The storefront's product softness, shared with the store cards beside it. */
+  border-radius: var(--radius-object);
   background: linear-gradient(
     160deg,
     color-mix(in oklab, var(--area-wash, var(--surface-raised)) 40%, var(--surface-base)),

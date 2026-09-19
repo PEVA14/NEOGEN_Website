@@ -68,6 +68,17 @@ export interface ProductMedia {
    */
   poster: ProductImage | null;
   /**
+   * A STUDIO STILL: the product's own 3D model, rendered as a product
+   * photograph by the studio rig (`components/experience/studio`) and captured
+   * to a file.
+   *
+   * Commerce media for surfaces that must not run WebGL — the catalogue card
+   * first. It is a RENDER of the real asset, not photography: it never fills
+   * `primary`, never counts toward "with photography", and needs a `model`
+   * behind it, so nothing is depicted that the GLB does not contain.
+   */
+  studio: ProductImage | null;
+  /**
    * Path to a lightweight `.glb` under `public/models/`.
    *
    * This used to live in `config/worlds.ts`, which made a 3D asset a property

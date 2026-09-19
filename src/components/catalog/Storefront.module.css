@@ -26,7 +26,8 @@
 
 /* --- Masthead: the brand's charcoal, the hero's token remap -------------- */
 
-.masthead {
+.masthead,
+.areasBand {
   --surface-base: var(--neogen-charcoal);
   --surface-raised: color-mix(in oklab, var(--neogen-charcoal) 90%, var(--neogen-paper));
   --ink-primary: var(--neogen-paper);
@@ -38,10 +39,13 @@
   --focus-ring: var(--neogen-paper);
   --focus-ring-offset: var(--neogen-charcoal);
 
-  position: relative;
-  padding-block: var(--space-xl) var(--space-2xl);
   background-color: var(--surface-base);
   color: var(--ink-primary);
+}
+
+.masthead {
+  position: relative;
+  padding-block: var(--space-xl) var(--space-xl);
   overflow-x: clip;
 }
 
@@ -400,8 +404,32 @@
 
 /* --- Area shelf ------------------------------------------------------------ */
 
+/*
+ * The shelf rises out of the charcoal: the band under the masthead carries
+ * the heading, and its lower `--shelf-rise` is overlapped by the tiles.
+ */
 .areas {
-  padding-block: var(--space-xl) var(--space-lg);
+  --shelf-rise: 5.5rem;
+  padding-block: 0 var(--space-lg);
+}
+
+.areasBand {
+  padding-block: var(--space-xs) var(--shelf-rise);
+}
+
+.areasBand .sectionHead {
+  margin-block-end: 0;
+}
+
+.areas .areaList {
+  position: relative;
+  margin-block-start: calc(var(--space-md) - var(--shelf-rise));
+}
+
+@media (max-width: 39.99rem) {
+  .areas {
+    --shelf-rise: 4.5rem;
+  }
 }
 
 .areaList {
@@ -463,7 +491,7 @@
 }
 
 .area:hover {
-  border-color: var(--area-ink, var(--border-strong));
+  border-color: var(--area-hue, var(--border-strong));
 }
 
 .area:focus-visible {
@@ -471,19 +499,44 @@
   outline-offset: 2px;
 }
 
+/*
+ * The colour-coded door: a band in the area's own tint under a rule of its
+ * full hue, and the area's symbol in that hue. Text stays charcoal — the hue
+ * carries only marks, never words.
+ */
 .areaHead {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: var(--space-3xs) var(--space-2xs);
+  align-items: center;
   padding: var(--space-xs) var(--space-sm) var(--space-sm);
+  border-block-start: 3px solid var(--area-hue);
+  background: color-mix(in oklab, var(--area-hue) 11%, var(--neogen-paper));
+}
+
+/* The symbol shares the number's row, so the name keeps the tile's full width. */
+.areaIcon {
+  grid-column: 2;
+  grid-row: 1;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  color: var(--area-hue);
+  transition: transform var(--motion-duration-base) var(--ease-standard);
+}
+
+.area:hover .areaIcon {
+  transform: scale(1.1);
 }
 
 .areaIndex {
-  grid-column: 1 / -1;
+  grid-column: 1;
+  grid-row: 1;
   font-family: var(--font-mono);
   font-size: var(--text-2xs);
   letter-spacing: var(--tracking-label);
-  color: var(--ink-muted);
+  /* Muted ink fails AA on the tinted band; secondary clears it. */
+  color: var(--ink-secondary);
 }
 
 .areaName {
@@ -503,7 +556,8 @@
   font-size: var(--text-2xs);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: var(--ink-muted);
+  /* Muted ink fails AA on the tinted band; secondary clears it. */
+  color: var(--ink-secondary);
 }
 
 .areaMedia {
@@ -545,8 +599,13 @@
 @media (prefers-reduced-motion: reduce) {
   .signatureMedia > *,
   .areaMedia > *,
+  .areaIcon,
   .arrow {
     transition: none;
+  }
+
+  .area:hover .areaIcon {
+    transform: none;
   }
 
   .signature:hover .signatureMedia > *,
@@ -604,4 +663,13 @@
   .searchSubmit {
     padding-inline: var(--space-sm);
   }
+}
+
+/* A studio still stands in the same frame the product object would. */
+.signatureImage {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
 }

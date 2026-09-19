@@ -28,6 +28,38 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
    */
   reta: {
     model: "/models/reta.glb",
+    /*
+     * THE STUDIO STILL (prototype, 2026-09-18, awaiting owner approval).
+     *
+     * The real GLB — its geometry and its own RETA label — rendered by the
+     * studio rig (`components/experience/studio/rig.ts`, RETA_RIG) and captured
+     * at 1600×2000 from `/es/estudio/reta`. A render, not a photograph: it is
+     * the catalogue card's image and never the product's `primary`.
+     */
+    studio: {
+      src: "/images/products/reta/studio.jpg",
+      alt: "Vial RETA de NEOGEN: render de estudio del modelo 3D, etiqueta al frente, sobre fondo azul oscuro.",
+      width: 1600,
+      height: 2000,
+    },
+  },
+
+  /*
+   * SEMAGLUTIDE — the NEUTRAL studio prototype (2026-09-18, awaiting owner
+   * approval; not yet propagated).
+   *
+   * No model of its own: it ships in the canonical NEOGEN container, whose
+   * real geometry is `reta.glb` (owner, 2026-09-18). Rendered by NEUTRAL_RIG
+   * with a label drawn from its registry name and presentation range in the
+   * real RETA label's layout (`components/experience/studio/label.ts`).
+   */
+  semaglutide: {
+    studio: {
+      src: "/images/products/semaglutide/studio.jpg",
+      alt: "Vial de Semaglutide de NEOGEN: render de estudio del envase NEOGEN, etiqueta al frente, sobre fondo neutro.",
+      width: 1600,
+      height: 2000,
+    },
   },
 
   /*

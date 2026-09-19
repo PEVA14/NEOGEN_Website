@@ -17,17 +17,21 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 
 ### Start here: handoff of 2026-09-18
 
-- **Tree.** `main`. The PDP record pass (§8o) and this handoff are
-  committed together, the commit after `87b0b5d`. Nothing is pushed. Every
-  gate passed, and axe and overflow were clean on 7 PDP routes at 375 and 1440.
-- **What the owner is doing.** Visual review of V1:
-  - the commerce pass `df4e64f` (§8n): product-object vials, visible prices,
-    the homepage order;
-  - the PDP record pass (§8o), driven by
-    `references/neogen-pdp-v1-desktop.png`.
-- **Nothing is approved to start.** The V1 audit ledger (§8p) lists what is
-  done, and what is open as code-only work or blocked on a decision. Ask
-  before picking up any open item.
+- **Tree.** `main`. The storefront follow-ups (§8q) and the product-media
+  studio (§8r) are committed together. Nothing is pushed. Every gate passed;
+  axe and overflow were clean on the catalogue, the area pages and the
+  homepage at 375 and 1440.
+- **Where the owner left it (2026-09-18).**
+  - The `/productos` storefront (§8q) is **approved and frozen**. Do not
+    redesign its layout, hierarchy, filters, area strip, cards or composition.
+  - The RETA studio still (§8r) is **approved**. `reta.glb` is NEOGEN's
+    canonical physical container.
+  - The neutral studio prototype (Semaglutide only, §8r) is **"good for now"**.
+    It is not propagated across the catalogue; GLOW and GHK-Cu have no studio
+    rigs yet.
+  - The owner moved on to other work. Ask before resuming product media.
+- **Nothing else is approved to start.** The V1 audit ledger (§8p) lists open
+  items. Ask before picking one up.
 - **Figma** (claude.ai connector, the owner's account): file
   `QRvGMkkoFPfhEsjQAyPBq4` ("NEOGEN — Web Design"):
   - page `0:1` "01 — Design Exploration": directions A–E, comps, world studies;
@@ -77,7 +81,8 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 | `df4e64f`   | V1 commerce and art-direction pass: product objects, visible commerce, commercial homepage rhythm (§8n)                         |
 | `87b0b5d`   | Atlas hidden for V1 by one feature flag: nav, footer and sitemap entries removed (§8m)                                          |
 | `5e76e06`   | PDP record pass: record rhythm, alternating grounds, research folded into the profile, swiped related shelves (§8o)             |
-| _this_      | The /productos storefront: masthead, area shelf, store card, paging (§8q), awaiting owner review                                |
+| `81ff312`   | The /productos storefront: masthead, area shelf, store card, paging (§8q)                                                       |
+| _this_      | Storefront follow-ups (§8q) and the product-media studio: RETA still, neutral prototype (§8r)                                   |
 
 **Current priority (owner, 2026-09-17): V1 completion.** Make NEOGEN V1 as
 complete, polished and commercially effective as possible with the
@@ -1215,6 +1220,38 @@ nothing here is to be propagated to other pages until approved.**
   text stays in the link. No catalogue index on the plate. On phones: a square
   stage and no category line.
 
+**Follow-up (owner, same day):** the store card now also runs on the area
+pages, in the area's lead compounds and its browser. Area tiles are
+colour-coded: a tinted band under a rule in the new `--area-hue`, plus one
+abstract symbol per area (`components/ui/AreaIcon`). The symbols are
+catalogue signs (cycle, link, cell, steps, layers, network, ring, flask),
+never bodies or effects.
+Desarrollo (was graphite) is now teal `#2e7f86`, and Materiales (was
+neutral) is olive `#7c7f3a`, across their whole area palette, owner request.
+
+**Polish pass (owner, same day; structure unchanged):**
+
+- **Handoff.** The area heading sits on a charcoal band that continues from
+  the masthead. The tiles rise out of it onto the paper (`--shelf-rise`).
+- **Grid rhythm and worlds.** In the store grid RETA, GLOW and GHK-Cu are
+  double-width cards (`format="flagship"`, `data-feature`):
+  - the world stage sits beside the record;
+  - the world's atmosphere shows in the record's ground;
+  - an accent seam runs along the top, the same device as the Experience
+    sections.
+
+  `grid-auto-flow: dense` prevents holes; checked at 2 to 5 columns, filtered
+  and unfiltered.
+
+- **Audit.**
+  - One-line toolbar: its captions are screen-reader only, and the controls
+    wrap as a group.
+  - The count reads "shown / matched" while paged.
+  - Compact cards keep an xl name at three across.
+  - World-card names are sized by container.
+  - Hover borders take the card's area hue.
+  - No touch reveal toggle on world cards.
+
 **Also fixed:** the header's dark state mixed `--ink-muted` at 52% paper, and
 the inactive locale measured 3.5:1 over dark sections. It is now 70%. This
 header change affects every page.
@@ -1223,6 +1260,94 @@ header change affects every page.
 6,800px. axe WCAG A/AA: 0 violations at 375 and 1440 on `/es/productos`,
 `/en/productos`, search mode, an area page and the homepage. Horizontal
 overflow: 0 on all of them. Area pages and the homepage keep the default card.
+
+## 8r. Product media: the RETA studio (prototype, awaiting owner review)
+
+**Owner direction (2026-09-18).** The catalogue is frozen. Next is product
+media, starting with RETA only:
+
+- a premium, studio-quality presentation of the existing `reta.glb` and its
+  real label;
+- no remodelling and no new packaging;
+- no propagation until approved.
+
+GLOW, GHK-Cu, generic product media, the homepage and backend are untouched.
+
+**What exists**
+
+- `components/experience/studio/rig.ts`: the shot described as data
+  (`StudioRig`, `RETA_RIG`):
+  - lens, camera height and turn;
+  - six softboxes, each with a diffuse `intensity` and a separate `reflection`
+    brightness;
+  - the sweep, the floor, and material overrides.
+- `components/experience/studio/StudioScene.tsx`: an R3F scene that executes a
+  rig on the unmodified GLB:
+  - a PMREM reflection map built from the rig's softboxes;
+  - rect-area lights;
+  - a screen-space sweep (no horizon line), a mirrored floor reflection, and a
+    radial contact shadow;
+  - Khronos Neutral tone mapping (label white stays true);
+  - 2× supersampling, `frameloop="demand"`, and a capture hook.
+- `/[locale]/estudio/[slug]`: development only (404 and no static params in
+  production, noindex). It is the viewfinder, with `?yaw= ?exp= ?fov= ?cy=
+?cz=` overrides and a "Capture still" button (1600×2000 PNG).
+- `public/images/products/reta/studio.jpg`: the captured still, registered as
+  the new `studio` media role. It is a render of the model:
+  - never `primary`;
+  - never counted as photography (the media check still reports 0);
+  - rejected by `check:media` without a `model`.
+- `commerceStill(slug)` (photograph, else studio still) feeds only the
+  catalogue's store card and the storefront masthead's RETA tile. The homepage
+  and PDP keep their current media.
+
+**Rig decisions that made the difference**
+
+- An 18° tele lens and a camera just above label height give a near-front
+  photographic perspective.
+- Dark-field edges: tall strips behind the object, close to the axis. A
+  cylinder's silhouette reflects what is directly behind it. Left is white,
+  right is RETA blue.
+- A reflection-only streak panel draws the long highlight down the glass.
+- The glass takes a raised reflection level (front-facing glass reflects about
+  4%). Attenuation is neutral: a blue attenuation had turned the clear glass
+  cobalt, which misrepresents the packaging.
+- The white key keeps the label accurate. The blue lives in an off-centre pool
+  behind the right shoulder and the right kicker, never in the key.
+
+**Approved (owner, 2026-09-18).** RETA's studio direction is approved, and
+`reta.glb` is NEOGEN's real physical container. It is canonical for every
+product in the same packaging.
+
+**Neutral prototype (awaiting review; not propagated).** Semaglutide, one
+generic product, is rendered on the canonical container by `NEUTRAL_RIG`:
+
+- a cream sweep and soft white softboxes;
+- bright-field glass: black flags behind the sides draw its edges;
+- a light contact shadow and a faint floor reflection;
+- no world colour.
+
+Its label is drawn from registry data (name and presentation range) in the
+real RETA label's measured layout (`studio/label.ts`), with a graphite rule
+where RETA's is blue and no LOT/ID placeholders. The still sits at
+`public/images/products/semaglutide/studio.jpg` as its `studio` media. The
+media check now requires a studio still to live in its own product's folder,
+and no longer requires the product's own model. The other generic products
+keep the drawn object until approval.
+
+Also fixed: glTF materials without extensions (the label and the black top)
+load as MeshStandardMaterial, and the studio's physical-only filter had
+skipped them. The approved RETA still was captured before this fix and is
+unchanged.
+
+**Open for the owner**
+
+- **Shape mismatch** (resolved: the GLB is canonical). The catalogue's vector product object is drawn as a
+  narrow vial, but `reta.glb` is a wide jar. The studio shows the real asset.
+  Decide which shape NEOGEN's packaging is before propagating.
+- **Label placeholders.** The label texture's side panels carry the asset's own
+  "[LOT] [PRODUCT ID] [FORMAT]" placeholders. They are invisible at the front
+  view; any turned view would show them.
 
 ## 9. Recommendation for Phase 13 (not approved)
 

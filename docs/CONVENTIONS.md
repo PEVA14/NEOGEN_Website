@@ -726,6 +726,39 @@ health, body or dosing answer to select a compound — `check:content` fails if 
 question so worded is bound to a decision field, unless it is consumed only as
 an option id translated to a catalogue area.
 
+## 17b. Product media: the studio pipeline
+
+Commerce surfaces never run WebGL. A product's catalogue image is a **studio
+still**: its 3D container rendered once as a product photograph and captured
+to a file.
+
+- **The container.** `public/models/reta.glb` is NEOGEN's real physical
+  container (owner, 2026-09-18). Products in the same packaging render on it.
+  Do not remodel it; web code owns camera, lighting and materials.
+- **The rig is data.** `components/experience/studio/rig.ts` describes the
+  shot: lens, turn, softboxes (diffuse `intensity` and a separate `reflection`
+  brightness), sweep, floor and material response.
+  - Flagships get a world rig (`RETA_RIG`).
+  - Every other product uses `NEUTRAL_RIG`: a cream set with no world colour,
+    so flagships stay exceptional.
+  - Add a rig object, not a new scene.
+- **Labels.** A flagship's GLB carries its printed label. Other products wear
+  a label drawn from registry data (name and presentation range) in the real
+  label's measured layout (`studio/label.ts`). Never print placeholders, lots
+  or claims.
+- **Capture.** Use `/[locale]/estudio/[slug]`. It is development only: a 404
+  in production, and noindex. It has a "Capture still" button (1600×2000).
+  Save to `public/images/products/<slug>/studio.jpg`.
+- **Registration.** The still goes in `MEDIA[slug].studio`.
+  - It is a render: never `primary`, never counted as photography.
+  - `check:media` requires the file to sit in the product's own folder.
+  - `commerceStill()` (photograph, else studio still) feeds only the store
+    card and the storefront masthead.
+- **Radius.** `--radius-object` (6px) softens product surfaces only: store
+  cards, area and signature tiles. Chrome stays square.
+- **glTF materials without extensions load as `MeshStandardMaterial`.**
+  Material tuning must not filter on `MeshPhysicalMaterial` alone.
+
 ## 18. Commands
 
 ```bash

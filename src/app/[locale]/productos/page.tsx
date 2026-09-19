@@ -10,6 +10,7 @@ import {
 import { HideWhileSearching } from "@/components/catalog/StoreSearch";
 import { routes } from "@/config/routes";
 import { worldIds } from "@/config/worlds";
+import { commerceStill } from "@/content/media";
 import { isPublishable, products, publishedProducts } from "@/data/catalog";
 import { publicAreas } from "@/data/discovery";
 import { isLocale, localeTags } from "@/i18n/config";
@@ -92,6 +93,7 @@ export default async function ProductsPage({ params }: { params: Promise<{ local
       worldLabel: entry.worldLabel ?? "",
       range: entry.range,
       price: entry.price,
+      image: commerceStill(entry.slug),
     }));
 
   /* Each area, shown by its entry product: the cheapest priced one filed there. */

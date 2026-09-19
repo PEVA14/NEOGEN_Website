@@ -444,8 +444,17 @@ export function CatalogBrowser({
           <div className={styles.toolbar}>
             {/* Announced, so a filter change is perceivable without sight. */}
             <Mono size="2xs" className={styles.count} aria-live="polite">
-              {copy.countLabel} {String(results.length).padStart(2, "0")} /{" "}
-              {String(products.length).padStart(2, "0")}
+              {copy.countLabel}{" "}
+              {/* Paged: what is on screen of what matched. Otherwise: matched of all. */}
+              {String(
+                pageSize && filters.view === "grid"
+                  ? Math.min(visible, results.length)
+                  : results.length,
+              ).padStart(2, "0")}{" "}
+              /{" "}
+              {String(
+                pageSize && filters.view === "grid" ? results.length : products.length,
+              ).padStart(2, "0")}
             </Mono>
 
             <div className={styles.toolbarControls}>
@@ -544,8 +553,17 @@ export function CatalogBrowser({
             <>
               <div className={styles.grid}>
                 {results.map((product, i) => (
-                  <div key={product.id} className={styles.cell} hidden={i >= visible || undefined}>
+                  <div
+                    key={product.id}
+                    className={styles.cell}
+                    hidden={i >= visible || undefined}
+                    /* In the store, a signature product is a double-width
+                       moment in its own world: the grid's rhythm breaks where
+                       the catalogue's three flagships stand. */
+                    data-feature={variant === "store" && product.world ? "" : undefined}
+                  >
                     <ProductCard
+                      format={variant === "store" && product.world ? "flagship" : "standard"}
                       slug={product.slug}
                       world={product.world}
                       worldLabel={product.worldLabel}

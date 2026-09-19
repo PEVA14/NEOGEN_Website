@@ -588,7 +588,17 @@
 .card[data-variant="store"] {
   border-radius: var(--radius-object);
   overflow: hidden;
+}
+
+/* Paper body for the neutral store; a signature card keeps its world's ground. */
+.card[data-variant="store"]:not([data-format="flagship"]) {
   background-color: var(--neogen-paper);
+}
+
+/* On a world's dark ground the action inverts: paper square, charcoal arrow. */
+.card[data-variant="store"][data-format="flagship"] .go {
+  background-color: var(--neogen-paper);
+  color: var(--neogen-charcoal);
 }
 
 .card[data-variant="store"] .link {
@@ -690,5 +700,133 @@
   .card[data-variant="store"] .commerce {
     border-block-start: 0;
     padding-block-start: var(--space-3xs);
+  }
+}
+
+/* In the wide feature card the stage is inset, so it takes a matching inner radius. */
+.card[data-variant="store"][data-format="feature"] .media {
+  border-radius: calc(var(--radius-object) - 0.125rem);
+}
+
+/* --- Store variant: the area grading ---------------------------------------
+ *
+ * Every store card is faintly graded toward its area's hue, so a shelf reads
+ * by category before a single label is read. Two places, both faint:
+ *
+ *   the stage   the studio sweep behind the object takes a wash of the hue,
+ *               strongest at the top and falling toward the floor;
+ *   the body    the paper under the name grades from clean paper to a tint of
+ *               the hue at the price line.
+ *
+ * Kept to single digits of the hue so charcoal and muted text stay AA. A
+ * signature product's world stage (`data-world` on the plate) is untouched:
+ * its colour is the product's, not the category's.
+ */
+.card[data-variant="store"][data-area] .media > :not([data-world]) {
+  --sweep-wall: color-mix(in oklab, var(--area-hue) 9%, var(--neogen-warm-stone));
+  --sweep-floor: color-mix(in oklab, var(--area-hue) 7%, var(--neogen-chalk));
+}
+
+.card[data-variant="store"][data-area]:not([data-format="flagship"]) {
+  background-image: linear-gradient(
+    180deg,
+    var(--neogen-paper) 55%,
+    color-mix(in oklab, var(--area-hue) 7%, var(--neogen-paper)) 100%
+  );
+}
+
+/* --- Store variant: signature products keep their worlds -------------------
+ *
+ * In the store grid RETA, GLOW and GHK-Cu are double-width cards on their own
+ * world ground: the object on its stage beside the record, the world's
+ * atmosphere breathing through the record's ground, and a hairline seam in the
+ * world's accent along the top — the same seam that opens every Experience
+ * section. The action stays paper-on-dark; the colour is the world's, never
+ * the interface's.
+ */
+.card[data-variant="store"][data-format="flagship"] {
+  border-block-start: 2px solid var(--world-accent);
+  background-image: var(--world-atmosphere);
+}
+
+.card[data-variant="store"][data-format="flagship"] .link {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  padding: 0;
+}
+
+.card[data-variant="store"][data-format="flagship"] .media {
+  grid-row: 1 / span 2;
+  block-size: 100%;
+}
+
+.card[data-variant="store"][data-format="flagship"] .media > * {
+  aspect-ratio: auto;
+  block-size: 100%;
+  min-block-size: 15rem;
+}
+
+/* The record spans the card's height, so its price sits on the row's price line. */
+.card[data-variant="store"][data-format="flagship"] .body {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  padding: var(--space-md);
+}
+
+/* The object at the scale of its neighbours, not blown up to the taller stage. */
+.card[data-variant="store"][data-format="flagship"] .media svg {
+  block-size: 68%;
+  margin-block-end: 9%;
+}
+
+/* Sized by the card, so a long name holds its words at every width. */
+.card[data-variant="store"][data-format="flagship"] .name {
+  font-size: min(var(--text-3xl), 6.5cqi);
+  overflow-wrap: normal;
+}
+
+/* The stage keeps its object clear: the record opens on hover or focus, and
+   on touch the card's link is the way in. */
+.card[data-variant="store"][data-format="flagship"] .revealToggle {
+  display: none;
+}
+
+/* The record lays over the stage column only. */
+.card[data-variant="store"][data-format="flagship"] .reveal {
+  inset-block: 0;
+  inset-inline: 0 50%;
+  aspect-ratio: auto;
+}
+
+/* --- Store variant: audit ---------------------------------------------------- */
+
+/* Hover answers in the card's own area colour, the way the area tiles do. */
+.card[data-variant="store"][data-area]:hover {
+  border-color: color-mix(in oklab, var(--area-hue) 60%, transparent);
+}
+
+/* Three across on a laptop is compact, but the name should not drop to phone scale. */
+@container (min-width: 12rem) and (max-width: 15rem) {
+  .card[data-variant="store"] .name {
+    font-size: var(--text-xl);
+  }
+}
+
+/* On a phone a signature card is full width: a narrower stage, a smaller name. */
+@container (max-width: 26rem) {
+  .card[data-variant="store"][data-format="flagship"] .link {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  }
+
+  .card[data-variant="store"][data-format="flagship"] .body {
+    padding: var(--space-sm);
+  }
+
+  .card[data-variant="store"][data-format="flagship"] .name {
+    font-size: min(var(--text-xl), 6.5cqi);
+  }
+
+  .card[data-variant="store"][data-format="flagship"] .reveal {
+    inset-inline: 0 52.6%;
   }
 }

@@ -400,6 +400,7 @@ export async function renderAreaPage({
             copy={catalogCopy(dict)}
             localeTag={tag}
             areaFacet="alsoIn"
+            variant="store"
             areaOrder={publicAreas()
               .filter((other) => other.id !== area.id)
               .map((other) => other.id)}

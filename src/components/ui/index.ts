@@ -15,3 +15,4 @@ export {
 export { SpecimenPlate } from "./SpecimenPlate";
 export { TextLink } from "./TextLink";
 export { WorldDot } from "./WorldDot";
+export { AreaIcon } from "./AreaIcon";

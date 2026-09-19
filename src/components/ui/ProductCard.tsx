@@ -7,7 +7,7 @@ import { useId, useRef, useState } from "react";
 import { Mono } from "@/components/typography";
 import { SpecimenPlate } from "@/components/ui/SpecimenPlate";
 import { WorldDot } from "@/components/ui/WorldDot";
-import { CARD_SIZES, productMedia, stillMedia } from "@/content/media";
+import { CARD_SIZES, commerceStill, productMedia, stillMedia } from "@/content/media";
 
 import styles from "./ProductCard.module.css";
 
@@ -154,6 +154,14 @@ export function ProductCard({
      4:5 plate, so it belongs to the formats that always have one. */
   const reveals = Boolean(details && detailsCopy) && format !== "feature";
   const still = stillMedia(slug);
+  /*
+   * The store card may also show a STUDIO STILL — a render of the product's
+   * own model — where no photograph exists. Other card variants still show
+   * photography only, until the studio treatment is approved beyond the
+   * catalogue.
+   */
+  const image =
+    variant === "store" ? commerceStill(slug) : still.kind === "image" ? still.image : null;
   const Heading = `h${headingLevel}` as "h2" | "h3";
 
   /*
@@ -189,6 +197,9 @@ export function ProductCard({
       data-world={format === "flagship" ? (world ?? undefined) : undefined}
       data-reveal={reveals ? (open ? "open" : "closed") : undefined}
       data-variant={variant === "store" ? "store" : undefined}
+      /* The store card carries its area, so its grounds can grade toward the
+         area's hue. A signature card's world ground is left alone. */
+      data-area={variant === "store" && format !== "flagship" ? (areaId ?? undefined) : undefined}
       onPointerEnter={warm}
     >
       {/*
@@ -198,12 +209,12 @@ export function ProductCard({
        */}
       <Link href={href} className={styles.link} onFocus={warm}>
         <span className={styles.media}>
-          {still.kind === "image" ? (
+          {image ? (
             <Image
-              src={still.image.src}
-              alt={still.image.alt}
-              width={still.image.width}
-              height={still.image.height}
+              src={image.src}
+              alt={image.alt}
+              width={image.width}
+              height={image.height}
               className={styles.photo}
               sizes={CARD_SIZES}
               loading="lazy"

@@ -168,7 +168,11 @@ export function EntryCompounds({
 
       {others.map((item) => (
         <div key={item.slug} className={styles.other}>
-          <ProductCard {...item} format={shape === "three" ? "feature" : item.format} />
+          <ProductCard
+            {...item}
+            format={shape === "three" ? "feature" : item.format}
+            variant="store"
+          />
         </div>
       ))}
     </div>

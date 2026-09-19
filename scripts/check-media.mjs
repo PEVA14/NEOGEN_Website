@@ -21,7 +21,7 @@ const IMAGE_TYPES = new Set([".jpg", ".jpeg", ".png", ".webp", ".avif"]);
 const MODEL_TYPES = new Set([".glb"]);
 
 /** Roles that hold a single image, and whether the role may be decorative. */
-const IMAGE_ROLES = ["primary", "detail", "packaging", "poster"];
+const IMAGE_ROLES = ["primary", "detail", "packaging", "poster", "studio"];
 
 const failures = [];
 const fail = (what, detail) => failures.push(`${what}: ${detail}`);
@@ -165,6 +165,15 @@ for (const [slug, entry] of Object.entries(MEDIA)) {
 
   /* A poster is the still of a live scene. Without a model there is no scene,
      and the image is being used as photography under the wrong role. */
+  /* A studio still is a render OF the model; without one it would depict
+     something no asset contains. */
+  /* A studio still renders either the product's own model or the canonical
+     NEOGEN container (reta.glb) — never a shape no asset contains. It must
+     live in the product's own folder, so one product's render can never be
+     declared as another's. */
+  if (entry.studio && entry.studio.src !== `/images/products/${slug}/studio.jpg`) {
+    fail("studio still outside its product folder", `${slug} → ${entry.studio.src}`);
+  }
   if (entry.poster && !entry.model) {
     fail("poster declared without a model", `${slug} — a poster is a still of the 3D scene`);
   }
