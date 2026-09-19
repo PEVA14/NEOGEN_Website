@@ -32,12 +32,10 @@ export interface StepState {
 /**
  * Is this step's own data satisfied?
  *
- * `payment` is the interesting case. It collects nothing today: there is no
- * configured provider, so there is no instrument to choose and no intent to
- * create. Rather than mark it permanently incomplete — which would make the
- * progression indicator lie about a step the customer genuinely finished — it
- * is complete once they have continued past it. When a real adapter is
- * registered, this is the one line that changes.
+ * `review` is complete once an order exists. `payment` is never complete from
+ * the DRAFT's point of view: payment belongs to the order, on its own page
+ * (`/checkout/pago/[id]`), and whether it succeeded is the order's state —
+ * which only the provider can move.
  */
 export function stepComplete(draft: CheckoutDraft, step: CheckoutStepId): boolean {
   switch (step) {
@@ -47,10 +45,10 @@ export function stepComplete(draft: CheckoutDraft, step: CheckoutStepId): boolea
       return validateAddress(draft.address).length === 0;
     case "delivery":
       return draft.delivery !== null;
-    case "payment":
-      return draft.attempted.payment === true;
     case "review":
       return draft.orderId !== null;
+    case "payment":
+      return false;
     case "confirmation":
       return draft.orderId !== null;
   }

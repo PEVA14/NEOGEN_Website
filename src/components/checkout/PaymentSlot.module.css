@@ -113,20 +113,11 @@
 /* --- embedded mount ------------------------------------------------------ */
 
 .mount {
-  align-items: center;
-  /* A dashed rule, the one place this system uses one: it reads as a reserved
-     area rather than a component, which is exactly what it is. */
-  border: 1px dashed var(--border-default);
+  border-block-start: 1px solid var(--border-subtle);
   display: flex;
-  justify-content: center;
-  min-block-size: 8rem;
+  flex-direction: column;
   margin-block-start: var(--space-2xs);
-}
-
-.mountLabel {
-  color: var(--ink-muted);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
+  padding-block-start: var(--space-sm);
 }
 
 /* --- redirect ------------------------------------------------------------ */

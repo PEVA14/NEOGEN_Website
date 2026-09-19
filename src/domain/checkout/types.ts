@@ -135,13 +135,21 @@ export interface DeliverySelection {
   price: Money | null;
 }
 
-/** Which step a draft is on. Ordered — the array IS the progression. */
+/**
+ * Which step a draft is on. Ordered — the array IS the progression.
+ *
+ * REVIEW COMES BEFORE PAYMENT. A payment is a charge against an ORDER, and an
+ * order's amounts are frozen at review. Paying first would mean either
+ * charging an amount that could still change, or tokenizing a card and
+ * holding it across steps — so the customer confirms the order, the order is
+ * created, and the card is charged for exactly that order.
+ */
 export const CHECKOUT_STEPS = [
   "contact",
   "shipping",
   "delivery",
-  "payment",
   "review",
+  "payment",
   "confirmation",
 ] as const;
 

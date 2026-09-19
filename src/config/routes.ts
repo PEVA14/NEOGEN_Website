@@ -69,6 +69,13 @@ export const routes = {
    * state in the client would have needed a second, weaker copy of every rule.
    */
   checkoutStep: (step: CheckoutStepId) => `/checkout/${checkoutSegments[step]}`,
+  /**
+   * PAYING ONE ORDER. Addressed by the order, not the draft: the draft is
+   * spent once the order exists, and a declined card must be retryable from a
+   * reload, a second visit or the confirmation page without rebuilding
+   * anything. Access is by the same ownership cookie as the confirmation.
+   */
+  orderPayment: (orderId: string) => `/checkout/pago/${orderId}`,
   /** The confirmation for one order. Not indexable, not guessable-by-sequence. */
   orderConfirmation: (orderId: string) => `/checkout/confirmacion/${orderId}`,
   /**

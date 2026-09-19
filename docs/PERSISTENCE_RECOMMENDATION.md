@@ -1,7 +1,13 @@
 # Durable persistence — recommendation
 
-**Status:** recommendation only. Nothing is integrated. Choosing a vendor and
-creating a production database needs owner approval (Phase 11, Part F).
+**Status (2026-09-19):** the Postgres adapters are BUILT —
+`domain/order/adapters/postgres.ts`, `domain/checkout/adapters/postgres.ts`,
+schema `db/migrations/001_orders.sql`, applied with `npm run db:migrate`, and
+selected by `DATABASE_URL` in `src/server/persistence.ts`. They are tested on
+a real Postgres engine (PGlite) in `check:payments`. What is NOT done:
+choosing the vendor and provisioning the database — that still needs owner
+approval. Live Mercado Pago payments refuse to run without it. The
+notification outbox is still in memory.
 
 **Question:** what should replace the in-memory adapters behind
 `OrderRepository`, `DraftStore` and `NotificationOutbox` (see

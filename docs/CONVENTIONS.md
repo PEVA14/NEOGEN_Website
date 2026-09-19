@@ -413,9 +413,10 @@ the behaviour to preserve.
 entrega,pago,revision}` are server components rendering plain `<form
 action={serverAction}>`. The whole flow works with no client JavaScript: back
 and forward behave, a step can be reloaded, and the validation a customer meets
-is the same code that decides whether an order may be created. There is exactly
-one client island in the flow — `ClearBagOnOrder` — and it exists only because
-the bag lives in the browser.
+is the same code that decides whether an order may be created. Client islands
+in the flow exist only where the browser must act: `ClearBagOnOrder` (the bag
+lives in the browser), `MercadoPagoCardForm` (the processor's card fields) and
+`PaymentWatcher` (asks the server to re-render an in-flight payment).
 
 **Completeness is derived, never stored.** `stepComplete` re-validates the
 draft's stored values; `canEnter` refuses a step whose predecessors are
@@ -429,16 +430,26 @@ there is no rate model: `quote` returns null, `placementBlock` returns
 `delivery_unquotable`, and the delivery step explains it. Never print a
 plausible shipping figure.
 
-**Payment: two gates, three shapes, seven states.** `bagEnabled()` is the flag;
-`paymentAvailable()` additionally needs a configured adapter. `none` never
-configures, so payment cannot be switched on by an environment variable — only
-by registering an adapter, which is a reviewed code change. `PaymentSlot`
-renders all seven states so a failure screen is not designed during a failure.
-**No processor SDK may appear in the output** — `check:output` asserts it.
+**Payment: Mercado Pago behind the adapter boundary.** Full reference:
+`docs/PAYMENTS.md`. `bagEnabled()` is the business flag; `paymentAvailable()`
+additionally needs a configured adapter (Mercado Pago: four environment
+variables, with an explicit `MERCADOPAGO_MODE`) and, in live mode, a
+`DATABASE_URL` — `paymentBlockers()` names what is missing. `none` remains the
+fallback. Review comes BEFORE payment: `placeOrder` freezes the order (only
+when payment is available), and `/checkout/pago/[id]` charges that order's
+total with a token from the Card Payment Brick. **Only a provider answer can
+make an order paid**: `reconcileSnapshot` (external reference and amount must
+match) → `applyPaymentEvent`; `transition()` refuses `paid` outright. A
+payment attempt is claimed under the order's version lock before the provider
+is called (`beginAttempt`), with a stable idempotency key per attempt. **The
+Mercado Pago SDK may appear only in the payment island's chunk** —
+`check:output` asserts it, and bans every other processor's SDK.
 
-**Provider events are idempotent by construction.** An adapter reduces a signed
-callback to `{eventId, providerRef, state}` before anything touches the order.
-`eventId` is the dedupe key, checked globally. Ordering is not handled by
+**Provider events are idempotent by construction.** A webhook is authenticated
+by the adapter (HMAC), and its BODY is never trusted for state: the verified
+reference is re-fetched from the provider. Every snapshot's `eventId` is the
+provider FACT (order + status + detail), so a synchronous answer and all its
+webhook deliveries apply once; it is checked globally. Ordering is not handled by
 comparing timestamps — a late event is simply an illegal transition, and the
 `TRANSITIONS` table refuses it. That is why `paid` cannot regress: no code path
 special-cases it.
@@ -522,7 +533,9 @@ twice. Links to either are rendered under the same condition, and
 **Notifications are provider-independent and cannot fail an order.** The order
 domain does not import them. `server/notifications.ts` builds structured
 messages (facts, not prose), writes them to an outbox, then attempts a channel.
-Today the channel is `none` and every message is left pending.
+The order-placed messages are queued when the provider first confirms payment
+(not at order creation). Today the channel is `none` and every message is left
+pending — nothing is emailed.
 
 ## 14. Discovery area pages (Phase 12.1)
 

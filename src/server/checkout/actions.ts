@@ -18,11 +18,10 @@ import {
   withSnapshot,
 } from "@/domain/checkout";
 import { priceLines, reprice } from "@/domain/checkout/pricing";
-import { createOrder, recordAttempt, transition } from "@/domain/order";
+import { createOrder } from "@/domain/order";
 import { isLocale, type Locale } from "@/i18n/config";
 import { localizePath } from "@/i18n/routing";
-import { activeProvider, bagEnabled } from "@/payments";
-import { notifyOrderPlaced } from "@/server/notifications";
+import { bagEnabled, paymentAvailable } from "@/payments";
 import { orderRepository } from "@/server/persistence";
 
 import { clearDraft, currentDraft, ensureDraft, rememberOrder, saveDraft } from "./session";
@@ -216,26 +215,11 @@ export async function submitDelivery(form: FormData): Promise<void> {
   await saveDraft(next);
 
   if (!method) redirect(stepPath(locale, "delivery"));
-  redirect(stepPath(locale, "payment"));
-}
-
-/**
- * 04 PAYMENT.
- *
- * Collects nothing today and is not pretending to. There is no configured
- * provider, so there is no instrument to choose — the step states that, and
- * continuing records that the customer saw it. When an adapter is registered
- * this is where the instrument choice and the intent creation land.
- */
-export async function continuePayment(form: FormData): Promise<void> {
-  const locale = localeOf(form);
-  const draft = await requireDraft(locale);
-  await saveDraft(markAttempted(draft, "payment"));
   redirect(stepPath(locale, "review"));
 }
 
 /**
- * 05 REVIEW → place the order.
+ * 04 REVIEW → register the order, then pay it.
  *
  * The one action that creates a durable record, and the only place a price is
  * finally committed. The order of operations below is the whole safety
@@ -251,7 +235,12 @@ export async function continuePayment(form: FormData): Promise<void> {
  *   4. FILTER ACKNOWLEDGEMENTS through `accept()`, which drops any id that is
  *      not currently publishable — so a posted consent to an unapproved
  *      declaration is discarded rather than recorded.
- *   5. CREATE and PERSIST, then attempt the payment intent.
+ *   5. REFUSE WITHOUT A PROCESSOR. An order is only registered when it can
+ *      be paid; the unpaid-order path existed only while no processor was
+ *      integrated.
+ *   6. CREATE and PERSIST, then send the customer to pay THAT order. Nothing
+ *      is charged here: the charge happens on the payment step, against the
+ *      order's frozen total, with a token from the provider's own fields.
  */
 export async function placeOrder(form: FormData): Promise<void> {
   const locale = localeOf(form);
@@ -278,76 +267,39 @@ export async function placeOrder(form: FormData): Promise<void> {
     redirect(blockedStep(locale, block));
   }
 
+  if (!paymentAvailable()) {
+    await saveDraft(withAcks);
+    redirect(stepPath(locale, "review"));
+  }
+
   const order = createOrder(
     withAcks,
     normaliseContact(withAcks.contact),
     normaliseAddress(withAcks.address),
+    locale,
   );
   /* Unreachable given `placementBlock`, but a null here must never become a
      thrown error on a customer's screen. */
   if (!order) redirect(stepPath(locale, "review"));
 
-  const repository = orderRepository();
-  const created = await repository.create(order);
+  const created = await orderRepository().create(order);
   if (!created.ok) redirect(stepPath(locale, "review"));
-
-  /*
-   * ASK THE PROVIDER TO OPEN A PAYMENT.
-   *
-   * `none` refuses, always — so today this records a refused attempt and the
-   * order stays in `created`. The confirmation page reads that state and says
-   * plainly that no payment was taken. The success branches are written
-   * because they are the shape a real adapter meets, and because writing them
-   * later would mean rewriting this action.
-   */
-  const provider = activeProvider();
-  const at = new Date().toISOString();
-  const intent = await provider.createIntent(created.order);
-
-  let placed = created.order;
-  if (intent.ok) {
-    placed = recordAttempt(placed, {
-      provider: provider.id,
-      at,
-      outcome: "intent_created",
-      providerRef: intent.providerRef,
-    });
-    /*
-     * A REDIRECT or INSTRUCTIONS intent means the customer still has to act,
-     * so the order is awaiting them. An EMBEDDED intent is paid in-page and
-     * stays in `created` until the provider says otherwise — we must never
-     * advance a state on the strength of having asked.
-     */
-    if (intent.action.kind !== "embedded") {
-      placed = transition(placed, "pending_payment", at) ?? placed;
-    }
-  } else {
-    placed = recordAttempt(placed, {
-      provider: provider.id,
-      at,
-      outcome: "intent_refused",
-      errorCode: intent.error.code,
-    });
-  }
-
-  const saved = await repository.save(placed);
-  const final = saved.ok ? saved.order : created.order;
 
   /* Mark the draft spent BEFORE clearing it, so a race that re-reads the
      draft finds the order id rather than an orderable basket. */
-  await saveDraft(touch(withAcks, { orderId: final.id }));
-  await rememberOrder(final.id);
+  await saveDraft(touch(withAcks, { orderId: created.order.id }));
+  await rememberOrder(created.order.id);
   await clearDraft();
 
   /*
-   * NOTIFICATIONS — after the order is durable, never before, and never able
-   * to fail it. `notifyOrderPlaced` swallows its own errors: an order that
-   * was recorded has been placed, whether or not an email went out. Today no
-   * channel is registered, so both messages are queued as pending.
+   * The bag is NOT cleared here. Until the provider confirms a payment the
+   * customer may still decline and walk away, and their bag should be where
+   * they left it. The confirmation page clears it once money is in flight.
+   *
+   * The order-placed messages are not sent here either — they go when the
+   * provider first confirms payment (`server/payments.ts`).
    */
-  await notifyOrderPlaced(final, locale);
-
-  redirect(localizePath(routes.orderConfirmation(final.id), locale));
+  redirect(localizePath(routes.orderPayment(created.order.id), locale));
 }
 
 /** Send a blocked customer to the step that can unblock them. */

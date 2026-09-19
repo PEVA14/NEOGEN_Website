@@ -96,3 +96,114 @@
   line-height: var(--leading-normal);
   max-inline-size: 60ch;
 }
+
+/* --- 05 payment --------------------------------------------------------------
+ * The facts the customer is agreeing to (which order, how much) sit above the
+ * provider's fields as a two-line record, so the amount is read in NEOGEN's
+ * type before it is typed against in Mercado Pago's.
+ */
+.payFacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs) var(--space-xl);
+  margin: 0;
+  padding-block: var(--space-sm);
+  border-block: 1px solid var(--border-subtle);
+}
+
+.payKey {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.payValue {
+  margin: 0;
+  color: var(--ink-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-lg);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Test credentials: said plainly, in the page's own voice, never hidden. */
+.testMode {
+  margin: 0;
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px dashed var(--border-strong);
+  color: var(--ink-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  line-height: var(--leading-snug);
+  text-transform: uppercase;
+}
+
+.retry {
+  border-inline-start: 2px solid var(--status-error);
+  padding-inline-start: var(--space-sm);
+}
+
+.retryTitle {
+  margin: 0;
+  color: var(--status-error-ink);
+  font-weight: 600;
+}
+
+.retryNote {
+  margin: 0;
+  color: var(--ink-secondary);
+  font-size: var(--text-sm);
+  max-inline-size: 52ch;
+}
+
+.provider {
+  margin: 0;
+  margin-block-start: var(--space-xs);
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.backLink {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 2.75rem;
+  color: var(--ink-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+}
+
+.backLink:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}
+
+/* The one action a payable order's confirmation offers. */
+.payAction {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 3rem;
+  margin-block: var(--space-sm);
+  padding-inline: var(--space-lg);
+  background: var(--surface-inverse);
+  color: var(--ink-inverse);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.payAction:hover {
+  background: var(--neogen-graphite);
+}
+
+.payAction:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}

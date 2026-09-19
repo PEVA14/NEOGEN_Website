@@ -23,3 +23,5 @@ export { OrderReceipt, type ReceiptCopy } from "./OrderReceipt";
 export { DeliveryOptions, type DeliveryCopy } from "./DeliveryOptions";
 export { formatDays, type DayCount } from "./days";
 export { ClearBagOnOrder } from "./ClearBagOnOrder";
+export { MercadoPagoCardForm, type CardFormCopy } from "./MercadoPagoCardForm";
+export { PaymentWatcher } from "./PaymentWatcher";

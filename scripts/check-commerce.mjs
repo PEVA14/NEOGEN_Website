@@ -20,6 +20,7 @@ import {
 } from "../src/domain/bag/index.ts";
 import {
   canTransition,
+  isPayable,
   isSettled,
   newOrderId,
   quote,
@@ -28,12 +29,22 @@ import {
 } from "../src/domain/order/index.ts";
 import { ORDER_LIMITS } from "../src/data/commerce/limits.ts";
 import { siteConfig } from "../src/config/site.ts";
-import { activeProvider, bagEnabled, paymentAvailable } from "../src/payments/index.ts";
+import {
+  activeProvider,
+  bagEnabled,
+  commerceEnabled,
+  paymentAvailable,
+  paymentBlockers,
+} from "../src/payments/index.ts";
 
 const failures = [];
 const fail = (what, detail) => failures.push(`${what}: ${detail}`);
 const eq = (actual, expected, what) => {
   if (actual !== expected) fail(what, `expected ${expected}, got ${actual}`);
+};
+
+const ok = (cond, what) => {
+  if (!cond) fail(what, "expected true");
 };
 
 const mxn = (amount) => ({ amount, currency: "MXN" });
@@ -136,6 +147,14 @@ for (const state of ["created", "pending_payment", "payment_processing", "paymen
   if (canTransition("paid", state)) fail("paid must not regress", `paid -> ${state}`);
 }
 if (!canTransition("paid", "refunded")) fail("paid must allow a refund", "paid -> refunded");
+if (!canTransition("paid", "disputed")) fail("paid must allow a dispute", "paid -> disputed");
+/* A paid order cannot be cancelled — only refunded or disputed. */
+if (canTransition("paid", "cancelled")) fail("paid must not be cancellable", "paid -> cancelled");
+/* Money in flight blocks a new attempt: only created/payment_failed are payable. */
+for (const s of STATES) {
+  const payable = s === "created" || s === "payment_failed";
+  if (isPayable(s) !== payable) fail("payable states are exactly created and payment_failed", s);
+}
 
 for (const terminal of ["cancelled", "refunded"]) {
   if (TRANSITIONS[terminal].length !== 0) fail("terminal state has outgoing transitions", terminal);
@@ -229,6 +248,7 @@ const fixture = {
   delivery: { methodId: "local-priority", route: "priority", estimateDays: 1, price: mxn(0) },
   route: "priority",
   acknowledged: [],
+  locale: "es",
   providerRef: null,
   provider: null,
   attempts: [],
@@ -236,15 +256,18 @@ const fixture = {
 };
 
 /*
- * An order cannot jump straight to paid: it has to have been attempted.
- * That is deliberate — a "mark as paid" shortcut is how money goes missing.
+ * NOTHING BUT THE PROVIDER'S ANSWER MAKES AN ORDER PAID. The table allows
+ * `created → paid` (a card can be approved in one step), so `transition` —
+ * the bare, unaudited mover — refuses `paid` from every state. A "mark as
+ * paid" shortcut is how money goes missing.
  */
-if (transition(fixture, "paid") !== null) fail("created must not jump to paid", "accepted");
+for (const s of STATES) {
+  if (transition({ ...fixture, state: s }, "paid") !== null)
+    fail("transition() must never set paid", s);
+}
 const pending = transition(fixture, "pending_payment");
 if (!pending) fail("created -> pending_payment is legal", "refused");
-if (pending && transition(pending, "paid") === null) {
-  fail("pending_payment -> paid is legal", "refused");
-}
+if (!canTransition("pending_payment", "paid")) fail("pending_payment -> paid is legal", "refused");
 if (transition({ ...fixture, state: "paid" }, "payment_processing") !== null) {
   fail("a redelivered event must not un-pay a paid order", "accepted");
 }
@@ -262,13 +285,72 @@ if (!/^NG-[0-9A-Z]+-[0-9A-Z]{3}$/.test(newOrderId())) fail("order id shape", new
 /* ---- payment gates ---------------------------------------------------- */
 
 /*
- * The safety property of this whole phase: payment cannot be enabled without
- * registering a real adapter. `none` never configures, so no environment
- * variable can turn purchasing on.
+ * THE GATES NOW THAT A PROCESSOR EXISTS.
+ *
+ *   No credentials in the environment  → `none` is active, payment unavailable.
+ *   Mercado Pago TEST credentials       → Mercado Pago is active; payment is
+ *                                         available only with the commerce flag.
+ *   Mercado Pago LIVE credentials       → additionally refused without a
+ *                                         DATABASE_URL: live money never runs on
+ *                                         memory storage.
+ *
+ * The environment is set and restored around each case, so this proves the
+ * gate logic rather than whatever the shell running the check happens to hold.
  */
-eq(activeProvider().id, "none", "the only registered provider is none");
-eq(activeProvider().isConfigured(), false, "none is never configured");
-eq(paymentAvailable(), false, "payment is unavailable with only the none adapter");
+const MP_KEYS = [
+  "MERCADOPAGO_MODE",
+  "MERCADOPAGO_ACCESS_TOKEN",
+  "MERCADOPAGO_PUBLIC_KEY",
+  "MERCADOPAGO_WEBHOOK_SECRET",
+  "DATABASE_URL",
+];
+const savedEnv = Object.fromEntries(MP_KEYS.map((k) => [k, process.env[k]]));
+const setEnv = (values) => {
+  for (const k of MP_KEYS) delete process.env[k];
+  Object.assign(process.env, values);
+};
+const TEST_ENV = {
+  MERCADOPAGO_MODE: "test",
+  MERCADOPAGO_ACCESS_TOKEN: "APP_USR-test-access-token",
+  MERCADOPAGO_PUBLIC_KEY: "APP_USR-test-public-key",
+  MERCADOPAGO_WEBHOOK_SECRET: "test-webhook-secret",
+};
+
+setEnv({});
+eq(activeProvider().id, "none", "with no credentials the active provider is none");
+eq(paymentAvailable(), false, "with no credentials payment is unavailable");
+ok(
+  paymentBlockers().includes("provider_unconfigured"),
+  "the missing provider is named as a blocker",
+);
+
+setEnv({ ...TEST_ENV, MERCADOPAGO_MODE: "sandbox" });
+eq(activeProvider().id, "none", "an unrecognised MERCADOPAGO_MODE configures nothing");
+
+setEnv({ ...TEST_ENV, MERCADOPAGO_WEBHOOK_SECRET: "" });
+eq(activeProvider().id, "none", "Mercado Pago without a webhook secret does not configure");
+
+setEnv(TEST_ENV);
+eq(activeProvider().id, "mercadopago", "test credentials activate Mercado Pago");
+eq(activeProvider().mode(), "test", "and it reports test mode");
+eq(paymentAvailable(), commerceEnabled, "test mode is available exactly when commerce is enabled");
+
+setEnv({ ...TEST_ENV, MERCADOPAGO_MODE: "live" });
+ok(
+  paymentBlockers().includes("live_without_database"),
+  "live credentials without a DATABASE_URL are refused",
+);
+eq(paymentAvailable(), false, "live mode never runs on memory storage");
+
+setEnv({ ...TEST_ENV, MERCADOPAGO_MODE: "live", DATABASE_URL: "postgres://example/neogen" });
+ok(
+  !paymentBlockers().includes("live_without_database"),
+  "live credentials with a database are not blocked by storage",
+);
+
+setEnv(savedEnv);
+for (const [k, v] of Object.entries(savedEnv)) if (v === undefined) delete process.env[k];
+
 if (bagEnabled() !== (process.env.NEXT_PUBLIC_COMMERCE_ENABLED === "true")) {
   fail("bagEnabled must follow the commerce flag", String(bagEnabled()));
 }

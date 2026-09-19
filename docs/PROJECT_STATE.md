@@ -1,6 +1,9 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-09-18**: **Atlas is frozen and deferred to V2** (§8m).
+Last updated **2026-09-19**: **the checkout pays through Mercado Pago in test
+mode** (§8t, `docs/PAYMENTS.md`). Production payment is blocked on merchant
+eligibility, credentials and the launch blockers in §6 — not on code.
+**Atlas is frozen and deferred to V2** (§8m).
 The priority is a complete, commercially effective V1 built from what already
 exists. The commerce pass (§8n) and the PDP record pass (§8o) are done, and
 the V1 audit ledger is in §8p.
@@ -17,6 +20,11 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 
 ### Start here: handoff of 2026-09-18
 
+- **Latest (2026-09-19): Mercado Pago checkout (§8t).** Committed; STOPPED for
+  the owner. Next step is the owner's: create the Mercado Pago application and
+  put its TEST credentials in `.env.local` (`docs/PAYMENTS.md` §9–§11), then
+  run one test purchase. Homepage review round 2 (§8s) is committed separately
+  just before it.
 - **Tree.** `main`. The storefront follow-ups (§8q) and the product-media
   studio (§8r) are committed together. Nothing is pushed. Every gate passed;
   axe and overflow were clean on the catalogue, the area pages and the
@@ -85,7 +93,8 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 | `5e76e06`   | PDP record pass: record rhythm, alternating grounds, research folded into the profile, swiped related shelves (§8o)             |
 | `81ff312`   | The /productos storefront: masthead, area shelf, store card, paging (§8q)                                                       |
 | `1ebbc21`   | Storefront follow-ups (§8q) and the product-media studio: RETA still, neutral prototype (§8r)                                   |
-| _this_      | Homepage pass: condensing hero, gateway, three worlds, area explorer, closing shelf (§8s)                                       |
+| `53ced06` … | Homepage pass and owner review rounds: gateway, RETA, GLOW, GHK-Cu, catalogue directory, area caps, performance (§8s)           |
+| _this_      | Mercado Pago checkout: Orders API + Card Payment Brick, webhook HMAC, Postgres adapters, review-before-payment (§8t)            |
 
 **Current priority (owner, 2026-09-17): V1 completion.** Make NEOGEN V1 as
 complete, polished and commercially effective as possible with the
@@ -212,7 +221,9 @@ also encoded in `src/config/site.ts`; anything undecided there is `null`.
 
 1. **Classification review** (regulatory). Gates the payment processor and is
    what any underwriter will ask for.
-2. **Payment processor.** Research done after the Phase 7 questionnaire found
+2. **Payment processor — merchant eligibility.** The Mercado Pago integration
+   is built and works in test mode (§8t), but that says nothing about whether
+   Mercado Pago will ACCEPT this catalogue in production. Research done after the Phase 7 questionnaire found
    no mainstream processor that accepts this catalogue: Stripe, PayPal, Square
    and Shopify Payments prohibit it; Mercado Pago prohibits medicamentos
    without registro sanitario; Conekta prohibits prescription/regulated
@@ -229,10 +240,13 @@ also encoded in `src/config/site.ts`; anything undecided there is `null`.
    not a determination.
 6. **Legal policies:** Terms, Privacy, returns (with the 18+ line). None are
    approved, so none render.
-7. **Persistence:** approve Neon (see `docs/PERSISTENCE_RECOMMENDATION.md`), and
+7. **Persistence:** the Postgres adapters are built (§8t); approve and
+   provision Neon (see `docs/PERSISTENCE_RECOMMENDATION.md`), and
    get counsel's answer on the privacy notice and international transfer under
-   the 2025 LFPDPPP — no vendor offers a Mexico region. Orders, drafts and the
-   notification outbox are in-memory today.
+   the 2025 LFPDPPP — no vendor offers a Mexico region. Without a
+   `DATABASE_URL`, orders and drafts are in memory (test mode only — live
+   Mercado Pago refuses to run on it); the notification outbox is in memory
+   regardless.
 8. **Email provider** and the internal operations destination (inbox or chat).
    8a. **Atlas questionnaire v4 asks for sensitive data** (§8k). None of it leaves
    the browser and none of it is used, but asking still needs counsel on the
@@ -1568,6 +1582,84 @@ focus follows, and the ground changes per area. Heights: desktop 10,900 →
 - Whether the area tiles (03) and the explorer (04) are both wanted, or one
   should absorb the other.
 - The molecular mark, if one exists outside the repo.
+
+## 8t. Mercado Pago checkout (test mode)
+
+Owner brief of 2026-09-19 (given while away): make the V1 checkout genuinely
+functional with Mercado Pago's Checkout API / Orders API, behind the existing
+adapter boundary, test credentials first; no homepage, catalogue, Atlas or 3D
+work. Full technical reference: **`docs/PAYMENTS.md`**.
+
+**What exists now**
+
+- `src/payments/adapters/mercadopago/`: config (4 env vars, explicit
+  `MERCADOPAGO_MODE`), the Orders API vocabulary (every documented
+  status → NEOGEN state / decline reason), webhook HMAC, and the adapter
+  (`charge` → `POST /v1/orders` with `X-Idempotency-Key`, `fetchStatus`,
+  `verifyWebhook`, `refund`). Registered ahead of `none`.
+- The `PaymentProvider` contract was rewritten around what an embedded card
+  flow needs: `prepare`, `charge`, `fetchStatus`, `verifyWebhook`, `refund`.
+- `src/payments/reconcile.ts`: the one path to every payment state. Checks the
+  external reference and, for `paid`, the exact amount.
+- `src/server/payments.ts`: `submitPayment` (claim under the version lock →
+  charge → reconcile), `refreshPayment` (revisits re-fetch in-flight orders,
+  release stalled attempts after 15 min), `settleFromProvider` (webhooks).
+- Order domain: new `disputed` state; widened transitions (`created → paid`,
+  `payment_failed → payment_processing/paid`, `payment_processing →
+pending_payment`); attempts carry an outcome lifecycle and a stable
+  idempotency key; `transition()` can never set `paid`; orders carry `locale`.
+- Checkout: **review now comes before payment.** `placeOrder` creates the
+  order only when payment is available and sends the customer to
+  `/checkout/pago/[id]` (the old `/checkout/pago` redirects to review). The
+  payment page renders the Card Payment Brick themed with NEOGEN tokens, a
+  test-mode banner, the decline reason and a fresh form on retry. The
+  confirmation refreshes in-flight payments, offers "pay" / "retry", and
+  clears the bag only once money is moving.
+- Webhook route: verify signature (401), fetch the order from Mercado Pago,
+  dedupe on the provider fact, apply. Body is never trusted for state.
+- Durable persistence: Postgres adapters for orders and drafts, migration,
+  `npm run db:migrate`; selected by `DATABASE_URL`. Live mode requires it.
+- Notifications: order-placed messages are now queued when payment is first
+  confirmed, not at order creation. Still queued as `pending`; nothing is sent.
+- Copy (ES/EN): payment step, 13 decline reasons, confirmation states
+  including `disputed`; every "no processor exists" sentence removed; the
+  regulatory-review wording kept.
+- Tests: `npm run check:payments` (in `npm run check`) — 189 assertions,
+  scripted Orders API + PGlite. Negative controls run: removing the amount
+  check or the signature check fails it on the right assertions.
+- Dependencies added: `pg` (runtime, Postgres driver); `@types/pg` and
+  `@electric-sql/pglite` (dev, tests only).
+
+**Gates changed**
+
+- The `none`-only registry and "no environment variable can enable payment"
+  invariants are replaced by: payment requires the commerce flag + a fully
+  configured provider + (live) a database, asserted case by case in
+  `check:commerce`.
+- The unpaid-order path is gone: without a processor, review blocks with
+  `payment_unavailable` instead of registering an order nobody can pay.
+- `check:output` rule 6: the Mercado Pago SDK may appear only in the payment
+  island's chunk; every other processor's SDK stays banned.
+- Kept: `NEXT_PUBLIC_COMMERCE_ENABLED` (a business decision, not a technical
+  one), the MX$10,000 shipping stop, repricing, ownership cookies, noindex.
+
+**Browser QA (production build, placeholder test keys, 375 and 1440, ES/EN)**
+
+Full walk bag → contact → shipping → delivery → review → payment →
+confirmation: a tampered bag price was repriced and disclosed; axe clean on
+review, payment and confirmation; no overflow; reload stays on the payment
+page; another browser gets "not found"; the bag is kept for an unpaid order.
+With a placeholder public key the Brick cannot initialise, and after 20 s the
+page shows the load error with a reload action (it previously would have
+spun forever). A real Brick has **not** been seen rendering: that needs the
+owner's test public key.
+
+**Owner decisions opened by this work**
+
+- Whether to send line items (product names) to Mercado Pago.
+- Meses sin intereses; SPEI/OXXO; 3-D Secure challenge UI (all architected,
+  none enabled).
+- An operations view (paid orders, disputes, refunds) — none exists.
 
 ## 9. Recommendation for Phase 13 (not approved)
 

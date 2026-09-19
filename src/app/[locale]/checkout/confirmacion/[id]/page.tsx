@@ -1,15 +1,20 @@
 import { notFound } from "next/navigation";
 
-import { ClearBagOnOrder, FlowNotice, OrderReceipt } from "@/components/checkout";
+import { ClearBagOnOrder, FlowNotice, OrderReceipt, PaymentWatcher } from "@/components/checkout";
 import { SectionHeader } from "@/components/layout";
 import { Container, Section } from "@/components/primitives";
 import { routes } from "@/config/routes";
 import { formatAddress } from "@/domain/checkout";
+import { isPayable } from "@/domain/order";
 import { isLocale, localeTags } from "@/i18n/config";
 import { getDictionary } from "@/i18n/getDictionary";
 import { localizePath } from "@/i18n/routing";
+import { paymentAvailable } from "@/payments";
 import { ownsOrder } from "@/server/checkout/session";
+import { refreshPayment } from "@/server/payments";
 import { orderRepository } from "@/server/persistence";
+
+import styles from "../../page.module.css";
 
 import type { Metadata } from "next";
 
@@ -72,10 +77,15 @@ export async function generateMetadata({
  * V1 does not have — and inventing a weaker one that felt like identity would
  * be worse than saying so.
  *
- * WHAT IT NEVER DOES: claim payment. The heading comes from `order.state`, and
- * with no configured provider that state is `created` — so the page says
- * plainly that nothing was charged. There is no success tick anywhere in this
- * component tree.
+ * WHAT IT NEVER DOES: claim payment. The heading comes from `order.state`,
+ * which only the provider's answer can move (`server/payments.ts`). While a
+ * payment is in flight the order is refreshed from the provider on each
+ * render and the page re-renders itself (`PaymentWatcher`); a payable order
+ * links back to its payment step. There is no success tick anywhere in this
+ * component tree that the state did not put there.
+ *
+ * THE BAG is emptied only once money is moving or taken. A declined or
+ * abandoned payment leaves it as it was.
  */
 export default async function ConfirmationPage({
   params,
@@ -95,7 +105,8 @@ export default async function ConfirmationPage({
    * by response, from a reference that does not exist.
    */
   const owned = await ownsOrder(id);
-  const order = owned ? await orderRepository().get(id) : null;
+  const stored = owned ? await orderRepository().get(id) : null;
+  const order = stored ? await refreshPayment(stored) : null;
 
   if (!order) {
     return (
@@ -127,8 +138,21 @@ export default async function ConfirmationPage({
           as="h1"
         />
 
-        {/* The one client island in the flow — see the component. */}
-        <ClearBagOnOrder orderId={order.id} />
+        {order.state === "paid" ||
+        order.state === "payment_processing" ||
+        order.state === "pending_payment" ? (
+          <ClearBagOnOrder orderId={order.id} />
+        ) : null}
+
+        {order.state === "payment_processing" || order.state === "pending_payment" ? (
+          <PaymentWatcher watching={copy.watching} stopped={copy.watchStopped} />
+        ) : null}
+
+        {isPayable(order.state) && paymentAvailable() ? (
+          <a href={path(routes.orderPayment(order.id))} className={styles.payAction}>
+            {order.state === "payment_failed" ? copy.actions.retry : copy.actions.pay} →
+          </a>
+        ) : null}
 
         <OrderReceipt
           order={order}

@@ -5,6 +5,7 @@ import styles from "./PaymentSlot.module.css";
 
 import type { Money } from "@/data/commerce";
 import type { PaymentErrorCode } from "@/payments";
+import type { ReactNode } from "react";
 
 /**
  * THE PAYMENT STEP — every state a processor can put us in, and one of them live.
@@ -21,23 +22,21 @@ import type { PaymentErrorCode } from "@/payments";
  * whether it is talking to Mercado Pago, Clip or a bank transfer reference.
  * Adding a provider therefore adds no state and no branch here.
  *
- * NO SDK IS LOADED, EVER, and certainly not on a page where no provider
- * exists. The `embedded` branch renders an empty, labelled MOUNT POINT — the
- * processor's own hosted fields go there when there is one. It does not render
- * card inputs, because a card number must never pass through markup this
- * project authors, and hand-rolling one on a site with no processor behind it
- * would be dangerous as well as wrong.
+ * NO CARD INPUT IS EVER AUTHORED HERE. The `embedded` branch is a frame
+ * whose contents are the provider's own client island (for Mercado Pago, the
+ * Card Payment Brick in `MercadoPagoCardForm`), passed in as children. A card
+ * number never passes through markup this project writes.
  *
- * THE INACTIVE STATE IS DESIGNED, not disabled. `no_provider` is what every
- * customer sees today, so it gets a real frame, a real explanation and a real
- * next action — the phone number that is NEOGEN's only live channel. A greyed
- * box would read as a broken build; this reads as a deliberate stage.
+ * THE INACTIVE STATE IS DESIGNED, not disabled. `no_provider` gets a real
+ * frame, a real explanation and a real next action — the phone number that is
+ * NEOGEN's live channel — because "intentional" and "broken" look identical
+ * when the answer is a greyed box.
  */
 export type PaymentView =
-  /** No adapter configured. The only reachable state today. */
+  /** No adapter configured. */
   | { kind: "no_provider" }
-  /** The processor's hosted fields mount into our page. */
-  | { kind: "embedded"; publicToken: string }
+  /** The processor's hosted fields mount into our page (as children). */
+  | { kind: "embedded" }
   /** We hand the customer to the processor and they come back. */
   | { kind: "redirect"; url: string }
   /** SPEI or similar: a reference the customer takes to their bank. */
@@ -77,8 +76,11 @@ export function PaymentSlot({
   copy,
   localeTag,
   contact,
+  children,
 }: {
   view: PaymentView;
+  /** The provider's client island, for the `embedded` state. */
+  children?: ReactNode;
   copy: PaymentSlotCopy;
   localeTag: string;
   /** NEOGEN's only live channel, for the states where there is nothing to click. */
@@ -114,16 +116,8 @@ export function PaymentSlot({
       ) : null}
 
       {view.kind === "embedded" ? (
-        /*
-         * THE MOUNT POINT. Empty by design — the processor's hosted component
-         * attaches here. `aria-hidden` because until it is mounted there is
-         * nothing to announce, and a labelled empty region would be a promise
-         * of a control that is not there.
-         */
-        <div className={styles.mount} aria-hidden="true" data-mount="payment">
-          <Mono size="2xs" className={styles.mountLabel}>
-            {copy.states.embedded.mountLabel}
-          </Mono>
+        <div className={styles.mount} aria-label={copy.states.embedded.mountLabel} role="group">
+          {children}
         </div>
       ) : null}
 

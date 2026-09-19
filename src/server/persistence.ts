@@ -1,7 +1,10 @@
 import "server-only";
 
+import { createPostgresDraftStore } from "@/domain/checkout/adapters/postgres";
 import { memoryDraftStore } from "@/domain/checkout/adapters/memory";
+import { createPostgresOrderRepository } from "@/domain/order/adapters/postgres";
 import { memoryOrderRepository } from "@/domain/order/adapters/memory";
+import { postgresClient } from "@/server/db/postgres";
 
 import type { DraftStore } from "@/domain/checkout/store";
 import type { OrderRepository } from "@/domain/order/repository";
@@ -9,26 +12,29 @@ import type { OrderRepository } from "@/domain/order/repository";
 /**
  * WHERE THE ADAPTERS ARE CHOSEN — the one file that knows.
  *
- * Two functions, four lines of logic, and the entire production storage
- * migration is contained by them. Nothing else in the application imports an
- * adapter: routes and actions ask for an `OrderRepository`, and the domain
- * takes one as an argument.
+ * `DATABASE_URL` set → Postgres (`db/migrations/001_orders.sql` must have been
+ * applied: `npm run db:migrate`). Unset → the in-memory development adapters.
+ * Nothing else in the application imports an adapter: routes and actions ask
+ * for an `OrderRepository`, and the domain takes one as an argument.
  *
- * `server-only` is imported at the top so this cannot be pulled into a client
- * bundle. That is not tidiness — the adapters hold customer addresses and
- * order contents in a process-global map, and a build that shipped this file
- * to a browser would be shipping the shape of NEOGEN's order store to
- * everyone. The import turns that into a build error.
+ * MEMORY IS NOT PRODUCTION STORAGE, and the payment gate enforces that rather
+ * than trusting this comment: `paymentBlockers()` refuses LIVE Mercado Pago
+ * credentials without a `DATABASE_URL`. Test mode may run on memory, which is
+ * what makes a local test purchase possible with no database at all.
  *
- * TODO(pre-launch): register a durable adapter here. See the production
- * blocker documented on `domain/order/adapters/memory.ts` — the decision is
- * the owner's, because it is a privacy and cost question before a technical
- * one, and Mexican customer addresses are personal data.
+ * `server-only` keeps this — and the customer data it reaches — out of every
+ * client bundle.
  */
+export function storageKind(): "postgres" | "memory" {
+  return process.env.DATABASE_URL?.trim() ? "postgres" : "memory";
+}
+
 export function orderRepository(): OrderRepository {
-  return memoryOrderRepository;
+  const url = process.env.DATABASE_URL?.trim();
+  return url ? createPostgresOrderRepository(postgresClient(url)) : memoryOrderRepository;
 }
 
 export function draftStore(): DraftStore {
-  return memoryDraftStore;
+  const url = process.env.DATABASE_URL?.trim();
+  return url ? createPostgresDraftStore(postgresClient(url)) : memoryDraftStore;
 }

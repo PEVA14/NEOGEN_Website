@@ -48,7 +48,7 @@ import {
 } from "../src/domain/checkout/index.ts";
 import { priceLines, reprice, fingerprint } from "../src/domain/checkout/pricing.ts";
 import { memoryDraftStore, __resetDraftStore } from "../src/domain/checkout/adapters/memory.ts";
-import { applyPaymentEvent, recordAttempt } from "../src/domain/order/events.ts";
+import { answerAttempt, applyPaymentEvent, beginAttempt } from "../src/domain/order/events.ts";
 import { createOrder, quote, transition } from "../src/domain/order/index.ts";
 import { mutate } from "../src/domain/order/repository.ts";
 import { memoryOrderRepository, __resetOrderStore } from "../src/domain/order/adapters/memory.ts";
@@ -377,7 +377,7 @@ eq(missingAcknowledgements(ready).length, 0, "no acknowledgements are required t
 
 /* ---- order creation ----------------------------------------------------- */
 
-const order = createOrder(ready, normaliseContact(CONTACT), normaliseAddress(ADDRESS));
+const order = createOrder(ready, normaliseContact(CONTACT), normaliseAddress(ADDRESS), "es");
 ok(order !== null, "a ready draft creates an order");
 eq(order.state, "created", "a new order starts in `created`, never `paid`");
 eq(order.status, "placed", "fulfilment status starts at `placed`");
@@ -398,26 +398,34 @@ ok(
 
 /* An unquotable or empty draft creates nothing. */
 eq(
-  createOrder(createDraft("x"), normaliseContact(CONTACT), normaliseAddress(ADDRESS)),
+  createOrder(createDraft("x"), normaliseContact(CONTACT), normaliseAddress(ADDRESS), "es"),
   null,
   "no order from an empty draft",
 );
 eq(
-  createOrder(noDelivery, normaliseContact(CONTACT), normaliseAddress(ADDRESS)),
+  createOrder(noDelivery, normaliseContact(CONTACT), normaliseAddress(ADDRESS), "es"),
   null,
   "no order without a delivery selection",
 );
 
 /* ---- payment events: idempotency, ordering, non-regression -------------- */
 
-const base = createOrder(ready, normaliseContact(CONTACT), normaliseAddress(ADDRESS));
-const withRef = recordAttempt(base, {
-  provider: "test",
-  at: "2026-09-10T10:00:00.000Z",
-  outcome: "intent_created",
+const base = createOrder(ready, normaliseContact(CONTACT), normaliseAddress(ADDRESS), "es");
+const claimed = beginAttempt(base, { provider: "test", at: "2026-09-10T10:00:00.000Z" });
+ok(claimed !== null, "a created order can begin a payment attempt");
+eq(claimed.state, "payment_processing", "a claimed attempt holds the order in processing");
+eq(
+  beginAttempt(claimed, { provider: "test", at: "x" }),
+  null,
+  "a second attempt cannot start while one is open",
+);
+const withRef = answerAttempt(claimed, {
+  at: "2026-09-10T10:00:01.000Z",
+  outcome: "answered",
   providerRef: "pay_1",
 });
 eq(withRef.attempts.length, 1, "an attempt is recorded");
+eq(withRef.attempts[0].outcome, "answered", "the attempt records the provider's answer");
 eq(withRef.providerRef, "pay_1", "the provider reference is stored");
 
 const event = (state, id = "evt_1", ref = "pay_1") => ({
@@ -633,10 +641,13 @@ eq(progression(ready, "review").length, 6, "the progression has six steps");
 /* ---- payment availability --------------------------------------------- */
 
 /*
- * The safety property of the phase: no environment variable can enable
- * payment. `none` is the only registered adapter and it never configures.
+ * With no processor credentials in the environment — which is how the gates
+ * run — payment is unavailable. The Mercado Pago gate cases themselves are in
+ * `check:commerce`; the end-to-end payment journey is `check:payments`.
  */
-eq(paymentAvailable(), false, "payment is unavailable — no adapter is configured");
+if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+  eq(paymentAvailable(), false, "payment is unavailable without processor credentials");
+}
 
 /* ---- snapshot freshness ------------------------------------------------ */
 

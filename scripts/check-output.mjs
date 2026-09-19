@@ -214,32 +214,45 @@ for (const file of htmlFiles) {
   }
 }
 
-/* --------------------------------------------- 6. no payment SDK is loaded
+/* ------------------------------ 6. the payment SDK loads in one place only
  *
- * NEOGEN has no configured payment processor, so no processor's JavaScript
- * may be in the output. This is not a hypothetical: adding an SDK "ready for
- * later" is the ordinary way a site starts making third-party requests on a
- * page that has no payment to take, and on a checkout that would be sending
- * customers' presence to a provider they never chose.
+ * Mercado Pago's SDK is loaded by exactly one client island — the card form
+ * on the payment step (`MercadoPagoCardForm`, marked `data-payment-island`).
+ * It must not appear in any other client asset or in any prerendered HTML:
+ * a processor's script on the homepage or a product page would be sending
+ * every visitor's presence to a third party with no payment to take.
+ *
+ * No OTHER processor's SDK may appear anywhere — Mercado Pago is the only
+ * integrated provider.
  */
-const PAYMENT_SDKS = [
+const MERCADOPAGO_SDK = "sdk.mercadopago.com";
+const OTHER_SDKS = [
   "js.stripe.com",
-  "sdk.mercadopago.com",
   "mercadopago.min.js",
   "js.clip.mx",
   "conekta.js",
   "openpay",
   "paypal.com/sdk",
-  "checkout.js",
 ];
+let sdkAssets = 0;
 for (const file of [...clientAssets, ...htmlFiles]) {
   const text = readFileSync(file, "utf8");
-  for (const sdk of PAYMENT_SDKS) {
-    if (text.includes(sdk)) {
-      fail("a payment SDK reference is in the output", `"${sdk}" in ${file}`);
+  for (const sdk of OTHER_SDKS) {
+    if (text.includes(sdk))
+      fail("a non-integrated payment SDK is in the output", `"${sdk}" in ${file}`);
+  }
+  if (text.includes(MERCADOPAGO_SDK)) {
+    if (file.endsWith(".html")) {
+      fail("the Mercado Pago SDK is referenced by prerendered HTML", file);
+    } else if (!text.includes("data-payment-island")) {
+      fail("the Mercado Pago SDK is referenced outside the payment island", file);
+    } else {
+      sdkAssets += 1;
     }
   }
 }
+if (sdkAssets > 1)
+  fail("the Mercado Pago SDK must live in one client chunk", `${sdkAssets} chunks`);
 
 /* --------------------------------------------- 7. trust states are real
  *

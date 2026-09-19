@@ -46,9 +46,15 @@ export function CheckoutProgress({
   hrefFor: (step: CheckoutStepId) => string | null;
 }) {
   const total = steps.length;
+  /*
+   * The bar scrolls sideways on a phone. When no step is a link (the payment
+   * step, where earlier steps are frozen into the order) nothing inside it can
+   * take focus, so the bar itself does — or a keyboard user could not scroll it.
+   */
+  const anyLinked = steps.some((s) => s.complete && !s.current && hrefFor(s.id) !== null);
 
   return (
-    <nav aria-label={copy.label} className={styles.progress}>
+    <nav aria-label={copy.label} className={styles.progress} tabIndex={anyLinked ? undefined : 0}>
       <ol className={styles.list}>
         {steps.map((step, index) => {
           const href = hrefFor(step.id);

@@ -1180,7 +1180,7 @@ const es = {
      * step the reader failed to complete rather than as the state of the site.
      */
     emptyNote:
-      "La compra aún no está habilitada. El catálogo puede consultarse por completo; los pedidos se activarán al concluir la revisión regulatoria y la selección de procesador de pagos.",
+      "La compra aún no está habilitada. El catálogo puede consultarse por completo; los pedidos se activarán al concluir la revisión regulatoria.",
     /* Used when purchasing IS enabled — see the bag page for why the
        regulatory note must not render then. */
     emptyNoteEnabled: "Añade compuestos desde el catálogo para verlos aquí.",
@@ -1197,7 +1197,7 @@ const es = {
     /* Shown while the server reprices the bag and opens the checkout draft. */
     checkoutBusy: "Preparando el pedido…",
     /* Taken from the project's own regulatory position, not invented. */
-    checkoutPending: "Pago no habilitado — pendiente de revisión regulatoria y de procesador",
+    checkoutPending: "Compra no habilitada — pendiente de revisión regulatoria",
   },
 
   /**
@@ -1465,24 +1465,50 @@ const es = {
             "El manejo especial (cadena de frío) está pendiente de determinación y no se aplica todavía.",
           none: "No hay servicio disponible para esta dirección.",
         },
-        submit: "Continuar a pago",
+        submit: "Continuar a revisión",
         back: "Volver a envío",
       },
 
-      payment: {
+      review: {
         index: "04",
+        title: "Revisión",
+        note: "Confirma que esto es exactamente lo que estás pidiendo. Al continuar, el pedido queda registrado con estos importes y pasas al pago.",
+        submit: "Continuar al pago",
+        back: "Volver a entrega",
+        acknowledgements: {
+          title: "Declaraciones",
+          requiredNote: "Las declaraciones marcadas son obligatorias.",
+        },
+        blocked: {
+          title: "Falta un paso",
+          empty: "No hay artículos en el pedido.",
+          contact_incomplete: "Los datos de contacto están incompletos.",
+          shipping_incomplete: "La dirección de envío está incompleta.",
+          delivery_missing: "Falta elegir el servicio de entrega.",
+          delivery_unquotable:
+            "El pedido no puede totalizarse: no hay tarifa de envío definida para este importe.",
+          acknowledgements_missing: "Faltan declaraciones obligatorias.",
+          already_placed: "Este pedido ya fue registrado.",
+          payment_unavailable:
+            "El pago no está disponible en este momento, así que el pedido no puede registrarse todavía.",
+          action: "Ir al paso",
+        },
+      },
+
+      payment: {
+        index: "05",
         title: "Pago",
         /*
-         * States the ENGINEERING position, not just the scope one: card data
-         * is captured by the processor's own hosted component and never
-         * passes through a form we author.
+         * States the ENGINEERING position: card data is typed into Mercado
+         * Pago's own secure fields, inside this page, and never passes through
+         * a form NEOGEN authors.
          */
-        note: "Los datos de tarjeta se capturan en un componente alojado por el procesador y nunca pasan por este sitio.",
+        note: "Escribe los datos de tu tarjeta en los campos seguros de Mercado Pago, dentro de esta página. NEOGEN nunca recibe ni guarda el número de tarjeta.",
         slot: {
           stateLabel: "Estado del pago",
           badges: {
             no_provider: "Sin procesador",
-            embedded: "En esta página",
+            embedded: "Tarjeta",
             redirect: "Redirección",
             instructions: "Transferencia",
             processing: "Procesando",
@@ -1491,14 +1517,14 @@ const es = {
           },
           states: {
             no_provider: {
-              title: "El pago no puede completarse todavía",
-              body: "NEOGEN no tiene un procesador de pagos activo. Puedes revisar y registrar el pedido: no se realizará ningún cargo y el pedido no queda pagado.",
+              title: "El pago no está disponible en este momento",
+              body: "No hay un procesador de pagos activo, así que no se puede realizar ningún cargo. Tu pedido queda registrado sin pagar.",
               contactLabel: "Canal disponible",
             },
             embedded: {
-              title: "Datos de pago",
-              body: "El procesador carga sus propios campos en esta página. NEOGEN no recibe ni almacena el número de tarjeta.",
-              mountLabel: "Área reservada al procesador",
+              title: "Tarjeta de crédito o débito",
+              body: "Los campos siguientes pertenecen a Mercado Pago. El cargo es por el total del pedido, calculado en el servidor.",
+              mountLabel: "Campos seguros de Mercado Pago",
             },
             redirect: {
               title: "Continúa con el procesador",
@@ -1533,32 +1559,53 @@ const es = {
             },
           },
         },
-        submit: "Continuar a revisión",
-        back: "Volver a entrega",
-      },
-
-      review: {
-        index: "05",
-        title: "Revisión",
-        note: "Confirma que esto es exactamente lo que estás pidiendo.",
-        submit: "Registrar pedido",
-        back: "Volver a pago",
-        acknowledgements: {
-          title: "Declaraciones",
-          requiredNote: "Las declaraciones marcadas son obligatorias.",
+        card: {
+          amountLabel: "Total a pagar",
+          orderLabel: "Pedido",
+          provider: "Pago procesado por Mercado Pago",
+          loading: "Cargando los campos seguros de Mercado Pago…",
+          loadError:
+            "Los campos de pago no pudieron cargarse. Revisa tu conexión y vuelve a cargarlos.",
+          reload: "Volver a cargar",
+          submitting: "Procesando el pago. No cierres esta página…",
+          testMode:
+            "Modo de prueba: Mercado Pago está en su entorno de pruebas y no se realiza ningún cargo real. Usa las tarjetas de prueba de Mercado Pago.",
+          formSubmit: "Pagar",
+          errors: {
+            unavailable: "El pago no está disponible en este momento. No se realizó ningún cargo.",
+            not_found: "No encontramos este pedido en este navegador.",
+            invalid_state: "Este pedido ya no admite un nuevo pago. Mostrando su estado actual…",
+            provider_error:
+              "No pudimos completar la operación con Mercado Pago. No se realizó ningún cargo; puedes intentar de nuevo.",
+            invalid_request: "Los datos de pago llegaron incompletos. Vuelve a escribirlos.",
+          },
         },
-        blocked: {
-          title: "Falta un paso",
-          empty: "No hay artículos en el pedido.",
-          contact_incomplete: "Los datos de contacto están incompletos.",
-          shipping_incomplete: "La dirección de envío está incompleta.",
-          delivery_missing: "Falta elegir el servicio de entrega.",
-          delivery_unquotable:
-            "El pedido no puede totalizarse: no hay tarifa de envío definida para este importe.",
-          acknowledgements_missing: "Faltan declaraciones obligatorias.",
-          already_placed: "Este pedido ya fue registrado.",
-          action: "Ir al paso",
+        retry: {
+          title: "El intento anterior no se completó",
+          note: "Tu pedido sigue registrado y tu bag no se modificó. Puedes intentar de nuevo con la misma tarjeta o con otra.",
         },
+        declines: {
+          insufficient_funds: "La tarjeta no tiene fondos suficientes. Prueba con otra tarjeta.",
+          card_data:
+            "Revisa los datos de la tarjeta (número, vencimiento o código de seguridad) e inténtalo de nuevo.",
+          call_for_authorize:
+            "Tu banco necesita autorizar este pago. Comunícate con él y vuelve a intentarlo, o usa otra tarjeta.",
+          card_disabled:
+            "La tarjeta está inhabilitada. Usa otra tarjeta o comunícate con tu banco.",
+          high_risk:
+            "El pago fue rechazado por la revisión de seguridad del procesador. Prueba con otra tarjeta.",
+          issuer_rejected:
+            "El banco emisor rechazó el pago. Prueba con otra tarjeta o comunícate con tu banco.",
+          amount_limit: "El importe supera el límite de la tarjeta. Prueba con otra tarjeta.",
+          installments: "La tarjeta no admite esta modalidad de pago. Prueba con otra tarjeta.",
+          attempts_exceeded: "Se alcanzó el máximo de intentos con esta tarjeta. Usa otra tarjeta.",
+          expired: "El tiempo para completar el pago terminó. Puedes intentarlo de nuevo.",
+          cancelled: "El intento de pago fue cancelado. Puedes intentarlo de nuevo.",
+          unconfirmed:
+            "No recibimos respuesta del intento anterior y no hay ningún pago registrado. Puedes intentarlo de nuevo.",
+          generic: "El pago fue rechazado. Prueba de nuevo o usa otra tarjeta.",
+        },
+        back: "Modificar la bag",
       },
     },
 
@@ -1609,7 +1656,7 @@ const es = {
       index: "—",
       label: "Compra // No habilitada",
       title: "La compra aún no está habilitada",
-      body: "El catálogo puede consultarse por completo. Los pedidos se activarán al concluir la revisión regulatoria y la selección de procesador de pagos.",
+      body: "El catálogo puede consultarse por completo. Los pedidos se activarán al concluir la revisión regulatoria.",
       catalogue: "Ver catálogo",
       bag: "Ver la bag",
     },
@@ -1633,24 +1680,23 @@ const es = {
       statusLabel: "Estado del pedido",
       states: {
         /*
-         * `created` is the ONLY reachable state, because no processor exists.
-         * It says plainly that nothing was charged — a confirmation page that
-         * implied otherwise would be the worst possible place to be vague.
+         * Every heading is taken from `order.state`, which only the provider's
+         * own answer can move. None of these says "paid" unless it is.
          */
         created: {
-          badge: "Sin cargo",
-          title: "Registramos tu pedido. No se realizó ningún cargo.",
-          body: "NEOGEN no tiene un procesador de pagos activo, así que el pedido no está pagado. Conserva la referencia: es la forma de identificarlo cuando el pago se habilite.",
+          badge: "Pendiente de pago",
+          title: "Tu pedido está registrado. Falta el pago.",
+          body: "Aún no se realizó ningún cargo. Completa el pago para confirmar el pedido.",
         },
         pending_payment: {
           badge: "En espera",
           title: "Falta completar el pago",
-          body: "El pedido queda reservado hasta que el procesador confirme la operación.",
+          body: "El procesador espera una acción para completar el pago. El pedido queda registrado hasta que lo confirme.",
         },
         payment_processing: {
           badge: "Procesando",
-          title: "El pago está en proceso",
-          body: "El procesador está resolviendo la operación. No es necesario hacer nada más.",
+          title: "Estamos confirmando tu pago",
+          body: "El procesador está resolviendo la operación. Esta página se actualiza sola; no vuelvas a pagar.",
         },
         paid: {
           badge: "Pagado",
@@ -1660,7 +1706,7 @@ const es = {
         payment_failed: {
           badge: "Rechazado",
           title: "El pago no se completó",
-          body: "No se realizó ningún cargo. El pedido sigue registrado con esta referencia.",
+          body: "No se realizó ningún cargo. Tu pedido sigue registrado y puedes intentar el pago de nuevo.",
         },
         cancelled: {
           badge: "Cancelado",
@@ -1671,6 +1717,11 @@ const es = {
           badge: "Reembolsado",
           title: "Pedido reembolsado",
           body: "El importe de este pedido fue devuelto.",
+        },
+        disputed: {
+          badge: "En disputa",
+          title: "El pago de este pedido está en disputa",
+          body: "El titular de la tarjeta disputó el cargo con su banco. El pedido queda en revisión hasta que la disputa se resuelva.",
         },
       },
       statuses: {
@@ -1683,7 +1734,7 @@ const es = {
       },
       nextSteps: {
         title: "Qué sigue",
-        body: "El pago se habilitará al concluir la revisión regulatoria y la selección de procesador. Hasta entonces, el único canal directo es el teléfono de NEOGEN.",
+        body: "Conserva la referencia: es la forma de identificar tu pedido. Para cualquier pregunta, el canal directo de NEOGEN es su teléfono.",
         contactLabel: "Comprobante registrado a",
       },
       items: { title: "Artículos", quantity: "×" },
@@ -1692,7 +1743,14 @@ const es = {
       totals: { subtotal: "Subtotal", shipping: "Envío", free: "Gratis", total: "Total" },
       estimateDays: { one: "{n} día hábil", many: "{n} días hábiles" },
       acknowledgedLabel: "Declaraciones aceptadas",
-      actions: { catalogue: "Seguir explorando", research: "NEOGEN Research" },
+      actions: {
+        catalogue: "Seguir explorando",
+        research: "NEOGEN Research",
+        pay: "Completar el pago",
+        retry: "Intentar el pago de nuevo",
+      },
+      watching: "Actualizando el estado del pago…",
+      watchStopped: "El pago sigue en proceso. Recarga la página más tarde para ver su estado.",
       notFound: {
         index: "—",
         label: "Confirmación // No encontrada",

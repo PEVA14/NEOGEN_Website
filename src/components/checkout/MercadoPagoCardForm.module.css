@@ -1,0 +1,73 @@
+/*
+ * THE CARD FIELDS' FRAME.
+ *
+ * Mercado Pago draws the form; NEOGEN draws the room it sits in. The Brick is
+ * themed from the same tokens (flat, square corners, charcoal on paper), and
+ * this frame adds only the messages around it — so the provider's component
+ * reads as part of the page rather than a pasted widget.
+ */
+.island {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  margin-block-start: var(--space-2xs);
+}
+
+.message {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--ink-secondary);
+  max-inline-size: 52ch;
+}
+
+.message:empty {
+  display: none;
+}
+
+.message[data-tone="error"] {
+  color: var(--status-error-ink);
+  border-inline-start: 2px solid var(--status-error);
+  padding-inline-start: var(--space-xs);
+}
+
+.loading {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+/* Reserve the Brick's height while it loads, so the page does not jump. */
+.mount {
+  min-block-size: 22rem;
+}
+
+.island[data-status="ready"] .mount,
+.island[data-status="declined"] .mount,
+.island[data-status="error"] .mount,
+.island[data-status="submitting"] .mount {
+  min-block-size: 0;
+}
+
+.reload {
+  align-self: flex-start;
+  min-block-size: 2.75rem;
+  padding-inline: var(--space-lg);
+  background: var(--surface-inverse);
+  color: var(--ink-inverse);
+  border: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.reload:hover {
+  background: var(--neogen-graphite);
+}
+
+.reload:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}

@@ -1,6 +1,7 @@
-import { canTransition } from "./types";
+import { canTransition, isPayable } from "./types";
 
-import type { Order, OrderEvent, PaymentState } from "./types";
+import type { PaymentErrorCode } from "@/payments/types";
+import type { Order, OrderEvent, PaymentAttempt, PaymentState } from "./types";
 
 /**
  * PAYMENT EVENTS — idempotency, ordering, and non-regression.
@@ -39,6 +40,12 @@ export interface NormalisedPaymentEvent {
   providerRef: string;
   /** The state this event asserts the payment is in. */
   state: PaymentState;
+  /**
+   * Why, in NEOGEN's vocabulary — a decline reason such as
+   * `insufficient_funds`, or null. Stored as the audit note, and the only
+   * thing the payment step reads to explain a decline.
+   */
+  detail?: string | null;
   receivedAt: string;
 }
 
@@ -115,6 +122,36 @@ export function applyPaymentEvent(order: Order, event: NormalisedPaymentEvent): 
     };
   }
 
+  /*
+   * AN EVENT FOR AN EARLIER ATTEMPT. A retry clears `providerRef` until the
+   * provider answers, so without this check a late event for the declined
+   * first attempt would be adopted as the reference of the second. Refused
+   * and recorded — and if it claims money moved, the note says so loudly,
+   * because that is a charge an operator must reconcile by hand.
+   */
+  if (
+    order.providerRef === null &&
+    order.attempts.some((a) => a.providerRef === event.providerRef)
+  ) {
+    const note = event.state === "paid" ? "paid_on_earlier_attempt" : "earlier_attempt_ref";
+    return {
+      order: {
+        ...order,
+        updatedAt: event.receivedAt,
+        events: append(order, {
+          at: event.receivedAt,
+          kind: "payment_event_rejected",
+          providerEventId: event.providerEventId,
+          from: order.state,
+          to: event.state,
+          note,
+        }),
+      },
+      outcome: "mismatched_ref",
+      note,
+    };
+  }
+
   if (order.state === event.state) {
     return {
       order: {
@@ -172,7 +209,7 @@ export function applyPaymentEvent(order: Order, event: NormalisedPaymentEvent): 
         providerEventId: event.providerEventId,
         from: order.state,
         to: event.state,
-        note: null,
+        note: event.detail ?? null,
       }),
     },
     outcome: "applied",
@@ -180,47 +217,178 @@ export function applyPaymentEvent(order: Order, event: NormalisedPaymentEvent): 
   };
 }
 
+/** The attempt currently being made, if one has not been answered. */
+export function openAttempt(order: Order): PaymentAttempt | null {
+  const last = order.attempts.at(-1);
+  return last && last.outcome === "submitted" ? last : null;
+}
+
+/** The idempotency key for an order's nth attempt. Stable, never random. */
+export function attemptKey(orderId: string, seq: number): string {
+  return `${orderId}:attempt:${seq}`;
+}
+
 /**
- * Record a payment attempt.
+ * CLAIM THE RIGHT TO CHARGE — before the provider is called.
  *
- * Separate from `applyPaymentEvent` because an attempt is not a state change:
- * asking a provider to open a payment and the provider telling us what
- * happened are two different facts, and conflating them is how an order ends
- * up "processing" because we tried, not because anyone is processing anything.
+ * Returns null when this order may not be charged now: it is already paid,
+ * money may be in flight, or another submission holds the claim. Persisted
+ * through `mutate`, so of two submissions racing for one order exactly one
+ * saves this and the other re-reads and gets null. That — not a disabled
+ * button — is what makes a double click, a second tab or a replayed request
+ * unable to charge twice.
+ *
+ * The order moves to `payment_processing` and forgets the previous attempt's
+ * reference, so a late event for that attempt cannot be mistaken for this
+ * one (see `applyPaymentEvent`).
  */
-export function recordAttempt(
+export function beginAttempt(
   order: Order,
-  attempt: {
-    provider: string;
-    at: string;
-    outcome: "intent_created" | "intent_refused";
-    providerRef?: string | null;
-    errorCode?: import("@/payments/types").PaymentErrorCode | null;
-  },
-): Order {
+  attempt: { provider: string; at: string },
+): Order | null {
+  if (!isPayable(order.state) || openAttempt(order)) return null;
+
+  const seq = order.attempts.length + 1;
   return {
     ...order,
+    state: "payment_processing",
     updatedAt: attempt.at,
     provider: attempt.provider,
-    providerRef: attempt.providerRef ?? order.providerRef,
+    providerRef: null,
     attempts: [
       ...order.attempts,
       {
-        seq: order.attempts.length + 1,
+        seq,
         provider: attempt.provider,
         at: attempt.at,
-        outcome: attempt.outcome,
-        providerRef: attempt.providerRef ?? null,
-        errorCode: attempt.errorCode ?? null,
+        outcome: "submitted",
+        idempotencyKey: attemptKey(order.id, seq),
+        providerRef: null,
+        errorCode: null,
+        answeredAt: null,
       },
     ],
     events: append(order, {
       at: attempt.at,
-      kind: "payment_intent",
+      kind: "payment_submitted",
       providerEventId: null,
       from: order.state,
-      to: null,
-      note: attempt.outcome,
+      to: "payment_processing",
+      note: `attempt_${seq}`,
     }),
   };
+}
+
+/**
+ * Record what the provider said to the open attempt.
+ *
+ * NOT a state change by itself. `answered` hands the provider's reference to
+ * the order; the state the provider reported is then applied through
+ * `applyPaymentEvent`, exactly as a webhook's would be, so the synchronous
+ * answer and the later notification share one deduplication key and one
+ * transition table.
+ *
+ * `refused` means the provider created nothing (a bad token, a rejected
+ * request): nothing can have been charged, so the order returns to
+ * `payment_failed` and the customer may retry. `unanswered` means we do not
+ * know — the order stays in `payment_processing` for the webhook to settle.
+ */
+export function answerAttempt(
+  order: Order,
+  answer: {
+    at: string;
+    outcome: "answered" | "refused" | "unanswered";
+    providerRef?: string | null;
+    errorCode?: PaymentErrorCode | null;
+    detail?: string | null;
+  },
+): Order {
+  const open = openAttempt(order);
+  if (!open) return order;
+
+  const attempts = order.attempts.map((a) =>
+    a.seq === open.seq
+      ? {
+          ...a,
+          outcome: answer.outcome,
+          providerRef: answer.providerRef ?? null,
+          errorCode: answer.errorCode ?? null,
+          answeredAt: answer.at,
+        }
+      : a,
+  );
+
+  const refused = answer.outcome === "refused" && order.state === "payment_processing";
+  return {
+    ...order,
+    updatedAt: answer.at,
+    state: refused ? "payment_failed" : order.state,
+    providerRef: answer.providerRef ?? order.providerRef,
+    attempts,
+    events: append(order, {
+      at: answer.at,
+      kind: "payment_answered",
+      providerEventId: null,
+      from: order.state,
+      to: refused ? "payment_failed" : null,
+      note: answer.detail ?? answer.errorCode ?? answer.outcome,
+    }),
+  };
+}
+
+/**
+ * How long an attempt may go unanswered before the customer may try again.
+ *
+ * An attempt with NO provider reference after this long means the request
+ * never produced a payment we know of — the server died mid-call, say. The
+ * order is released to `payment_failed` so the customer is not stuck. If the
+ * provider did in fact create a payment, its webhook still arrives, finds the
+ * order by its external reference, and `payment_failed → paid` is legal.
+ */
+export const STALLED_ATTEMPT_MS = 15 * 60 * 1000;
+
+export function recoverStalledAttempt(order: Order, now: string): Order | null {
+  if (order.state !== "payment_processing" || order.providerRef !== null) return null;
+  const last = order.attempts.at(-1);
+  if (!last || (last.outcome !== "submitted" && last.outcome !== "unanswered")) return null;
+  if (Date.parse(now) - Date.parse(last.at) < STALLED_ATTEMPT_MS) return null;
+
+  return {
+    ...order,
+    state: "payment_failed",
+    updatedAt: now,
+    attempts: order.attempts.map((a) =>
+      a.seq === last.seq
+        ? { ...a, outcome: "unanswered", errorCode: "provider_error", answeredAt: now }
+        : a,
+    ),
+    events: append(order, {
+      at: now,
+      kind: "payment_answered",
+      providerEventId: null,
+      from: order.state,
+      to: "payment_failed",
+      note: "unconfirmed",
+    }),
+  };
+}
+
+/**
+ * The reason the latest attempt failed, in NEOGEN's vocabulary, or null.
+ *
+ * Read from the audit trail rather than stored separately, so there is one
+ * record of why and it cannot disagree with itself.
+ */
+export function lastDecline(order: Order): string | null {
+  if (order.state !== "payment_failed") return null;
+  for (let i = order.events.length - 1; i >= 0; i -= 1) {
+    const e = order.events[i];
+    if (
+      e.to === "payment_failed" &&
+      (e.kind === "payment_event_applied" || e.kind === "payment_answered")
+    ) {
+      return e.note;
+    }
+  }
+  return null;
 }

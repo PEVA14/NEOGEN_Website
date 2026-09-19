@@ -1079,7 +1079,7 @@ const en: Dictionary = {
     countLabel: "Items",
     empty: "Your bag is empty.",
     emptyNote:
-      "Purchasing is not enabled yet. The catalogue can be browsed in full; ordering opens once regulatory review and payment-processor selection are complete.",
+      "Purchasing is not enabled yet. The catalogue can be browsed in full; ordering opens once regulatory review is complete.",
     /* Used when purchasing IS enabled — see the bag page for why the
        regulatory note must not render then. */
     emptyNoteEnabled: "Add compounds from the catalogue to see them here.",
@@ -1095,7 +1095,7 @@ const en: Dictionary = {
     checkout: "Continue to payment",
     /* Shown while the server reprices the bag and opens the checkout draft. */
     checkoutBusy: "Preparing your order…",
-    checkoutPending: "Payment not enabled — pending regulatory and processor review",
+    checkoutPending: "Purchasing not enabled — pending regulatory review",
   },
 
   /**
@@ -1329,19 +1329,45 @@ const en: Dictionary = {
             "Special handling (cold chain) has not been determined and is not applied yet.",
           none: "No service is available for this address.",
         },
-        submit: "Continue to payment",
+        submit: "Continue to review",
         back: "Back to shipping",
       },
 
-      payment: {
+      review: {
         index: "04",
+        title: "Review",
+        note: "Confirm this is exactly what you are ordering. Continuing registers the order at these amounts and takes you to payment.",
+        submit: "Continue to payment",
+        back: "Back to delivery",
+        acknowledgements: {
+          title: "Declarations",
+          requiredNote: "Marked declarations are required.",
+        },
+        blocked: {
+          title: "A step is missing",
+          empty: "There are no items in the order.",
+          contact_incomplete: "Contact details are incomplete.",
+          shipping_incomplete: "The shipping address is incomplete.",
+          delivery_missing: "A delivery service has not been chosen.",
+          delivery_unquotable:
+            "The order cannot be totalled: no shipping rate has been set for this amount.",
+          acknowledgements_missing: "Required declarations are missing.",
+          already_placed: "This order has already been registered.",
+          payment_unavailable:
+            "Payment is not available right now, so the order cannot be registered yet.",
+          action: "Go to step",
+        },
+      },
+
+      payment: {
+        index: "05",
         title: "Payment",
-        note: "Card details are captured in a component hosted by the processor and never pass through this site.",
+        note: "Enter your card details in Mercado Pago's secure fields, inside this page. NEOGEN never receives or stores the card number.",
         slot: {
           stateLabel: "Payment state",
           badges: {
             no_provider: "No processor",
-            embedded: "On this page",
+            embedded: "Card",
             redirect: "Redirect",
             instructions: "Transfer",
             processing: "Processing",
@@ -1350,14 +1376,14 @@ const en: Dictionary = {
           },
           states: {
             no_provider: {
-              title: "Payment cannot be completed yet",
-              body: "NEOGEN has no active payment processor. You can review and register the order: nothing will be charged and the order is not paid.",
+              title: "Payment is not available right now",
+              body: "There is no active payment processor, so nothing can be charged. Your order stays registered and unpaid.",
               contactLabel: "Available channel",
             },
             embedded: {
-              title: "Payment details",
-              body: "The processor loads its own fields into this page. NEOGEN never receives or stores the card number.",
-              mountLabel: "Area reserved for the processor",
+              title: "Credit or debit card",
+              body: "The fields below belong to Mercado Pago. The charge is the order total, computed on the server.",
+              mountLabel: "Mercado Pago secure fields",
             },
             redirect: {
               title: "Continue with the processor",
@@ -1392,32 +1418,51 @@ const en: Dictionary = {
             },
           },
         },
-        submit: "Continue to review",
-        back: "Back to delivery",
-      },
-
-      review: {
-        index: "05",
-        title: "Review",
-        note: "Confirm this is exactly what you are ordering.",
-        submit: "Register order",
-        back: "Back to payment",
-        acknowledgements: {
-          title: "Declarations",
-          requiredNote: "Marked declarations are required.",
+        card: {
+          amountLabel: "Total to pay",
+          orderLabel: "Order",
+          provider: "Payment processed by Mercado Pago",
+          loading: "Loading Mercado Pago's secure fields…",
+          loadError: "The payment fields could not load. Check your connection and reload them.",
+          reload: "Reload",
+          submitting: "Processing the payment. Do not close this page…",
+          testMode:
+            "Test mode: Mercado Pago is in its test environment and no real charge is made. Use Mercado Pago's test cards.",
+          formSubmit: "Pay",
+          errors: {
+            unavailable: "Payment is not available right now. Nothing was charged.",
+            not_found: "We could not find this order in this browser.",
+            invalid_state: "This order no longer accepts a new payment. Showing its current state…",
+            provider_error:
+              "We could not complete the operation with Mercado Pago. Nothing was charged; you can try again.",
+            invalid_request: "The payment details arrived incomplete. Please enter them again.",
+          },
         },
-        blocked: {
-          title: "A step is missing",
-          empty: "There are no items in the order.",
-          contact_incomplete: "Contact details are incomplete.",
-          shipping_incomplete: "The shipping address is incomplete.",
-          delivery_missing: "A delivery service has not been chosen.",
-          delivery_unquotable:
-            "The order cannot be totalled: no shipping rate has been set for this amount.",
-          acknowledgements_missing: "Required declarations are missing.",
-          already_placed: "This order has already been registered.",
-          action: "Go to step",
+        retry: {
+          title: "The previous attempt did not complete",
+          note: "Your order is still registered and your bag is unchanged. You can try again with the same card or another one.",
         },
+        declines: {
+          insufficient_funds: "The card has insufficient funds. Try another card.",
+          card_data: "Check the card details (number, expiry date or security code) and try again.",
+          call_for_authorize:
+            "Your bank needs to authorise this payment. Contact them and try again, or use another card.",
+          card_disabled: "The card is disabled. Use another card or contact your bank.",
+          high_risk:
+            "The payment was declined by the processor's security review. Try another card.",
+          issuer_rejected:
+            "The issuing bank declined the payment. Try another card or contact your bank.",
+          amount_limit: "The amount exceeds the card's limit. Try another card.",
+          installments: "The card does not accept this payment option. Try another card.",
+          attempts_exceeded:
+            "The maximum number of attempts with this card was reached. Use another card.",
+          expired: "The time to complete the payment ran out. You can try again.",
+          cancelled: "The payment attempt was cancelled. You can try again.",
+          unconfirmed:
+            "We received no answer to the previous attempt and no payment is recorded. You can try again.",
+          generic: "The payment was declined. Try again or use another card.",
+        },
+        back: "Edit the bag",
       },
     },
 
@@ -1465,7 +1510,7 @@ const en: Dictionary = {
       index: "—",
       label: "Purchase // Not enabled",
       title: "Purchasing is not enabled yet",
-      body: "The catalogue can be browsed in full. Orders will be activated once regulatory review and payment-processor selection are complete.",
+      body: "The catalogue can be browsed in full. Orders will be activated once regulatory review is complete.",
       catalogue: "View catalogue",
       bag: "View the bag",
     },
@@ -1489,19 +1534,19 @@ const en: Dictionary = {
       statusLabel: "Order status",
       states: {
         created: {
-          badge: "Not charged",
-          title: "We registered your order. Nothing was charged.",
-          body: "NEOGEN has no active payment processor, so the order is not paid. Keep the reference: it is how the order is identified once payment is enabled.",
+          badge: "Awaiting payment",
+          title: "Your order is registered. Payment is still due.",
+          body: "Nothing has been charged yet. Complete the payment to confirm the order.",
         },
         pending_payment: {
           badge: "Awaiting",
           title: "Payment still needs to be completed",
-          body: "The order is held until the processor confirms the transaction.",
+          body: "The processor is waiting for an action to complete the payment. The order stays registered until it confirms.",
         },
         payment_processing: {
           badge: "Processing",
-          title: "Payment is in progress",
-          body: "The processor is resolving the transaction. Nothing further is needed.",
+          title: "We are confirming your payment",
+          body: "The processor is resolving the transaction. This page updates itself; do not pay again.",
         },
         paid: {
           badge: "Paid",
@@ -1511,7 +1556,7 @@ const en: Dictionary = {
         payment_failed: {
           badge: "Declined",
           title: "Payment did not complete",
-          body: "Nothing was charged. The order remains registered under this reference.",
+          body: "Nothing was charged. Your order is still registered and you can try the payment again.",
         },
         cancelled: {
           badge: "Cancelled",
@@ -1522,6 +1567,11 @@ const en: Dictionary = {
           badge: "Refunded",
           title: "Order refunded",
           body: "The amount for this order was returned.",
+        },
+        disputed: {
+          badge: "Disputed",
+          title: "The payment for this order is disputed",
+          body: "The cardholder disputed the charge with their bank. The order stays under review until the dispute is resolved.",
         },
       },
       statuses: {
@@ -1534,7 +1584,7 @@ const en: Dictionary = {
       },
       nextSteps: {
         title: "What happens next",
-        body: "Payment will be enabled once regulatory review and processor selection are complete. Until then, NEOGEN's phone line is the only direct channel.",
+        body: "Keep the reference: it is how your order is identified. For any question, NEOGEN's direct channel is its phone line.",
         contactLabel: "Receipt registered to",
       },
       items: { title: "Items", quantity: "×" },
@@ -1543,7 +1593,14 @@ const en: Dictionary = {
       totals: { subtotal: "Subtotal", shipping: "Shipping", free: "Free", total: "Total" },
       estimateDays: { one: "{n} business day", many: "{n} business days" },
       acknowledgedLabel: "Declarations accepted",
-      actions: { catalogue: "Keep exploring", research: "NEOGEN Research" },
+      actions: {
+        catalogue: "Keep exploring",
+        research: "NEOGEN Research",
+        pay: "Complete the payment",
+        retry: "Try the payment again",
+      },
+      watching: "Updating the payment state…",
+      watchStopped: "The payment is still processing. Reload the page later to see its state.",
       notFound: {
         index: "—",
         label: "Confirmation // Not found",

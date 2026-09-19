@@ -15,6 +15,7 @@ import {
   placementBlock,
 } from "@/domain/checkout";
 import { quote } from "@/domain/order";
+import { paymentAvailable } from "@/payments";
 import { placeOrder } from "@/server/checkout/actions";
 
 import { CheckoutShell, StepHead, loadStep, stepMetadata } from "../shared";
@@ -88,6 +89,11 @@ export default async function ReviewStep({ params }: { params: Promise<{ locale:
 
   const block = placementBlock(draft);
   const missing = missingAcknowledgements(draft);
+  /*
+   * An order is registered only when it can be paid. Stated on screen, with
+   * the reason, rather than a button that silently does nothing.
+   */
+  const payable = paymentAvailable();
 
   /*
    * Empty today. Each entry would carry its own approved declaration text
@@ -142,6 +148,10 @@ export default async function ReviewStep({ params }: { params: Promise<{ locale:
           />
         ) : null}
 
+        {!block && !payable ? (
+          <BlockNotice title={copy.blocked.title} body={copy.blocked.payment_unavailable} />
+        ) : null}
+
         <ReviewPanel
           lines={draft.snapshot.lines}
           contact={contact}
@@ -169,8 +179,8 @@ export default async function ReviewStep({ params }: { params: Promise<{ locale:
          */}
         <StepActions
           submit={copy.submit}
-          disabled={block !== null || missing.length > 0}
-          back={{ href: path(routes.checkoutStep("payment")), label: copy.back }}
+          disabled={block !== null || missing.length > 0 || !payable}
+          back={{ href: path(routes.checkoutStep("delivery")), label: copy.back }}
         />
       </form>
     </CheckoutShell>

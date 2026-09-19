@@ -5,7 +5,13 @@ import { Body, Mono } from "@/components/typography";
 import { SectionHeader } from "@/components/layout";
 import { Container, Section } from "@/components/primitives";
 import { routes } from "@/config/routes";
-import { canEnter, firstIncomplete, progression, provisionalShipping } from "@/domain/checkout";
+import {
+  CHECKOUT_STEPS,
+  canEnter,
+  firstIncomplete,
+  progression,
+  provisionalShipping,
+} from "@/domain/checkout";
 import { isLocale, localeTags, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/getDictionary";
 import { localizePath } from "@/i18n/routing";
@@ -14,7 +20,8 @@ import { currentDraft } from "@/server/checkout/session";
 
 import styles from "./page.module.css";
 
-import type { CheckoutDraft, CheckoutStepId } from "@/domain/checkout";
+import type { CheckoutDraft, CheckoutStepId, StepState } from "@/domain/checkout";
+import type { Order } from "@/domain/order";
 import type { Dictionary } from "@/i18n/types";
 import type { ReactNode } from "react";
 
@@ -77,10 +84,11 @@ export async function loadStep(rawLocale: string, step: CheckoutStepId): Promise
     };
   }
 
-  /* Already ordered from this draft: the confirmation is the only sensible
-     destination, and re-entering the flow would risk a second order. */
+  /* Already ordered from this draft: the order's payment page is the only
+     sensible destination (it forwards to the confirmation once paid), and
+     re-entering the flow would risk a second order. */
   if (draft.orderId && step !== "confirmation") {
-    redirect(path(routes.orderConfirmation(draft.orderId)));
+    redirect(path(routes.orderPayment(draft.orderId)));
   }
 
   if (!canEnter(draft, step)) redirect(stepPath(firstIncomplete(draft)));
@@ -185,6 +193,72 @@ export function CheckoutShell({
               delivery={draft.delivery}
               shipping={shipping}
               total={total}
+              copy={checkout.summary}
+              localeTag={tag}
+              bagHref={path(routes.cart)}
+            />
+          </div>
+        </div>
+      </Container>
+    </Section>
+  );
+}
+
+/**
+ * THE SHELL FOR AN ORDER — the payment step.
+ *
+ * Same masthead, progression and summary column as `CheckoutShell`, read from
+ * the ORDER instead of the draft: once review registers an order the draft is
+ * spent, and what is shown and charged from here on is the order's frozen
+ * snapshot. Earlier steps are complete and no longer links — the order they
+ * produced cannot be edited, only paid (or abandoned for a new one from the
+ * bag, which is untouched).
+ */
+export function OrderShell({
+  dict,
+  order,
+  tag,
+  path,
+  children,
+}: {
+  dict: Dictionary;
+  order: Order;
+  tag: string;
+  path: (to: string) => string;
+  children: ReactNode;
+}) {
+  const checkout = dict.checkout;
+  const steps: readonly StepState[] = CHECKOUT_STEPS.map((id, i) => ({
+    id,
+    index: String(i + 1).padStart(2, "0"),
+    complete: i < CHECKOUT_STEPS.indexOf("payment"),
+    available: i <= CHECKOUT_STEPS.indexOf("payment"),
+    current: id === "payment",
+  }));
+
+  return (
+    <Section mode="quiet" aria-labelledby="checkout-title">
+      <Container width="full">
+        <SectionHeader
+          index={checkout.index}
+          label={`${checkout.label} // ${checkout.qualifier}`}
+          title={checkout.title}
+          id="checkout-title"
+          lede={checkout.lede}
+          as="h1"
+        />
+
+        <CheckoutProgress steps={steps} copy={checkout.progress} hrefFor={() => null} />
+
+        <div className={styles.layout}>
+          <div className={styles.flow}>{children}</div>
+          <div className={styles.aside}>
+            <OrderSummary
+              lines={order.lines}
+              subtotal={order.totals.subtotal}
+              delivery={order.delivery}
+              shipping={order.totals.shipping}
+              total={order.totals.total}
               copy={checkout.summary}
               localeTag={tag}
               bagHref={path(routes.cart)}

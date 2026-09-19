@@ -15,13 +15,20 @@ export type {
   OrderStatus,
   OrderTotals,
   PaymentAttempt,
+  PaymentAttemptOutcome,
   PaymentState,
 } from "./types";
-export { canTransition, isSettled, TRANSITIONS } from "./types";
+export { canTransition, isPayable, isSettled, PAYABLE_STATES, TRANSITIONS } from "./types";
 export {
   alreadySeen,
+  answerAttempt,
   applyPaymentEvent,
-  recordAttempt,
+  attemptKey,
+  beginAttempt,
+  lastDecline,
+  openAttempt,
+  recoverStalledAttempt,
+  STALLED_ATTEMPT_MS,
   type ApplyOutcome,
   type ApplyResult,
   type NormalisedPaymentEvent,
@@ -97,6 +104,7 @@ export function createOrder(
   draft: CheckoutDraft,
   contact: Order["contact"],
   shipping: Order["shipping"],
+  locale: Order["locale"],
   now: () => string = () => new Date().toISOString(),
   id: () => string = newOrderId,
 ): Order | null {
@@ -120,6 +128,7 @@ export function createOrder(
     delivery: draft.delivery,
     route: routeForAddress(shipping),
     acknowledged: [...draft.acknowledged],
+    locale,
     providerRef: null,
     provider: null,
     attempts: [],
@@ -146,10 +155,18 @@ function freeze(line: PricedLine): OrderLine {
  * Advance an order, or refuse.
  *
  * Returns null on an illegal transition rather than throwing. For provider
- * callbacks use `applyPaymentEvent` instead — it adds deduplication, reference
+ * answers use `applyPaymentEvent` / `reconcileSnapshot` instead — it adds deduplication, reference
  * matching and an audit entry, all of which a bare transition skips.
  */
 export function transition(order: Order, to: PaymentState, at?: string): Order | null {
+  /*
+   * NEVER `paid`, whatever the table allows. The table permits `created →
+   * paid` because a provider can answer a card charge with "approved" in one
+   * step — but that move belongs to `applyPaymentEvent`, fed by the provider.
+   * A bare transition to `paid` is exactly the "mark as paid" shortcut by
+   * which money goes missing, so this function refuses it outright.
+   */
+  if (to === "paid") return null;
   if (!canTransition(order.state, to)) return null;
   const stamp = at ?? new Date().toISOString();
   return {
