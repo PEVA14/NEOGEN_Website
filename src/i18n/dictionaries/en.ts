@@ -539,13 +539,28 @@ const en: Dictionary = {
     },
 
     glow: {
-      eyebrow: "Research compound — Luminous",
+      /*
+       * GLOW ON THE HOMEPAGE — the light, split into what it contains.
+       *
+       * GLOW is a blend, and that is the first thing to say. Composition,
+       * milligrams, proportions, pack and prices come from the registry.
+       * Nothing describes effects or uses.
+       */
+      eyebrow: "Signature compound · Luminous",
+      title: "GLOW",
+      /** The world's line: the product page uses it too. */
       statement: "The environment becomes light.",
-      body: "The vial is the source. Saturated amber gold illumination emanates from the core, spreading warm refractive patterns across darkness. Clean, focused luminescence.",
-      specs: {
-        presentation: "Presentations",
-        category: "Category",
+      lede: "{n} peptides in a single {total} mg vial.",
+      blend: {
+        label: "The blend",
+        share: "{pct}% of the blend",
+        alone: "Also sold alone",
         from: "From",
+      },
+      presentation: {
+        label: "The presentation",
+        pack: "{strength} × {n} vials",
+        perVial: "{price} per vial",
       },
       cta: "View GLOW",
     },

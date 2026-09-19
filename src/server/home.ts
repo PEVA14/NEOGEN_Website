@@ -21,6 +21,7 @@ import {
   type DiscoveryAreaId,
 } from "@/data/discovery";
 import { publicEvidenceIndex } from "@/domain/quality";
+import { perVial } from "@/domain/storefront";
 import { localeTags, type Locale } from "@/i18n/config";
 import { localizePath } from "@/i18n/routing";
 
@@ -61,6 +62,25 @@ export interface HomeProduct {
   image: ProductImage | null;
 }
 
+export interface HomeComponent {
+  /** As printed in the composition: "GHK-CU". */
+  name: string;
+  mg: number;
+  /** The product sold on its own, when the catalogue has one. */
+  product: { name: string; href: string; price: string | null } | null;
+}
+
+/** "GHK-CU 50mg + TB-500 10mg" → [{ name, mg }]. Null if any part does not parse. */
+function parseComposition(text: string | null): { name: string; mg: number }[] | null {
+  if (!text) return null;
+  const parts = text.split("+").map((part) => part.trim().match(/^(.+?)\s*([\d.]+)\s*mg$/i));
+  if (parts.length < 2 || parts.some((m) => !m)) return null;
+  return parts.map((m) => ({ name: m![1].trim(), mg: Number(m![2]) }));
+}
+
+/** Letters and digits only, lower case: "TB-500" and "TB500" are the same compound. */
+const key = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, "");
+
 export interface HomeArea {
   id: DiscoveryAreaId;
   slug: string;
@@ -94,6 +114,14 @@ export interface HomeData {
     pack: number | null;
     /** The flagship's first public discovery area. */
     primaryArea: DiscoveryAreaId | null;
+    /**
+     * A blend's printed composition, parsed into its parts — each linked to
+     * the product that sells it alone, when the catalogue has one. Null for a
+     * single compound, or when the composition does not parse.
+     */
+    components: readonly HomeComponent[] | null;
+    /** The entry pack's price per vial, formatted. */
+    perVial: string | null;
   })[];
   areas: readonly HomeArea[];
   closing: readonly HomeProduct[];
@@ -247,6 +275,34 @@ export async function homeData(locale: Locale): Promise<HomeData> {
         }),
         pack: typeof only === "number" ? only : null,
         primaryArea: publicAreasFor(p.slug)[0]?.id ?? null,
+        components:
+          parseComposition(p.composition)?.map((part) => {
+            const alone = published.find(
+              (q) =>
+                q.slug !== p.slug &&
+                q.category !== "blends" &&
+                (key(q.slug) === key(part.name) || key(q.name).endsWith(key(part.name))),
+            );
+            const price = alone ? cheapest(alone) : null;
+            return {
+              ...part,
+              product: alone
+                ? {
+                    name: alone.name,
+                    href: path(routes.product(alone.slug)),
+                    price: price ? formatPrice(price, tag) : null,
+                  }
+                : null,
+            };
+          }) ?? null,
+        perVial: (() => {
+          const entry = p.variants
+            .map((v) => ({ v, price: prices.get(v.id) ?? null }))
+            .filter((row) => row.price !== null)
+            .sort((a, b) => a.price!.amount - b.price!.amount)[0];
+          const unit = entry ? perVial(entry.price!.amount, entry.v.vials ?? null) : null;
+          return unit !== null ? formatPrice({ amount: unit, currency: "MXN" }, tag) : null;
+        })(),
       };
     }),
     areas,

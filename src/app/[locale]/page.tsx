@@ -6,6 +6,7 @@ import {
   Hero,
   MaterialMoment,
   RetaExperience,
+  type GlowMomentCopy,
   type HeroCopy,
   type RetaExperienceCopy,
 } from "@/components/experience";
@@ -130,6 +131,75 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     loadingLabel: home.reta.loadingLabel,
     staticLabel: home.reta.staticLabel,
   };
+
+  /*
+   * GLOW, set out as what it is: a blend. Parts, milligrams and shares from its
+   * printed composition; each part linked to the product that sells it alone.
+   */
+  const glow = data.flagships.find((item) => item.world === "glow");
+  const glowCopy: GlowMomentCopy | null =
+    glow && glowProduct
+      ? (() => {
+          const parts = glow.components ?? [];
+          const total = parts.reduce((sum, part) => sum + part.mg, 0);
+          const single = glow.ladder.length === 1 ? glow.ladder[0].label : null;
+          /* Whole percentages that always total 100 (largest remainder). */
+          const exact = parts.map((part) => (total > 0 ? (part.mg / total) * 100 : 0));
+          const shares = exact.map(Math.floor);
+          exact
+            .map((value, i) => ({ i, rest: value - Math.floor(value) }))
+            .sort((x, y) => y.rest - x.rest)
+            .slice(0, 100 - shares.reduce((sum, v) => sum + v, 0))
+            .forEach(({ i }) => (shares[i] += 1));
+          return {
+            eyebrow: home.glow.eyebrow,
+            title: home.glow.title,
+            name: glow.name,
+            lede: home.glow.lede
+              .replace("{n}", String(parts.length))
+              .replace("{total}", String(total)),
+            blend:
+              parts.length > 1
+                ? {
+                    label: home.glow.blend.label,
+                    parts: parts.map((part, i) => {
+                      const percent = total > 0 ? shares[i] : 0;
+                      return {
+                        name: part.product?.name ?? part.name,
+                        amount: `${part.mg} mg`,
+                        share: home.glow.blend.share.replace("{pct}", String(percent)),
+                        percent,
+                        alone: part.product
+                          ? {
+                              label: home.glow.blend.alone,
+                              href: part.product.href,
+                              price: part.product.price,
+                              from,
+                            }
+                          : undefined,
+                      };
+                    }),
+                  }
+                : undefined,
+            presentation: {
+              label: home.glow.presentation.label,
+              items: [
+                ...(single && glow.pack
+                  ? [
+                      home.glow.presentation.pack
+                        .replace("{strength}", single)
+                        .replace("{n}", String(glow.pack)),
+                    ]
+                  : []),
+                ...(glow.perVial
+                  ? [home.glow.presentation.perVial.replace("{price}", glow.perVial)]
+                  : []),
+              ],
+            },
+            product: glowProduct,
+          };
+        })()
+      : null;
 
   const catalogPath = path(routes.products);
 
@@ -261,16 +331,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       />
 
       {/* Impact — light, resolving into GLOW. */}
-      {glowProduct ? (
-        <GlowMoment
-          copy={{
-            eyebrow: home.glow.eyebrow,
-            statement: home.glow.statement,
-            body: home.glow.body,
-            product: glowProduct,
-          }}
-        />
-      ) : null}
+      {glowProduct && glowCopy ? <GlowMoment copy={glowCopy} /> : null}
 
       <ScienceBand
         index={home.science.index}

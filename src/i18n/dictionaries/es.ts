@@ -555,13 +555,28 @@ const es = {
     },
 
     glow: {
-      eyebrow: "Compuesto de investigación — Luminoso",
+      /*
+       * GLOW EN LA PORTADA — la luz, descompuesta en lo que contiene.
+       *
+       * GLOW es una mezcla, y eso es lo primero que hay que decir. La
+       * composición, los miligramos, las proporciones, el empaque y los
+       * precios salen del registro. Nada describe efectos ni usos.
+       */
+      eyebrow: "Compuesto insignia · Luminoso",
+      title: "GLOW",
+      /** La frase del mundo: la usa también la página del producto. */
       statement: "El entorno se vuelve luz.",
-      body: "El vial es la fuente. Una iluminación ámbar dorada emana desde el núcleo y extiende patrones refractivos cálidos sobre la oscuridad. Luminiscencia limpia y enfocada.",
-      specs: {
-        presentation: "Presentaciones",
-        category: "Categoría",
+      lede: "{n} péptidos en un solo vial de {total} mg.",
+      blend: {
+        label: "La mezcla",
+        share: "{pct} % de la mezcla",
+        alone: "También por separado",
         from: "Desde",
+      },
+      presentation: {
+        label: "La presentación",
+        pack: "{strength} × {n} viales",
+        perVial: "{price} por vial",
       },
       cta: "Ver GLOW",
     },

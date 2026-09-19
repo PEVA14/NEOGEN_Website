@@ -1461,6 +1461,22 @@ focus follows, and the ground changes per area. Heights: desktop 10,900 →
   - On phones it stacks, with the canvas as a feathered full-bleed band.
   - The old beats copy was replaced by `home.reta.facts`. The product page's
     world line now reads `home.reta.statement`.
+- **GLOW, clarified (2026-09-19).** The section led with prose about light.
+  It now says what GLOW is: a blend. `homeData` parses the flagship's
+  printed composition into parts (`HomeComponent`), matching each to the
+  product that sells it alone (by slug or name, never a blend). It also
+  reads the pack's price per vial from `perVial`.
+  - `GlowMoment` (`GlowMomentCopy`) shows "3 peptides in a single 70 mg
+    vial", then a spectrum bar with each part proportional to its
+    milligrams.
+  - Each part lists its share (largest-remainder rounding, so the shares
+    total 100) and its amount, with an "also sold alone · from $X" link.
+  - Then the presentation (70 mg × 10 vials, $1,790 per vial) and the
+    price.
+  - The light bloom and its view-timeline ignition stay, and the bands
+    fill with it. On phones the vial comes first.
+  - `MaterialMoment` keeps `WorldMomentCopy`, and the product page reads
+    `home.glow.statement`.
 - **Accessibility fix (pre-existing).** `PresentationLadder` scrolls
   sideways at tablet width and was not keyboard-reachable (axe
   `scrollable-region-focusable`). It now scrolls inside a focusable,
