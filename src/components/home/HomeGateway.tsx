@@ -233,7 +233,7 @@ export function HomeGateway({ copy, data }: { copy: GatewayCopy; data: GatewayDa
             <ul className={styles.areaList}>
               {data.areas.map((area) => (
                 <li key={area.id} data-area={area.id}>
-                  <Link href={area.href} className={styles.area}>
+                  <Link prefetch={false} href={area.href} className={styles.area}>
                     <AreaIcon id={area.id} className={styles.areaIcon} />
                     <span className={styles.areaName}>{area.label}</span>
                     <span className={styles.areaCount}>
@@ -290,7 +290,12 @@ export function HomeGateway({ copy, data }: { copy: GatewayCopy; data: GatewayDa
                   <span className={styles.suggestionsLabel}>{label}</span>
                   <span className={shape === "rail" ? styles.rail : styles.scale}>
                     {items.map((item) => (
-                      <Link key={item.href} href={item.href} className={styles.suggestion}>
+                      <Link
+                        key={item.href}
+                        prefetch={false}
+                        href={item.href}
+                        className={styles.suggestion}
+                      >
                         {item.label}
                       </Link>
                     ))}
@@ -315,7 +320,12 @@ export function HomeGateway({ copy, data }: { copy: GatewayCopy; data: GatewayDa
             <ul className={styles.worldList}>
               {data.worlds.map((world) => (
                 <li key={world.world}>
-                  <Link href={world.href} className={styles.world} data-world={world.world}>
+                  <Link
+                    prefetch={false}
+                    href={world.href}
+                    className={styles.world}
+                    data-world={world.world}
+                  >
                     <span className={styles.worldObject} aria-hidden="true">
                       {world.image ? (
                         <Image

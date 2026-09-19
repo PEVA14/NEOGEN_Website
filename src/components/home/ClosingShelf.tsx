@@ -1,26 +1,39 @@
 import Link from "next/link";
 
 import { Container } from "@/components/primitives";
-import { ProductCard } from "@/components/ui";
+import { AreaIcon } from "@/components/ui";
 
 import styles from "./ClosingShelf.module.css";
 
-import type { HomeProduct } from "@/server/home";
+import type { WorldId } from "@/config/worlds";
+import type { DiscoveryAreaId } from "@/data/discovery";
+
+export interface DirectoryArea {
+  id: DiscoveryAreaId;
+  name: string;
+  href: string;
+  items: readonly { name: string; href: string; price: string | null; world: WorldId | null }[];
+}
+
+const pad = (n: number) => String(n).padStart(2, "0");
 
 /**
- * THE PAGE ENDS IN THE STORE.
+ * THE PAGE ENDS IN THE WHOLE CATALOGUE — as a directory.
  *
- * After the last world, the collection once more: ten products that walk the
- * eight areas one at a time by entry price (none of them shown above), then
- * the whole catalogue as the page's final, largest action.
+ * Owner direction (2026-09-19): fix the closing section. Ten more product
+ * cards chosen by a round-robin rule read as a random handful, repeated the
+ * card grid the page already shows twice, and ended a deep page flatly. The
+ * close is now the catalogue at a glance: every product, filed by area in
+ * its own hue and sign, A to Z, each with its entry price and one click from
+ * its page. Flagships carry their world's dot. It is the store directory the
+ * page has been pointing at — the proof there is far more than three products.
  *
- * On a phone the shelf is the catalogue's own two-up grid, cut to six so the
- * final action stays close.
+ * On a phone each area shows its first five and a way to the rest, so the
+ * directory stays a directory rather than a long scroll.
  */
 export function ClosingShelf({
   copy,
-  items,
-  areaLabels,
+  areas,
   counts,
   href,
 }: {
@@ -29,22 +42,22 @@ export function ClosingShelf({
     label: string;
     title: string;
     lede: string;
-    allTitle: string;
-    allBody: string;
+    count: string;
+    more: string;
+    facts: string;
     action: string;
-    from: string;
-    cta: string;
+    search: string;
   };
-  items: readonly HomeProduct[];
-  areaLabels: Partial<Record<string, string>>;
-  counts: { products: number; presentations: number };
+  areas: readonly DirectoryArea[];
+  counts: { products: number; presentations: number; areas: number };
   href: string;
 }) {
-  const fill = (t: string) =>
-    t
+  const fill = (template: string, values: Record<string, string | number> = {}) =>
+    template
       .replace("{products}", String(counts.products))
       .replace("{presentations}", String(counts.presentations))
-      .replace("{n}", String(counts.products));
+      .replace("{areas}", String(counts.areas))
+      .replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? ""));
 
   return (
     <section className={styles.closing} aria-labelledby="closing-title">
@@ -56,39 +69,83 @@ export function ClosingShelf({
           <h2 id="closing-title" className={styles.title}>
             {copy.title}
           </h2>
-          <p className={styles.lede}>{copy.lede}</p>
+          <p className={styles.lede}>{fill(copy.lede)}</p>
         </header>
 
-        {items.length > 0 ? (
-          <ul className={styles.grid}>
-            {items.map((item) => (
-              <li key={item.slug} className={styles.item}>
-                <ProductCard
-                  slug={item.slug}
-                  world={item.world}
-                  areaId={item.areaId}
-                  eyebrow={item.areaId ? areaLabels[item.areaId] : undefined}
-                  name={item.name}
-                  href={item.href}
-                  price={item.price}
-                  priceFrom={copy.from}
-                  presentationRange={item.range}
-                  presentations={item.presentations}
-                  ctaLabel={copy.cta}
-                  variant="store"
-                />
-              </li>
-            ))}
-          </ul>
-        ) : null}
+        <div className={styles.directory}>
+          {areas.map((area) => (
+            <section
+              key={area.id}
+              className={styles.area}
+              data-area={area.id}
+              aria-labelledby={`dir-${area.id}`}
+            >
+              <h3 id={`dir-${area.id}`} className={styles.areaHead}>
+                <Link prefetch={false} href={area.href} className={styles.areaLink}>
+                  <AreaIcon id={area.id} className={styles.areaIcon} />
+                  <span className={styles.areaName}>{area.name}</span>
+                  <span className={styles.areaCount}>
+                    <span aria-hidden="true">{pad(area.items.length)}</span>
+                    <span className={styles.srOnly}>
+                      {fill(copy.count, { n: area.items.length })}
+                    </span>
+                  </span>
+                </Link>
+              </h3>
+              <ul className={styles.items}>
+                {area.items.map((item) => (
+                  <li key={item.href} className={styles.item}>
+                    <Link prefetch={false} href={item.href} className={styles.product}>
+                      <span className={styles.productName}>
+                        {item.world ? (
+                          <span
+                            className={styles.worldDot}
+                            data-world-tint={item.world}
+                            aria-hidden="true"
+                          />
+                        ) : null}
+                        {item.name}
+                      </span>
+                      {item.price ? (
+                        <span className={styles.productPrice}>{item.price}</span>
+                      ) : null}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              {area.items.length > 5 ? (
+                <Link prefetch={false} href={area.href} className={styles.more}>
+                  {fill(copy.more, { n: area.items.length, area: area.name })}{" "}
+                  <span aria-hidden="true">→</span>
+                </Link>
+              ) : null}
+            </section>
+          ))}
+        </div>
 
-        <Link href={href} className={styles.all}>
-          <span className={styles.allTitle}>{copy.allTitle}</span>
-          <span className={styles.allBody}>{fill(copy.allBody)}</span>
-          <span className={styles.allAction}>
-            {fill(copy.action)} <span aria-hidden="true">→</span>
-          </span>
-        </Link>
+        <div className={styles.bar}>
+          <p className={styles.facts}>{fill(copy.facts)}</p>
+          <div className={styles.actions}>
+            <search className={styles.searchWrap}>
+              <form action={href} method="get" className={styles.search}>
+                <label htmlFor="closing-search" className={styles.srOnly}>
+                  {copy.search}
+                </label>
+                <input
+                  id="closing-search"
+                  name="q"
+                  type="search"
+                  autoComplete="off"
+                  placeholder={copy.search}
+                  className={styles.searchInput}
+                />
+              </form>
+            </search>
+            <Link prefetch={false} href={href} className={styles.action}>
+              {copy.action} <span aria-hidden="true">→</span>
+            </Link>
+          </div>
+        </div>
       </Container>
     </section>
   );

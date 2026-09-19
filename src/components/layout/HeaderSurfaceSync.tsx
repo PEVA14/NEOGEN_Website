@@ -38,7 +38,10 @@ export function HeaderSurfaceSync() {
         const rect = section.getBoundingClientRect();
         return rect.top < band.bottom && rect.bottom > band.top;
       });
-      header.dataset.surface = over ? "dark" : "light";
+      // Write only on change: setting the same attribute every scroll frame
+      // still invalidates the header's style (performance audit, 2026-09-19).
+      const next = over ? "dark" : "light";
+      if (header.dataset.surface !== next) header.dataset.surface = next;
     };
 
     const schedule = () => {

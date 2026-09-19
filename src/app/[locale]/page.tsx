@@ -35,7 +35,7 @@ import type { Metadata } from "next";
  *   GLOW            Impact      light, resolving into GLOW
  *   05 Evidencia    Quiet       counted, sourced, brief
  *   GHK-Cu          Impact      material, resolving into GHK-Cu
- *   06 Catálogo     Quiet       ten more products, then the whole catalogue
+ *   06 Catálogo     Quiet       the whole catalogue as a directory, by area
  *
  * brand → exploration → products → experience → discovery → trust → products.
  *
@@ -359,8 +359,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           href: area.href,
           label: areaLabel(area.id),
           count: area.count,
-          entry: area.entry ? { name: area.entry.name, range: area.entry.range } : null,
-          price: area.entry?.price ?? null,
         }))}
         copy={{
           index: home.collection.index,
@@ -369,7 +367,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             .replace("{n}", String(data.counts.products))
             .replace("{areas}", String(data.counts.areas)),
           count: home.collection.count,
-          from,
           all: home.collection.action,
         }}
       />
@@ -424,9 +421,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       {ghkCopy ? <MaterialMoment copy={ghkCopy} /> : null}
 
       <ClosingShelf
-        copy={{ ...home.closing, from, cta: home.products.cta }}
-        items={data.closing}
-        areaLabels={Object.fromEntries(data.areas.map((a) => [a.id, areaLabel(a.id)]))}
+        copy={home.closing}
+        areas={data.directory.map((area) => ({
+          id: area.areaId,
+          name: areaLabel(area.areaId),
+          href: area.href,
+          items: area.items,
+        }))}
         counts={data.counts}
         href={catalogPath}
       />

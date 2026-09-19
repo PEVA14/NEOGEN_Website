@@ -97,7 +97,7 @@ export function GlowMoment({ copy }: { copy: GlowMomentCopy }) {
                         <span className={styles.partAmount}>{part.amount}</span>
                         <span className={styles.partShare}>{part.share}</span>
                         {part.alone ? (
-                          <Link href={part.alone.href} className={styles.alone}>
+                          <Link prefetch={false} href={part.alone.href} className={styles.alone}>
                             {part.alone.label}
                             {part.alone.price ? (
                               <span className={styles.alonePrice}>

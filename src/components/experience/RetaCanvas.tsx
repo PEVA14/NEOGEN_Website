@@ -237,9 +237,11 @@ export default function RetaCanvas({
       // so the canvas and the page dissolve into each other with no edge and no
       // rectangular panel.
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
-      // Cap at 2. Retina phones report 3+, tripling fragment cost for a
-      // difference nobody can see on a 6-inch screen.
-      dpr={[1, 2]}
+      // Cap at 2 for the product page's framed presenter, and at 1.5 for the
+      // full-bleed homepage canvases (hero, RETA scene): at 2 a Retina laptop
+      // renders ~2880px of transmission glass every frame, and the difference
+      // from 1.5 is invisible at that size (performance audit, 2026-09-19).
+      dpr={variant === "presenter" ? [1, 2] : [1, 1.5]}
       camera={{ fov: 28, position: [0, 0, CAMERA_Z], near: 0.1, far: 40 }}
       // Reduced motion renders a single frame then stops entirely — no rAF
       // loop, no battery drain, for a user who asked for no movement.

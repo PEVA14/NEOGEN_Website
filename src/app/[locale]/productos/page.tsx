@@ -58,7 +58,7 @@ const PAGE_SIZE = 24;
  *
  *   1. masthead   — charcoal. The count, the one search field, and the three
  *                   signature products on their world grounds, priced.
- *   2. areas      — eight ways in, each shown by a real product from it.
+ *   2. areas      — eight ways in, each a compact door capped in its hue.
  *   3. collection — the whole catalogue: facets, sort, the register view, and
  *                   the storefront card, paged so a phone is a shelf rather
  *                   than a 20,000px list.
@@ -96,21 +96,13 @@ export default async function ProductsPage({ params }: { params: Promise<{ local
       image: commerceStill(entry.slug),
     }));
 
-  /* Each area, shown by its entry product: the cheapest priced one filed there. */
-  const areaShelf: StoreArea[] = areas.map((area) => {
-    const inArea = entries.filter((entry) => entry.areas.includes(area.id));
-    const entry = inArea
-      .filter((e) => e.priceAmount !== null)
-      .sort((a, b) => a.priceAmount! - b.priceAmount!)[0];
-    return {
-      id: area.id,
-      href: path(routes.area(area.slug)),
-      label: dict.discovery.areas[area.id].short,
-      count: inArea.length,
-      entry: entry ? { name: entry.name, range: entry.range } : null,
-      price: entry?.price ?? null,
-    };
-  });
+  /* Each area as a compact door: its name, its count, its capped vial. */
+  const areaShelf: StoreArea[] = areas.map((area) => ({
+    id: area.id,
+    href: path(routes.area(area.slug)),
+    label: dict.discovery.areas[area.id].short,
+    count: entries.filter((entry) => entry.areas.includes(area.id)).length,
+  }));
 
   const stats = fillTemplate(store.stats, {
     products: String(published.length),

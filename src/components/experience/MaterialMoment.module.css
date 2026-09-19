@@ -19,6 +19,15 @@
   grid-template-areas: "material";
   min-block-size: min(88vh, 54rem);
   align-items: center;
+  /* One continuous ground under the strata: void, a warm copper middle, void.
+     No hard edges anywhere — the section reads as a single gradient. */
+  background: linear-gradient(
+    180deg,
+    var(--world-void) 0%,
+    color-mix(in oklab, var(--world-void) 82%, var(--world-accent)) 45%,
+    color-mix(in oklab, var(--world-void) 88%, var(--world-patina)) 75%,
+    var(--world-void) 100%
+  );
 }
 
 .viewport > * {
@@ -35,63 +44,57 @@
   overflow: hidden;
 }
 
+/*
+ * Three soft fields of oxidised copper and patina that drift apart on scroll.
+ * Owner direction (2026-09-19): no lines, no columns. Each band is taller than
+ * before, overlaps its neighbours and is feathered top and bottom by a mask,
+ * and its colour is a wide radial pool that fades out before the band's own
+ * edges — so the depth reads as light, never as stripes.
+ */
 .band {
   position: absolute;
-  inset-inline: -10%;
+  inset-inline: -15%;
   display: block;
   /* Resolved state: settled. */
   transform: translateY(0);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 35%, #000 65%, transparent 100%);
 }
 
-/*
- * Oxidised copper, assembled rather than photographed: a broad copper wash,
- * a patina bloom offset from it, and a fine directional grain that reads as
- * machined metal at a glance and as nothing in particular up close.
- */
 .bandBack {
-  inset-block-start: 8%;
-  block-size: 46%;
+  inset-block-start: -5%;
+  block-size: 70%;
   background:
     radial-gradient(
-      70% 120% at 22% 40%,
-      color-mix(in oklab, var(--world-patina) 34%, transparent) 0%,
-      transparent 62%
+      45% 55% at 22% 50%,
+      color-mix(in oklab, var(--world-patina) 30%, transparent) 0%,
+      transparent 100%
     ),
-    linear-gradient(
-      100deg,
-      color-mix(in oklab, var(--world-accent) 20%, transparent) 0%,
-      transparent 58%
+    radial-gradient(
+      50% 60% at 70% 45%,
+      color-mix(in oklab, var(--world-accent) 16%, transparent) 0%,
+      transparent 100%
     );
-  filter: blur(2px);
 }
 
 .bandMid {
-  inset-block-start: 34%;
-  block-size: 38%;
-  background:
-    repeating-linear-gradient(
-      92deg,
-      color-mix(in oklab, var(--world-light) 5%, transparent) 0px,
-      transparent 2px,
-      transparent 7px
-    ),
-    linear-gradient(
-      82deg,
-      color-mix(in oklab, var(--world-accent) 30%, transparent) 0%,
-      color-mix(in oklab, var(--world-patina) 16%, transparent) 52%,
-      transparent 86%
-    );
+  inset-block-start: 25%;
+  block-size: 60%;
+  background: radial-gradient(
+    60% 55% at 35% 50%,
+    color-mix(in oklab, var(--world-accent) 26%, transparent) 0%,
+    color-mix(in oklab, var(--world-patina) 10%, transparent) 55%,
+    transparent 100%
+  );
 }
 
 .bandFront {
-  inset-block-start: 62%;
-  block-size: 34%;
-  background: linear-gradient(
-    268deg,
-    color-mix(in oklab, var(--world-accent) 26%, transparent) 0%,
-    transparent 64%
+  inset-block-start: 55%;
+  block-size: 55%;
+  background: radial-gradient(
+    55% 60% at 78% 50%,
+    color-mix(in oklab, var(--world-accent) 22%, transparent) 0%,
+    transparent 100%
   );
-  filter: blur(1px);
 }
 
 /*
@@ -220,8 +223,10 @@
   gap: var(--space-xs);
   padding: var(--space-sm) var(--space-md);
   border-block-start: 1px solid color-mix(in oklab, var(--world-accent) 55%, transparent);
-  background: color-mix(in oklab, var(--world-void) 72%, transparent);
-  backdrop-filter: blur(6px);
+  /* A denser ground instead of backdrop-filter: blurring the strata behind,
+     which move with the scroll, cost a full re-blur every frame (audit,
+     2026-09-19). */
+  background: color-mix(in oklab, var(--world-void) 84%, transparent);
 }
 
 .slab + .slab {
@@ -416,23 +421,41 @@
  */
 .specimen {
   position: relative;
+  isolation: isolate;
   display: grid;
   place-items: center;
   block-size: min(64vh, 34rem);
-  border: 1px solid color-mix(in oklab, var(--world-accent) 40%, transparent);
+}
+
+/*
+ * No box: a copper key light above and a patina floor below, on their own
+ * layer and feathered to nothing on every side, so the vial stands in the
+ * section's light rather than in a framed panel (owner direction, 2026-09-19).
+ * The layer is masked, never the vial.
+ */
+.specimen::before {
+  content: "";
+  position: absolute;
+  inset: -12% -18%;
+  z-index: -1;
+  pointer-events: none;
   background:
     radial-gradient(
-      60% 50% at 30% 20%,
-      color-mix(in oklab, var(--world-accent) 38%, transparent),
-      transparent 70%
+      40% 38% at 42% 30%,
+      color-mix(in oklab, var(--world-accent) 34%, transparent),
+      transparent 100%
     ),
     radial-gradient(
-      70% 30% at 50% 100%,
+      42% 18% at 50% 78%,
       color-mix(in oklab, var(--world-patina) 40%, transparent),
-      transparent 70%
+      transparent 100%
     ),
-    color-mix(in oklab, var(--world-void) 70%, #000);
-  overflow: hidden;
+    radial-gradient(
+      32% 40% at 50% 52%,
+      color-mix(in oklab, var(--world-void) 60%, #000),
+      transparent 100%
+    );
+  mask-image: radial-gradient(closest-side, #000 55%, transparent 100%);
 }
 
 .object {

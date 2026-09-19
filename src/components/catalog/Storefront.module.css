@@ -437,31 +437,14 @@
   margin: 0;
   padding: 0;
   display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(9.25rem, 42%);
+  /* Compact doors: all eight fit two across on a phone, no swiping. */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-xs);
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scroll-snap-type: x mandatory;
-  scroll-padding-inline: var(--gutter);
-  margin-inline: calc(-1 * var(--gutter));
-  padding-inline: var(--gutter);
-  padding-block-end: var(--space-2xs);
-  scrollbar-width: none;
-}
-
-.areaList::-webkit-scrollbar {
-  display: none;
 }
 
 @media (min-width: 48rem) {
   .areaList {
-    grid-auto-flow: row;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    grid-auto-columns: auto;
-    overflow: visible;
-    margin-inline: 0;
-    padding-inline: 0;
   }
 }
 
@@ -484,7 +467,13 @@
   border: 1px solid var(--area-line, var(--border-subtle));
   border-radius: var(--radius-object);
   overflow: hidden;
-  background: var(--neogen-paper);
+  /* Paper at the name, the area's own tint at the foot where the cap stands. */
+  background: linear-gradient(
+    180deg,
+    var(--neogen-paper) 0%,
+    var(--neogen-paper) 35%,
+    color-mix(in oklab, var(--area-hue) 16%, var(--neogen-paper)) 100%
+  );
   color: var(--ink-primary);
   text-decoration: none;
   transition: border-color var(--motion-duration-base) var(--ease-standard);
@@ -510,9 +499,8 @@
   grid-template-columns: minmax(0, 1fr) auto;
   gap: var(--space-3xs) var(--space-2xs);
   align-items: center;
-  padding: var(--space-xs) var(--space-sm) var(--space-sm);
+  padding: var(--space-xs) var(--space-sm) 0;
   border-block-start: 3px solid var(--area-hue);
-  background: color-mix(in oklab, var(--area-hue) 11%, var(--neogen-paper));
 }
 
 /* The symbol shares the number's row, so the name keeps the tile's full width. */
@@ -560,35 +548,45 @@
   color: var(--ink-secondary);
 }
 
-.areaMedia {
-  display: block;
-  margin-block-start: auto;
-}
-
-/* A shorter crop than a card: the tile is a door, not the product page. */
-.area .areaMedia > * {
-  aspect-ratio: 1 / 1;
-  transition: transform var(--motion-duration-slow) var(--ease-standard);
-}
-
-.area:hover .areaMedia > * {
-  transform: scale(1.02);
-}
-
 .areaFoot {
+  position: relative;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2xs);
-  padding: var(--space-xs) var(--space-sm);
-  border-block-start: 1px solid var(--area-line, var(--border-subtle));
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
+  align-items: flex-end;
+  justify-content: center;
+  margin-block-start: auto;
+  padding-inline: var(--space-sm);
+  min-block-size: 4.75rem;
+}
+
+/* The top of a vial, capped in the area's hue, rising from the tile's foot. */
+.areaCap {
+  inline-size: min(64%, 7rem);
+  margin-block-end: -1px;
+  transition: transform var(--motion-duration-slow) var(--ease-standard);
+  transform-origin: 50% 100%;
+}
+
+.area:hover .areaCap {
+  transform: translateY(-4px);
+}
+
+/* Eight across: the tiles are narrow, so the cap takes more of the width. */
+@media (min-width: 80rem) {
+  .areaCap {
+    inline-size: min(84%, 8.5rem);
+  }
+  .areaFoot {
+    min-block-size: 5.5rem;
+  }
 }
 
 .arrow {
+  position: absolute;
+  inset-block-end: var(--space-xs);
+  inset-inline-end: var(--space-sm);
+  font-size: var(--text-lg);
+  line-height: 1;
+  color: var(--ink-primary);
   transition: transform var(--motion-duration-base) var(--ease-standard);
 }
 
@@ -598,7 +596,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .signatureMedia > *,
-  .areaMedia > *,
+  .areaCap,
   .areaIcon,
   .arrow {
     transition: none;
@@ -609,7 +607,7 @@
   }
 
   .signature:hover .signatureMedia > *,
-  .area:hover .areaMedia > *,
+  .area:hover .areaCap,
   .area:hover .arrow {
     transform: none;
   }

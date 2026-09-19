@@ -1493,6 +1493,69 @@ focus follows, and the ground changes per area. Heights: desktop 10,900 →
   shared `WorldMomentCopy` type is gone, and the product page reads
   `home.ghkcu.statement`.
 
+- **Closing section → catalogue directory (2026-09-19).** The ten
+  round-robin cards read as a random handful and repeated the card grid
+  shown above.
+  - The close is now `ClosingShelf` as a directory: every publishable product
+    per area (`homeData().directory`), A to Z with its entry price on a
+    dotted leader, and each area opened by its hue rule, sign and count.
+    Flagships carry their world dot.
+  - On phones each area shows its first five, then "all {n} in {area}".
+  - It ends in a slim charcoal bar with the counts, a GET search and "View
+    the full catalogue".
+  - The closing selection (`closing`, `CLOSING_SIZE`) is removed from
+    `server/home.ts`.
+- **Area tiles made compact (2026-09-19).** This change is to the shared
+  `AreaShelf`, so it affects both /productos and the homepage's collection.
+  Following an owner reference, each tile is now its number, sign, name and
+  count over a paper-to-area-tint ground, with the top of a NEOGEN vial rising
+  from its foot. The new `ui/AreaCap` draws the cap in the area's
+  `--area-hue`.
+  - The full drawn vial and the "From" price are gone. `StoreArea` no longer
+    carries `entry` or `price`, and the unused `from` keys are removed.
+  - Phones show two across (no swipe), tablets four, wide screens eight.
+- **Homepage performance audit (2026-09-19).** Measured on the production
+  build (`neogen-prod`, :3100) with Playwright: desktop unthrottled, and a
+  phone profile (390 px, 4× CPU).
+
+  The dev server is ~18× slower to load `/es` (1.8 s against 0.1 s), so judge
+  speed on a production build.
+
+  Found and fixed:
+  - **Explorer:** it rendered all eight panels (56 % of the DOM, 180 of 246
+    SVG gradients, ~180 KB of HTML). Now only opened panels render.
+  - **Prefetch:** every one of 217 links prefetched its route, 695 KB across
+    150 requests. `prefetch={false}` now covers the dense lists (directory,
+    area tiles, gateway directory, suggestions and world chips, GLOW parts,
+    GHK-Cu chips and links). Primary CTAs keep it.
+  - **Canvas density:** it was capped at 2×. Now 1.5× for the full-bleed hero
+    and RETA scene; the product page presenter keeps 2×.
+  - **3D start:** it began during hydration. `useVialStage` now waits for
+    `requestIdleCallback` (1.5 s at most); the poster paints first.
+  - **CSS repaints:** GLOW's scaling bloom used `filter: blur()` and GHK-Cu's
+    slabs used `backdrop-filter` over moving strata; both removed.
+  - **Header:** `HeaderSurfaceSync` wrote its attribute every scroll frame; it
+    now writes only on change.
+
+  |                  | Before           | After           |
+  | ---------------- | ---------------- | --------------- |
+  | DOM nodes        | 4,046            | 2,142           |
+  | SVG gradients    | 246              | 90              |
+  | HTML (decoded)   | 527 KB           | 380 KB          |
+  | Prefetch traffic | 695 KB / 150 req | 153 KB / 66 req |
+  | Phone TBT        | 362 ms           | 231 ms          |
+  | Phone LCP        | 1.15 s           | 0.95 s          |
+
+  CLS stays 0.
+
+  Not changed:
+  - three.js is 238 KB; it now loads after idle.
+  - The inline RSC payload is ~190 KB decoded (38 KB gzipped for the whole
+    document), normal for a server-rendered tree.
+  - Fonts are 113 KB.
+  - Whether phones should get the static poster instead of the hero's live 3D
+    is a design decision, left to the owner.
+
 - **Accessibility fix (pre-existing).** `PresentationLadder` scrolls
   sideways at tablet width and was not keyboard-reachable (axe
   `scrollable-region-focusable`). It now scrolls inside a focusable,

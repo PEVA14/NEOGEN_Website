@@ -750,7 +750,6 @@ const es = {
       title: "{n} compuestos. {areas} áreas.",
       action: "Ver todo el catálogo",
       count: "{n} compuestos",
-      from: "Desde",
     },
     explorer: {
       index: "04",
@@ -765,11 +764,13 @@ const es = {
     closing: {
       index: "06",
       label: "Catálogo",
-      title: "Más del catálogo",
-      lede: "Una selección que recorre las ocho áreas, ordenada por precio de entrada.",
-      allTitle: "Todo el catálogo",
-      allBody: "{products} compuestos y {presentations} presentaciones, cada una con su precio.",
-      action: "Ver los {n} compuestos",
+      title: "Todo el catálogo",
+      lede: "{products} compuestos y {presentations} presentaciones, cada una con su precio. Por área, de la A a la Z.",
+      count: "{n} compuestos",
+      more: "Los {n} de {area}",
+      facts: "{products} compuestos · {presentations} presentaciones · {areas} áreas",
+      action: "Ver el catálogo completo",
+      search: "Buscar un compuesto",
     },
     products: {
       index: "01",
@@ -1050,7 +1051,6 @@ const es = {
           label: "Áreas",
           title: "Compra por área",
           count: "{n} compuestos",
-          from: "Desde",
           all: "Ver todos los compuestos",
         },
         collection: {

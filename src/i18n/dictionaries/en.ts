@@ -712,7 +712,6 @@ const en: Dictionary = {
       title: "{n} compounds. {areas} areas.",
       action: "View the whole catalogue",
       count: "{n} compounds",
-      from: "From",
     },
     explorer: {
       index: "04",
@@ -727,11 +726,13 @@ const en: Dictionary = {
     closing: {
       index: "06",
       label: "Catalogue",
-      title: "More from the catalogue",
-      lede: "A selection across all eight areas, ordered by entry price.",
-      allTitle: "The whole catalogue",
-      allBody: "{products} compounds and {presentations} presentations, each with its price.",
-      action: "View all {n} compounds",
+      title: "The whole catalogue",
+      lede: "{products} compounds and {presentations} presentations, each with its price. By area, A to Z.",
+      count: "{n} compounds",
+      more: "All {n} in {area}",
+      facts: "{products} compounds · {presentations} presentations · {areas} areas",
+      action: "View the full catalogue",
+      search: "Search for a compound",
     },
     products: {
       index: "01",
@@ -960,7 +961,6 @@ const en: Dictionary = {
           label: "Areas",
           title: "Shop by area",
           count: "{n} compounds",
-          from: "From",
           all: "View all compounds",
         },
         collection: {

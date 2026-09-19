@@ -1,5 +1,10 @@
 /*
- * THE CLOSING SHELF — the catalogue once more, then the whole of it.
+ * THE CATALOGUE DIRECTORY — the page's close.
+ *
+ * Typography does the work: eight area columns, each opened by its hue as a
+ * rule and its sign, then every product A to Z with its entry price on the
+ * same line, dotted leaders between — the register of a store that has a lot
+ * in it. Quiet chrome, dense content, one charcoal action at the end.
  */
 
 .closing {
@@ -7,12 +12,23 @@
   background: var(--surface-base);
 }
 
+.srOnly {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* --- Head ------------------------------------------------------------------ */
+
 .head {
   display: grid;
   gap: var(--space-2xs) var(--space-xl);
   align-items: end;
   padding-block-start: var(--space-sm);
-  margin-block-end: var(--space-lg);
+  margin-block-end: var(--space-xl);
   border-block-start: 1px solid var(--border-default);
 }
 
@@ -44,8 +60,8 @@
   font-family: var(--font-display);
   font-stretch: var(--font-stretch-display);
   font-weight: 700;
-  font-size: var(--text-4xl);
-  line-height: 0.9;
+  font-size: var(--text-5xl);
+  line-height: 0.86;
   letter-spacing: var(--tracking-display);
   text-transform: uppercase;
 }
@@ -56,108 +72,251 @@
   color: var(--ink-secondary);
   font-size: var(--text-base);
   line-height: var(--leading-snug);
+  text-wrap: pretty;
 }
 
-.grid {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+/* --- The directory ------------------------------------------------------------ */
+
+.directory {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-xs);
+  gap: var(--space-xl) var(--gutter);
+  grid-template-columns: minmax(0, 1fr);
 }
 
-@media (min-width: 48rem) {
-  .grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+@media (min-width: 40rem) {
+  .directory {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 64rem) {
-  .grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+  .directory {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    row-gap: var(--space-2xl);
   }
 }
 
-.item {
+.area {
   display: flex;
+  flex-direction: column;
   min-inline-size: 0;
 }
 
-/* A phone gets six: two rows of the catalogue's grid, then the way in. */
-@media (max-width: 47.999rem) {
-  .item:nth-child(n + 7) {
-    display: none;
-  }
+.areaHead {
+  margin: 0 0 var(--space-2xs);
 }
 
-/* Three across on a tablet: nine, so the last row is full. */
-@media (min-width: 48rem) and (max-width: 63.999rem) {
-  .item:nth-child(n + 10) {
-    display: none;
-  }
-}
-
-/* --- The whole catalogue ------------------------------------------------- */
-
-.all {
+/* The area's own door: its hue as the rule, its sign, its name, its count. */
+.areaLink {
   display: grid;
-  gap: var(--space-2xs) var(--space-xl);
-  align-items: end;
-  margin-block-start: var(--space-md);
-  padding: var(--space-lg);
-  background: var(--neogen-charcoal);
-  color: var(--neogen-paper);
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2xs);
+  padding-block: var(--space-xs);
+  border-block-start: 3px solid var(--area-hue);
+  border-block-end: 1px solid var(--border-default);
+  color: var(--ink-primary);
   text-decoration: none;
 }
 
-@media (min-width: 64rem) {
-  .all {
-    grid-template-columns: minmax(0, 1fr) auto;
-    padding: var(--space-xl) var(--space-lg);
-  }
+.areaLink:hover .areaName {
+  text-decoration: underline;
+  text-decoration-color: var(--area-hue);
+  text-underline-offset: 4px;
 }
 
-.all:focus-visible {
-  outline: var(--focus-ring-width) solid var(--focus-ring);
-  outline-offset: 3px;
+.areaIcon {
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  color: var(--area-hue);
 }
 
-.allTitle {
+.areaName {
   font-family: var(--font-display);
   font-stretch: var(--font-stretch-display);
   font-weight: 700;
-  font-size: var(--text-5xl);
-  line-height: 0.86;
-  letter-spacing: var(--tracking-display);
+  font-size: var(--text-xl);
+  line-height: 1;
   text-transform: uppercase;
 }
 
-.allBody {
+.areaCount {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Name, a dotted leader, the price — a register line. */
+.product {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2xs);
+  min-block-size: 2rem;
+  padding-block: 0.3rem;
+  color: var(--ink-primary);
+  text-decoration: none;
+}
+
+.product::after {
+  content: "";
+  order: 1;
+  flex: 1;
+  min-inline-size: var(--space-sm);
+  border-block-end: 1px dotted var(--border-strong);
+  transform: translateY(-0.2em);
+}
+
+.productName {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-size: var(--text-sm);
+  line-height: 1.3;
+}
+
+.productPrice {
+  order: 2;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-secondary);
+  white-space: nowrap;
+}
+
+.product:hover .productName {
+  text-decoration: underline;
+  text-decoration-color: var(--area-hue);
+  text-underline-offset: 3px;
+}
+
+.product:hover .productPrice {
+  color: var(--ink-primary);
+}
+
+/* A flagship keeps its world, as a dot. */
+.worldDot {
+  flex: none;
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  border-radius: var(--radius-pill);
+  background: var(--world-accent);
+  transform: translateY(-0.05em);
+}
+
+.more {
+  align-self: flex-start;
+  display: none;
+  align-items: center;
+  gap: 0.35em;
+  min-block-size: 2.5rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-primary);
+  text-decoration: underline;
+  text-decoration-color: var(--area-hue);
+  text-underline-offset: 4px;
+}
+
+.areaLink:focus-visible,
+.product:focus-visible,
+.more:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* On the charcoal bar the ring is paper, or it would vanish. */
+.action:focus-visible {
+  outline: var(--focus-ring-width) solid var(--neogen-paper);
+  outline-offset: 3px;
+}
+
+/* A phone: the first five of each area, then the way to the rest. */
+@media (max-width: 39.99rem) {
+  .item:nth-child(n + 6) {
+    display: none;
+  }
+  .more {
+    display: inline-flex;
+  }
+}
+
+/* --- The closing bar ------------------------------------------------------------ */
+
+.bar {
+  display: grid;
+  gap: var(--space-md);
+  align-items: center;
+  margin-block-start: var(--space-2xl);
+  padding: var(--space-md) var(--space-lg);
+  background: var(--neogen-charcoal);
+  color: var(--neogen-paper);
+}
+
+@media (min-width: 64rem) {
+  .bar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}
+
+.facts {
+  margin: 0;
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: color-mix(in oklab, var(--neogen-paper) 72%, var(--neogen-charcoal));
+  color: color-mix(in oklab, var(--neogen-paper) 78%, var(--neogen-charcoal));
+  font-variant-numeric: tabular-nums;
 }
 
-@media (min-width: 64rem) {
-  .allBody {
-    grid-column: 1;
-  }
-  .allAction {
-    grid-column: 2;
-    grid-row: 1 / span 2;
-  }
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
 }
 
-.allAction {
-  justify-self: start;
+.searchWrap {
+  display: block;
+}
+
+.search {
+  display: flex;
+}
+
+.searchInput {
+  inline-size: 16rem;
+  max-inline-size: 100%;
+  min-block-size: 3rem;
+  padding-inline: var(--space-sm);
+  border: 1px solid color-mix(in oklab, var(--neogen-paper) 30%, transparent);
+  background: transparent;
+  color: var(--neogen-paper);
+  font: inherit;
+  font-size: var(--text-sm);
+}
+
+.searchInput::placeholder {
+  color: color-mix(in oklab, var(--neogen-paper) 62%, var(--neogen-charcoal));
+}
+
+.searchInput:focus-visible {
+  outline: var(--focus-ring-width) solid var(--neogen-paper);
+  outline-offset: 2px;
+}
+
+.action {
   display: inline-flex;
   align-items: center;
   gap: var(--space-xs);
-  min-block-size: 3.25rem;
-  margin-block-start: var(--space-sm);
+  min-block-size: 3rem;
   padding-inline: var(--space-lg);
   background: var(--neogen-paper);
   color: var(--neogen-charcoal);
@@ -165,16 +324,29 @@
   font-size: var(--text-xs);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
+  text-decoration: none;
   white-space: nowrap;
   transition: gap var(--motion-duration-base) var(--ease-standard);
 }
 
-.all:hover .allAction {
+.action:hover {
   gap: var(--space-sm);
 }
 
+@media (max-width: 39.99rem) {
+  .searchWrap,
+  .search,
+  .searchInput,
+  .action {
+    inline-size: 100%;
+  }
+  .action {
+    justify-content: center;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .allAction {
+  .action {
     transition: none;
   }
 }

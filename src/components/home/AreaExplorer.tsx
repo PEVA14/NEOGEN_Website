@@ -60,8 +60,12 @@ const pad = (n: number) => String(n).padStart(2, "0");
  * collection tiles above already show — as store cards, with the area's own
  * page one action away.
  *
- * Every panel is in the server HTML (inactive ones `hidden`), so the products
- * are indexable and the first area works before hydration.
+ * PERFORMANCE: only the open area's products are rendered. Rendering all
+ * eight panels up front put ~2,300 DOM nodes, 180 SVG gradients and ~180 KB
+ * of HTML on the page for seven hidden tabs (audit, 2026-09-19). A panel is
+ * rendered the first time its tab is chosen and kept afterwards, so switching
+ * back is instant. Every product is still linked, crawlable, from the closing
+ * catalogue directory.
  */
 export function AreaExplorer({
   copy,
@@ -71,6 +75,12 @@ export function AreaExplorer({
   areas: readonly ExplorerArea[];
 }) {
   const [active, setActive] = useState(0);
+  /* Panels already opened stay rendered; unopened ones cost nothing. */
+  const [opened, setOpened] = useState<ReadonlySet<number>>(() => new Set([0]));
+  const open = (index: number) => {
+    setActive(index);
+    setOpened((current) => (current.has(index) ? current : new Set(current).add(index)));
+  };
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
   const baseId = useId();
   if (areas.length === 0) return null;
@@ -94,7 +104,7 @@ export function AreaExplorer({
               : null;
     if (next === null) return;
     event.preventDefault();
-    setActive(next);
+    open(next);
     tabs.current[next]?.focus();
   };
 
@@ -130,7 +140,7 @@ export function AreaExplorer({
               tabIndex={index === active ? 0 : -1}
               className={styles.tab}
               data-area={area.id}
-              onClick={() => setActive(index)}
+              onClick={() => open(index)}
               onKeyDown={onKey}
             >
               <AreaIcon id={area.id} className={styles.tabIcon} />
@@ -149,53 +159,57 @@ export function AreaExplorer({
             hidden={index !== active}
             className={styles.panel}
           >
-            <div className={styles.intro}>
-              <AreaIcon id={area.id} className={styles.introIcon} />
-              <h3 className={styles.areaTitle}>{area.title}</h3>
-              <p className={styles.areaBody}>{area.body}</p>
-              <p className={styles.areaFacts}>
-                <span>{copy.count.replace("{n}", pad(area.count))}</span>
-                {area.price ? (
-                  <span>
-                    {copy.from} <strong>{area.price}</strong>
-                  </span>
-                ) : null}
-              </p>
-              <Link href={area.href} className={styles.enter}>
-                {copy.enter} <span aria-hidden="true">→</span>
-              </Link>
-            </div>
+            {opened.has(index) ? (
+              <>
+                <div className={styles.intro}>
+                  <AreaIcon id={area.id} className={styles.introIcon} />
+                  <h3 className={styles.areaTitle}>{area.title}</h3>
+                  <p className={styles.areaBody}>{area.body}</p>
+                  <p className={styles.areaFacts}>
+                    <span>{copy.count.replace("{n}", pad(area.count))}</span>
+                    {area.price ? (
+                      <span>
+                        {copy.from} <strong>{area.price}</strong>
+                      </span>
+                    ) : null}
+                  </p>
+                  <Link href={area.href} className={styles.enter}>
+                    {copy.enter} <span aria-hidden="true">→</span>
+                  </Link>
+                </div>
 
-            <ul className={styles.shelf}>
-              {area.products.map((product) => (
-                <li key={product.slug} className={styles.shelfItem}>
-                  <ProductCard
-                    slug={product.slug}
-                    world={product.world}
-                    areaId={area.id}
-                    name={product.name}
-                    href={product.href}
-                    price={product.price}
-                    priceFrom={copy.from}
-                    presentationRange={product.range}
-                    presentations={product.presentations}
-                    ctaLabel={copy.cta}
-                    variant="store"
-                  />
-                </li>
-              ))}
-              <li className={styles.shelfItem}>
-                <Link href={area.href} className={styles.more}>
-                  <span className={styles.moreFigure}>{pad(area.count)}</span>
-                  <span className={styles.moreLabel}>
-                    {copy.all.replace("{n}", String(area.count))}
-                  </span>
-                  <span className={styles.moreGo} aria-hidden="true">
-                    →
-                  </span>
-                </Link>
-              </li>
-            </ul>
+                <ul className={styles.shelf}>
+                  {area.products.map((product) => (
+                    <li key={product.slug} className={styles.shelfItem}>
+                      <ProductCard
+                        slug={product.slug}
+                        world={product.world}
+                        areaId={area.id}
+                        name={product.name}
+                        href={product.href}
+                        price={product.price}
+                        priceFrom={copy.from}
+                        presentationRange={product.range}
+                        presentations={product.presentations}
+                        ctaLabel={copy.cta}
+                        variant="store"
+                      />
+                    </li>
+                  ))}
+                  <li className={styles.shelfItem}>
+                    <Link href={area.href} className={styles.more}>
+                      <span className={styles.moreFigure}>{pad(area.count)}</span>
+                      <span className={styles.moreLabel}>
+                        {copy.all.replace("{n}", String(area.count))}
+                      </span>
+                      <span className={styles.moreGo} aria-hidden="true">
+                        →
+                      </span>
+                    </Link>
+                  </li>
+                </ul>
+              </>
+            ) : null}
           </div>
         ))}
       </Container>

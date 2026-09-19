@@ -83,6 +83,24 @@ export function useVialStage(
   const id = useId();
   const [palette, setPalette] = useState<WorldPalette | null>(null);
   const [granted, setGranted] = useState(false);
+  /*
+   * WAIT FOR IDLE. The 3D layer — three.js, the GLB parse, shader compilation
+   * — is the heaviest work on any page that hosts the vial, and starting it
+   * during hydration made it compete with the page becoming interactive
+   * (performance audit, 2026-09-19). The poster paints first either way; the
+   * canvas takes over once the main thread is free, or after 1.5 s at most.
+   */
+  const [idle, setIdle] = useState(false);
+
+  useEffect(() => {
+    const done = () => setIdle(true);
+    if ("requestIdleCallback" in window) {
+      const handle = window.requestIdleCallback(done, { timeout: 1500 });
+      return () => window.cancelIdleCallback(handle);
+    }
+    const handle = setTimeout(done, 600);
+    return () => clearTimeout(handle);
+  }, []);
 
   useEffect(() => {
     const el = target.current;
@@ -127,6 +145,6 @@ export function useVialStage(
     palette,
     // `webgl` is false on the server and on the first client paint, so the
     // static fallback is always what paints first.
-    canRender3D: modelPath !== null && webgl && palette !== null && granted,
+    canRender3D: modelPath !== null && webgl && palette !== null && granted && idle,
   };
 }

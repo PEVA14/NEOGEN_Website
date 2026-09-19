@@ -80,7 +80,8 @@
     color-mix(in oklab, var(--world-accent) 20%, transparent) 34%,
     transparent 68%
   );
-  filter: blur(12px);
+  /* No filter: blur. The gradient is already soft, and a blurred layer that
+     scales with the scroll re-rasterises every frame (audit, 2026-09-19). */
 }
 
 /* A tighter, hotter core. Two bodies read as depth; one reads as a flat disc. */
@@ -92,7 +93,6 @@
     color-mix(in oklab, var(--world-light) 42%, transparent) 0%,
     transparent 62%
   );
-  filter: blur(6px);
 }
 
 @media (prefers-reduced-motion: no-preference) {

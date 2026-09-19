@@ -114,7 +114,7 @@ export function MaterialMoment({ copy }: { copy: MaterialMomentCopy }) {
                     <ul className={styles.chips}>
                       {copy.areas.items.map((area) => (
                         <li key={area.id} data-area={area.id}>
-                          <Link href={area.href} className={styles.chip}>
+                          <Link prefetch={false} href={area.href} className={styles.chip}>
                             <AreaIcon id={area.id} className={styles.chipIcon} />
                             {area.name}
                           </Link>
@@ -130,7 +130,7 @@ export function MaterialMoment({ copy }: { copy: MaterialMomentCopy }) {
                     <ul className={styles.links}>
                       {copy.usedIn.items.map((item) => (
                         <li key={item.href}>
-                          <Link href={item.href} className={styles.link}>
+                          <Link prefetch={false} href={item.href} className={styles.link}>
                             <span className={styles.linkName}>{item.name}</span>
                             <span className={styles.linkBody}>{item.body}</span>
                             <span className={styles.linkGo} aria-hidden="true">
@@ -146,7 +146,7 @@ export function MaterialMoment({ copy }: { copy: MaterialMomentCopy }) {
                 {copy.research ? (
                   <section className={styles.slab} aria-label={copy.research.label}>
                     <p className={styles.slabLabel}>{copy.research.label}</p>
-                    <Link href={copy.research.href} className={styles.link}>
+                    <Link prefetch={false} href={copy.research.href} className={styles.link}>
                       <span className={styles.linkName}>{copy.research.body}</span>
                       <span className={styles.linkBody}>{copy.research.action}</span>
                       <span className={styles.linkGo} aria-hidden="true">

@@ -1,0 +1,16 @@
+/*
+ * The cap takes its colour from the area's hue: a lit face, a base and a dark
+ * edge, all mixed from `--area-hue`, so each area reads as its own material.
+ */
+.cap {
+  --cap-base: var(--area-hue, var(--neogen-graphite));
+  --cap-light: color-mix(in oklab, var(--cap-base) 52%, #fff);
+  --cap-dark: color-mix(in oklab, var(--cap-base) 55%, #000);
+  --collar-light: color-mix(in oklab, var(--cap-base) 20%, #f2f0ec);
+  --collar-dark: color-mix(in oklab, var(--cap-base) 30%, #8f8c86);
+  --glass-edge: color-mix(in oklab, var(--cap-base) 30%, #3b3a36);
+
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+}

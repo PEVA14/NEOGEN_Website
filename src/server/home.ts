@@ -37,10 +37,10 @@ import { localizePath } from "@/i18n/routing";
  *   entry        an area's cheapest priced product: the way into that area.
  *   area shelf   the next four products of an area by entry price, so the
  *                explorer shows depth rather than repeating the entry tile.
- *   closing      one product per area per round, by entry price, skipping
- *                everything already shown above: the catalogue's breadth.
+ *   directory    every product in every area, A to Z, with its entry price:
+ *                the whole catalogue at a glance.
  *
- * The flagships are excluded from the area shelves and the closing selection.
+ * The flagships are excluded from the area shelves; the directory lists all.
  * They are loud elsewhere on the page, and a shelf is where the rest of the
  * collection gets its turn.
  *
@@ -138,7 +138,12 @@ export interface HomeData {
     hasProfile: boolean;
   })[];
   areas: readonly HomeArea[];
-  closing: readonly HomeProduct[];
+  /** The whole catalogue by area, A to Z: the page's closing directory. */
+  directory: readonly {
+    areaId: DiscoveryAreaId;
+    href: string;
+    items: readonly { name: string; href: string; price: string | null; world: WorldId | null }[];
+  }[];
   /**
    * The strengths the catalogue carries most often ("10 mg"), as searches to
    * try: a fact about the catalogue's shape, not a popularity signal.
@@ -156,7 +161,6 @@ export interface HomeData {
 }
 
 const SHELF_SIZE = 4;
-const CLOSING_SIZE = 10;
 
 export async function homeData(locale: Locale): Promise<HomeData> {
   const tag = localeTags[locale];
@@ -199,12 +203,9 @@ export async function homeData(locale: Locale): Promise<HomeData> {
     .map((id) => products.find((p) => p.world === id && isPublishable(p)))
     .filter((p): p is Product & { world: WorldId } => Boolean(p && p.world));
 
-  const shown = new Set<string>(flagships.map((p) => p.slug));
-
   const areas: HomeArea[] = publicAreas().map((area) => {
     const all = ranked(area.id);
     const entry = all[0] ?? null;
-    if (entry) shown.add(entry.slug);
     const shelf = all
       .filter((p) => p.slug !== entry?.slug && !p.world)
       .slice(0, SHELF_SIZE)
@@ -218,24 +219,25 @@ export async function homeData(locale: Locale): Promise<HomeData> {
       shelf,
     };
   });
-  for (const area of areas) for (const item of area.shelf) shown.add(item.slug);
-
-  /* Round-robin across the areas, so the closing shelf reads as breadth. */
-  const queues = publicAreas().map((area) => ({
+  /* Every publishable product per area, A to Z, each with its entry price. */
+  const collator = new Intl.Collator(tag, { sensitivity: "base", numeric: true });
+  const directory = publicAreas().map((area) => ({
     areaId: area.id,
-    queue: ranked(area.id).filter((p) => !p.world),
+    href: path(routes.area(area.slug)),
+    items: productsInArea(area.id)
+      .filter(isPublishable)
+      .slice()
+      .sort((x, y) => collator.compare(x.name, y.name))
+      .map((product) => {
+        const price = cheapest(product);
+        return {
+          name: product.name,
+          href: path(routes.product(product.slug)),
+          price: price ? formatPrice(price, tag) : null,
+          world: product.world,
+        };
+      }),
   }));
-  const closing: HomeProduct[] = [];
-  const taken = new Set<string>();
-  for (let round = 0; closing.length < CLOSING_SIZE && round < 12; round++) {
-    for (const { areaId, queue } of queues) {
-      if (closing.length >= CLOSING_SIZE) break;
-      const next = queue.find((p) => !shown.has(p.slug) && !taken.has(p.slug));
-      if (!next) continue;
-      taken.add(next.slug);
-      closing.push(toItem(next, areaId));
-    }
-  }
 
   const lowest = published
     .map(cheapest)
@@ -347,7 +349,7 @@ export async function homeData(locale: Locale): Promise<HomeData> {
       };
     }),
     areas,
-    closing,
+    directory,
     strengths,
     recentReferences: referenceIndex.slice(0, 3).map(({ reference }) => ({
       title: reference.title,

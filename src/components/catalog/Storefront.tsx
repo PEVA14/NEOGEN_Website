@@ -4,7 +4,7 @@ import Link from "next/link";
 import type React from "react";
 
 import { Container } from "@/components/primitives";
-import { AreaIcon, SpecimenPlate } from "@/components/ui";
+import { AreaCap, AreaIcon, SpecimenPlate } from "@/components/ui";
 
 import { StoreSearch } from "./StoreSearch";
 import styles from "./Storefront.module.css";
@@ -45,9 +45,6 @@ export interface StoreArea {
   href: string;
   label: string;
   count: number;
-  /** The area's entry product — its cheapest priced one — as the tile's object. */
-  entry: { name: string; range: string } | null;
-  price: string | null;
 }
 
 export interface StoreCopy {
@@ -149,10 +146,12 @@ export function StoreMasthead({
 }
 
 /**
- * EIGHT WAYS IN. Each area is shown by a real product from it — its entry
- * product, the cheapest priced one — standing on the area's own studio tone,
- * with the area's count and its entry price. One row on a wide screen, a
- * swiped shelf on a phone.
+ * EIGHT WAYS IN. Compact doors (owner direction, 2026-09-19): each area is
+ * its number, name and count over its own tint, and the top of a NEOGEN vial
+ * rising from the tile's foot with its cap in the area's colour — a shelf of
+ * these, without showing any one product. No price: the tile opens the area,
+ * and the area's own page carries the prices. One row on a wide screen, four
+ * across on a tablet, two across on a phone.
  */
 export function AreaShelf({
   areas,
@@ -161,7 +160,7 @@ export function AreaShelf({
   id,
 }: {
   areas: readonly StoreArea[];
-  copy: { index: string; label: string; title: string; count: string; from: string; all: string };
+  copy: { index: string; label: string; title: string; count: string; all: string };
   /** Where "see all" goes. The storefront scrolls to its own collection; the
       homepage opens the catalogue. */
   allHref?: string;
@@ -191,7 +190,7 @@ export function AreaShelf({
         <ul className={styles.areaList}>
           {areas.map((area, i) => (
             <li key={area.id} className={styles.areaItem} data-area={area.id}>
-              <Link href={area.href} className={styles.area}>
+              <Link prefetch={false} href={area.href} className={styles.area}>
                 <span className={styles.areaHead}>
                   <AreaIcon id={area.id} className={styles.areaIcon} />
                   <span className={styles.areaIndex}>{String(i + 1).padStart(2, "0")}</span>
@@ -200,28 +199,9 @@ export function AreaShelf({
                     {copy.count.replace("{n}", String(area.count).padStart(2, "0"))}
                   </span>
                 </span>
-                {area.entry ? (
-                  <span className={styles.areaMedia}>
-                    <SpecimenPlate
-                      areaId={area.id}
-                      world={null}
-                      name={area.entry.name}
-                      annotation={area.entry.range}
-                    />
-                  </span>
-                ) : null}
-                <span className={styles.areaFoot}>
-                  {area.price ? (
-                    <span>
-                      <span className={styles.from}>{copy.from} </span>
-                      {area.price}
-                    </span>
-                  ) : (
-                    <span />
-                  )}
-                  <span className={styles.arrow} aria-hidden="true">
-                    →
-                  </span>
+                <span className={styles.areaFoot} aria-hidden="true">
+                  <AreaCap className={styles.areaCap} />
+                  <span className={styles.arrow}>→</span>
                 </span>
               </Link>
             </li>
