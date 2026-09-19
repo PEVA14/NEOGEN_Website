@@ -586,13 +586,32 @@ const en: Dictionary = {
     },
 
     ghkcu: {
-      eyebrow: "Copper peptide complex — GHK-Cu",
+      /*
+       * GHK-Cu ON THE HOMEPAGE — its record, in layers.
+       *
+       * Material is weight and surface; here the weight is literal: two
+       * presentations drawn to scale. Presentations, prices, areas, the blend
+       * that contains it and the references come from the registry. Nothing
+       * describes effects or uses.
+       */
+      eyebrow: "Signature compound · Material",
+      title: "GHK-Cu",
+      /** The world's line: the product page uses it too. */
       statement: "The environment becomes material.",
-      body: "Heavy tactile context. Saturated verdigris and deep oxidised copper replace the clinical template. Symmetrical physical textures present weight where GLOW presents light.",
-      specs: {
-        presentation: "Presentations",
-        category: "Category",
-        from: "From",
+      lede: "A research compound in {n} presentations: {list}.",
+      strata: {
+        presentations: {
+          label: "Presentations",
+          pack: "× {n} vials",
+          perVial: "{price} per vial",
+        },
+        areas: { label: "Areas" },
+        usedIn: { label: "Also in", body: "{mg} mg in every {total} mg vial" },
+        research: {
+          label: "Research",
+          body: "Sourced profile · {n} references",
+          action: "Read the profile",
+        },
       },
       cta: "View GHK-Cu",
     },

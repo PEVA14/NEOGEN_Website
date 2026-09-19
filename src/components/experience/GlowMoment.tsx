@@ -8,14 +8,6 @@ import { getWorld } from "@/config/worlds";
 import { MomentCommerce, type MomentCommerceProps } from "./MomentCommerce";
 import styles from "./GlowMoment.module.css";
 
-export interface WorldMomentCopy {
-  eyebrow: string;
-  statement: string;
-  body: string;
-  /** The product the moment is about — drawn as its object, then sold. */
-  product: MomentCommerceProps;
-}
-
 /** GLOW's own copy: the blend, set out as what it contains. */
 export interface GlowMomentCopy {
   eyebrow: string;

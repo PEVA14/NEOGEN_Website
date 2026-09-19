@@ -8,12 +8,13 @@ import {
   RetaExperience,
   type GlowMomentCopy,
   type HeroCopy,
+  type MaterialMomentCopy,
   type RetaExperienceCopy,
 } from "@/components/experience";
 import { AreaExplorer, ClosingShelf, HomeGateway, ScienceBand, WorldBand } from "@/components/home";
 import { routes } from "@/config/routes";
 import { getWorld, type WorldId } from "@/config/worlds";
-import { isLocale } from "@/i18n/config";
+import { isLocale, localeTags } from "@/i18n/config";
 import { getDictionary } from "@/i18n/getDictionary";
 import { localizePath } from "@/i18n/routing";
 import { alternates } from "@/lib/alternates";
@@ -201,6 +202,74 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         })()
       : null;
 
+  /*
+   * GHK-Cu, as its record: the presentations drawn to scale, the areas it is
+   * filed under, the blends that contain it and its sourced profile.
+   */
+  const ghk = data.flagships.find((item) => item.world === "ghk-cu");
+  const strata = home.ghkcu.strata;
+  const heaviest = Math.max(1, ...(ghk?.ladder.map((step) => step.mg ?? 0) ?? []));
+  const listFormat = new Intl.ListFormat(localeTags[locale], { type: "conjunction" });
+  const ghkCopy: MaterialMomentCopy | null =
+    ghk && ghkProduct
+      ? {
+          eyebrow: home.ghkcu.eyebrow,
+          title: home.ghkcu.title,
+          name: ghk.name,
+          lede: home.ghkcu.lede
+            .replace("{n}", String(ghk.ladder.length))
+            .replace("{list}", listFormat.format(ghk.ladder.map((step) => step.label))),
+          presentations: {
+            label: strata.presentations.label,
+            steps: ghk.ladder.map((step) => ({
+              label: step.label,
+              weight: step.mg ? Math.round((step.mg / heaviest) * 100) : 100,
+              pack: step.vials
+                ? strata.presentations.pack.replace("{n}", String(step.vials))
+                : null,
+              price: step.price,
+              perVial: step.perVial
+                ? strata.presentations.perVial.replace("{price}", step.perVial)
+                : null,
+            })),
+          },
+          areas:
+            ghk.areas.length > 0
+              ? {
+                  label: strata.areas.label,
+                  items: ghk.areas.map((area) => ({
+                    id: area.id,
+                    name: areaLabel(area.id),
+                    href: area.href,
+                  })),
+                }
+              : undefined,
+          usedIn:
+            ghk.usedIn.length > 0
+              ? {
+                  label: strata.usedIn.label,
+                  items: ghk.usedIn.map((blend) => ({
+                    name: blend.name,
+                    href: blend.href,
+                    body: strata.usedIn.body
+                      .replace("{mg}", String(blend.mg))
+                      .replace("{total}", String(blend.total)),
+                  })),
+                }
+              : undefined,
+          research:
+            ghk.hasProfile && ghk.references > 0
+              ? {
+                  label: strata.research.label,
+                  body: strata.research.body.replace("{n}", String(ghk.references)),
+                  action: strata.research.action,
+                  href: `${ghk.href}#overview-title`,
+                }
+              : undefined,
+          product: ghkProduct,
+        }
+      : null;
+
   const catalogPath = path(routes.products);
 
   return (
@@ -352,16 +421,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       />
 
       {/* Impact — material, resolving into GHK-Cu. */}
-      {ghkProduct ? (
-        <MaterialMoment
-          copy={{
-            eyebrow: home.ghkcu.eyebrow,
-            statement: home.ghkcu.statement,
-            body: home.ghkcu.body,
-            product: ghkProduct,
-          }}
-        />
-      ) : null}
+      {ghkCopy ? <MaterialMoment copy={ghkCopy} /> : null}
 
       <ClosingShelf
         copy={{ ...home.closing, from, cta: home.products.cta }}

@@ -4,7 +4,7 @@ import { routes } from "@/config/routes";
 import { worldIds, type WorldId } from "@/config/worlds";
 import { commerceStill, type ProductImage } from "@/content/media";
 import { publicOverview } from "@/content/overview";
-import { researchReferenceIndex } from "@/content/research";
+import { referencesForProduct, researchReferenceIndex } from "@/content/research";
 import {
   formatStrength,
   isPublishable,
@@ -109,7 +109,14 @@ export interface HomeData {
   flagships: readonly (HomeProduct & {
     world: WorldId;
     /** Every presentation with its own price, smallest first. */
-    ladder: readonly { label: string; price: string | null }[];
+    ladder: readonly {
+      label: string;
+      price: string | null;
+      /** Milligrams for a solid presentation, for drawing to scale; else null. */
+      mg: number | null;
+      vials: number | null;
+      perVial: string | null;
+    }[];
     /** Vials per pack when every presentation shares one, else null. */
     pack: number | null;
     /** The flagship's first public discovery area. */
@@ -122,6 +129,13 @@ export interface HomeData {
     components: readonly HomeComponent[] | null;
     /** The entry pack's price per vial, formatted. */
     perVial: string | null;
+    /** Every public discovery area the flagship is filed under. */
+    areas: readonly { id: DiscoveryAreaId; href: string }[];
+    /** Blends that contain this compound, with how much of it per vial. */
+    usedIn: readonly { name: string; href: string; mg: number; total: number }[];
+    /** Public references its sourced profile cites; 0 without a profile. */
+    references: number;
+    hasProfile: boolean;
   })[];
   areas: readonly HomeArea[];
   closing: readonly HomeProduct[];
@@ -268,11 +282,38 @@ export async function homeData(locale: Locale): Promise<HomeData> {
         world: p.world,
         ladder: p.variants.map((v) => {
           const price = prices.get(v.id) ?? null;
+          const unit = price ? perVial(price.amount, v.vials ?? null) : null;
           return {
             label: formatStrength(v.strength),
             price: price ? formatPrice(price, tag) : null,
+            mg: v.strength.kind === "solid" ? v.strength.mg : null,
+            vials: v.vials ?? null,
+            perVial: unit !== null ? formatPrice({ amount: unit, currency: "MXN" }, tag) : null,
           };
         }),
+        areas: publicAreasFor(p.slug).map((area) => ({
+          id: area.id,
+          href: path(routes.area(area.slug)),
+        })),
+        /* Reverse of `components`: the blends whose printed composition names this compound. */
+        usedIn: published.flatMap((blend) => {
+          if (blend.slug === p.slug || blend.category !== "blends") return [];
+          const parts = parseComposition(blend.composition);
+          const part = parts?.find(
+            (x) => key(p.slug) === key(x.name) || key(p.name).endsWith(key(x.name)),
+          );
+          if (!parts || !part) return [];
+          return [
+            {
+              name: blend.name,
+              href: path(routes.product(blend.slug)),
+              mg: part.mg,
+              total: parts.reduce((sum, x) => sum + x.mg, 0),
+            },
+          ];
+        }),
+        references: referencesForProduct(p.slug).length,
+        hasProfile: Boolean(publicOverview(p.slug, locale)),
         pack: typeof only === "number" ? only : null,
         primaryArea: publicAreasFor(p.slug)[0]?.id ?? null,
         components:

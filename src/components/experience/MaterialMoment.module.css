@@ -139,8 +139,32 @@
   z-index: var(--z-content);
   display: flex;
   flex-direction: column;
-  gap: var(--space-2xl);
-  padding-block: var(--space-3xl);
+  gap: var(--space-xl);
+  padding-block: var(--space-3xl) var(--space-2xl);
+}
+
+/*
+ * Denser than the other two worlds on purpose: material is about weight, so the
+ * grid tightens and the record sits in heavy slabs rather than floating.
+ */
+.layout {
+  display: grid;
+  gap: var(--space-xl);
+  grid-template-columns: 1fr;
+  align-items: start;
+}
+
+@media (min-width: 64rem) {
+  .layout {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: var(--space-3xl);
+    align-items: center;
+  }
+}
+
+.record {
+  display: grid;
+  gap: var(--space-xs);
 }
 
 .eyebrow {
@@ -149,55 +173,252 @@
   text-transform: uppercase;
 }
 
-/*
- * Denser than the other two worlds on purpose: material is about weight, so the
- * grid tightens and the type gets heavier rather than floating in space.
- */
-.layout {
-  display: grid;
-  gap: var(--space-xl);
-  grid-template-columns: 1fr;
-  align-items: end;
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: clamp(4.5rem, 3rem + 7vw, 9.5rem);
+  line-height: 0.82;
+  /* Tighter and heavier than GLOW's title — material has mass. */
+  letter-spacing: -0.04em;
+  color: var(--world-light);
 }
 
-@media (min-width: 64rem) {
-  .layout {
-    grid-template-columns: minmax(0, 7fr) minmax(0, 4fr);
-    gap: var(--space-3xl);
+.name {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+
+.lede {
+  margin: var(--space-xs) 0 0;
+  max-inline-size: 30ch;
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-2xl);
+  line-height: 1.05;
+  letter-spacing: var(--tracking-tight);
+  color: var(--ink-primary);
+  text-wrap: balance;
+}
+
+/* --- The record, in slabs ---------------------------------------------------- */
+
+.slabs {
+  display: grid;
+  margin-block-start: var(--space-lg);
+}
+
+/* One slab per fact: a copper rule on top, a darker ground, label beside. */
+.slab {
+  display: grid;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  border-block-start: 1px solid color-mix(in oklab, var(--world-accent) 55%, transparent);
+  background: color-mix(in oklab, var(--world-void) 72%, transparent);
+  backdrop-filter: blur(6px);
+}
+
+.slab + .slab {
+  margin-block-start: 3px;
+}
+
+@media (min-width: 48rem) {
+  .slab {
+    grid-template-columns: 9rem minmax(0, 1fr);
+    align-items: start;
+    column-gap: var(--space-md);
   }
 }
 
-.statementBlock {
+.slabLabel {
+  margin: 0;
+  padding-block-start: 0.2rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+/* Presentations as weights: each block's height is its milligrams to scale. */
+.weights {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+  gap: var(--space-sm);
+}
+
+.weight {
+  display: grid;
+  gap: 0.15rem;
+  align-content: end;
+}
+
+.block {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
+  align-items: flex-end;
+  block-size: 4.5rem;
+  margin-block-end: var(--space-2xs);
 }
 
-.statement {
+.blockFill {
+  display: block;
+  inline-size: 100%;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--world-light) 70%, var(--world-accent)) 0,
+    var(--world-accent) 2px,
+    color-mix(in oklab, var(--world-accent) 70%, var(--world-void)) 100%
+  );
+  box-shadow: inset 0 -12px 18px color-mix(in oklab, var(--world-patina) 45%, transparent);
+  transform-origin: 50% 100%;
+}
+
+.weightLabel {
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-2xl);
+  line-height: 1;
+  color: var(--world-light);
+}
+
+.weightPrice {
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+  font-variant-numeric: tabular-nums;
   color: var(--ink-primary);
-  text-wrap: balance;
-  /* Tighter and heavier than GLOW's statement — material has mass. */
-  letter-spacing: -0.03em;
 }
 
-.body {
+.weightMeta {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Areas: each in its own sign and hue. */
+.chips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  min-block-size: 2.5rem;
+  padding-inline: var(--space-sm);
+  border: 1px solid color-mix(in oklab, var(--world-light) 22%, transparent);
+  border-block-start: 2px solid var(--area-hue);
+  background: color-mix(in oklab, var(--world-light) 6%, transparent);
+  color: var(--ink-primary);
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-base);
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background-color var(--motion-duration-base) var(--ease-standard);
+}
+
+.chip:hover {
+  background: color-mix(in oklab, var(--world-light) 14%, transparent);
+}
+
+.chipIcon {
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  /* The area's hue, lifted so it reads on the copper dark. */
+  color: color-mix(in oklab, var(--area-hue) 70%, var(--neogen-paper));
+}
+
+/* A fact that is also a way in: the blend, the profile. */
+.links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2xs);
+}
+
+.link {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "name go"
+    "body go";
+  gap: 0.15rem var(--space-sm);
+  align-items: center;
+  color: var(--ink-primary);
+  text-decoration: none;
+}
+
+.linkName {
+  grid-area: name;
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-lg);
+  line-height: 1.1;
+}
+
+.linkBody {
+  grid-area: body;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
   color: var(--ink-secondary);
-  max-inline-size: 34rem;
-  text-wrap: pretty;
 }
 
-/* --- Core sample --------------------------------------------------------- */
+.linkGo {
+  grid-area: go;
+  display: grid;
+  place-items: center;
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  border: 1px solid color-mix(in oklab, var(--world-light) 30%, transparent);
+  color: var(--world-light);
+  transition: transform var(--motion-duration-base) var(--ease-standard);
+}
+
+.link:hover .linkGo {
+  transform: translateX(3px);
+}
+
+.chip:focus-visible,
+.link:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* --- The plinth -------------------------------------------------------------- */
 
 /*
  * A vertical section through the material. Heavier and denser than anything in
- * GLOW or RETA by construction: hard-edged strata, a rule between each, and a
- * frame that reads as an instrument mount rather than an image well.
+ * GLOW or RETA by construction: a frame that reads as an instrument mount, the
+ * copper-capped vial standing in it.
  */
 .specimen {
   position: relative;
   display: grid;
   place-items: center;
-  block-size: min(60vh, 32rem);
+  block-size: min(64vh, 34rem);
   border: 1px solid color-mix(in oklab, var(--world-accent) 40%, transparent);
   background:
     radial-gradient(
@@ -207,7 +428,7 @@
     ),
     radial-gradient(
       70% 30% at 50% 100%,
-      color-mix(in oklab, #3f756d 40%, transparent),
+      color-mix(in oklab, var(--world-patina) 40%, transparent),
       transparent 70%
     ),
     color-mix(in oklab, var(--world-void) 70%, #000);
@@ -223,14 +444,50 @@
   block-size: 100%;
 }
 
-@media (max-width: 63.999rem) {
-  .specimen {
-    block-size: 24rem;
+/* The slabs settle in, heaviest first, like layers laid down. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .slab {
+      animation: deposit auto linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 90%;
+    }
+    .blockFill {
+      animation: load auto linear both;
+      animation-timeline: view();
+      animation-range: entry 20% cover 40%;
+    }
   }
 }
 
-@media (max-width: 47.999rem) {
+@keyframes deposit {
+  from {
+    opacity: 0;
+    transform: translateY(1.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes load {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: none;
+  }
+}
+
+/* --- Phone: the object first, then its record --------------------------------- */
+
+@media (max-width: 63.999rem) {
   .viewport {
-    min-block-size: min(80vh, 44rem);
+    min-block-size: auto;
+  }
+  .specimen {
+    order: -1;
+    block-size: 24rem;
   }
 }

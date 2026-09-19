@@ -610,13 +610,32 @@ const es = {
     },
 
     ghkcu: {
-      eyebrow: "Complejo peptídico de cobre — GHK-Cu",
+      /*
+       * GHK-Cu EN LA PORTADA — su expediente, en capas.
+       *
+       * Material es peso y superficie; aquí el peso es literal: dos
+       * presentaciones dibujadas a escala. Presentaciones, precios, áreas,
+       * la mezcla que lo contiene y las referencias salen del registro.
+       * Nada describe efectos ni usos.
+       */
+      eyebrow: "Compuesto insignia · Material",
+      title: "GHK-Cu",
+      /** La frase del mundo: la usa también la página del producto. */
       statement: "El entorno se vuelve materia.",
-      body: "Contexto táctil y pesado. Verdigrís saturado y cobre oxidado profundo reemplazan la plantilla clínica. Texturas físicas simétricas aportan peso donde GLOW aporta luz.",
-      specs: {
-        presentation: "Presentaciones",
-        category: "Categoría",
-        from: "Desde",
+      lede: "Un compuesto de investigación en {n} presentaciones: {list}.",
+      strata: {
+        presentations: {
+          label: "Presentaciones",
+          pack: "× {n} viales",
+          perVial: "{price} por vial",
+        },
+        areas: { label: "Áreas" },
+        usedIn: { label: "También en", body: "{mg} mg en cada vial de {total} mg" },
+        research: {
+          label: "Investigación",
+          body: "Perfil con fuentes · {n} referencias",
+          action: "Leer el perfil",
+        },
       },
       cta: "Ver GHK-Cu",
     },

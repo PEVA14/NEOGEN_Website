@@ -1477,6 +1477,22 @@ focus follows, and the ground changes per area. Heights: desktop 10,900 →
     fill with it. On phones the vial comes first.
   - `MaterialMoment` keeps `WorldMomentCopy`, and the product page reads
     `home.glow.statement`.
+- **GHK-Cu, clarified (2026-09-19).** The section led with prose about
+  verdigris and texture. It now sets out the record as strata
+  (`MaterialMoment`, `MaterialMomentCopy`), each slab one fact:
+  - the presentations drawn as weights to scale (each block's height is its
+    mg against the heaviest), with pack, price and price per vial;
+  - its areas as hue-coded links;
+  - "also in" GLOW: `homeData` reverse-parses blend compositions into
+    `usedIn`, here 50 mg in each 70 mg vial;
+  - its sourced profile and reference count, linking to `#overview-title` on
+    its page.
+
+  The parallax strata and the copper plinth stay. The slabs settle and the
+  weights load on view timelines, and on phones the plinth comes first. The
+  shared `WorldMomentCopy` type is gone, and the product page reads
+  `home.ghkcu.statement`.
+
 - **Accessibility fix (pre-existing).** `PresentationLadder` scrolls
   sideways at tablet width and was not keyboard-reachable (axe
   `scrollable-region-focusable`). It now scrolls inside a focusable,
