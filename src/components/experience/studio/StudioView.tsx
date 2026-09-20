@@ -10,8 +10,13 @@ import type { StudioLabel } from "./label";
 
 const StudioScene = dynamic(() => import("./StudioScene"), { ssr: false });
 
-/** The canonical NEOGEN container (owner, 2026-09-18): RETA's real vial. */
-const CONTAINER = "/models/reta.glb";
+/**
+ * The canonical NEOGEN container (owner, 2026-09-18): RETA's real vial, now the
+ * second-generation export. Its label sheet has the same printed strip geometry
+ * as the first (x 18, 455px of 2048), which is what `drawLabel` is calibrated
+ * to — so the neutral rig's generated labels still land on the same panel.
+ */
+const CONTAINER = "/models/reta-v2.glb";
 
 /**
  * Flagships have their own rig; every other product is the neutral rig on the

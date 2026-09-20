@@ -28,6 +28,18 @@ const NORMALISED_HEIGHT = 1;
 /** How much of the media well's height the resolved object occupies. */
 const FIT_IN_PANEL = 0.62;
 
+/**
+ * Cap metal, corrected at load time. See the material pass below for why.
+ *
+ * 0.32 is satin: bright along the crown, falling off around the cylinder —
+ * brushed aluminium rather than chrome. Lower reads as a mirror, which in
+ * NEOGEN's near-black worlds has nothing to reflect and goes murky.
+ */
+const CAP_ROUGHNESS = 0.32;
+
+/** A metal at or above this roughness was never given a value; treat it as unset. */
+const UNTUNED_METAL = 0.9;
+
 /*
  * PRESENTER MOTION — a museum display, not a 3D toy.
  *
@@ -184,6 +196,30 @@ export function VialModel({
       // Set per-material rather than on `scene.environmentIntensity`: R3F owns
       // the scene object and it must not be mutated from a component.
       material.envMapIntensity = envIntensity;
+
+      if (material.metalness > 0.5 && material.roughness >= UNTUNED_METAL) {
+        /*
+         * SATIN ALUMINIUM — the cap, which was reading as painted grey.
+         *
+         * The caps are authored `metalness: 1` AND `roughness: 1`. A fully
+         * rough metal scatters every ray and so forms no reflection at all:
+         * it renders as flat grey paint, which is exactly what the vials
+         * showed. It is the same class of export artefact as the glass
+         * arriving at roughness 0 below — a default that survived rather than
+         * a value someone chose. Real anodised lab caps sit near 0.3.
+         *
+         * Only a metal left at FULL roughness is corrected, so an asset that
+         * deliberately ships a softer metal keeps what it was given.
+         */
+        material.roughness = CAP_ROUGHNESS;
+        /*
+         * The export also carries KHR_materials_specular at 0.4, halving the
+         * reflection that describes the cap's edge and crown. Metal has no
+         * colour of its own — the reflection IS the material — so it gets its
+         * full specular response back.
+         */
+        material.specularIntensity = 1;
+      }
 
       if (material.transmission > 0) {
         /*

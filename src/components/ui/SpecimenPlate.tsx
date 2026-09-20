@@ -17,7 +17,7 @@ export type PlateSize = "card" | "plate" | "feature" | "stage";
  * across 85 cards it read as a database entry — a record OF a product rather
  * than the product. The Design Bible now says the products get loud, so the
  * fallback is an OBJECT: the NEOGEN vial, drawn from the proportions of the
- * real model (`public/models/reta.glb`), standing on a lit studio sweep, with
+ * real model (`public/models/reta-v2.glb`), standing on a lit studio sweep, with
  * NEOGEN's own packaging identity — the wordmark, the product's name, its
  * strength — printed on the paper label, exactly as the model's label is.
  *

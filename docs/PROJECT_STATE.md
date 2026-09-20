@@ -1,7 +1,7 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-09-19**: **the checkout pays through Mercado Pago in test
-mode** (§8t, `docs/PAYMENTS.md`). Production payment is blocked on merchant
+Last updated **2026-09-20**: **all three flagships ship a real vial** (§8u) and
+**the checkout pays through Mercado Pago in test mode** (§8t, `docs/PAYMENTS.md`). Production payment is blocked on merchant
 eligibility, credentials and the launch blockers in §6 — not on code.
 **Atlas is frozen and deferred to V2** (§8m).
 The priority is a complete, commercially effective V1 built from what already
@@ -20,7 +20,11 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 
 ### Start here: handoff of 2026-09-18
 
-- **Latest (2026-09-19): Mercado Pago checkout (§8t).** Committed; STOPPED for
+- **Latest (2026-09-20): second-generation 3D vials (§8u).** RETA V2, GHK-Cu and
+  GLOW are live on their product pages and the homepage; the caps read as
+  metal. Committed. One thing waits on the owner: the RETA export carries TWO
+  lids and the build keeps the narrow one — see §8u.
+- **Mercado Pago checkout (§8t).** Committed; STOPPED for
   the owner. Next step is the owner's: create the Mercado Pago application and
   put its TEST credentials in `.env.local` (`docs/PAYMENTS.md` §9–§11), then
   run one test purchase. Homepage review round 2 (§8s) is committed separately
@@ -94,7 +98,8 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 | `81ff312`   | The /productos storefront: masthead, area shelf, store card, paging (§8q)                                                       |
 | `1ebbc21`   | Storefront follow-ups (§8q) and the product-media studio: RETA still, neutral prototype (§8r)                                   |
 | `53ced06` … | Homepage pass and owner review rounds: gateway, RETA, GLOW, GHK-Cu, catalogue directory, area caps, performance (§8s)           |
-| _this_      | Mercado Pago checkout: Orders API + Card Payment Brick, webhook HMAC, Postgres adapters, review-before-payment (§8t)            |
+| `eef099d`   | Mercado Pago checkout: Orders API + Card Payment Brick, webhook HMAC, Postgres adapters, review-before-payment (§8t)            |
+| _this_      | Second-generation vials: RETA V2, GHK-Cu, GLOW; model prep and inspection tooling; satin cap metal (§8u)                        |
 
 **Current priority (owner, 2026-09-17): V1 completion.** Make NEOGEN V1 as
 complete, polished and commercially effective as possible with the
@@ -1660,6 +1665,74 @@ owner's test public key.
 - Meses sin intereses; SPEI/OXXO; 3-D Secure challenge UI (all architected,
   none enabled).
 - An operations view (paid orders, disputes, refunds) — none exists.
+
+## 8u. Second-generation 3D vials (2026-09-20)
+
+The owner exported new vials and asked for them to be implemented, plus "a much
+better understanding of the 3d assets". The how-to lives in
+`public/models/README.md`; this records the decisions and what is still open.
+
+**What shipped**
+
+- `reta-v2.glb`, `ghk-cu.glb`, `glow.glb` — all three flagships now have a
+  model, where only RETA did before. GHK-Cu and GLOW product pages open on the
+  real object inside their worlds instead of the world alone.
+- **`reta-v2.glb` supersedes `reta.glb`** as NEOGEN's canonical container: it is
+  what `StudioView` mounts for the neutral rig, and what the §8r statement about
+  the canonical container now refers to. The old file is deleted. The filename is
+  versioned because models carry a one-year immutable cache — overwriting in
+  place would never reach a returning visitor.
+- Two scripts, because a GLB is opaque until something says otherwise:
+  `scripts/inspect-model.mjs` (parts in millimetres, triangles per material,
+  whether the glass still carries transmission, texture weight, parts sharing
+  space) and `scripts/prepare-model.mjs` (`3d assets/` → `public/models/`: drop
+  nodes, re-encode textures, prune; refuses to write a vial whose glass lost its
+  transmission). Dev dependencies: `@gltf-transform/core`, `/functions`,
+  `/extensions`.
+- Cap metal corrected at load time in `VialModel` — see below.
+
+**What the exports turned out to contain**
+
+- All three are the same container: 287.9 mm tall, Ø129 mm, ~15.4k triangles,
+  glass with real transmission, and a 2048² label sheet whose printed strip is
+  identical across all three (455 px at x = 18). That last fact is load-bearing:
+  `studio/label.ts` draws generated labels against exactly that strip, so the
+  neutral rig still lines up on the new container.
+- **RETA V2 carries two lids**, interpenetrating by 33.9 mm: the narrow
+  `NEOGEN_VIAL_CAP` (Ø123) and the wider `0.75 Dram Autosampler Lid` (Ø147).
+  Together they render as a double-brimmed cap with a seam. The build drops the
+  autosampler lid, matching the approved first-generation silhouette.
+  **OPEN: the owner may prefer the wider lid** — that is one flag in the prepare
+  command, or a re-export carrying a single lid.
+- GLOW's first export (2026-09-19) was an **empty scene**; the owner re-exported
+  it the same night and that one is what ships.
+- Raw exports were 0.8–1.0 MB, 40–53% of which was a PNG label. Re-encoded to
+  JPEG q92 at the same 2048², all three land at ~460 KB, inside the budget.
+
+**Cap metal (`VialModel`)**
+
+The caps are authored `metalness: 1` with `roughness: 1` and
+`KHR_materials_specular` 0.4. A fully rough metal forms no reflection and renders
+as flat grey paint — the same class of export artefact as the glass arriving at
+roughness 0. The material pass now corrects a metal left at FULL roughness to
+0.32 with full specular. Because metal shows its surroundings, each cap picks up
+its own world: blue on RETA, copper on GHK-Cu, gold on GLOW. Environment
+intensity was deliberately NOT raised — that is the next lever if more brightness
+is ever wanted, not a lower roughness (0.12 went murky in the near-black worlds).
+
+**Open for the owner**
+
+- Which RETA lid (above).
+- The labels carry visible placeholders — `[COMPOUND NAME]`, `LOT`, `MFG/EXP` and
+  a `RECONSTITUTION: [SOLVENT / INSTRUCTIONS]` field. Legible at product-page
+  size. Honest as placeholders, but filling that last one in would collide with
+  the no-dosing / no-reconstitution rule (§4).
+- `/images/products/reta/studio.jpg` (the catalogue card) was rendered from the
+  v1 label and no longer matches the live model. Re-capture from `/estudio/reta`.
+- The homepage GHK-Cu and GLOW sections still use the drawn `SpecimenPlate`
+  rather than these models. Not changed: those sections are freshly approved.
+- Optional: set the cap material to roughness 0.35 / specular 0.5 in Blender so
+  the source matches the site, after which the `VialModel` correction can go.
 
 ## 9. Recommendation for Phase 13 (not approved)
 

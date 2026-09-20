@@ -16,18 +16,22 @@ import type { ProductMedia } from "./types";
  */
 export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
   /*
-   * RETA — the only product with a 3D asset.
+   * RETA — the second-generation vial (owner export, 2026-09-19).
    *
-   * The GLB is real and shipping. There is no photograph and no rendered
-   * poster, so the viewer falls back to the diagrammatic silhouette while it
-   * loads and for anyone who cannot run WebGL.
+   * `reta-v2.glb` replaces `reta.glb`: the same container, re-exported with the
+   * printed NEOGEN PEPTIDES label instead of the faint first-generation art.
+   * The filename carries the version because models are served with a one-year
+   * immutable cache — a changed file under the old name would never be fetched.
+   *
+   * There is no photograph and no rendered poster, so the viewer falls back to
+   * the diagrammatic silhouette while it loads and for anyone without WebGL.
    *
    * TODO(assets): capture `poster.jpg` from the live scene once its lighting
    * is signed off. A poster that disagrees with the canvas is worse than none,
    * which is why this is null rather than a rough render.
    */
   reta: {
-    model: "/models/reta.glb",
+    model: "/models/reta-v2.glb",
     /*
      * THE STUDIO STILL (prototype, 2026-09-18, awaiting owner approval).
      *
@@ -49,7 +53,7 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
    * approval; not yet propagated).
    *
    * No model of its own: it ships in the canonical NEOGEN container, whose
-   * real geometry is `reta.glb` (owner, 2026-09-18). Rendered by NEUTRAL_RIG
+   * real geometry is `reta-v2.glb` (owner, 2026-09-18). Rendered by NEUTRAL_RIG
    * with a label drawn from its registry name and presentation range in the
    * real RETA label's layout (`components/experience/studio/label.ts`).
    */
@@ -63,13 +67,28 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
   },
 
   /*
-   * GLOW and GHK-Cu have no entry at all, and that is the correct
-   * configuration rather than an omission.
+   * GHK-Cu — its own vial (owner export, 2026-09-19).
    *
-   * Neither has a GLB and neither has photography. Their product pages open in
-   * the full Experience environment — amber light for GLOW, copper strata for
-   * GHK-Cu — which is a deliberate world fallback, not a missing image. The
-   * environment carries the identity; inventing a render to fill the frame
-   * would be manufacturing product imagery.
+   * The same container as RETA, carrying the printed GHK-Cu label, so the
+   * product page now opens on the real object inside the copper world rather
+   * than on the world alone. No photograph and no studio still yet: the
+   * silhouette covers the load and the no-WebGL case, as it does for RETA.
    */
+  "ghk-cu": {
+    model: "/models/ghk-cu.glb",
+  },
+
+  /*
+   * GLOW — its own vial (owner export, 2026-09-20).
+   *
+   * The same container and the same printed-label geometry as RETA and GHK-Cu,
+   * carrying the GLOW artwork, inside the amber world.
+   *
+   * All three flagships now ship a model. Every other product still resolves to
+   * the world or the silhouette, which stays the correct answer for a product
+   * nobody has modelled or photographed — see the note on Semaglutide above.
+   */
+  glow: {
+    model: "/models/glow.glb",
+  },
 };

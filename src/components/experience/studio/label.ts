@@ -2,11 +2,11 @@ import { CanvasTexture, SRGBColorSpace, type Texture } from "three";
 
 /**
  * A NEOGEN LABEL, DRAWN FROM REGISTRY DATA — for products that share the
- * canonical container (`reta.glb`) but have no printed label artwork of their
+ * canonical container (`reta-v2.glb`) but have no printed label artwork of their
  * own.
  *
  * IT REPRODUCES THE REAL RETA LABEL'S LAYOUT, not a new design. Measured off
- * the label texture embedded in `reta.glb` (2048² sheet, printed strip 458px
+ * the label texture embedded in `reta-v2.glb` (2048² sheet, printed strip 458px
  * wide on the left, type set rotated 90° so it wraps horizontally round the
  * container):
  *

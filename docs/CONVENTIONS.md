@@ -745,7 +745,7 @@ Commerce surfaces never run WebGL. A product's catalogue image is a **studio
 still**: its 3D container rendered once as a product photograph and captured
 to a file.
 
-- **The container.** `public/models/reta.glb` is NEOGEN's real physical
+- **The container.** `public/models/reta-v2.glb` is NEOGEN's real physical
   container (owner, 2026-09-18). Products in the same packaging render on it.
   Do not remodel it; web code owns camera, lighting and materials.
 - **The rig is data.** `components/experience/studio/rig.ts` describes the
