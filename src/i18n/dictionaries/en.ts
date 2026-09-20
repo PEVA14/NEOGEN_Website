@@ -1679,8 +1679,7 @@ const en: Dictionary = {
     add: "Add to bag",
     added: "Added",
     soldOut: "Currently unavailable",
-    unavailable:
-      "Purchasing opens once regulatory review and payment-processor selection are complete.",
+    unavailable: "Purchasing opens once the regulatory review is complete.",
     decrease: "Decrease quantity",
     increase: "Increase quantity",
   },

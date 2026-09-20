@@ -1829,8 +1829,7 @@ const es = {
     add: "Añadir a la bag",
     added: "Añadido",
     soldOut: "No disponible por ahora",
-    unavailable:
-      "La compra se activará al concluir la revisión regulatoria y la selección de procesador de pagos.",
+    unavailable: "La compra se activará al concluir la revisión regulatoria.",
     decrease: "Reducir cantidad",
     increase: "Aumentar cantidad",
   },
