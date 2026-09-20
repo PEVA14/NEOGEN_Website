@@ -36,7 +36,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync, statSync } from "node
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { NodeIO } from "@gltf-transform/core";
+import { NodeIO, PropertyType } from "@gltf-transform/core";
 import { KHRONOS_EXTENSIONS } from "@gltf-transform/extensions";
 import { dedup, prune } from "@gltf-transform/functions";
 
@@ -144,7 +144,25 @@ if (jpegQuality !== null) {
 
 /* ---- 3. prune ------------------------------------------------------------ */
 
-await document.transform(dedup(), prune());
+/*
+ * MATERIALS ARE NOT DEDUPLICATED, and that is deliberate.
+ *
+ * Two materials can carry identical values and still mean different things —
+ * the RETA export has a satin aluminium band and a lid material with the same
+ * numbers. Merging them keeps ONE name, and the site reads material names:
+ * `studio/StudioScene.tsx` paints anything named "aluminum" as metal. A merge
+ * renamed the cap band to "…Black Plastic" and the catalogue still came back
+ * with a black cap. Names are content here, so only geometry and textures are
+ * deduplicated.
+ */
+const DEDUP_TYPES = [
+  PropertyType.ACCESSOR,
+  PropertyType.MESH,
+  PropertyType.TEXTURE,
+  PropertyType.SKIN,
+];
+
+await document.transform(dedup({ propertyTypes: DEDUP_TYPES }), prune());
 
 /* ---- report and write ---------------------------------------------------- */
 

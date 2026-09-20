@@ -232,8 +232,15 @@ function useStudioModel(modelPath: string, rig: StudioRig, label: StudioLabel | 
         m.specularIntensity = 1;
         // Front-facing glass reflects ~4%: the softboxes must read through that.
         m.envMapIntensity = rig.materials.glass.reflect;
-      } else if (name.includes("aluminum")) {
-        // The crimp collar: brushed aluminium, not grey plastic.
+      } else if (m.metalness > 0.5) {
+        /*
+         * The cap: brushed aluminium, not grey plastic.
+         *
+         * Matched on METALNESS, not on the material's name. The name is what
+         * an exporter or an asset tool renames without meaning to — one did,
+         * and this branch fell through to the black-plastic one below, so the
+         * catalogue card came back with a black cap on a silver vial.
+         */
         m.metalness = 1;
         m.roughness = rig.materials.metal.roughness;
         m.color = new Color(rig.materials.metal.color);

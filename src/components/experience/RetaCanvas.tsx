@@ -2,7 +2,7 @@
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, type RefObject } from "react";
-import { ACESFilmicToneMapping, MathUtils, type RectAreaLight } from "three";
+import { ACESFilmicToneMapping, MathUtils, type PointLight, type RectAreaLight } from "three";
 import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLightUniformsLib.js";
 
 import type { WorldEnvironment } from "@/config/worlds";
@@ -93,7 +93,14 @@ const RIG = {
   fill: { position: [2.6, -0.2, 2.2], width: 1.4, height: 3.2 },
   // Separates cap and shoulder from the backdrop.
   top: { position: [0, 2.8, 0.3], width: 2.4, height: 1.0 },
+  // CORE — just behind the object, for a luminous world. Close enough that the
+  // glass carries it, with a short falloff so it lights the vial and not the
+  // whole scene.
+  core: { position: [0, -0.05, -0.7], distance: 3.2 },
 } as const;
+
+/** Base intensity of a luminous world's core light. */
+const CORE_GLOW = 5.5;
 
 /**
  * The studio rig.
@@ -124,6 +131,19 @@ function StudioLights({
   const rimLight = useRef<RectAreaLight>(null);
   const fillLight = useRef<RectAreaLight>(null);
   const topLight = useRef<RectAreaLight>(null);
+  const coreLight = useRef<PointLight>(null);
+
+  /*
+   * A LUMINOUS WORLD EMITS — it does not merely get tinted.
+   *
+   * GLOW's atmosphere is `luminous` (config/worlds), and that should mean
+   * light coming OUT of the object, not a warmer version of the same rig. A
+   * point light sits just behind the vial: the glass transmits it, so the body
+   * lights from within and the label is rimmed from behind.
+   *
+   * Driven by the world's own data rather than by a product name, so any world
+   * declared luminous gets it and RETA and GHK-Cu are untouched.
+   */
 
   // Aimed once on mount. `lookAt` has no declarative equivalent, and a ref is
   // the one thing React does intend to be mutated outside render.
@@ -134,14 +154,25 @@ function StudioLights({
   // The environment responds to the sequence, restrained: only the accent rim
   // breathes, and only within a narrow band. Enough that the light feels alive
   // as the vial turns; not enough to read as an effect.
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     const light = rimLight.current;
-    if (!light) return;
+    if (light) {
+      const at = reducedMotion ? restingProgress(variant) : progress.current;
+      const target = sampleTrack(at, track.rimIntensity);
+      light.intensity = reducedMotion ? target : MathUtils.damp(light.intensity, target, 3, delta);
+    }
 
-    const at = reducedMotion ? restingProgress(variant) : progress.current;
-    const target = sampleTrack(at, track.rimIntensity);
-
-    light.intensity = reducedMotion ? target : MathUtils.damp(light.intensity, target, 3, delta);
+    /*
+     * The core breathes — slowly, and never below a steady floor, so it reads
+     * as something lit rather than something blinking. Held at the floor for a
+     * reader who asked for no movement.
+     */
+    const core = coreLight.current;
+    if (core) {
+      core.intensity = reducedMotion
+        ? CORE_GLOW
+        : CORE_GLOW * (1 + Math.sin(state.clock.elapsedTime * 0.5) * 0.22);
+    }
   });
 
   return (
@@ -180,6 +211,16 @@ function StudioLights({
         intensity={1.5}
         color={palette.light}
       />
+      {environment.atmosphere === "luminous" ? (
+        <pointLight
+          ref={coreLight}
+          position={RIG.core.position}
+          intensity={CORE_GLOW}
+          distance={RIG.core.distance}
+          decay={2}
+          color={palette.light}
+        />
+      ) : null}
     </>
   );
 }

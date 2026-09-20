@@ -285,7 +285,7 @@ export function VialModel({
     // The presenter has a real, continuous rotation; the decorative sway that
     // gives the campaign sequences presence would only fight it.
     const idleSpin =
-      time === null || variant === "presenter" || variant === "sequence"
+      time === null || variant === "presenter" || variant === "sequence" || variant === "moment"
         ? 0
         : Math.sin(time * 0.35) * IDLE_ROTATION;
     const idleLift = time === null ? 0 : Math.sin(time * 0.45) * IDLE_FLOAT;
@@ -410,7 +410,7 @@ export function VialModel({
     }
 
     /*
-     * SEQUENCE — the homepage turntable.
+     * SEQUENCE and MOMENT — the homepage turntables.
      *
      * The pose is constant now, so there is nothing for position or scale to
      * ease into and they are assigned directly; damping a value that never
@@ -419,7 +419,7 @@ export function VialModel({
      * instead of jumping, rAF having stopped while it was away), and the
      * cursor's accumulated travel is damped in on top of it.
      */
-    if (variant === "sequence" && !reducedMotion) {
+    if ((variant === "sequence" || variant === "moment") && !reducedMotion) {
       const pose = applyPose(progress.current, state.clock.elapsedTime);
 
       spin.current += delta * SPIN_RATE;

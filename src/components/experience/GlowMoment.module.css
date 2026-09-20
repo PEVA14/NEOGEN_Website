@@ -427,3 +427,24 @@
     inline-size: 150vw;
   }
 }
+
+/*
+ * THE LIVE STAGE, in the same box the drawn plate occupied.
+ *
+ * Sized by `.object > :last-child` above, so the canvas and the plate share one
+ * frame and the handover between them changes nothing in the layout.
+ *
+ * A PLAIN BLOCK, deliberately: centring the child instead (`place-items`) makes
+ * the renderer's container size itself to a canvas's intrinsic 300 × 150 and
+ * then stretch to fit, which distorts the object and crops it.
+ */
+.stage {
+  position: relative;
+}
+
+/* The static plate fills the same frame; the live canvas covers it (`fill`). */
+.stage > svg {
+  display: block;
+  block-size: 100%;
+  inline-size: 100%;
+}

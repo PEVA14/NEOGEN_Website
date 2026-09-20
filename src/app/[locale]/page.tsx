@@ -17,6 +17,7 @@ import { getWorld, type WorldId } from "@/config/worlds";
 import { isLocale, localeTags } from "@/i18n/config";
 import { getDictionary } from "@/i18n/getDictionary";
 import { localizePath } from "@/i18n/routing";
+import { productMedia } from "@/content/media";
 import { alternates } from "@/lib/alternates";
 import { homeData } from "@/server/home";
 
@@ -153,6 +154,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             .slice(0, 100 - shares.reduce((sum, v) => sum + v, 0))
             .forEach(({ i }) => (shares[i] += 1));
           return {
+            /* The live object for the section's stage; null keeps the drawn
+               plate, which is also the fallback while the GLB loads. */
+            model: productMedia("glow").model,
             eyebrow: home.glow.eyebrow,
             title: home.glow.title,
             name: glow.name,
@@ -213,6 +217,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const ghkCopy: MaterialMomentCopy | null =
     ghk && ghkProduct
       ? {
+          model: productMedia("ghk-cu").model,
           eyebrow: home.ghkcu.eyebrow,
           title: home.ghkcu.title,
           name: ghk.name,

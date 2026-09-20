@@ -6,6 +6,8 @@ import { AreaIcon } from "@/components/ui/AreaIcon";
 import { SpecimenPlate } from "@/components/ui/SpecimenPlate";
 import { getWorld } from "@/config/worlds";
 
+import { MomentStage } from "./MomentStage";
+
 import { MomentCommerce, type MomentCommerceProps } from "./MomentCommerce";
 import styles from "./MaterialMoment.module.css";
 
@@ -13,6 +15,8 @@ import type { DiscoveryAreaId } from "@/data/discovery";
 
 /** GHK-Cu's own copy: its record, as strata. */
 export interface MaterialMomentCopy {
+  /** The product's GLB, when one is declared for it. */
+  model: string | null;
   eyebrow: string;
   title: string;
   /** The product's registry name. */
@@ -158,17 +162,25 @@ export function MaterialMoment({ copy }: { copy: MaterialMomentCopy }) {
               </div>
             </div>
 
-            {/* The product, on a copper-lit plinth. */}
+            {/* The product, on a copper-lit plinth: live where the model
+                exists, the drawn plate everywhere else. */}
             <div className={styles.specimen}>
               <div className={styles.object}>
-                <SpecimenPlate
-                  areaId={null}
+                <MomentStage
                   world="ghk-cu"
-                  name={copy.product.name}
-                  annotation={copy.product.range ?? undefined}
-                  size="stage"
-                  bare
-                />
+                  modelPath={copy.model}
+                  label={copy.product.name}
+                  className={styles.stage}
+                >
+                  <SpecimenPlate
+                    areaId={null}
+                    world="ghk-cu"
+                    name={copy.product.name}
+                    annotation={copy.product.range ?? undefined}
+                    size="stage"
+                    bare
+                  />
+                </MomentStage>
               </div>
             </div>
           </div>

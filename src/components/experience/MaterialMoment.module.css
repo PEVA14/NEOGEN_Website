@@ -514,3 +514,16 @@
     block-size: 24rem;
   }
 }
+
+/* The live stage shares the plate's frame — see GlowMoment.module.css. */
+.stage {
+  position: relative;
+  block-size: 100%;
+}
+
+/* The static plate fills the same frame; the live canvas covers it (`fill`). */
+.stage > svg {
+  display: block;
+  block-size: 100%;
+  inline-size: 100%;
+}

@@ -180,12 +180,39 @@ const PRESENTER: PoseTrack = {
   rimIntensity: [7],
 };
 
+/*
+ * MOMENT — the GLOW and GHK-Cu sections on the homepage.
+ *
+ * Between the two extremes already here: not the full-bleed sequence, where
+ * the vial travels across the whole frame, and not the presenter, whose
+ * position comes from a measured media well. A moment is an object in a LIT
+ * BOX inside a section of type — so it stays centred and simply arrives,
+ * growing a little and rising as the section is scrolled through, then holding
+ * while it is read.
+ *
+ * The scale is relative to the canvas box, which is the section's own object
+ * frame: ~0.7 of its height, leaving air for the world's light around it.
+ */
+const MOMENT: PoseTrack = {
+  offsetX: [0, 0],
+  /* Rises slightly into place, then holds. */
+  offsetY: [-0.05, 0.015],
+  offsetZ: [0, 0],
+  scale: [1.16, 1.32],
+  rotationY: [0],
+  /* The same diagonal the rest of the system presents the vial on. */
+  rotationZ: [-0.24],
+  rotationX: [-0.05],
+  rimIntensity: [7, 10],
+};
+
 /** Which choreography a stage plays. */
-export type StageVariant = "hero" | "sequence" | "presenter";
+export type StageVariant = "hero" | "sequence" | "presenter" | "moment";
 
 export function poseTrack(tier: StageTier, variant: StageVariant = "sequence"): PoseTrack {
   if (variant === "hero") return tier === "compact" ? HERO_COMPACT : HERO_FULL;
   if (variant === "presenter") return PRESENTER;
+  if (variant === "moment") return MOMENT;
   return tier === "compact" ? COMPACT : FULL;
 }
 
@@ -204,7 +231,9 @@ export const RESTING_PROGRESS = 0.05;
  * middle — presented, facing the reader — so reduced motion holds that.
  */
 export function restingProgress(variant: StageVariant): number {
-  return variant === "sequence" ? 0.5 : RESTING_PROGRESS;
+  /* Both scroll-driven variants resolve at their midpoint: the arrival is
+     over and the object is held, which is the frame stillness should keep. */
+  return variant === "sequence" || variant === "moment" ? 0.5 : RESTING_PROGRESS;
 }
 
 /**

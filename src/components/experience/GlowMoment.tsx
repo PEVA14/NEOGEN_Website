@@ -5,11 +5,15 @@ import { Mono } from "@/components/typography";
 import { SpecimenPlate } from "@/components/ui/SpecimenPlate";
 import { getWorld } from "@/config/worlds";
 
+import { MomentStage } from "./MomentStage";
+
 import { MomentCommerce, type MomentCommerceProps } from "./MomentCommerce";
 import styles from "./GlowMoment.module.css";
 
 /** GLOW's own copy: the blend, set out as what it contains. */
 export interface GlowMomentCopy {
+  /** The product's GLB, when one is declared for it. */
+  model: string | null;
   eyebrow: string;
   title: string;
   /** The product's registry name: "GLOW Peptide Series". */
@@ -125,20 +129,28 @@ export function GlowMoment({ copy }: { copy: GlowMomentCopy }) {
             </div>
 
             {/* The object, in its own light. The bloom is the product's world;
-                the vial is the product. */}
+                the vial is the product — live where the model exists, and the
+                drawn plate everywhere else. */}
             <div className={styles.object}>
               <div className={styles.lights} aria-hidden="true">
                 <div className={styles.bloom} data-motion="cinematic" />
                 <div className={styles.halo} data-motion="cinematic" />
               </div>
-              <SpecimenPlate
-                areaId={null}
+              <MomentStage
                 world="glow"
-                name={copy.product.name}
-                annotation={copy.product.range ?? undefined}
-                size="stage"
-                bare
-              />
+                modelPath={copy.model}
+                label={copy.product.name}
+                className={styles.stage}
+              >
+                <SpecimenPlate
+                  areaId={null}
+                  world="glow"
+                  name={copy.product.name}
+                  annotation={copy.product.range ?? undefined}
+                  size="stage"
+                  bare
+                />
+              </MomentStage>
             </div>
           </div>
 

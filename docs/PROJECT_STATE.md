@@ -1,6 +1,7 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-09-20**: **all three flagships ship a real vial** (§8u) and
+Last updated **2026-09-20**: **all three flagships ship a real vial, live on
+their own homepage sections** (§8u, §8v) and
 **the checkout pays through Mercado Pago in test mode** (§8t, `docs/PAYMENTS.md`). Production payment is blocked on merchant
 eligibility, credentials and the launch blockers in §6 — not on code.
 **Atlas is frozen and deferred to V2** (§8m).
@@ -20,10 +21,13 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 
 ### Start here: handoff of 2026-09-18
 
-- **Latest (2026-09-20): second-generation 3D vials (§8u).** RETA V2, GHK-Cu and
-  GLOW are live on their product pages and the homepage; the caps read as
-  metal. Committed. One thing waits on the owner: the RETA export carries TWO
-  lids and the build keeps the narrow one — see §8u.
+- **Latest (2026-09-20): flagship vials in their homepage moments (§8v).** GLOW
+  and GHK-Cu now show their own vial where the drawn plate was, and both
+  catalogue cards were re-captured from the new model. Committed.
+- **Second-generation 3D vials (§8u).** RETA V2, GHK-Cu and GLOW are live on
+  their product pages and the homepage; the caps read as metal. Committed. One
+  thing waits on the owner: the RETA export carries TWO lids and the build
+  keeps the narrow one — see §8u.
 - **Mercado Pago checkout (§8t).** Committed; STOPPED for
   the owner. Next step is the owner's: create the Mercado Pago application and
   put its TEST credentials in `.env.local` (`docs/PAYMENTS.md` §9–§11), then
@@ -99,7 +103,7 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 | `1ebbc21`   | Storefront follow-ups (§8q) and the product-media studio: RETA still, neutral prototype (§8r)                                   |
 | `53ced06` … | Homepage pass and owner review rounds: gateway, RETA, GLOW, GHK-Cu, catalogue directory, area caps, performance (§8s)           |
 | `eef099d`   | Mercado Pago checkout: Orders API + Card Payment Brick, webhook HMAC, Postgres adapters, review-before-payment (§8t)            |
-| _this_      | Second-generation vials: RETA V2, GHK-Cu, GLOW; model prep and inspection tooling; satin cap metal (§8u)                        |
+| `0bcbaf7`   | Second-generation vials: RETA V2, GHK-Cu, GLOW; model prep and inspection tooling; satin cap metal (§8u)                        |
 
 **Current priority (owner, 2026-09-17): V1 completion.** Make NEOGEN V1 as
 complete, polished and commercially effective as possible with the
@@ -1727,12 +1731,80 @@ is ever wanted, not a lower roughness (0.12 went murky in the near-black worlds)
   a `RECONSTITUTION: [SOLVENT / INSTRUCTIONS]` field. Legible at product-page
   size. Honest as placeholders, but filling that last one in would collide with
   the no-dosing / no-reconstitution rule (§4).
-- `/images/products/reta/studio.jpg` (the catalogue card) was rendered from the
-  v1 label and no longer matches the live model. Re-capture from `/estudio/reta`.
-- The homepage GHK-Cu and GLOW sections still use the drawn `SpecimenPlate`
-  rather than these models. Not changed: those sections are freshly approved.
+- ~~`/images/products/reta/studio.jpg` was rendered from the v1 label.~~ Done in
+  §8v, along with Semaglutide's.
+- ~~The homepage GHK-Cu and GLOW sections still use the drawn `SpecimenPlate`.~~
+  Done in §8v; the plate remains their fallback.
 - Optional: set the cap material to roughness 0.35 / specular 0.5 in Blender so
   the source matches the site, after which the `VialModel` correction can go.
+
+## 8v. Flagship vials in their homepage moments (2026-09-20)
+
+Owner request: re-capture the RETA catalogue card, fix the Semaglutide render
+with the new vial, and put the GLOW and GHK-Cu models into their homepage
+sections "in a cool way".
+
+**The studio stills**
+
+- `scripts/capture-studio.mjs <slug>...` is new: it opens `/estudio/<slug>` on
+  the dev server, waits for the scene to settle, takes the frame the page
+  already exposes (`window.__studio.capture()`) and writes
+  `public/images/products/<slug>/studio.jpg`. The page's own comment had
+  referenced such a script since §8r; it was session scratch and had been lost.
+  Dev dependency: `playwright-core` (system Chrome, no bundled browser).
+- Both cards re-captured at 1600 × 2000, matching what the registry declares.
+
+**A regression the first capture caught**
+
+The first RETA capture came back with a BLACK cap. `StudioScene` chose
+materials BY NAME (`name.includes("aluminum")`), and `prepare-model.mjs` ran
+`dedup()`, which merged the RETA export's two identically-valued materials and
+kept the name "Lid - Ridged Black Plastic" for the aluminium band — so the
+studio painted the cap as plastic. Fixed at both ends:
+
+- `prepare-model.mjs` no longer deduplicates MATERIALS (geometry and textures
+  still are). Material names are content in this codebase, not noise.
+- `StudioScene` matches metal on `metalness > 0.5`, so no future rename can
+  repaint a part. `VialModel` already matched this way.
+
+Only `reta-v2.glb` changed when the models were rebuilt; GHK-Cu and GLOW had no
+duplicate materials and came out byte-identical, which is the proof that the
+dedup was the whole cause.
+
+**The homepage moments**
+
+- `components/experience/MomentStage.tsx` hosts a live vial inside a section's
+  existing object box, with that section's drawn `SpecimenPlate` passed as
+  children — first paint, loading state and the no-WebGL fallback, unchanged.
+- **One canvas, still.** `useVialStage`'s registry already arbitrated a single
+  WebGL context by visibility; it now spans three stages, so scrolling hands
+  the canvas from the RETA scene to GLOW to GHK-Cu. Verified: exactly one
+  canvas exists at any scroll position.
+- A `moment` variant in `choreography.ts`: centred, arriving with a slight
+  rise and growth as the section is scrolled through, then held and turning
+  slowly. Not the full-bleed sequence, not the anchored presenter.
+- **A luminous world now emits.** `RetaCanvas` adds a point light behind the
+  object when `environment.atmosphere === "luminous"` — the glass transmits it,
+  so GLOW lights from within and its label is rimmed from behind. It breathes
+  slowly, and holds at its floor under reduced motion. Driven by world data,
+  not by a product name: RETA and GHK-Cu are untouched, and any future luminous
+  world gets it.
+- The canvas uses `RetaCanvas`'s existing `fill` mode. Laying it out by
+  percentages instead made the renderer's container resolve against a canvas's
+  intrinsic 300 × 150 and come out squashed and cropped.
+
+**Cost.** A reader who scrolls the whole homepage now fetches three GLBs,
+~1.4 MB, spread across the scroll and never above the fold. A reader who does
+not scroll that far fetches none of them.
+
+**Open**
+
+- GLOW and GHK-Cu have no `poster` still, so their sections show the drawn
+  plate while the GLB is in flight. Capturing one needs a rig entry per world
+  (`studio/rig.ts` has RETA and NEUTRAL) and their slugs added to the studio
+  page's `PROTOTYPES` list.
+- The homepage sections' composition was not otherwise touched: the object box,
+  its size and its place in the grid are exactly where §8s left them.
 
 ## 9. Recommendation for Phase 13 (not approved)
 
