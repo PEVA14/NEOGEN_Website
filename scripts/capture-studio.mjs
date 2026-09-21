@@ -21,7 +21,13 @@
  *   --base http://localhost:3000   the running dev server
  *   --width 800                    CSS width; the frame is 4:5 at 2× (1600×2000)
  *   --quality 88                   JPEG quality (macOS `sips`)
+ *   --name studio                  file basename, WITHOUT extension
  *   --out public/images/products   destination root
+ *
+ * VERSION THE NAME WHEN THE RENDER CHANGES (`--name studio-v2`). Images are
+ * served with a one-year immutable cache and Next's optimizer caches by URL,
+ * so re-writing `studio.jpg` in place leaves every visitor — and the local dev
+ * server — on the old picture. The registry points at the new name.
  *
  * The registry entry (`content/media/registry.ts`) carries the intrinsic size
  * and the alt text; this writes only the file. If the dimensions here change,
@@ -45,10 +51,11 @@ const base = flag("base", "http://localhost:3000");
 const width = Number(flag("width", 800));
 const quality = Number(flag("quality", 88));
 const outRoot = flag("out", "public/images/products");
+const name = flag("name", "studio");
 
 if (!slugs.length) {
   console.error(
-    "usage: node scripts/capture-studio.mjs <slug>... [--base URL] [--width 800] [--quality 88]",
+    "usage: node scripts/capture-studio.mjs <slug>... [--base URL] [--width 800] [--quality 88] [--name studio-v2]",
   );
   process.exit(1);
 }
@@ -110,7 +117,7 @@ try {
 
     const directory = path.join(outRoot, slug);
     mkdirSync(directory, { recursive: true });
-    const jpg = path.join(directory, "studio.jpg");
+    const jpg = path.join(directory, `${name}.jpg`);
     const previous = existsSync(jpg) ? statSync(jpg).size : null;
 
     execFileSync(

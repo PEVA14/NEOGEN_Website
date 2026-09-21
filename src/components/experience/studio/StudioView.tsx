@@ -4,9 +4,8 @@ import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-import { NEUTRAL_RIG, RETA_RIG, type StudioRig } from "./rig";
-
-import type { StudioLabel } from "./label";
+import { loadBrandArtwork, type StudioLabel } from "./label";
+import { GHK_RIG, GLOW_RIG, NEUTRAL_RIG, RETA_RIG, type StudioRig } from "./rig";
 
 const StudioScene = dynamic(() => import("./StudioScene"), { ssr: false });
 
@@ -24,6 +23,8 @@ const CONTAINER = "/models/reta-v2.glb";
  */
 const FLAGSHIPS: Record<string, StudioRig> = {
   reta: RETA_RIG,
+  glow: GLOW_RIG,
+  "ghk-cu": GHK_RIG,
 };
 
 /**
@@ -33,20 +34,37 @@ const FLAGSHIPS: Record<string, StudioRig> = {
  * a capture is deterministic. `?yaw=`, `?exp=`, `?fov=`, `?cy=` and `?cz=`
  * override the rig while iterating; the committed rig is what ships.
  */
-export function StudioView({ slug, label }: { slug: string; label: StudioLabel }) {
+export function StudioView({
+  slug,
+  label,
+  model,
+}: {
+  slug: string;
+  label: StudioLabel;
+  /**
+   * The product's OWN model, when the registry declares one. A flagship wears
+   * its own printed label, so it must be photographed as itself — rendering
+   * every product on the canonical container put RETA's label on GLOW.
+   */
+  model: string | null;
+}) {
   const params = useSearchParams();
   const flagship = FLAGSHIPS[slug];
   const entry = {
-    model: CONTAINER,
+    model: model ?? CONTAINER,
     rig: flagship ?? NEUTRAL_RIG,
     // A flagship's model carries its own printed label.
     label: flagship ? null : label,
   };
-  // The label is drawn in the site's face: wait for it, or the capture sets
-  // the type in a fallback font.
-  const [fonts, setFonts] = useState(false);
+  /*
+   * The label is drawn — in the site's face, over the brand artwork — so both
+   * have to be in hand before the scene mounts. Neither can be awaited inside
+   * the draw, and a capture that starts first photographs a label set in a
+   * fallback font with the lockup missing.
+   */
+  const [assets, setAssets] = useState(false);
   useEffect(() => {
-    void document.fonts.ready.then(() => setFonts(true));
+    void Promise.all([document.fonts.ready, loadBrandArtwork()]).then(() => setAssets(true));
   }, []);
   const rig = useMemo(() => {
     const num = (key: string, fallback: number) => {
@@ -63,7 +81,7 @@ export function StudioView({ slug, label }: { slug: string; label: StudioLabel }
     } satisfies StudioRig;
   }, [entry.rig, params]);
 
-  if (!fonts) return null;
+  if (!assets) return null;
   const width = Number(params.get("w") ?? 800);
 
   return (

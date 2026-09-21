@@ -18,6 +18,7 @@
     "check:checkout": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-checkout.mjs",
     "check:payments": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-payments.mjs",
     "db:migrate": "node scripts/db-migrate.mjs",
+    "brand": "node scripts/prepare-brand.mjs",
     "check:quality": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-quality.mjs",
     "check:content": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-content.mjs",
     "check:atlas": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-atlas.mjs"
@@ -48,6 +49,7 @@
     "playwright-core": "^1.63.0",
     "prettier": "^3.9.6",
     "prettier-plugin-tailwindcss": "^0.8.1",
+    "sharp": "^0.35.4",
     "tailwindcss": "^4",
     "typescript": "^5"
   },

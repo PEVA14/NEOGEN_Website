@@ -10,10 +10,22 @@ import { CanvasTexture, SRGBColorSpace, type Texture } from "three";
  * wide on the left, type set rotated 90° so it wraps horizontally round the
  * container):
  *
- *   front panel   y 588–1342: "NEOGEN" tracked small, a hairline, the name
- *                 set large and tracked, a small secondary line, a short rule
+ *   front panel   y 588–1342: the identity, a hairline, the name set large and
+ *                 tracked, a small secondary line, a short rule
  *   top panel     y 0–588:    the same identity at small size
  *   bottom panel  y 1342–2048: the mark
+ *
+ * The sheet's x axis runs down the label's height and its y axis runs round the
+ * container, which is why everything here is drawn rotated: the front panel is
+ * the band the camera sees, and x 34–424 is what reads top-to-bottom on it.
+ *
+ * THE IDENTITY IS THE BRAND ARTWORK, NOT TYPE. It used to be the word "NEOGEN"
+ * set in the site's face, because there was no logo file to print. There is now
+ * (`public/branding/`, trimmed by `scripts/prepare-brand.mjs`), so the label
+ * carries the real lockup — mark plus NEOGEN / PEPTIDES — the way a printed
+ * label would, and the bottom panel carries the mark alone. The type fallback
+ * stays: if the artwork cannot be fetched the label is still complete, just
+ * wordmarked rather than logo'd.
  *
  * Only registry facts are printed: the product's name and its presentation
  * range. The RETA label's "[LOT] [PRODUCT ID] [FORMAT]" placeholders are left
@@ -33,6 +45,75 @@ const PAPER = "#f8f7f4";
 const INK = "#2b2b2c";
 const MUTED = "#6d6c69";
 const RULE = "#d9d7d1";
+
+/* ---- the brand artwork ---------------------------------------------------- */
+
+/**
+ * The lockup and the mark, as `scripts/prepare-brand.mjs` trims them: pure
+ * black on an alpha channel, with the file's box equal to the artwork's box —
+ * so a draw only needs a height, and the width follows.
+ */
+const ARTWORK = {
+  logo: "/branding/neogen-logo.png",
+  mark: "/branding/neogen-mark.png",
+} as const;
+
+type Inked = Record<keyof typeof ARTWORK, HTMLCanvasElement>;
+
+/**
+ * Loaded once per document, and read synchronously by `drawLabel`.
+ *
+ * `drawLabel` runs inside the scene's `useMemo`, which cannot await, so the
+ * studio resolves this BEFORE it mounts the canvas (`StudioView`). A capture
+ * therefore never races the artwork — the alternative, redrawing the texture
+ * when the image lands, would have `window.__studio.ready` mean two different
+ * things and could photograph the label mid-swap.
+ */
+let inked: Inked | null = null;
+
+/**
+ * Re-ink black-on-alpha artwork in the label's ink.
+ *
+ * The artwork is black because black-on-alpha is a mask, which is what lets one
+ * file serve the light header, the dark footer and this label. Printed type
+ * here is #2b2b2c, not #000 — `source-in` keeps the artwork's alpha, including
+ * its feathered edge, and replaces the colour.
+ */
+function ink(image: HTMLImageElement, color: string): HTMLCanvasElement {
+  const canvas = document.createElement("canvas");
+  canvas.width = image.naturalWidth;
+  canvas.height = image.naturalHeight;
+  const ctx = canvas.getContext("2d")!;
+  ctx.drawImage(image, 0, 0);
+  ctx.globalCompositeOperation = "source-in";
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  return canvas;
+}
+
+/**
+ * Fetch the brand artwork for `drawLabel`. Resolves either way: a label that
+ * cannot load its logo falls back to type, which is worse than the logo and far
+ * better than a studio that never becomes ready.
+ */
+export async function loadBrandArtwork(): Promise<void> {
+  if (inked) return;
+  const load = (src: string) =>
+    new Promise<HTMLImageElement | null>((resolve) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => resolve(null);
+      image.src = src;
+    });
+  const [logo, mark] = await Promise.all([load(ARTWORK.logo), load(ARTWORK.mark)]);
+  if (!logo || !mark) {
+    console.warn("studio label: brand artwork did not load; falling back to the wordmark");
+    return;
+  }
+  inked = { logo: ink(logo, INK), mark: ink(mark, INK) };
+}
+
+/* ---- drawing -------------------------------------------------------------- */
 
 /** Draw `text` rotated to read bottom-to-top, centred on (x, y). */
 function vertical(
@@ -54,6 +135,42 @@ function vertical(
   ctx.textBaseline = "middle";
   ctx.fillText(text, tracking / 2, 0);
   ctx.restore();
+}
+
+/**
+ * Draw artwork in the same rotated frame as `vertical`, centred on (x, y) and
+ * `height` tall across the label. Its width — the extent round the container —
+ * follows from the artwork's own proportion.
+ */
+function verticalArt(
+  ctx: CanvasRenderingContext2D,
+  art: HTMLCanvasElement,
+  x: number,
+  y: number,
+  height: number,
+) {
+  const width = (art.width / art.height) * height;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(-Math.PI / 2);
+  ctx.drawImage(art, -width / 2, -height / 2, width, height);
+  ctx.restore();
+}
+
+/**
+ * The identity: the lockup where the artwork loaded, the wordmark where it did
+ * not. `height` is the lockup's height; the fallback's type is sized to sit in
+ * the same band so neither version disturbs the panel's rhythm.
+ */
+function identity(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  height: number,
+  family: string,
+) {
+  if (inked) verticalArt(ctx, inked.logo, x, y, height);
+  else vertical(ctx, "NEOGEN", x, y, `500 ${height * 0.78}px ${family}`, height * 0.27, INK);
 }
 
 /** Largest size (≤ max) at which `text` fits `room` px along the label. */
@@ -96,9 +213,28 @@ export function drawLabel(label: StudioLabel, family: string): Texture {
 
   /* FRONT PANEL — centred on y 965, as RETA's is. */
   const centre = 965;
-  vertical(ctx, "NEOGEN", 75, centre, `500 26px ${family}`, 9, INK);
-  ctx.fillStyle = RULE;
-  ctx.fillRect(97, centre - 65, 2, 130);
+  /*
+   * 84px tall — the lockup occupies x 40–124, where the wordmark (62–88) and
+   * the hairline that divided it from the headline (97) used to sit together.
+   *
+   * IT TOOK THE DIVIDER'S ROOM ON PURPOSE. A rule is there to separate the
+   * brand from the product name, and at this size the lockup already does that.
+   *
+   * WHY IT IS THIS BIG. The label prints at roughly 1.5× on the 1600×2000
+   * still, so a lockup of 34px put "PEPTIDES" under 9px on the sheet and it
+   * came back as mush. The ceiling is the paper: the strip's hairline is at
+   * x 18, and 40 leaves the same margin above the brand that the old wordmark
+   * had. Everything below shifts by NAME_DROP to keep the gap it had.
+   */
+  identity(ctx, 82, centre, 84, family);
+
+  /*
+   * How far the name block moved down to make room for the lockup. It is one
+   * number so the single-line and two-line layouts cannot drift apart — the
+   * two-line branch is the one nobody looks at while tuning, and it is the one
+   * that overflows the panel if it is forgotten.
+   */
+  const NAME_DROP = 24;
 
   // The headline: as large as RETA's where it fits, tracked like it, and split
   // over two lines only when one line would drop below a legible size.
@@ -109,25 +245,27 @@ export function drawLabel(label: StudioLabel, family: string): Texture {
     const cut = Math.ceil(words.length / 2);
     const lines = [words.slice(0, cut).join(" "), words.slice(cut).join(" ")];
     size = Math.min(...lines.map((part) => fit(ctx, part, family, 600, 74, room, 0.14)));
-    vertical(ctx, lines[0], 160, centre, `600 ${size}px ${family}`, size * 0.14, INK);
-    vertical(ctx, lines[1], 160 + size * 1.08, centre, `600 ${size}px ${family}`, size * 0.14, INK);
-    vertical(ctx, line, 172 + size * 2, centre, `400 22px ${family}`, 4, MUTED);
+    const top = 160 + NAME_DROP;
+    vertical(ctx, lines[0], top, centre, `600 ${size}px ${family}`, size * 0.14, INK);
+    vertical(ctx, lines[1], top + size * 1.08, centre, `600 ${size}px ${family}`, size * 0.14, INK);
+    vertical(ctx, line, top + 12 + size * 2, centre, `400 22px ${family}`, 4, MUTED);
   } else {
-    vertical(ctx, name, 180, centre, `600 ${size}px ${family}`, size * 0.16, INK);
-    vertical(ctx, line, 255, centre, `400 22px ${family}`, 4, MUTED);
+    vertical(ctx, name, 180 + NAME_DROP, centre, `600 ${size}px ${family}`, size * 0.16, INK);
+    vertical(ctx, line, 255 + NAME_DROP, centre, `400 22px ${family}`, 4, MUTED);
     // RETA's short accent rule, in graphite: a neutral product carries no colour.
     ctx.fillStyle = MUTED;
-    ctx.fillRect(279, centre - 43, 2, 86);
+    ctx.fillRect(279 + NAME_DROP, centre - 43, 2, 86);
   }
 
   /* TOP PANEL — the identity at small size. */
-  vertical(ctx, "NEOGEN", 85, 410, `500 15px ${family}`, 5, INK);
+  identity(ctx, 90, 410, 38, family);
   const small = fit(ctx, name, family, 600, 22, 230, 0.12);
-  vertical(ctx, name, 118, 410, `600 ${small}px ${family}`, small * 0.12, INK);
-  vertical(ctx, line, 143, 410, `400 13px ${family}`, 2, MUTED);
+  vertical(ctx, name, 126, 410, `600 ${small}px ${family}`, small * 0.12, INK);
+  vertical(ctx, line, 151, 410, `400 13px ${family}`, 2, MUTED);
 
   /* BOTTOM PANEL — the mark. */
-  vertical(ctx, "NEOGEN", 85, 1780, `500 15px ${family}`, 5, INK);
+  if (inked) verticalArt(ctx, inked.mark, 88, 1780, 46);
+  else vertical(ctx, "NEOGEN", 85, 1780, `500 15px ${family}`, 5, INK);
 
   const texture = new CanvasTexture(canvas);
   texture.colorSpace = SRGBColorSpace;

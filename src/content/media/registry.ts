@@ -39,9 +39,14 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
      * studio rig (`components/experience/studio/rig.ts`, RETA_RIG) and captured
      * at 1600×2000 from `/es/estudio/reta`. A render, not a photograph: it is
      * the catalogue card's image and never the product's `primary`.
+     *
+     * VERSIONED FILENAME, re-captured on the second-generation vial
+     * (2026-09-20). Images carry a one-year immutable cache and the optimizer
+     * keys on the URL, so re-rendering into the old name leaves every visitor —
+     * and the local dev server — looking at the previous picture.
      */
     studio: {
-      src: "/images/products/reta/studio.jpg",
+      src: "/images/products/reta/studio-v3.jpg",
       alt: "Vial RETA de NEOGEN: render de estudio del modelo 3D, etiqueta al frente, sobre fondo azul oscuro.",
       width: 1600,
       height: 2000,
@@ -56,10 +61,16 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
    * real geometry is `reta-v2.glb` (owner, 2026-09-18). Rendered by NEUTRAL_RIG
    * with a label drawn from its registry name and presentation range in the
    * real RETA label's layout (`components/experience/studio/label.ts`).
+   *
+   * v5 (2026-09-20): the drawn label now prints the brand LOCKUP — the mark and
+   * NEOGEN / PEPTIDES, from `public/branding/` — where it used to set the word
+   * "NEOGEN" in the site's face, at a size the still can actually carry. The flagships already carried the lockup in
+   * their baked artwork; this is what closes the gap for every product that
+   * wears a generated label.
    */
   semaglutide: {
     studio: {
-      src: "/images/products/semaglutide/studio.jpg",
+      src: "/images/products/semaglutide/studio-v5.jpg",
       alt: "Vial de Semaglutide de NEOGEN: render de estudio del envase NEOGEN, etiqueta al frente, sobre fondo neutro.",
       width: 1600,
       height: 2000,
@@ -76,6 +87,14 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
    */
   "ghk-cu": {
     model: "/models/ghk-cu.glb",
+    /* Its own vial on the copper rig (GHK_RIG): a neutral key so the label
+       stays true, and copper laid down the right edge of the glass. */
+    studio: {
+      src: "/images/products/ghk-cu/studio-v2.jpg",
+      alt: "Vial GHK-Cu de NEOGEN: render de estudio del modelo 3D, etiqueta al frente, sobre fondo cobre oscuro.",
+      width: 1600,
+      height: 2000,
+    },
   },
 
   /*
@@ -90,5 +109,13 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
    */
   glow: {
     model: "/models/glow.glb",
+    /* Its own vial on the amber rig (GLOW_RIG): the pool behind the glass lights
+       it from behind, and the cap takes the world's gold. */
+    studio: {
+      src: "/images/products/glow/studio-v2.jpg",
+      alt: "Vial GLOW de NEOGEN: render de estudio del modelo 3D, etiqueta al frente, sobre fondo ámbar oscuro.",
+      width: 1600,
+      height: 2000,
+    },
   },
 };

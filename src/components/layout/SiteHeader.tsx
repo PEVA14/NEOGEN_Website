@@ -47,7 +47,8 @@ export function SiteHeader({ locale, dict }: SiteHeaderProps) {
             className={`neogen-display text-xl tracking-(--tracking-tight) ${styles.wordmark}`}
             data-brand-mark=""
           >
-            <span aria-hidden="true" className={styles.wordmarkDot} />
+            {/* Decorative: the wordmark beside it is already the accessible name. */}
+            <span aria-hidden="true" className={styles.wordmarkMark} />
             {dict.meta.siteName}
           </Link>
 

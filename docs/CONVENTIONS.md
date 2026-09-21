@@ -254,12 +254,32 @@ in `npm run check`:
 
 ## 9. Dependencies
 
-Current runtime dependencies: `next`, `react`, `react-dom`, `three`,
-`@react-three/fiber`. That is the whole list.
-
 - Explain any major dependency addition **before** adding it.
 - Do not install overlapping animation / state / UI libraries.
 - Do not install a package because it might be useful later.
+
+Runtime dependencies, in full:
+
+| Package                       | Why                                                                                                                              |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `next`, `react`, `react-dom`  | The framework.                                                                                                                   |
+| `three`, `@react-three/fiber` | The 3D layer (§10).                                                                                                              |
+| `pg`                          | The Postgres order and draft stores (§12).                                                                                       |
+| `zod`, `@anthropic-ai/sdk`    | Atlas only — its schema layer and advisor engine. Frozen with Atlas (§17); checkout and payments validate by hand, not with zod. |
+
+Build and asset tooling (devDependencies), none of which ships to the browser:
+
+| Package                | Used by                                                         |
+| ---------------------- | --------------------------------------------------------------- |
+| `@gltf-transform/*`    | `prepare-model.mjs` — the Blender export pipeline.              |
+| `sharp`                | `prepare-brand.mjs` — trims the brand artwork, writes the icon. |
+| `playwright-core`      | `capture-studio.mjs` — headless Chrome for the studio still.    |
+| `@electric-sql/pglite` | `check-payments.mjs` — a real Postgres to test the adapters.    |
+
+`sharp` was already in the tree twice before it was declared (Next's image
+optimizer, and `@gltf-transform/functions`), so declaring it downloaded
+nothing. It is native code, which is why it is a devDependency and never
+imported from application code.
 
 Added in Phase 2:
 
@@ -751,17 +771,29 @@ to a file.
 - **The rig is data.** `components/experience/studio/rig.ts` describes the
   shot: lens, turn, softboxes (diffuse `intensity` and a separate `reflection`
   brightness), sweep, floor and material response.
-  - Flagships get a world rig (`RETA_RIG`).
+  - Each flagship gets its own world rig: `RETA_RIG`, `GLOW_RIG`, `GHK_RIG`.
+    The last two are spread from `RETA_RIG`, so only what differs is stated.
   - Every other product uses `NEUTRAL_RIG`: a cream set with no world colour,
     so flagships stay exceptional.
   - Add a rig object, not a new scene.
-- **Labels.** A flagship's GLB carries its printed label. Other products wear
-  a label drawn from registry data (name and presentation range) in the real
-  label's measured layout (`studio/label.ts`). Never print placeholders, lots
-  or claims.
-- **Capture.** Use `/[locale]/estudio/[slug]`. It is development only: a 404
-  in production, and noindex. It has a "Capture still" button (1600×2000).
-  Save to `public/images/products/<slug>/studio.jpg`.
+- **Photograph the product as itself.** `StudioView` takes the product's OWN
+  model where the registry declares one, and falls back to the canonical
+  container otherwise. Rendering every product on the container put RETA's
+  printed label on GLOW.
+- **Labels.** A flagship's GLB carries its printed label; `label.ts` never
+  touches one. Every other product wears a label DRAWN from registry data — the
+  brand lockup (§19), the product name and its presentation range — in the real
+  label's measured layout. Never print placeholders, lots or claims.
+- **Capture.** `node scripts/capture-studio.mjs <slug>... [--name studio-v4]`,
+  with the dev server running. It opens `/[locale]/estudio/[slug]`, waits for
+  `window.__studio.ready`, takes the frame the page exposes and writes the JPEG
+  at 1600 × 2000. That route is development only: a real 404 in production, and
+  noindex. Its "Capture still" button does the same by hand.
+- **Version the filename whenever the render changes.** Images carry a one-year
+  immutable cache and the optimizer keys on the URL, so re-rendering into the
+  old name leaves every visitor on the previous picture. `check:media` accepts
+  `studio.jpg` and `studio-v<N>.jpg`, in the product's own folder, and nothing
+  else.
 - **Registration.** The still goes in `MEDIA[slug].studio`.
   - It is a render: never `primary`, never counted as photography.
   - `check:media` requires the file to sit in the product's own folder.
@@ -786,7 +818,69 @@ npm run check:checkout  # server-side pricing, gates, idempotency, policies
 npm run check:quality   # evidence resolver, lots, Janoshik rules, media readiness
 npm run check:content   # references, sourced statements, forbidden vocabulary, notifications
 npm run check:media     # media declarations vs real files
+npm run check:payments  # Mercado Pago vocabulary, webhook HMAC, charge integrity, reconciliation
 npm run check:atlas     # questionnaire, profile, privacy, projections, no-leak sweep, policies, engines
 npm run check:output    # what the build actually emitted
 npm run format       # Prettier
+npm run db:migrate   # apply db/migrations to DATABASE_URL
 ```
+
+Asset pipelines — run by hand, and their output is committed:
+
+```bash
+npm run brand                                    # public/branding/ + the favicon
+node scripts/prepare-model.mjs <src> <dest> ...  # 3d assets/ -> public/models/
+node scripts/inspect-model.mjs <file.glb>        # parts in mm, triangles, transmission
+node scripts/capture-studio.mjs <slug>...        # the studio still (dev server must be up)
+```
+
+## 19. The brand mark
+
+The owner's artwork lives in `public/branding/`. Two files are theirs
+(`NEOGEN Branding.png`, the mark — the molecule; `NEOGEN Full Logo.png`, the
+lockup — mark + NEOGEN / PEPTIDES) and two are derived. Regenerate the derived
+ones with `npm run brand`; never edit them by hand.
+
+**Both sources are pure black on an alpha channel, and that is the design.**
+An all-black image with real alpha is a MASK, not a picture. So the site never
+places the mark as an `<img>`: it masks a block of `currentColor`.
+
+```css
+.mark {
+  block-size: 1.05em;
+  aspect-ratio: 389 / 485; /* the artwork's own trimmed box */
+  background-color: currentColor;
+  -webkit-mask: url("/branding/neogen-mark.png") no-repeat center / contain;
+  mask: url("/branding/neogen-mark.png") no-repeat center / contain;
+}
+```
+
+One file then inks itself graphite on the light header, paper on the inverted
+footer, and paper again on whatever surface `HeaderSurfaceSync` flips the
+header to. An `<img>` would need a second, inverted export, and would still be
+the wrong one half the time.
+
+- **The derived files are trimmed to their ink** (`scripts/prepare-brand.mjs`),
+  so the file's box is the artwork's box and a caller only says how tall the
+  mark should be. The sources carry wide, uneven margins — the mark's ink is
+  389×485 inside a 447×531 sheet — and compensating for that at each call site
+  goes quietly wrong the next time the owner re-exports.
+- **The mark is decorative wherever the wordmark is beside it.** `aria-hidden`,
+  every time: the word NEOGEN is already the accessible name, and announcing
+  both reads as a stutter.
+- **Use the MARK at small sizes and the LOCKUP only where "PEPTIDES" survives.**
+  The second word is the first thing to go. It holds on a rendered label at
+  84px of a 2048² sheet; it does not hold in a 200-unit SVG plate or in the
+  header, which take the mark alone.
+- **Where it is today:** the header (before the wordmark), the footer (over the
+  oversized wordmark), `src/app/icon.png` (the favicon — paper mark on
+  charcoal), the drawn label of every product without its own artwork
+  (`studio/label.ts`), and the drawn `SpecimenPlate`.
+- **An `<image>` inside SVG cannot take `currentColor`.** `SpecimenPlate` uses
+  the artwork's own black against `--vial-label-ink`, which is charcoal on both
+  of that component's surfaces. If a surface ever needs a different label ink,
+  that mark has to become a mask like the others.
+- **Replacing the artwork:** drop the new export over the source file keeping
+  its name, run `npm run brand`, commit what it writes. If a future export is
+  not black-on-alpha, the masking stops working and the mark renders as a solid
+  block — say so rather than working around it.

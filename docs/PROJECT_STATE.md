@@ -1,7 +1,8 @@
 # NEOGEN — Project state and handoff
 
 Last updated **2026-09-20**: **all three flagships ship a real vial, live on
-their own homepage sections** (§8u, §8v) and
+their own homepage sections** (§8u, §8v), **the brand mark is applied across
+the site and the rendered labels** (§8x) and
 **the checkout pays through Mercado Pago in test mode** (§8t, `docs/PAYMENTS.md`). Production payment is blocked on merchant
 eligibility, credentials and the launch blockers in §6 — not on code.
 **Atlas is frozen and deferred to V2** (§8m).
@@ -21,7 +22,16 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 
 ### Start here: handoff of 2026-09-18
 
-- **Latest (2026-09-20): flagship vials in their homepage moments (§8v).** GLOW
+- **Latest (2026-09-20): the brand mark, applied (§8x). NOT COMMITTED.** The
+  owner's logo files are in `public/branding/`; the mark is now on the header,
+  the footer, the favicon, the drawn `SpecimenPlate` and the rendered label of
+  every product without artwork of its own. The three flagships' labels are
+  printed in Blender and are an export away, not a code change.
+- **Also uncommitted (§8w): studio rigs for GLOW and GHK-Cu, and the cap at
+  92%.** All four studio stills re-captured; `prepare-model.mjs` gained
+  `--scale-node`. The cap was judged only in headless software rendering — see
+  §8w before changing the factor.
+- **Flagship vials in their homepage moments (§8v).** GLOW
   and GHK-Cu now show their own vial where the drawn plate was, and both
   catalogue cards were re-captured from the new model. Committed.
 - **Second-generation 3D vials (§8u).** RETA V2, GHK-Cu and GLOW are live on
@@ -43,8 +53,8 @@ Read order for a fresh session: `CLAUDE.md` → this file →
   - The RETA studio still (§8r) is **approved**. `reta.glb` is NEOGEN's
     canonical physical container.
   - The neutral studio prototype (Semaglutide only, §8r) is **"good for now"**.
-    It is not propagated across the catalogue; GLOW and GHK-Cu have no studio
-    rigs yet.
+    It is still not propagated across the catalogue — but GLOW and GHK-Cu now
+    have their own studio rigs (§8w), so every flagship can be photographed.
   - The owner moved on to other work. Ask before resuming product media.
 - **Homepage pass (§8s) is awaiting the owner's visual review.** Do not
   propagate its direction to other pages until approved.
@@ -1805,6 +1815,121 @@ not scroll that far fetches none of them.
   page's `PROTOTYPES` list.
 - The homepage sections' composition was not otherwise touched: the object box,
   its size and its place in the grid are exactly where §8s left them.
+
+## 8w. Studio rigs for GLOW and GHK-Cu, and a smaller cap (2026-09-20)
+
+Owner request, in Spanish: make the RETA render in the WorldBand match the
+current model, adapt GHK-Cu and GLOW the same way, and Semaglutide too —
+"me gustan los renders actuales, solo que sean con los nuevos modelos". Then:
+"a ver intenta lo de la tapa que este un poco mas chica, tampoco tanto".
+
+**Every flagship can now be photographed as itself**
+
+- `studio/rig.ts` gains `GLOW_RIG` (amber pool, warm strips, exposure 1.06) and
+  `GHK_RIG` (copper right strip, exposure 1.02, more floor reflection), both
+  spread from `RETA_RIG` so only what differs is stated.
+- `StudioView` takes the product's OWN model. It used to render every product
+  on the canonical container, which put RETA's printed label on GLOW.
+- `estudio/[slug]` lists all four prototypes.
+- All four stills re-captured under versioned names (`reta/studio-v3.jpg`,
+  `semaglutide/studio-v3.jpg`, `glow/studio-v2.jpg`, `ghk-cu/studio-v2.jpg`).
+  `check:media` was rewritten to accept `studio-v<N>`; three negative controls
+  proved the relaxed rule still rejects the shapes it is there to reject.
+
+**The cap at 92%**
+
+Measured first, from raw vertex data: the glass neck is Ø97.2 mm and the cap
+Ø123.0 mm, so there is 12.9 mm of skirt per side and the floor is about 79%
+before the neck shows. Rendered at 100/96/92/88% and shipped 92% — cap now
+Ø113 × 40 mm.
+
+It shrinks around its TOP, not its base. The glass ends at 286.7 mm and the cap
+at 287.9; shrinking from below would lift the closure off the lip. The base
+rises 244.3 → 247.8 mm and what is gained is visible neck. Verified: the top
+held at exactly 287.9 and the cap still covers 38.9 mm of neck.
+
+It lives in the preparation step (`prepare-model.mjs --scale-node "NEOGEN_VIAL_CAP" 0.92`),
+not in web code, so the live 3D, the studio and the stills agree and the Blender
+export stays untouched. Changing the number and re-running is the whole edit.
+
+That script's own rule said it "never moves, rotates or rescales". The rule now
+reads: it never re-poses the object — the page does that — but it may change one
+part's proportion to the rest, because that is something the model carries with
+it. If the owner would rather this lived in Blender, it comes out in one line.
+
+**Open**
+
+- The cap was judged only in software-rendered headless Chrome. 96% and 88% are
+  one number away if 92% reads wrong on real hardware.
+- Which RETA lid is still an owner decision (§8u): the narrow `NEOGEN_VIAL_CAP`
+  ships; the wider autosampler lid is one flag away.
+
+## 8x. The brand mark, applied (2026-09-20)
+
+Owner dropped `NEOGEN Branding.png` (the mark — the molecule) and
+`NEOGEN Full Logo.png` (the lockup — mark + NEOGEN / PEPTIDES) into
+`public/branding/`, and asked for the logo on the Semaglutide render's label
+and "where it should" on the site.
+
+**Both sources are black-on-alpha, which is the whole design**
+
+An all-black image with a real alpha channel is a MASK, not a picture. So the
+site never places it as an `<img>`: it masks a block of `currentColor`, and the
+mark comes out graphite on the light header, paper on the inverted footer and
+on whatever surface `HeaderSurfaceSync` flips the header to — from one file,
+with no second inverted export to keep in sync.
+
+`scripts/prepare-brand.mjs` (`npm run brand`) trims each source to its ink
+(the mark's artwork is 389×485 inside a 447×531 sheet) and writes
+`neogen-mark.png`, `neogen-logo.png` and the favicon. Trimming once makes the
+file's box the artwork's box, so a caller only says how tall the mark should be
+— the alternative is a margin correction at every call site that goes quietly
+wrong the next time the owner re-exports. Dev dependency: `sharp`, which was
+already in the tree twice (Next's image optimizer, gltf-transform) and is now
+declared; nothing new was downloaded.
+
+**Where it went**
+
+- **Header** — the mark before the wordmark, replacing a solid dot that had
+  stood in for it since there was no mark to use.
+- **Footer** — the mark over the oversized wordmark, in paper.
+- **Favicon** — `src/app/icon.png`, the mark in paper on charcoal. It replaces
+  `icon.svg`, a hand-drawn dot with a comment explaining that the dot WAS the
+  identity. It is not, any more.
+- **The drawn label** — `studio/label.ts` prints the real lockup where it used
+  to set the word "NEOGEN" in the site's face. Semaglutide re-captured as
+  `studio-v4.jpg`.
+
+**Two things the label needed**
+
+The lockup took the divider hairline's room and is drawn at 84px on the 2048²
+sheet, with the name block dropped 24px to clear it. Two sizes were rejected
+first: at 34px "PEPTIDES" came back as mush, and at 48px the owner still could
+not see it — the label prints at roughly 1.5× on the 1600×2000 still, and that
+still is then shown 6× smaller again on a catalogue card. The ceiling is the
+paper, not taste: the printed strip's hairline is at x 18, and 40 leaves the
+brand the same top margin the old wordmark had. A rule exists to separate the
+brand from the product name, and at this size the lockup already does that.
+
+The drop is one constant (`NAME_DROP`) rather than four edited numbers, because
+the two-line branch — the layout nobody looks at while tuning a render of a
+one-word product — is the one that overflows the panel when it is forgotten.
+Checked against the catalogue's worst cases ("CJC-1295 without DAC +
+Ipamorelin", "Healthy Hair Skin Nails Blend") by adding them to the studio's
+prototype list, rendering, and taking them back out.
+
+`drawLabel` runs inside the scene's `useMemo` and cannot await an image, so
+`StudioView` resolves the artwork BEFORE it mounts the canvas, alongside
+`document.fonts.ready`. Redrawing the texture when the image lands would make
+`window.__studio.ready` mean two things and could photograph a label mid-swap.
+If the artwork cannot be fetched at all, the label falls back to the wordmark
+rather than leaving the studio permanently un-ready.
+
+**Not done, and why**
+
+The three flagships' labels are printed into their `.glb` in Blender. RETA's
+already carries the lockup (§8u); putting it on GLOW and GHK-Cu is an export,
+not a code change. `label.ts` does not touch a flagship.
 
 ## 9. Recommendation for Phase 13 (not approved)
 

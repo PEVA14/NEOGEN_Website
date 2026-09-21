@@ -70,6 +70,8 @@ export function SiteFooter({ locale, dict }: SiteFooterProps) {
     <footer data-surface="dark" className={styles.footer}>
       <Container width="full">
         <div className={styles.brand}>
+          {/* Decorative: the wordmark below it is already the accessible name. */}
+          <span aria-hidden="true" className={styles.mark} />
           <span className={styles.wordmark}>{dict.meta.siteName}_</span>
           <Body size="lg" className={styles.tagline}>
             {dict.footer.tagline}

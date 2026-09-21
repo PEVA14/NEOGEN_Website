@@ -7,8 +7,9 @@
  * object, the floor it stands on, and the grade. The scene in `StudioScene`
  * only executes it.
  *
- * RETA is the prototype (owner direction, 2026-09-18). GLOW and GHK-Cu will
- * get their own rig objects — not new scenes — once RETA is approved.
+ * RETA is the prototype (owner direction, 2026-09-18); GLOW and GHK-Cu now
+ * have their own rig objects — not new scenes — built from it by overriding
+ * the light colours, the sweep and the grade (owner request, 2026-09-20).
  */
 
 export interface Softbox {
@@ -162,6 +163,91 @@ export const RETA_RIG: StudioRig = {
     },
     metal: { color: "#cfd3d9", roughness: 0.34 },
     label: { roughness: 0.62 },
+  },
+};
+
+/**
+ * GLOW — "the environment becomes light".
+ *
+ * RETA's dark field, warmed: the pool behind the vial is amber and sits a
+ * little higher and wider, so the glass is lit from behind rather than edged.
+ * The key stays near-white — the label is paper and must not go orange — and
+ * the amber lives in the sweep, the right strip and the top light, which is
+ * what puts a warm crown on the cap.
+ *
+ * Colours are the world's own (`styles/worlds.css`): void #160d06, accent
+ * #c88722, light #ffd78a.
+ */
+export const GLOW_RIG: StudioRig = {
+  ...RETA_RIG,
+  /* A luminous world carries more exposure; the sweep is brighter than RETA's
+     and the roll-off is what keeps the highlights from clipping. */
+  exposure: 1.06,
+  softboxes: {
+    ...RETA_RIG.softboxes,
+    key: { ...RETA_RIG.softboxes.key, color: "#fff6e8", intensity: 5.2, reflection: 6 },
+    fill: { ...RETA_RIG.softboxes.fill, color: "#fff4e4", intensity: 1.1 },
+    stripLeft: { ...RETA_RIG.softboxes.stripLeft, reflection: 18, color: "#fffaf2" },
+    /* The amber edge: GLOW's identity, and the one strip allowed to be warm. */
+    stripRight: { ...RETA_RIG.softboxes.stripRight, reflection: 20, color: "#ffb44e" },
+    streak: { ...RETA_RIG.softboxes.streak, reflection: 4.2 },
+    top: { ...RETA_RIG.softboxes.top, color: "#ffd78a", intensity: 2.6, reflection: 2.4 },
+  },
+  sweep: {
+    edge: "#0b0703",
+    glow: "#8a5410",
+    glowX: 0.5,
+    glowY: 0.44,
+    glowStrength: 1.15,
+    horizon: 0.92,
+  },
+  floor: { color: "#0a0604", reflection: 0.32, shadow: 0.8 },
+  room: 0.7,
+  materials: {
+    ...RETA_RIG.materials,
+    glass: { ...RETA_RIG.materials.glass, attenuation: "#d8c6a8", reflect: 2.4 },
+    /* Warm silver: the cap picks the world up without turning brass. */
+    metal: { color: "#d8d2c6", roughness: 0.34 },
+  },
+};
+
+/**
+ * GHK-Cu — "the environment becomes material".
+ *
+ * The most physical of the three sets: a copper pool low and to the left, a
+ * neutral key so the label stays true, and a copper strip that lays the metal's
+ * own colour along the right edge of the glass. The floor holds more of the
+ * object than RETA's, because a material world should show its weight.
+ *
+ * Colours are the world's own: void #1a100c, accent #b5683c, light #f0d9cb.
+ */
+export const GHK_RIG: StudioRig = {
+  ...RETA_RIG,
+  exposure: 1.02,
+  softboxes: {
+    ...RETA_RIG.softboxes,
+    key: { ...RETA_RIG.softboxes.key, color: "#fff8f3", intensity: 5.4, reflection: 6.2 },
+    fill: { ...RETA_RIG.softboxes.fill, color: "#fff6f0", intensity: 1.0 },
+    stripLeft: { ...RETA_RIG.softboxes.stripLeft, reflection: 20, color: "#fffaf6" },
+    /* Copper down the right edge — the metal reading its own world. */
+    stripRight: { ...RETA_RIG.softboxes.stripRight, reflection: 17, color: "#c9763f" },
+    streak: { ...RETA_RIG.softboxes.streak, reflection: 4.4 },
+    top: { ...RETA_RIG.softboxes.top, color: "#f0d9cb", intensity: 2.3, reflection: 2 },
+  },
+  sweep: {
+    edge: "#080505",
+    glow: "#7a3a18",
+    glowX: 0.38,
+    glowY: 0.34,
+    glowStrength: 1,
+    horizon: 1,
+  },
+  floor: { color: "#0a0706", reflection: 0.36, shadow: 0.85 },
+  room: 0.62,
+  materials: {
+    ...RETA_RIG.materials,
+    glass: { ...RETA_RIG.materials.glass, attenuation: "#c8bdb6", reflect: 2.5 },
+    metal: { color: "#d4cdc6", roughness: 0.3 },
   },
 };
 

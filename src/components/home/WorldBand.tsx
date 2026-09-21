@@ -34,9 +34,9 @@ export interface WorldPanel {
  * onto its product page.
  *
  * The media is what exists and nothing more. RETA stands as its approved
- * studio still; GLOW and GHK-Cu, which have no model or still yet, stand as
- * the drawn product object on their own world stage. The panel's ground is
- * the world palette either way, so the three read as one set.
+ * studio still; a world without one stands as the drawn product object on its
+ * own world stage. The panel's ground is the world palette either way, so the
+ * three read as one set.
  *
  * On a phone the panels become a swiped row: three tall worlds stacked were a
  * screen and a half each of scroll before the store began.

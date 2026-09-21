@@ -238,8 +238,20 @@ function VialObject({
       {/* Label — NEOGEN packaging identity, printed with registry data. */}
       <g>
         <rect x="36" y="150" width="128" height="116" fill="var(--vial-label)" />
+        {/*
+          The identity, as the rendered label sets it: the mark, then the
+          wordmark. The MARK ALONE, not the full lockup — this plate is drawn
+          at 200 units wide and shown smaller still inside a homepage moment,
+          and "PEPTIDES" does not survive that. The mark is five filled
+          circles and does.
+
+          Its ink is the artwork's own black against `--vial-label-ink`, which
+          is charcoal in both of this plate's surfaces; an <image> cannot take
+          `currentColor`, and at 7 units the difference is not visible.
+        */}
+        <image href="/branding/neogen-mark.png" x="76" y="162.6" width="7.2" height="9" />
         <text
-          x="100"
+          x="105"
           y="170"
           textAnchor="middle"
           className={styles.labelMark}

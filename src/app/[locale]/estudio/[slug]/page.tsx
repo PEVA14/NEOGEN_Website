@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { StudioView } from "@/components/experience/studio/StudioView";
+import { productMedia } from "@/content/media";
 import { presentationRange, publishedProducts } from "@/data/catalog";
 
 import type { Metadata } from "next";
@@ -17,8 +18,8 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-/** RETA (flagship rig) and one generic product (neutral rig), awaiting review. */
-const PROTOTYPES = ["reta", "semaglutide"];
+/** The three flagships on their own rigs, plus one generic product (neutral rig). */
+const PROTOTYPES = ["reta", "glow", "ghk-cu", "semaglutide"];
 
 export async function generateStaticParams() {
   if (process.env.NODE_ENV === "production") return [];
@@ -37,7 +38,11 @@ export default async function StudioPage({
   return (
     <main style={{ background: "#05070c", minHeight: "100vh", padding: "24px 0" }}>
       <Suspense>
-        <StudioView slug={slug} label={{ name: product.name, line: presentationRange(product) }} />
+        <StudioView
+          slug={slug}
+          label={{ name: product.name, line: presentationRange(product) }}
+          model={productMedia(slug).model}
+        />
       </Suspense>
     </main>
   );

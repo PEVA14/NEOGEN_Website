@@ -108,12 +108,27 @@
   color: var(--ink-primary);
 }
 
-/* The reference wordmark is preceded by a small solid dot. */
-.wordmarkDot {
-  inline-size: 0.5rem;
-  block-size: 0.5rem;
-  border-radius: var(--radius-pill);
+/*
+ * The wordmark is preceded by the brand mark — the molecule.
+ *
+ * PAINTED AS A MASK, NOT PLACED AS AN IMAGE. `neogen-mark.png` is pure black on
+ * an alpha channel, so masking a block of `currentColor` with it inks the mark
+ * in whatever colour the surface is already using: graphite here, paper on the
+ * footer and on the dark surfaces `HeaderSurfaceSync` flips the header to. One
+ * file, every surface; an <img> would need a second inverted export and would
+ * still be the wrong one half the time.
+ *
+ * The ratio is the artwork's own trimmed box (`scripts/prepare-brand.mjs`), so
+ * the mark keeps its proportion at any type size; `em` ties it to the wordmark.
+ *
+ * It replaces a solid dot that stood in for the mark before there was one.
+ */
+.wordmarkMark {
+  block-size: 1.05em;
+  aspect-ratio: 389 / 485;
   background-color: currentColor;
+  -webkit-mask: url("/branding/neogen-mark.png") no-repeat center / contain;
+  mask: url("/branding/neogen-mark.png") no-repeat center / contain;
 }
 
 /* --- Navigation ---------------------------------------------------------- */

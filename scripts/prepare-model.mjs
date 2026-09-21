@@ -16,17 +16,24 @@
  *   2. RE-ENCODE TEXTURES to JPEG (`--jpeg <quality>`). The label art is a
  *      2048² PNG of mostly flat paper; as JPEG it is a quarter of the size with
  *      the fine print still legible. Skipped for textures with transparency.
- *   3. PRUNE and DEDUP — drop everything the remaining scene no longer
+ *   3. RESIZE A NODE (`--scale-node "Name" 0.92`), around its own top and
+ *      axis. The one transform this script performs, and it is here because it
+ *      is a decision about the PRODUCT — how large its cap reads — not about
+ *      the scene. Scaling around the top keeps the closure sitting on the
+ *      neck: what shrinking buys is visible glass below it, never a gap above.
+ *   4. PRUNE and DEDUP — drop everything the remaining scene no longer
  *      references (orphan meshes, accessors, materials) and merge duplicates.
  *      This is what turns a dropped node into actual bytes saved.
  *
- * It never moves, rotates or rescales anything: the web layer normalises
- * position and size at load time (`VialModel`), and an asset silently re-posed
- * here would make that normalisation lie.
+ * It never moves or rotates the OBJECT, and never rescales the whole of it:
+ * the web layer normalises position and overall size at load time
+ * (`VialModel`), and an asset silently re-posed here would make that
+ * normalisation lie. `--scale-node` resizes ONE PART relative to the rest,
+ * which is a proportion the model carries, not a pose the page owns.
  *
  * Usage:
  *   node scripts/prepare-model.mjs <source.glb> <destination.glb> \
- *     [--drop "Node name"]... [--jpeg 92] [--dry]
+ *     [--drop "Node name"]... [--scale-node "Node name" 0.92] [--jpeg 92] [--dry]
  *
  * Requires macOS `sips` for --jpeg (it is what the owner's machine has;
  * without it the script says so and leaves textures untouched).
@@ -43,15 +50,20 @@ import { dedup, prune } from "@gltf-transform/functions";
 const args = process.argv.slice(2);
 const positional = args.filter((a) => !a.startsWith("--") && !isFlagValue(a));
 const drops = [];
+const scales = [];
 let jpegQuality = null;
 let dry = false;
 
 function isFlagValue(arg) {
   const i = args.indexOf(arg);
-  return i > 0 && (args[i - 1] === "--drop" || args[i - 1] === "--jpeg");
+  if (i <= 0) return false;
+  /* `--scale-node` takes TWO values (name, factor), so both follow it. */
+  if (args[i - 1] === "--scale-node" || args[i - 2] === "--scale-node") return true;
+  return args[i - 1] === "--drop" || args[i - 1] === "--jpeg";
 }
 for (let i = 0; i < args.length; i += 1) {
   if (args[i] === "--drop") drops.push(args[i + 1]);
+  if (args[i] === "--scale-node") scales.push({ name: args[i + 1], factor: Number(args[i + 2]) });
   if (args[i] === "--jpeg") jpegQuality = Number(args[i + 1] ?? 92);
   if (args[i] === "--dry") dry = true;
 }
@@ -98,7 +110,72 @@ for (const name of drops) {
   node.dispose();
 }
 
-/* ---- 2. textures --------------------------------------------------------- */
+/* ---- 2. resize parts ------------------------------------------------------ */
+
+for (const { name, factor } of scales) {
+  const node = root.listNodes().find((n) => n.getName() === name);
+  if (!node) {
+    console.error(`  ! no node named ${JSON.stringify(name)} — nothing resized`);
+    continue;
+  }
+  if (!Number.isFinite(factor) || factor <= 0) {
+    console.error(`  ! --scale-node ${JSON.stringify(name)} needs a positive factor`);
+    process.exit(1);
+  }
+
+  /* Rotation would make "its own top and axis" ambiguous, and these vials have
+     none. Refuse rather than quietly resize around the wrong point. */
+  const [rx, ry, rz, rw] = node.getRotation();
+  if (Math.abs(rx) + Math.abs(ry) + Math.abs(rz) > 1e-6 || Math.abs(rw - 1) > 1e-6) {
+    console.error(`  ! ${JSON.stringify(name)} carries a rotation; resizing it is not supported`);
+    process.exit(1);
+  }
+
+  const mesh = node.getMesh();
+  if (!mesh) {
+    console.error(`  ! ${JSON.stringify(name)} has no mesh`);
+    continue;
+  }
+
+  /* The part's own bounds, in its local space. */
+  const min = [Infinity, Infinity, Infinity];
+  const max = [-Infinity, -Infinity, -Infinity];
+  for (const primitive of mesh.listPrimitives()) {
+    const position = primitive.getAttribute("POSITION");
+    if (!position) continue;
+    const lo = position.getMin([0, 0, 0]);
+    const hi = position.getMax([0, 0, 0]);
+    for (let axis = 0; axis < 3; axis += 1) {
+      min[axis] = Math.min(min[axis], lo[axis]);
+      max[axis] = Math.max(max[axis], hi[axis]);
+    }
+  }
+
+  const scale = node.getScale();
+  const translation = node.getTranslation();
+  const centreX = (min[0] + max[0]) / 2;
+  const centreZ = (min[2] + max[2]) / 2;
+
+  /*
+   * Keep the TOP and the axis where they were: a vertex sits at
+   * `translation + scale · v`, so holding `translation + scale · p` fixed for
+   * the pivot `p` means moving the translation by `scale · p · (1 - factor)`.
+   */
+  node.setScale([scale[0] * factor, scale[1] * factor, scale[2] * factor]);
+  node.setTranslation([
+    translation[0] + scale[0] * centreX * (1 - factor),
+    translation[1] + scale[1] * max[1] * (1 - factor),
+    translation[2] + scale[2] * centreZ * (1 - factor),
+  ]);
+
+  const width = (max[0] - min[0]) * Math.abs(scale[0]) * factor * 1000;
+  const height = (max[1] - min[1]) * Math.abs(scale[1]) * factor * 1000;
+  console.log(
+    `  resized "${name}" to ${(factor * 100).toFixed(0)}% → Ø${width.toFixed(0)} × ${height.toFixed(0)} mm`,
+  );
+}
+
+/* ---- 3. textures --------------------------------------------------------- */
 
 if (jpegQuality !== null) {
   let sips = true;
@@ -142,7 +219,7 @@ if (jpegQuality !== null) {
   }
 }
 
-/* ---- 3. prune ------------------------------------------------------------ */
+/* ---- 4. prune ------------------------------------------------------------ */
 
 /*
  * MATERIALS ARE NOT DEDUPLICATED, and that is deliberate.

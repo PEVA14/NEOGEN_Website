@@ -168,10 +168,17 @@ for (const [slug, entry] of Object.entries(MEDIA)) {
   /* A studio still is a render OF the model; without one it would depict
      something no asset contains. */
   /* A studio still renders either the product's own model or the canonical
-     NEOGEN container (reta.glb) — never a shape no asset contains. It must
-     live in the product's own folder, so one product's render can never be
-     declared as another's. */
-  if (entry.studio && entry.studio.src !== `/images/products/${slug}/studio.jpg`) {
+     NEOGEN container — never a shape no asset contains. It must live in the
+     product's own folder, so one product's render can never be declared as
+     another's.
+
+     A VERSION SUFFIX IS ALLOWED (`studio-v2.jpg`) and is how a re-render ships:
+     images carry a one-year immutable cache and Next's optimizer keys on the
+     URL, so re-rendering into the same name leaves visitors on the old picture
+     (public/images/README.md). The name still has to be the ROLE plus a
+     version — nothing else may sit in that slot. */
+  const STUDIO_NAME = new RegExp(`^/images/products/${slug}/studio(-v[0-9]+)?\\.[a-z]+$`);
+  if (entry.studio && !STUDIO_NAME.test(entry.studio.src)) {
     fail("studio still outside its product folder", `${slug} → ${entry.studio.src}`);
   }
   if (entry.poster && !entry.model) {

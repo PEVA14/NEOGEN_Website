@@ -17,29 +17,53 @@ Nothing there is served. The served file is derived from one by:
 
 ```bash
 node scripts/prepare-model.mjs "3d assets/NEOGEN_RETA_VIAL_V2.glb" \
-  public/models/reta-v2.glb --drop "0.75 Dram Autosampler Lid" --jpeg 92
+  public/models/reta-v2.glb --drop "0.75 Dram Autosampler Lid" \
+  --scale-node "NEOGEN_VIAL_CAP" 0.92 --jpeg 92
 ```
 
 That script drops nodes the web build should not carry, re-encodes label
 textures (PNG → JPEG, roughly a quarter of the bytes at the same 2048²), prunes
 what is then unreferenced, and **refuses to write a vial whose glass has lost
 its transmission** — the one mistake that would turn the glass into a white
-cylinder. It never moves, rotates or rescales: `VialModel` normalises position
-and size at load time, and an asset re-posed here would make that a lie.
+cylinder.
+
+**What it will and will not transform.** It never moves or rotates the object
+and never rescales the whole of it: `VialModel` normalises position and overall
+size at load time, and an asset silently re-posed here would make that
+normalisation lie. `--scale-node` is the exception, and it is not one: it
+resizes ONE PART relative to the rest, which is a proportion the model carries
+with it, not a pose the page owns.
 
 Current recipes:
 
-| Served file      | Source export               | Extra                                    |
-| ---------------- | --------------------------- | ---------------------------------------- |
-| `reta-v2.glb`    | `NEOGEN_RETA_VIAL_V2.glb`   | `--drop "0.75 Dram Autosampler Lid"` (1) |
-| `ghk-cu.glb`     | `NEOGEN_GHK-Cu_VIAL.glb`    | —                                        |
-| `glow.glb`       | `NEOGEN_GLOW_VIAL.glb`      | —                                        |
+| Served file   | Source export             | Extra                                                             |
+| ------------- | ------------------------- | ----------------------------------------------------------------- |
+| `reta-v2.glb` | `NEOGEN_RETA_VIAL_V2.glb` | `--drop "0.75 Dram Autosampler Lid"` (1), `--scale-node` cap (2)  |
+| `ghk-cu.glb`  | `NEOGEN_GHK-Cu_VIAL.glb`  | `--scale-node` cap (2)                                            |
+| `glow.glb`    | `NEOGEN_GLOW_VIAL.glb`    | `--scale-node` cap (2)                                            |
 
 (1) That export carries **two** lids, stacked and interpenetrating: the narrow
 `NEOGEN_VIAL_CAP` and the wider `0.75 Dram Autosampler Lid`. Only one can be
 right. The build keeps the narrow cap, which matches the approved first-
 generation silhouette; to ship the wider one instead, drop `NEOGEN_VIAL_CAP`
 rather than the autosampler lid.
+
+(2) `--scale-node "NEOGEN_VIAL_CAP" 0.92` — the cap at 92% (owner, 2026-09-20),
+Ø123 × 44 mm as exported, Ø113 × 40 mm as served.
+
+It shrinks **around the cap's top**, not its base. The glass ends at 286.7 mm
+and the cap at 287.9; shrinking from below would lift the closure off the lip.
+What the smaller cap buys is visible neck under it — the base rises from 244.3
+to 247.8 mm and the top holds at 287.9.
+
+The floor is about **0.79**: the glass neck is Ø97.2 mm against a Ø123.0 mm cap,
+so there is 12.9 mm of skirt per side, and below that the neck starts showing
+through. Changing the factor and re-running the recipe is the whole edit — and
+it has to be re-run for all three files, because the cap is the same part in
+each and they must agree.
+
+If the owner would rather the proportion lived in Blender, drop the flag and
+ask for it in the export; nothing in the web layer depends on it.
 
 ## Declaring one
 

@@ -18,6 +18,7 @@ public/images/products/<product-slug>/
   detail-01.jpg        label or macro detail
   packaging.jpg        the product as it ships
   poster.jpg           rendered still of the 3D scene (only where a GLB exists)
+  studio-v3.jpg        the studio still — a RENDER, not a photograph
 ```
 
 The slug is the join between the product registry, the URL and the media
@@ -28,6 +29,31 @@ registry. `semaglutide` → `/images/products/semaglutide/primary.jpg` →
 
 Only `primary.jpg` is needed for a product to stop showing the diagram. The
 other roles are optional and can arrive later.
+
+## The studio still is the one file nobody shoots
+
+`studio-v<N>.jpg` is the product's own 3D container rendered as a product
+photograph and captured to a file, so commerce surfaces never run WebGL. It is
+what a catalogue card shows for a product that has no photography yet. Produce
+it with the dev server running:
+
+```bash
+node scripts/capture-studio.mjs semaglutide --name studio-v4
+```
+
+That opens `/es/estudio/<slug>`, waits for the scene to settle, takes the frame
+the page itself exposes and writes the JPEG at 1600 × 2000. The rig, lights and
+grade all live in `components/experience/studio/rig.ts` — this only presses the
+shutter. See CONVENTIONS §17b for the pipeline.
+
+**Version the filename every time the render changes** (`--name studio-v4`).
+Images are served with a one-year immutable cache and Next's optimizer caches
+by URL, so re-rendering into the old name leaves every visitor — and the local
+dev server, and the owner's browser — looking at the previous picture. Point
+the registry at the new name and delete the old file in the same change.
+
+A studio still is a render and is registered as `studio`, never as `primary`:
+it does not count as photography, and no surface promotes it to a social card.
 
 ## How to add one
 
