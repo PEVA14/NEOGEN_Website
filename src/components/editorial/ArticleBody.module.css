@@ -1,0 +1,119 @@
+/*
+ * A NOTE, SET AS A DOCUMENT.
+ *
+ * One column at reading measure, a spine of headings, and definition lists
+ * that hold their term in a narrow left column on wide screens. No pull
+ * quotes, no drop caps, no card around anything: the editorial register here
+ * is the same restraint the rest of Quiet Mode uses, so a note reads as part
+ * of the site rather than as a blog bolted to it.
+ */
+
+.body {
+  display: grid;
+  gap: var(--space-md);
+  max-inline-size: 42rem;
+}
+
+.heading {
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 600;
+  font-size: var(--text-2xl);
+  line-height: 1.1;
+  letter-spacing: var(--tracking-tight);
+  color: var(--ink-primary);
+  margin: var(--space-lg) 0 0;
+  text-wrap: balance;
+}
+
+/* The first heading does not need to push away from the lede above it. */
+.heading:first-child {
+  margin-block-start: 0;
+}
+
+.paragraph {
+  color: var(--ink-secondary);
+  margin: 0;
+}
+
+.list {
+  display: grid;
+  gap: var(--space-2xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.list li {
+  position: relative;
+  padding-inline-start: var(--space-md);
+  color: var(--ink-secondary);
+}
+
+/* A rule, not a bullet: the same mark the rest of the site uses for a row. */
+.list li::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-start: 0.7em;
+  inline-size: var(--space-2xs);
+  block-size: 1px;
+  background: var(--border-strong);
+}
+
+.terms {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+
+.term {
+  display: grid;
+  gap: var(--space-3xs);
+  padding-block: var(--space-sm);
+  border-block-start: 1px solid var(--border-subtle);
+}
+
+.term:last-child {
+  border-block-end: 1px solid var(--border-subtle);
+}
+
+@media (min-width: 48rem) {
+  .term {
+    grid-template-columns: minmax(0, 0.32fr) minmax(0, 0.68fr);
+    gap: var(--space-md);
+    align-items: baseline;
+  }
+}
+
+.termName {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-primary);
+}
+
+.termBody {
+  margin: 0;
+  color: var(--ink-secondary);
+}
+
+.note {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-2xs);
+  align-items: start;
+  border-inline-start: 2px solid var(--border-strong);
+  padding: var(--space-2xs) 0 var(--space-2xs) var(--space-md);
+  margin-block: var(--space-2xs);
+}
+
+.noteMark {
+  color: var(--ink-muted);
+}
+
+.noteText {
+  color: var(--ink-primary);
+  margin: 0;
+}

@@ -1,0 +1,93 @@
+/*
+ * THE FAQ — a two-column document on wide screens: the topic held in the left
+ * margin like a section label, its questions running down the right.
+ *
+ * Same asymmetry as the product record and the bag, so the help pages read as
+ * the same publication rather than as a support site someone attached.
+ */
+
+.faq {
+  display: grid;
+  gap: var(--space-2xl);
+}
+
+.group {
+  display: grid;
+  gap: var(--space-sm);
+  border-block-start: 1px solid var(--border-default);
+  padding-block-start: var(--space-md);
+}
+
+@media (min-width: 64rem) {
+  .group {
+    grid-template-columns: minmax(0, 0.28fr) minmax(0, 0.72fr);
+    gap: var(--space-2xl);
+    align-items: start;
+  }
+}
+
+.groupTitle {
+  margin: 0;
+  color: var(--ink-secondary);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  /* The label stays with its questions while they scroll past on desktop. */
+  position: sticky;
+  inset-block-start: calc(var(--header-height, 4rem) + var(--space-sm));
+}
+
+@media (max-width: 63.99rem) {
+  .groupTitle {
+    position: static;
+  }
+}
+
+.items {
+  display: grid;
+  gap: var(--space-lg);
+  min-inline-size: 0;
+}
+
+.item {
+  display: grid;
+  gap: var(--space-2xs);
+  scroll-margin-block-start: calc(var(--header-height, 4rem) + var(--space-lg));
+}
+
+.question {
+  margin: 0;
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 600;
+  font-size: var(--text-xl);
+  line-height: 1.15;
+  letter-spacing: var(--tracking-tight);
+  color: var(--ink-primary);
+  text-wrap: balance;
+}
+
+.answer {
+  margin: 0;
+  color: var(--ink-secondary);
+  max-inline-size: 58ch;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin: var(--space-3xs) 0 0;
+}
+
+.link {
+  color: var(--ink-muted);
+  text-decoration: underline;
+  text-decoration-color: var(--border-default);
+  text-underline-offset: 0.25em;
+  text-decoration-thickness: 1px;
+}
+
+.link:hover {
+  color: var(--ink-primary);
+  text-decoration-color: currentColor;
+}

@@ -58,6 +58,7 @@ export function CommercePanel({
   world,
   worldLabel,
   children,
+  conditions,
 }: {
   copy: CommerceCopy;
   world: WorldId | null;
@@ -65,6 +66,17 @@ export function CommercePanel({
   worldLabel: string;
   /** The commerce block — `AddToBag`. */
   children: ReactNode;
+  /**
+   * The stated conditions of the sale: fulfilment and research use.
+   *
+   * Passed in rather than built here because both are derived from config and
+   * the dictionary, and this panel is deliberately a dumb server component.
+   * They sit UNDER the buy block, which is where a customer looks once they
+   * have decided — the shipping facts answer "when does it arrive" at the
+   * moment the question occurs, and the research-use line states the
+   * condition at the point of the decision rather than after it.
+   */
+  conditions?: ReactNode;
 }) {
   return (
     <div className={styles.panel}>
@@ -125,9 +137,14 @@ export function CommercePanel({
 
       <div className={styles.foot}>
         <TextLink href={copy.documentationHref}>{copy.documentation}</TextLink>
-        {/* No shipping line. There is no shipping policy to state, and
-            "SHIPPING — PLACEHOLDER" only labels an empty field. It returns
-            when there is a real policy. */}
+        {/*
+         * THE SHIPPING LINE RETURNED, because the facts behind it did. It was
+         * removed when there was nothing true to put in it; it now states the
+         * confirmed coverage, the named one-day zone and the free-shipping
+         * threshold, all read from `config/site` — and still no rate, because
+         * there is still no rate model.
+         */}
+        {conditions}
       </div>
     </div>
   );

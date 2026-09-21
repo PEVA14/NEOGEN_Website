@@ -60,6 +60,7 @@ export function socialMetadata({
   title,
   description,
   image,
+  article,
 }: {
   locale: Locale;
   /** Unlocalised route from `config/routes`. */
@@ -67,6 +68,15 @@ export function socialMetadata({
   title: string;
   description: string;
   image?: ProductImage | null;
+  /**
+   * Set on an editorial note, which is an `article` rather than a `website`.
+   *
+   * The dates are the note's own approval dates from the editorial registry —
+   * never a file's mtime, and never "now". A published time a crawler can
+   * check against the page is worth having; one that changes on every deploy
+   * teaches it the opposite lesson.
+   */
+  article?: { publishedTime: string; modifiedTime?: string | null };
 }): Pick<Metadata, "openGraph" | "twitter"> {
   const images = image
     ? [{ url: image.src, width: image.width, height: image.height, alt: image.alt }]
@@ -81,7 +91,13 @@ export function socialMetadata({
 
   return {
     openGraph: {
-      type: "website",
+      ...(article
+        ? {
+            type: "article" as const,
+            publishedTime: article.publishedTime,
+            ...(article.modifiedTime ? { modifiedTime: article.modifiedTime } : {}),
+          }
+        : { type: "website" as const }),
       siteName: siteConfig.name,
       locale: localeTags[locale],
       url: localizePath(path, locale),

@@ -53,6 +53,20 @@ import {
   referencesForProduct,
   researchReferenceIndex,
 } from "../src/content/research.ts";
+import {
+  ARTICLES,
+  isPublishableBlock,
+  publicArticle,
+  publicArticles,
+  RESERVED_ARTICLE_SLUGS,
+} from "../src/content/editorial/index.ts";
+import { FAQ_ENTRIES, isPublishableEntry, publicFaq, tokensIn } from "../src/content/faq/index.ts";
+import {
+  hasCertifications,
+  isVerified,
+  publicCertifications,
+} from "../src/content/certifications.ts";
+import { supports } from "../src/domain/fulfilment/index.ts";
 import { publishedProducts } from "../src/data/catalog/index.ts";
 import { AREAS, publicAreas } from "../src/data/discovery/index.ts";
 import { ATLAS_QUESTIONNAIRE } from "../src/content/atlas/questionnaire.ts";
@@ -937,6 +951,305 @@ ok(
   !/notifications|resend|sendgrid|nodemailer|@sendgrid/i.test(orderDomain),
   "the order domain has no dependency on notifications or an email provider",
 );
+
+/* Every token `content/faq` can resolve. Declared here so a new token has to
+   be added in both places deliberately. */
+const FAQ_TOKENS = [
+  "priorityZone",
+  "priorityDays",
+  "nationalDays",
+  "madeToOrderDays",
+  "freeShipping",
+  "phone",
+  "catalogueCount",
+];
+
+/* ---- editorial: the notes ---------------------------------------------- */
+
+/*
+ * A NOTE IS HELD TO THE SAME RULES AS A PRODUCT PAGE.
+ *
+ * The editorial layer is where an honest catalogue is most tempted to drift:
+ * SEO rewards pages about what compounds DO, and nobody audits a blog the way
+ * they audit a product page. So the blog is audited here, on the same terms.
+ */
+const reservedSlugs = new Set(RESERVED_ARTICLE_SLUGS);
+const publishedNotes = publicArticles();
+
+ok(publishedNotes.length > 0, "the editorial section publishes at least one note");
+eq(
+  ARTICLES.filter((a) => a.status !== "approved").length,
+  ARTICLES.length - publishedNotes.length,
+  "every unpublished note is unpublished because it is not approved",
+);
+
+const noteText = [];
+for (const article of ARTICLES) {
+  ok(!reservedSlugs.has(article.slug), `\`${article.slug}\` does not collide with a reserved slug`);
+  ok(/^[a-z0-9-]+$/.test(article.slug), `\`${article.slug}\` is a clean URL slug`);
+  ok(
+    !ARTICLES.some((other) => other !== article && other.slug === article.slug),
+    `\`${article.slug}\` is declared once`,
+  );
+  ok(
+    !Number.isNaN(Date.parse(article.publishedOn)),
+    `\`${article.slug}\` carries a real publication date`,
+  );
+
+  /* Both locales, everywhere. A note that is approved in Spanish and missing
+     in English would render an empty page under /en, not a fallback. */
+  for (const locale of ["es", "en"]) {
+    ok(article.title[locale]?.length > 0, `\`${article.slug}\` has a ${locale} title`);
+    ok(article.summary[locale]?.length > 0, `\`${article.slug}\` has a ${locale} summary`);
+    noteText.push(article.title[locale], article.summary[locale]);
+  }
+
+  for (const block of article.body) {
+    for (const locale of ["es", "en"]) {
+      if (block.kind === "list") {
+        ok(
+          block.items[locale]?.length > 0,
+          `\`${article.slug}\`/${block.id} has ${locale} list items`,
+        );
+        noteText.push(...block.items[locale]);
+      } else if (block.kind === "terms") {
+        for (const term of block.terms) {
+          ok(
+            term.term[locale]?.length > 0 && term.definition[locale]?.length > 0,
+            `\`${article.slug}\`/${block.id} has a complete ${locale} term`,
+          );
+          noteText.push(term.term[locale], term.definition[locale]);
+        }
+      } else {
+        ok(block.text[locale]?.length > 0, `\`${article.slug}\`/${block.id} has ${locale} text`);
+        noteText.push(block.text[locale]);
+      }
+    }
+  }
+
+  /* Internal links resolve against the real catalogue, so a note cannot point
+     at a compound or an area that does not exist. */
+  for (const slug of article.related.products) {
+    ok(
+      publishedProducts.some((p) => p.slug === slug),
+      `\`${article.slug}\` links to a published compound (\`${slug}\`)`,
+    );
+  }
+  for (const area of article.related.areas) {
+    ok(
+      AREAS.some((a) => a.id === area),
+      `\`${article.slug}\` links to a declared area (\`${area}\`)`,
+    );
+  }
+}
+
+/* The vocabulary rule, applied to every editorial string in both locales. */
+for (const text of noteText) {
+  const term = forbiddenTermIn(text);
+  if (term) fail("forbidden vocabulary in an editorial note", `"${term}" in "${text}"`);
+}
+assertions += 1;
+
+/*
+ * A `sourced` block needs approved public references. Nothing in the seeded
+ * notes uses that class, so these are fixtures — and they are what stops the
+ * class becoming a way to publish a claim by writing one.
+ */
+ok(
+  !isPublishableBlock({
+    id: "fixture",
+    kind: "paragraph",
+    editorialClass: "sourced",
+    text: { es: "x", en: "x" },
+  }),
+  "a sourced block with no references does not render",
+);
+ok(
+  !isPublishableBlock({
+    id: "fixture",
+    kind: "paragraph",
+    editorialClass: "sourced",
+    references: ["ref-does-not-exist"],
+    text: { es: "x", en: "x" },
+  }),
+  "a sourced block citing an unknown reference does not render",
+);
+ok(
+  isPublishableBlock({
+    id: "fixture",
+    kind: "paragraph",
+    editorialClass: "definition",
+    text: { es: "x", en: "x" },
+  }),
+  "a definition block needs no citation",
+);
+ok(
+  publicArticle("que-es-un-peptido") !== undefined,
+  "an approved note resolves for the route to generate",
+);
+ok(publicArticle("calidad") === undefined, "a reserved slug never resolves to a note");
+
+/* ---- FAQ ---------------------------------------------------------------- */
+
+/*
+ * THE QUESTIONS NOBODY CAN ANSWER MUST NOT RENDER, and they must say why.
+ * `blockedOn` is the owner's list of decisions; a blocked entry without one is
+ * a question that was quietly dropped instead of escalated.
+ */
+for (const entry of FAQ_ENTRIES) {
+  if (isPublishableEntry(entry)) {
+    for (const locale of ["es", "en"]) {
+      ok(entry.question[locale]?.length > 0, `FAQ \`${entry.id}\` has a ${locale} question`);
+      ok(entry.answer[locale]?.length > 0, `FAQ \`${entry.id}\` has a ${locale} answer`);
+      const term = forbiddenTermIn(`${entry.question[locale]} ${entry.answer[locale]}`);
+      if (term) fail("forbidden vocabulary in the FAQ", `"${term}" in \`${entry.id}\``);
+      /* Every token an answer uses has to resolve, or a customer reads a
+         literal `{freeShipping}`. */
+      for (const token of tokensIn(entry.answer[locale])) {
+        ok(
+          FAQ_TOKENS.includes(token),
+          `FAQ \`${entry.id}\` uses a known value token (\`${token}\`)`,
+        );
+      }
+    }
+  } else {
+    ok(
+      typeof entry.blockedOn === "string" && entry.blockedOn.length > 20,
+      `unpublished FAQ \`${entry.id}\` names what it is waiting on`,
+    );
+  }
+}
+assertions += 1;
+
+/* Resolution actually happens: no braces survive into a rendered answer. */
+for (const locale of ["es", "en"]) {
+  for (const entry of publicFaq(locale, "y")) {
+    ok(
+      !/[{}]/.test(entry.answer),
+      `the resolved ${locale} answer to \`${entry.id}\` has no tokens left`,
+    );
+  }
+}
+
+/* ---- fulfilment: the claims that may not be made ------------------------ */
+
+/*
+ * THE 24-HOUR PROMISE.
+ *
+ * The brief asked for "envíos a México en 24 horas". The confirmed facts are
+ * one business day to Guadalajara and Durango and up to seven elsewhere, so
+ * the claim is false for most of the country — and same-day was explicitly
+ * ruled out by the owner. Both are refused structurally here, and the strings
+ * are checked so that a future edit cannot reintroduce the promise in copy
+ * while the data still says otherwise.
+ */
+ok(supports("national"), "national shipping is a confirmed fact and may be stated");
+ok(supports("next-day-priority"), "the one-business-day zone is confirmed and may be stated");
+ok(!supports("same-day"), "same-day delivery is NOT supported and may never be stated");
+ok(!supports("nationwide-24h"), "24 hours nationwide is NOT supported and may never be stated");
+ok(!supports("dispatch-window"), "no dispatch window has been stated by anyone");
+ok(!supports("courier"), "no courier is chosen, so none may be named");
+ok(!supports("rates-below-threshold"), "no rate model exists below the free-shipping threshold");
+ok(!supports("cold-chain"), "cold chain is undetermined and may not be claimed");
+
+/*
+ * The copy sweep. A claim phrase is allowed ONLY inside a sentence that
+ * negates it — "no ofrecemos entrega el mismo día" is the honest use, and it
+ * is the one the FAQ makes.
+ */
+const CLAIM_PATTERNS = [
+  /en 24 horas/i,
+  /within 24 hours/i,
+  /24[- ]hour delivery/i,
+  /entrega el mismo d[ií]a/i,
+  /same[- ]day delivery/i,
+];
+const NEGATIONS = /\bno\b|\bnunca\b|\bnot\b|\bdo not\b|\bdoes not\b/i;
+const copySources = [
+  ...noteText,
+  ...FAQ_ENTRIES.flatMap((e) => ["es", "en"].map((l) => `${e.question[l]} ${e.answer[l]}`)),
+  ...["es", "en"].flatMap((locale) =>
+    [
+      ...readFileSync(`src/i18n/dictionaries/${locale}.ts`, "utf8").matchAll(
+        /"((?:[^"\\]|\\.)*)"/g,
+      ),
+    ].map((m) => m[1]),
+  ),
+];
+for (const text of copySources) {
+  for (const pattern of CLAIM_PATTERNS) {
+    if (!pattern.test(text)) continue;
+    /* Find the sentence that carries it, and require the negation there. */
+    const sentence = text.split(/(?<=[.;])\s+/).find((part) => pattern.test(part)) ?? text;
+    ok(
+      NEGATIONS.test(sentence),
+      `a delivery claim the data does not support appears unqualified: "${sentence.trim()}"`,
+    );
+  }
+}
+assertions += 1;
+
+/* ---- certifications ----------------------------------------------------- */
+
+/*
+ * "CERTIFIED PEPTIDES IN MEXICO" was requested. Nothing in the repository
+ * supports it: no certificate, no registration, no laboratory analysis, and
+ * the classification review has not happened. The registry is therefore empty,
+ * and these assertions are what keep the claim from arriving as copy instead.
+ */
+eq(publicCertifications().length, 0, "NO certification is publishable — none is on file");
+ok(!hasCertifications(), "so no surface may render a certification block");
+ok(
+  !isVerified({
+    id: "fixture",
+    kind: "standard-certification",
+    scope: "entity",
+    issuer: "Body",
+    standard: "Standard",
+    identifier: "X-1",
+    validFrom: "2026-01-01",
+    validUntil: null,
+    verifyUrl: null,
+    covers: { es: "x", en: "x" },
+    status: "verified",
+  }),
+  "a certification nobody can verify independently is not publishable",
+);
+ok(
+  !isVerified({
+    id: "fixture",
+    kind: "standard-certification",
+    scope: "entity",
+    issuer: "Body",
+    standard: "Standard",
+    identifier: "X-1",
+    validFrom: "2026-01-01",
+    validUntil: null,
+    verifyUrl: "https://example.org/registry/x-1",
+    covers: null,
+    status: "verified",
+  }),
+  "a certification that does not state what it covers is not publishable",
+);
+
+/* And no string may assert one. The patterns are narrow on purpose: the FAQ
+   answer that EXPLAINS why nothing is certified has to keep working. */
+const CERTIFICATION_CLAIMS = [
+  /productos? certificad/i,
+  /p[eé]ptidos? certificad/i,
+  /estamos certificad/i,
+  /somos? certificad/i,
+  /certified (peptides|products)/i,
+  /we are certified/i,
+  /cofepris (aprob|autoriz|registr)/i,
+  /registro sanitario/i,
+];
+for (const text of copySources) {
+  for (const pattern of CERTIFICATION_CLAIMS) {
+    ok(!pattern.test(text), `no copy asserts a certification: "${text.slice(0, 80)}"`);
+  }
+}
+assertions += 1;
 
 /* ---- report ------------------------------------------------------------ */
 

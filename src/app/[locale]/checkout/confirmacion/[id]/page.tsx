@@ -156,7 +156,13 @@ export default async function ConfirmationPage({
 
         <OrderReceipt
           order={order}
-          copy={copy}
+          /* The declaration wording has ONE source — the review step's copy —
+             so the sentence on the receipt is provably the sentence that was
+             ticked, rather than a second string that could drift from it. */
+          copy={{
+            ...copy,
+            declarations: dict.checkout.steps.review.acknowledgements.declarations,
+          }}
           localeTag={localeTags[locale]}
           addressLine={formatAddress(order.shipping)}
           links={{

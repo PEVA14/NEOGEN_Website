@@ -49,7 +49,29 @@ export const routes = {
   qualityExplorer: "/investigacion/calidad",
   /** The whole reference registry, read from both ends. Exists once one does. */
   researchReferences: "/investigacion/referencias",
-  article: (slug: string) => `/investigacion/${slug}`,
+  /**
+   * THE EDITORIAL SECTION — NEOGEN's notes.
+   *
+   * Under `/investigacion`, not at the root and not under a word like "blog",
+   * because a note is reading material of the same kind as the reference index
+   * that sits beside it. A shop whose educational writing lives in a separate
+   * marketing silo is telling you which of the two it takes seriously.
+   *
+   * Notes are NESTED (`/investigacion/notas/<slug>`) rather than sharing the
+   * `[slug]` space with `calidad` and `referencias`. That space is a small set
+   * of reserved words, and an editorial slug that happened to collide with one
+   * would not 404 — it would silently take over an existing page.
+   */
+  articles: "/investigacion/notas",
+  article: (slug: string) => `/investigacion/notas/${slug}`,
+  /**
+   * The peptide guide — the one page that explains what this catalogue is.
+   * Linked from the header, because "what is this" is the first question a
+   * first-time visitor has and it should not be a footnote.
+   */
+  peptides: "/peptidos",
+  /** Customer questions, answered from the facts. */
+  faq: "/preguntas",
   /**
    * NEOGEN Atlas — the personal research map. A tool that crosses the
    * catalogue and research, so it sits at the root rather than under either.
@@ -102,6 +124,13 @@ export const routes = {
 const navItems = [
   { key: "products", href: routes.products },
   { key: "research", href: routes.research },
+  /*
+   * The guide earns a header slot for the same reason Atlas was given one: it
+   * is where a visitor who does not yet know what a peptide is can start, and
+   * no amount of catalogue design substitutes for that. It sits after
+   * Research so the commerce and evidence destinations stay first.
+   */
+  { key: "peptides", href: routes.peptides },
   /*
    * Atlas earns a header slot: it is the one place a first-time reader can
    * ask "where do I start" and get an answer built from the catalogue, and it

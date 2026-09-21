@@ -29,6 +29,15 @@ export interface ReceiptCopy {
   actions: { catalogue: string; research: string };
   /** Printed only when a declaration was actually accepted. */
   acknowledgedLabel: string;
+  /**
+   * The declaration WORDING, by id — the same strings the review step showed.
+   *
+   * Passed in rather than looked up here so the receipt cannot print a
+   * sentence the customer was never shown: if an id has no wording, the record
+   * falls back to the id and version, which is still evidence of what was
+   * accepted even when it is not readable prose.
+   */
+  declarations: Readonly<Record<string, string>>;
 }
 
 /**
@@ -203,9 +212,13 @@ export function OrderReceipt({
           </section>
 
           {/*
-           * Printed only when something was actually accepted. Zero
-           * declarations are publishable today, so this is absent — and an
-           * empty "you agreed to" block would imply otherwise.
+           * Printed only when something was actually accepted, so an order
+           * placed before a declaration existed does not grow one in hindsight.
+           *
+           * THIS IS THE CUSTOMER'S COPY OF THE EVIDENCE. The order record
+           * holds `id@version` and the moment of acceptance; this prints the
+           * sentence that was accepted beside them, so the receipt says what
+           * was agreed rather than referring to it.
            */}
           {order.acknowledged.length > 0 ? (
             <section className={styles.section} aria-label={copy.acknowledgedLabel}>
@@ -214,9 +227,16 @@ export function OrderReceipt({
               </Mono>
               <ul className={styles.acks}>
                 {order.acknowledged.map((ack) => (
-                  <li key={`${ack.id}@${ack.version}`}>
+                  <li key={`${ack.id}@${ack.version}`} className={styles.ack}>
+                    {copy.declarations[ack.id] ? (
+                      <Body size="sm">{copy.declarations[ack.id]}</Body>
+                    ) : null}
                     <Mono size="2xs" className={styles.lineMeta}>
-                      {ack.id} · v{ack.version}
+                      {ack.id} · v{ack.version} ·{" "}
+                      {new Intl.DateTimeFormat(localeTag, {
+                        dateStyle: "long",
+                        timeStyle: "short",
+                      }).format(new Date(ack.acceptedAt))}
                     </Mono>
                   </li>
                 ))}

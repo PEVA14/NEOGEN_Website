@@ -825,6 +825,56 @@ to a file.
 - **glTF materials without extensions load as `MeshStandardMaterial`.**
   Material tuning must not filter on `MeshPhysicalMaterial` alone.
 
+## 17c. Education, editorial and the FAQ
+
+Three content layers were added in §8y of `PROJECT_STATE.md`. They share one
+rule with everything else here: **a surface may only state what something in
+this repository can be checked against.**
+
+- **`content/editorial`** — the notes (`/investigacion/notas/<slug>`).
+  Structured blocks, not MDX: a block declares what it rests on
+  (`definition` — vocabulary true independently of NEOGEN; `practice` — how
+  NEOGEN itself works; `sourced` — a claim about what a compound does), and a
+  `sourced` block without approved public references does not render. Notes
+  live under `/investigacion` because a note is reading material of the same
+  kind as the reference index, not a marketing silo. Slugs are checked against
+  `RESERVED_ARTICLE_SLUGS`.
+- **`content/faq`** — the questions (`/preguntas`). An entry carries a status;
+  an unapproved one does not render AND must name what it waits on in
+  `blockedOn`, which is internal and never shown. Answers interpolate
+  `{tokens}` resolved from `config/site` and `domain/fulfilment`, so the FAQ
+  cannot promise what the checkout would not do.
+- **`content/certifications`** — the empty registry for any future
+  certification, in the shape of `content/policies`: six required facts, a
+  `verifyUrl` a reader can follow, and `publicCertifications()` returning
+  nothing today. Nothing may render a certification from anywhere else.
+
+### Fulfilment claims are data, not copy
+
+`domain/fulfilment` answers whether a delivery claim MAY be made, derived from
+`config/site`. `supports("same-day")` and `supports("nationwide-24h")` are
+false and stay false until the facts change; `ShippingNote` renders only the
+lines whose claims are supported. `check:content` fails the build if a
+dictionary, note or FAQ string states a 24-hour or same-day delivery outside a
+sentence that negates it.
+
+### Acknowledgements: two kinds
+
+`domain/acknowledgements` now distinguishes:
+
+- an **agreement** — consent to a NEOGEN document. Publishable only when the
+  policy behind it is approved. None is.
+- a **condition of sale** — the customer stating something about their own
+  purchase. Publishable on approved wording alone, because there is no second
+  document to read. `research-use@1` is one, it is required, and
+  `placeOrder` refuses to create an order without it.
+
+Acceptances are stored as `id@version` on the draft and the order. **Changing
+the wording means bumping the version** — that deliberately stops new consent
+inheriting the old text, and `check:checkout` asserts the wording exists in
+both dictionaries so a published declaration can never render as an unlabelled
+checkbox.
+
 ## 18. Commands
 
 ```bash

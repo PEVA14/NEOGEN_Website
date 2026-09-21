@@ -22,7 +22,13 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 
 ### Start here: handoff of 2026-09-20
 
-- **Latest (2026-09-20): the brand mark (§8x) and the studio rigs for GLOW
+- **Latest (2026-09-20): education, editorial, FAQ and the research-use gate
+  (§8y).** `/peptidos`, `/investigacion/notas`, `/preguntas`, the RUO notice
+  across the journey, and a REQUIRED research-use declaration that blocks order
+  creation. Two requested claims were refused for want of evidence —
+  certification and 24-hour nationwide delivery; §8y lists what the owner must
+  supply for either.
+- **The brand mark (§8x) and the studio rigs for GLOW
   and GHK-Cu with the cap at 92% (§8w), committed together as `1fd202d`.** The
   owner's logo files are in `public/branding/`; the mark is now on the header,
   the footer, the favicon, the drawn `SpecimenPlate` and the rendered label of
@@ -120,6 +126,8 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 | `d29af23`   | Flagship vials in their homepage moments; the capture script; the dedup regression (§8v)                                        |
 | `1ca7620`   | Product page copy: purchasing waits on the regulatory review, not on a payment processor (§8t, §6)                              |
 | `1fd202d`   | Studio rigs for GLOW and GHK-Cu, the cap at 92%, and the brand mark applied across the site and the drawn labels (§8w, §8x)     |
+| `2d650d1`   | Documentation caught up with the 3D and product-media work                                                                      |
+| _this_      | Peptide guide, editorial notes, FAQ, shipping facts, and the blocking research-use declaration (§8y)                            |
 
 **Current priority (owner, 2026-09-17): V1 completion.** Make NEOGEN V1 as
 complete, polished and commercially effective as possible with the
@@ -202,10 +210,14 @@ whether or not a check catches them.
 - Never represent Janoshik verification without an actual report, and never
   imply that testing one strength verifies every variant.
 - "Research use only" is not a loophole and not proof a transaction is lawful.
-- **RUO label (owner, Q32):** products are sold with a small "for research
-  purposes only" line and the owner does not want it prominent. Build it
-  restrained and in the mono register — but not below the site's contrast or
-  size floors, and never hidden behind an interaction.
+- **RUO label (owner, Q32; SUPERSEDED IN PART, 2026-09-20):** Q32 said the
+  research line should be small and not prominent. The later brief asks for the
+  condition to be emphasised and for an explicit acknowledgement before
+  purchase. Both are satisfied the same way: PRESENCE AND REPETITION AT
+  DECISION POINTS, not volume — one wording (`dict.researchUse`), the mono
+  register, on the catalogue, the product page, the bag, the footer and every
+  editorial page, and a required checkbox at review (§8y). It is never a
+  banner, a modal, an error colour or a wall of disclaimer text.
 - No "pending", "coming soon" or placeholder language on a trust surface. A
   fact we do not have is absent.
 
@@ -1949,6 +1961,85 @@ rather than leaving the studio permanently un-ready.
 The three flagships' labels are printed into their `.glb` in Blender. RETA's
 already carries the lockup (§8u); putting it on GLOW and GHK-Cu is an export,
 not a code change. `label.ts` does not touch a flagship.
+
+## 8y. Education, editorial, FAQ and the research-use gate (2026-09-20)
+
+Stakeholder brief: explain what peptides are, communicate quality/certification
+status, communicate shipping ("envíos a México en 24 horas", same-day where
+supported), emphasise RUO, require an explicit RUO acknowledgement before
+purchase, add a real blog for SEO, and add an FAQ.
+
+**What shipped**
+
+- **`/peptidos`** — the guide. Six sections: what a peptide is, why they are
+  studied, the research-use condition (on charcoal), how documentation works
+  (the existing `EvidenceChain`), handling and shipping, and the way into the
+  catalogue by area. It is in the header nav, because "what is this" is the
+  first question a first-time visitor has.
+- **`/investigacion/notas`** and **`/investigacion/notas/<slug>`** — the
+  editorial system. Structured blocks, not MDX (`content/editorial`): each
+  block carries provenance (`definition` / `practice` / `sourced`) and a
+  `sourced` block without approved references does not render. Four seeded
+  notes, both locales. Article JSON-LD, OG `type: article` with real dates,
+  canonicals, hreflang, sitemap entries, `dynamicParams = false`.
+- **`/preguntas`** — the FAQ. Fourteen questions render; four do NOT, each with
+  a `blockedOn` note naming the decision it waits on. Answers interpolate the
+  facts (`{priorityZone}`, `{nationalDays}`, `{freeShipping}`, …) from
+  `config/site` and `domain/fulfilment`, so they cannot drift from what the
+  checkout quotes. FAQPage JSON-LD is built from the SAME resolved list.
+- **The research-use acknowledgement is live and blocking.** The framework
+  built in Phase 10 was waiting for an approved declaration; it now has one.
+  `AcknowledgementKind` distinguishes an `agreement` (consent to a document —
+  still unpublishable, no policy is approved) from a `condition-of-sale` (a
+  statement about the buyer's own purchase, publishable on owner approval).
+  `research-use@1` is required, so `placeOrder` refuses to create an order
+  without it, the acceptance is stored on the draft AND the order, and the
+  confirmation prints the sentence accepted with its version and timestamp.
+- **RUO and shipping across the journey.** `ResearchUseNotice` (one wording,
+  two registers) on the catalogue masthead, the product page, the bag, the
+  guide, the FAQ, every note and the footer's legal bar — and as the checkout
+  checkbox. `ShippingNote` on the catalogue, the product page, the bag and the
+  guide.
+
+**The two claims that were refused**
+
+- **"Certified in Mexico" is not published.** Nothing supports it: no COA, no
+  lot, no laboratory analysis, no registration, and the classification review
+  has not happened. `content/certifications.ts` is the empty registry with the
+  six facts a record must carry, `publicCertifications()` returns nothing, and
+  `check:content` fails the build if any string asserts a certification. The
+  FAQ answers the question honestly instead, by explaining what the word
+  requires.
+- **"24 horas a todo México" and same-day are not published.** The confirmed
+  facts are one business day to Guadalajara and Durango and up to seven
+  elsewhere; same-day was explicitly ruled out by the owner.
+  `domain/fulfilment` answers `supports("nationwide-24h")` and
+  `supports("same-day")` with `false` — derived from `config/site`, so a
+  confirmed fact turns the claim on everywhere at once — and the gate rejects
+  an unqualified delivery claim in any dictionary, note or FAQ string.
+
+**Verified end to end** (local `next start` with the commerce flag on):
+the review step renders the declaration unticked with the submit ENABLED (it
+is fixable on that screen); posting with the checkbox removed from the DOM
+entirely returns to review with the notice and creates NO order; ticking it
+places order `NG-…` and the confirmation shows `research-use · v1` with the
+accepted wording and the moment it was accepted.
+
+**Owner decisions this work is waiting on** — see also §6:
+
+1. Evidence for any certification claim: issuer, standard, identifier, scope,
+   validity, and a document or public registry URL. Six fields or nothing.
+2. Real COA / lot / laboratory data, so the documentation surfaces fill.
+3. Exact shipping coverage: is the 1-day estimate a courier commitment, and
+   is there a dispatch SLA that could honestly be stated as "24 hours"?
+4. Same-day: if it is ever offered, it needs its own confirmed cities and a
+   cut-off time before it can be modelled.
+5. Returns and cancellation policy (PROFECO distance-selling rules apply).
+6. The 18+ rule: final wording and where it lives.
+7. Counsel review of the research-use declaration's wording. It ships as
+   version 1; changing a word means bumping the version, which deliberately
+   stops inheriting consent given to the old text.
+8. Shipping rate below MX$10,000, and the cold-chain determination.
 
 ## 9. Recommendation for Phase 13 (not approved)
 

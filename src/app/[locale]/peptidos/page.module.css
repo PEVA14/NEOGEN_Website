@@ -1,0 +1,252 @@
+/*
+ * THE GUIDE.
+ *
+ * Two-column where a pair of ideas belong together, one column at reading
+ * measure where a single idea has to land. Area tiles reuse the catalogue's
+ * own `[data-area]` tokens so the entry points look like the shop they lead
+ * into, not like a new component family.
+ */
+
+.opening {
+  display: grid;
+  gap: var(--space-xl);
+  margin-block-start: var(--space-xl);
+}
+
+@media (min-width: 64rem) {
+  .opening {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4xl);
+  }
+}
+
+.block {
+  display: grid;
+  gap: var(--space-2xs);
+  align-content: start;
+}
+
+.blockLabel {
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+}
+
+.blockTitle {
+  margin: 0;
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 600;
+  font-size: var(--text-3xl);
+  line-height: 1;
+  letter-spacing: var(--tracking-tight);
+  color: var(--ink-primary);
+  text-wrap: balance;
+}
+
+.blockBody {
+  margin: 0;
+  color: var(--ink-secondary);
+  max-inline-size: 44ch;
+}
+
+.prose {
+  margin: var(--space-md) 0 0;
+  color: var(--ink-secondary);
+  max-inline-size: 52ch;
+}
+
+/* --- 03 the condition ---------------------------------------------------- */
+
+/*
+ * THE DARK GROUND.
+ *
+ * `Section surface="dark"` only tells the header to invert; a section paints
+ * itself. This is the same token REMAP the hub and the hero use rather than a
+ * hard-coded palette, so the shared components inside it — the research-use
+ * panel, its rule, its link — resolve to the right ink without knowing they
+ * are on charcoal.
+ */
+.dark {
+  --surface-base: var(--neogen-charcoal);
+  --surface-raised: color-mix(in oklab, var(--neogen-charcoal) 88%, var(--neogen-paper));
+  --ink-primary: var(--neogen-paper);
+  --ink-secondary: color-mix(in oklab, var(--neogen-paper) 82%, var(--neogen-charcoal));
+  --ink-muted: color-mix(in oklab, var(--neogen-paper) 62%, var(--neogen-charcoal));
+  --border-subtle: color-mix(in oklab, var(--neogen-paper) 14%, transparent);
+  --border-default: color-mix(in oklab, var(--neogen-paper) 28%, transparent);
+  --border-strong: color-mix(in oklab, var(--neogen-paper) 45%, transparent);
+  --focus-ring: var(--neogen-paper);
+  --focus-ring-offset: var(--neogen-charcoal);
+
+  background-color: var(--surface-base);
+  color: var(--ink-primary);
+}
+
+.condition {
+  display: grid;
+  gap: var(--space-lg);
+  margin-block-start: var(--space-lg);
+}
+
+@media (min-width: 64rem) {
+  .condition {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr);
+    gap: var(--space-4xl);
+    align-items: start;
+  }
+}
+
+.conditionBody {
+  margin: 0;
+  color: var(--ink-secondary);
+  max-inline-size: 48ch;
+}
+
+/* On the dark ground the panel's rule and ink come from the inverted tokens
+   the section already sets; only the measure changes. */
+.conditionNotice {
+  max-inline-size: 42ch;
+}
+
+/* --- 04 documentation ---------------------------------------------------- */
+
+.chain {
+  margin-block-start: var(--space-lg);
+}
+
+/* --- 05 handling --------------------------------------------------------- */
+
+.handling {
+  display: grid;
+  gap: var(--space-lg);
+}
+
+@media (min-width: 64rem) {
+  .handling {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.55fr);
+    gap: var(--space-4xl);
+    align-items: start;
+  }
+}
+
+.shipping {
+  margin-block-start: var(--space-md);
+}
+
+/* --- 06 the areas -------------------------------------------------------- */
+
+.areas {
+  list-style: none;
+  margin: var(--space-lg) 0 0;
+  padding: 0;
+  display: grid;
+  gap: 1px;
+  /* A hairline grid: the gap IS the rule, drawn by the tiles' own ground. */
+  background: var(--border-subtle);
+  border: 1px solid var(--border-subtle);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 48rem) {
+  .areas {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.area {
+  background: var(--surface-base);
+}
+
+.areaLink {
+  display: grid;
+  gap: var(--space-2xs);
+  padding: var(--space-md);
+  min-block-size: 100%;
+  color: inherit;
+  text-decoration: none;
+  /* The area's own wash, at the lightest weight the token layer defines. */
+  background-image: linear-gradient(180deg, var(--area-wash, transparent), transparent 70%);
+  transition: background-color var(--motion-duration-fast) var(--ease-standard);
+}
+
+.areaLink:hover {
+  background-color: var(--surface-raised);
+}
+
+.areaLink:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: calc(var(--focus-ring-offset-width) * -1);
+}
+
+.areaIcon {
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  color: var(--area-ink, var(--ink-secondary));
+}
+
+.areaName {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: 1.2;
+  color: var(--ink-primary);
+  overflow-wrap: normal;
+}
+
+.areaCount {
+  color: var(--ink-muted);
+}
+
+/* --- the tail: notes and questions ---------------------------------------- */
+
+.tail {
+  display: grid;
+  gap: var(--space-2xl);
+}
+
+@media (min-width: 64rem) {
+  .tail {
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 0.5fr);
+    gap: var(--space-4xl);
+    align-items: start;
+  }
+}
+
+.tailColumn {
+  min-inline-size: 0;
+}
+
+.questions {
+  display: grid;
+  gap: var(--space-2xs);
+  justify-items: start;
+  border-block-start: 1px solid var(--border-default);
+  padding-block-start: var(--space-sm);
+}
+
+.questionsLabel {
+  color: var(--ink-secondary);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+}
+
+.questionList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2xs);
+}
+
+.question {
+  color: var(--ink-secondary);
+  text-decoration: underline;
+  text-decoration-color: var(--border-default);
+  text-underline-offset: 0.25em;
+  text-decoration-thickness: 1px;
+}
+
+.question:hover {
+  color: var(--ink-primary);
+  text-decoration-color: currentColor;
+}

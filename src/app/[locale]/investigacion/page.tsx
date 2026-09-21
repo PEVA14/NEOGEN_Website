@@ -2,16 +2,18 @@ import { notFound } from "next/navigation";
 
 import { SectionHeader } from "@/components/layout";
 import { Container, Section } from "@/components/primitives";
+import { NoteIndex } from "@/components/editorial";
 import { EvidenceChain } from "@/components/quality";
 import { CitationRail, CompoundFinder, ResearchAreaIndex } from "@/components/research";
 import { Body, Mono } from "@/components/typography";
 import { TextLink } from "@/components/ui";
 import { routes } from "@/config/routes";
+import { publicArticles } from "@/content/editorial";
 import { researchReferenceIndex, referencesForArea } from "@/content/research";
 import { formatStrength, publishedProducts } from "@/data/catalog";
 import { productsInArea, publicAreas, publicAreasFor } from "@/data/discovery";
 import { publicEvidenceIndex, resolveEvidence } from "@/domain/quality";
-import { isLocale } from "@/i18n/config";
+import { isLocale, localeTags } from "@/i18n/config";
 import { getDictionary } from "@/i18n/getDictionary";
 import { localizePath } from "@/i18n/routing";
 import { alternates } from "@/lib/alternates";
@@ -66,6 +68,7 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
   const dict = await getDictionary(locale);
   const hub = dict.research.hub;
   const path = (to: string) => localizePath(to, locale);
+  const notes = publicArticles();
 
   const areas = publicAreas();
   const areaEntries = areas.map((area) => {
@@ -185,6 +188,38 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
           <EvidenceChain copy={dict.quality.record.chain} />
         </Container>
       </Section>
+
+      {/*
+       * 06 — THE NOTES. The hub's reading section: the editorial layer belongs
+       * beside the reference index because both are things to read, held to
+       * the same evidence rules. It renders only while notes exist, from the
+       * same accessor the routes are generated from.
+       */}
+      {notes.length > 0 ? (
+        <Section mode="quiet" aria-labelledby="hub-notes-title">
+          <Container width="full">
+            <SectionHeader
+              index={hub.notes.index}
+              label={`${hub.notes.label} // ${hub.notes.qualifier}`}
+              title={hub.notes.title}
+              lede={hub.notes.lede}
+              id="hub-notes-title"
+              action={<TextLink href={path(routes.articles)}>{hub.notes.all}</TextLink>}
+            />
+            <NoteIndex
+              notes={notes.map((note) => ({
+                slug: note.slug,
+                href: path(routes.article(note.slug)),
+                topic: dict.editorial.topics[note.topic],
+                title: note.title[locale],
+                summary: note.summary[locale],
+                publishedOn: note.publishedOn,
+              }))}
+              localeTag={localeTags[locale]}
+            />
+          </Container>
+        </Section>
+      ) : null}
 
       <Section mode="quiet" aria-labelledby="references-title">
         <Container width="full">

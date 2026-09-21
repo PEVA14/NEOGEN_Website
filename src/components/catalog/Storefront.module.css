@@ -180,6 +180,18 @@
   outline-offset: 2px;
 }
 
+/*
+ * The conditions of sale at the foot of the store front. On charcoal the
+ * notices inherit the masthead's inverted ink, so no second colour rule is
+ * needed — only the measure and the space above them.
+ */
+.conditions {
+  display: grid;
+  gap: var(--space-sm);
+  margin-block-start: var(--space-lg);
+  max-inline-size: 46rem;
+}
+
 .browseAll {
   justify-self: start;
   display: inline-flex;

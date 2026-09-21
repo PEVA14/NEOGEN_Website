@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 
-import { BagLines } from "@/components/commerce";
+import { BagLines, ResearchUseNotice, ShippingNote } from "@/components/commerce";
 import { SectionHeader } from "@/components/layout";
 import { Container, Section } from "@/components/primitives";
 import { routes } from "@/config/routes";
@@ -9,6 +9,8 @@ import { getDictionary } from "@/i18n/getDictionary";
 import { localizePath } from "@/i18n/routing";
 import { alternates } from "@/lib/alternates";
 import { bagEnabled } from "@/payments";
+
+import styles from "./page.module.css";
 
 import type { Metadata } from "next";
 
@@ -113,6 +115,22 @@ export default async function CartPage({ params }: { params: Promise<{ locale: s
           localeTag={tag}
           locale={locale}
         />
+
+        {/*
+         * THE CONDITIONS, BETWEEN THE BAG AND THE CHECKOUT.
+         *
+         * The bag is the last screen before a customer commits to a flow, so
+         * it is where the fulfilment facts stop being marketing and start
+         * being what they bought — and where the research-use condition is
+         * stated once more before the step that asks them to accept it.
+         */}
+        <div className={styles.conditions}>
+          <ShippingNote copy={dict.shipping} localeTag={tag} />
+          <ResearchUseNotice
+            copy={dict.researchUse}
+            href={localizePath(routes.article("uso-exclusivo-en-investigacion"), locale)}
+          />
+        </div>
       </Container>
     </Section>
   );

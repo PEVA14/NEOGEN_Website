@@ -1,0 +1,67 @@
+/*
+ * The questions at reading measure, with a narrow column beside them holding
+ * the research-use condition, the contact channel and the ways onward. Same
+ * asymmetry as the bag and the product record.
+ */
+
+.layout {
+  display: grid;
+  gap: var(--space-2xl);
+  align-items: start;
+  margin-block-start: var(--space-xl);
+}
+
+@media (min-width: 64rem) {
+  .layout {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.6fr);
+    gap: var(--space-4xl);
+  }
+}
+
+.aside {
+  display: grid;
+  gap: var(--space-lg);
+  align-content: start;
+}
+
+@media (min-width: 64rem) {
+  .aside {
+    position: sticky;
+    inset-block-start: calc(var(--header-height) + var(--space-lg));
+  }
+}
+
+.contact {
+  display: grid;
+  gap: var(--space-2xs);
+  border-block-start: 1px solid var(--border-subtle);
+  padding-block-start: var(--space-sm);
+}
+
+.contactTitle {
+  color: var(--ink-secondary);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+}
+
+.phone {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--ink-primary);
+  text-decoration: underline;
+  text-decoration-color: var(--border-default);
+  text-underline-offset: 0.25em;
+  justify-self: start;
+}
+
+.phone:hover {
+  text-decoration-color: currentColor;
+}
+
+.more {
+  display: grid;
+  gap: var(--space-2xs);
+  justify-items: start;
+  border-block-start: 1px solid var(--border-subtle);
+  padding-block-start: var(--space-sm);
+}

@@ -10,12 +10,29 @@ import type { AcceptedAcknowledgement } from "@/domain/checkout/types";
  * are DATA, the checkout iterates them, and adding an age gate or a terms
  * checkbox later is an entry in this list rather than a change to a form.
  *
- * TODAY IT RENDERS ZERO, and that is the correct output rather than a gap.
- * A checkbox saying "I accept the Terms" next to a link that 404s is worse
- * than no checkbox: it collects a consent to a document the customer could not
- * read and NEOGEN cannot produce. So a declaration is publishable only when
- * its own copy is approved AND the policy it points at is approved — and no
- * policy is (see `content/policies.ts`).
+ * TWO KINDS OF DECLARATION, AND THE DIFFERENCE DECIDES WHAT EACH NEEDS.
+ * ---------------------------------------------------------------------
+ * An AGREEMENT is consent to a document: the Terms, a privacy notice. It is
+ * publishable only when its own copy is approved AND the policy it points at
+ * is approved. A checkbox reading "I accept the Terms" beside a link that 404s
+ * collects a consent to a document the customer could not read and NEOGEN
+ * cannot produce — worse than no checkbox, both as an experience and as
+ * evidence. No policy is approved (see `content/policies.ts`), so every
+ * agreement here still renders nothing.
+ *
+ * A CONDITION OF SALE is different in kind. It is not consent to NEOGEN's
+ * text; it is the customer stating what they are doing. "I am acquiring this
+ * material for research work and not for consumption or human use" is a fact
+ * about the buyer's own intent, it needs no document behind it to be
+ * meaningful, and it is exactly what the rest of the site already says on
+ * every product surface. So it publishes on owner approval alone.
+ *
+ * THE RESEARCH-USE DECLARATION IS STILL NOT A SAFE HARBOUR. COFEPRIS applies
+ * a "use destined" criterion: a ticked box does not change what a product is,
+ * and it does not make a transaction lawful. It is collected because the
+ * condition should be explicit on both sides and because an order ought to
+ * carry evidence of what was agreed — never as a defence, and never as a
+ * reason to soften anything else on the site.
  *
  * WHAT GETS PERSISTED, AND WHY IT IS THE ID AND VERSION.
  * -----------------------------------------------------
@@ -27,8 +44,18 @@ import type { AcceptedAcknowledgement } from "@/domain/checkout/types";
  */
 export type AcknowledgementStatus = "draft" | "owner-review" | "counsel-review" | "approved";
 
+/**
+ * What the customer is doing when they tick the box.
+ *
+ * `agreement` — consenting to a NEOGEN document. Needs that document approved.
+ * `condition-of-sale` — declaring something about their own purchase. Needs
+ * only its own wording approved, because there is no document to read.
+ */
+export type AcknowledgementKind = "agreement" | "condition-of-sale";
+
 export interface AcknowledgementDefinition {
   id: string;
+  kind: AcknowledgementKind;
   /**
    * Bumped whenever the declaration's own wording or its policy changes.
    *
@@ -57,40 +84,72 @@ const ACKNOWLEDGEMENTS: readonly AcknowledgementDefinition[] = [
    * That is a decision to make one, not an approved declaration — and if it
    * lands inside the Terms it may not need to be a separate checkbox at all.
    */
-  { id: "age-18", version: "0", required: true, policy: "terms", status: "draft" },
-  { id: "terms", version: "0", required: true, policy: "terms", status: "draft" },
   {
-    /*
-     * The research-use declaration. NOT a legal safe harbour: COFEPRIS
-     * applies a "use destined" criterion, so a customer ticking a box does
-     * not change what a product is. It is listed as a candidate declaration
-     * and nothing more, and it must not ship before the classification review.
-     */
-    id: "research-use",
+    id: "age-18",
+    kind: "agreement",
     version: "0",
     required: true,
-    policy: "research-use",
+    policy: "terms",
     status: "draft",
+  },
+  {
+    id: "terms",
+    kind: "agreement",
+    version: "0",
+    required: true,
+    policy: "terms",
+    status: "draft",
+  },
+  {
+    /*
+     * THE RESEARCH-USE DECLARATION — published, required, and blocking.
+     *
+     * Owner instruction (2026-09-20): a customer must explicitly acknowledge
+     * the research-use condition before completing a purchase, and must not be
+     * able to proceed without it. That instruction is what approves this
+     * declaration; the wording it approves is `checkout.steps.review
+     * .acknowledgements.declarations["research-use"]` in the dictionaries.
+     *
+     * It is a CONDITION OF SALE, not an agreement, so it does not wait on the
+     * research-use policy document — which remains a draft, and which would
+     * add nothing to a statement the customer is making about themselves.
+     *
+     * VERSION 1 IS THE FIRST PUBLISHED WORDING. If counsel changes a word of
+     * it, bump the version: acceptances are stored as `id@version`, so a new
+     * version deliberately stops inheriting consent given to the old text
+     * rather than quietly re-labelling it.
+     */
+    id: "research-use",
+    kind: "condition-of-sale",
+    version: "1",
+    required: true,
+    policy: null,
+    status: "approved",
   },
 ];
 
 export const acknowledgements: readonly AcknowledgementDefinition[] = ACKNOWLEDGEMENTS;
 
 /**
- * Publishable — approved copy AND an approved policy behind it.
+ * Publishable — approved wording, plus an approved policy for an agreement.
  *
- * The policy half is the important half. It is what makes it structurally
- * impossible to publish a declaration whose linked document is not approved,
- * rather than something a reviewer has to remember.
+ * The policy half is the important half for an agreement. It is what makes it
+ * structurally impossible to publish a declaration whose linked document is
+ * not approved, rather than something a reviewer has to remember.
+ *
+ * A condition of sale that names a policy is held to the same rule: if a
+ * declaration points at a document, the document has to exist. Only a
+ * standalone declaration — one the customer can fully read in the checkbox
+ * itself — is exempt, because there is nothing else for them to read.
  */
 export function isPublishable(ack: AcknowledgementDefinition): boolean {
   if (ack.status !== "approved") return false;
-  if (ack.policy === null) return true;
+  if (ack.policy === null) return ack.kind === "condition-of-sale";
   const policy = policyById(ack.policy);
   return policy !== undefined && isApproved(policy);
 }
 
-/** What the checkout renders. Empty today. */
+/** What the checkout renders: the research-use condition, today. */
 export function publicAcknowledgements(): readonly AcknowledgementDefinition[] {
   return ACKNOWLEDGEMENTS.filter(isPublishable);
 }

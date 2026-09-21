@@ -9,7 +9,6 @@ import { routes } from "@/config/routes";
 import { publicAcknowledgements } from "@/domain/acknowledgements";
 import {
   formatAddress,
-  missingAcknowledgements,
   normaliseAddress,
   normaliseContact,
   placementBlock,
@@ -65,9 +64,12 @@ export async function generateMetadata({
  * it. A disabled primary action with no stated reason is the single most
  * frustrating thing a checkout can do.
  *
- * DECLARATIONS RENDER NOTHING. No acknowledgement is approved and no policy
- * behind one is approved, so `publicAcknowledgements()` is empty — see
- * `domain/acknowledgements` for why an unapproved checkbox is worse than none.
+ * ONE DECLARATION RENDERS: the research-use condition, and it is required.
+ * `placeOrder` refuses to create an order without it — the checkbox is the
+ * visible half of a server-side gate, not the gate itself, and posting the
+ * form with the box removed lands back here rather than in an order. Every
+ * other declaration (Terms, 18+) is still unpublishable because its policy
+ * does not exist; see `domain/acknowledgements`.
  */
 export default async function ReviewStep({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -88,7 +90,12 @@ export default async function ReviewStep({ params }: { params: Promise<{ locale:
   if (!delivery) return null;
 
   const block = placementBlock(draft);
-  const missing = missingAcknowledgements(draft);
+  /*
+   * The ONE block a customer can clear without leaving this screen. Before
+   * they have tried, it is not a problem to report — it is the checkbox
+   * below. After a refused attempt (`attempted.review`), it is.
+   */
+  const unacknowledgedOnly = block === "acknowledgements_missing" && !draft.attempted.review;
   /*
    * An order is registered only when it can be paid. Stated on screen, with
    * the reason, rather than a button that silently does nothing.
@@ -96,21 +103,39 @@ export default async function ReviewStep({ params }: { params: Promise<{ locale:
   const payable = paymentAvailable();
 
   /*
-   * Empty today. Each entry would carry its own approved declaration text
-   * from the dictionary; there is no copy for any of them because none is
-   * approved, so the list maps to nothing and the fieldset does not render.
+   * The declaration text comes from the dictionary, keyed by id — never from
+   * the domain, which holds no copy, and never from the id itself, which is
+   * not a sentence. A published declaration with no wording for this locale
+   * would be a checkbox with no statement on it, so it is dropped rather than
+   * labelled with its own id.
+   *
+   * `check:checkout` asserts that every publishable declaration HAS wording in
+   * both dictionaries, which is what keeps that filter from ever mattering: a
+   * required declaration dropped here would disable the button with no box to
+   * tick, so the condition is caught at build time rather than survived.
    */
-  const acknowledgements: readonly AcknowledgementItem[] = publicAcknowledgements().map((ack) => ({
-    id: ack.id,
-    version: ack.version,
-    label: ack.id,
-    required: ack.required,
-    policy: null,
-  }));
+  const declarations = copy.acknowledgements.declarations;
+  const acknowledgements: readonly AcknowledgementItem[] = publicAcknowledgements()
+    .map((ack) => ({
+      id: ack.id,
+      version: ack.version,
+      label: declarations[ack.id as keyof typeof declarations] ?? "",
+      required: ack.required,
+      policy: null,
+    }))
+    .filter((item) => item.label !== "");
 
   return (
     <CheckoutShell ctx={ctx} step="review">
-      <form action={placeOrder} className={styles.step} noValidate>
+      {/*
+       * `noValidate` is the convention on every other step, where the server
+       * owns validation and native bubbles would duplicate it in a different
+       * voice. THIS form is the exception: its only input is the declaration
+       * checkbox, and the browser's own `required` handling is the one thing
+       * that stops an accidental submit with no JavaScript at all. The server
+       * still refuses the order either way.
+       */}
+      <form action={placeOrder} className={styles.step}>
         <input type="hidden" name="locale" value={ctx.locale} />
 
         <StepHead index={copy.index} title={copy.title} note={copy.note} id="step-review" />
@@ -123,7 +148,7 @@ export default async function ReviewStep({ params }: { params: Promise<{ locale:
           localeTag={tag}
         />
 
-        {block ? (
+        {block && !unacknowledgedOnly ? (
           <BlockNotice
             title={copy.blocked.title}
             body={copy.blocked[block]}
@@ -173,13 +198,19 @@ export default async function ReviewStep({ params }: { params: Promise<{ locale:
         <Acknowledgements items={acknowledgements} copy={copy.acknowledgements} />
 
         {/*
-         * Disabled when anything blocks placement — including a missing
-         * declaration, which is unreachable today because none is required.
-         * The reason is always on screen above.
+         * DISABLED FOR WHAT THE CUSTOMER CANNOT FIX HERE — an incomplete
+         * address, an unquotable delivery, no processor. NOT for an unticked
+         * declaration: that is fixable on this very screen, and a button that
+         * stays dead after the box is ticked is a dead end, because this form
+         * is server-rendered and nothing re-renders on a click.
+         *
+         * The checkbox is `required`, so the browser refuses the submit on its
+         * own — no JavaScript involved — and `placeOrder` re-checks regardless.
+         * The disabled state is a courtesy; the gate is the server.
          */}
         <StepActions
           submit={copy.submit}
-          disabled={block !== null || missing.length > 0 || !payable}
+          disabled={(block !== null && !unacknowledgedOnly) || !payable}
           back={{ href: path(routes.checkoutStep("delivery")), label: copy.back }}
         />
       </form>

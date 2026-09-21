@@ -263,7 +263,14 @@ export async function placeOrder(form: FormData): Promise<void> {
 
   const block = placementBlock(withAcks);
   if (block) {
-    await saveDraft(withAcks);
+    /*
+     * MARK THE ATTEMPT. The review screen shows its declaration notice only
+     * after one: a customer arriving for the first time has not failed to
+     * accept anything yet, and opening the screen with a red "required
+     * declarations are missing" is an accusation rather than an instruction.
+     * After a real attempt it is exactly the right message.
+     */
+    await saveDraft(markAttempted(withAcks, "review"));
     redirect(blockedStep(locale, block));
   }
 

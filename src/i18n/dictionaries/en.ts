@@ -32,6 +32,11 @@ const en: Dictionary = {
         "NEOGEN quality documentation, tied to the exact presentation and lot each document examines.",
       research:
         "NEOGEN compound index, research areas, and the model each presentation's quality is documented by.",
+      peptides:
+        "What a peptide is, why they are studied, and the condition NEOGEN's compounds are sold under in Mexico.",
+      faq: "Shipping, documentation, payment and research use: frequently asked questions for NEOGEN Mexico.",
+      articles:
+        "NEOGEN notes on laboratory vocabulary, analytical documentation and the handling of lyophilised materials.",
       cart: "Your NEOGEN Mexico bag.",
       checkout: "NEOGEN Mexico payment process.",
     },
@@ -360,6 +365,8 @@ const en: Dictionary = {
     home: "Home",
     products: "Products",
     research: "NEOGEN Research",
+    peptides: "Peptides",
+    faq: "FAQ",
     atlas: "Atlas",
     cart: "Cart",
     checkout: "Checkout",
@@ -1056,6 +1063,14 @@ const en: Dictionary = {
         lede: "A document attaches to the most specific thing it examines: the presentation, or the lot. Nothing extends from one presentation to another, and no status appears without a document behind it.",
         explorer: "Explore documentation",
       },
+      notes: {
+        index: "06",
+        label: "Notes",
+        qualifier: "Reading",
+        title: "NEOGEN notes",
+        lede: "Vocabulary, documentation and handling, explained without jargon. Short reading to understand what is being bought.",
+        all: "All notes",
+      },
       references: {
         index: "05",
         label: "References",
@@ -1342,6 +1357,10 @@ const en: Dictionary = {
         acknowledgements: {
           title: "Declarations",
           requiredNote: "Marked declarations are required.",
+          declarations: {
+            "research-use":
+              "I confirm that I am acquiring these materials for research use only, and that I will not direct them to consumption or to human or veterinary use.",
+          },
         },
         blocked: {
           title: "A step is missing",
@@ -1699,6 +1718,116 @@ const en: Dictionary = {
     },
   },
 
+  /** The research-use condition — one wording for the whole site. See `es.ts`. */
+  researchUse: {
+    label: "Research use only",
+    statement:
+      "Materials intended for laboratory work. They are not medicines, supplements or cosmetics, and they are not sold for consumption or for human or veterinary use.",
+    readMore: "What this means",
+  },
+
+  /** Shipping templates. Values are filled from `config/site` — see `es.ts`. */
+  shipping: {
+    label: "Shipping",
+    national: "We ship anywhere in Mexico.",
+    priority: "{zone}: estimated delivery in {days} business day.",
+    standard: "Rest of the country: up to {days} business days.",
+    free: "Free shipping from {amount}.",
+    and: "and",
+  },
+
+  peptides: {
+    eyebrow: "NEOGEN guide",
+    title: "Peptides, explained",
+    lede: "What they are, why they are studied, and the condition they are sold under. No promises, no jargon, no hedging.",
+    sections: {
+      what: {
+        index: "01",
+        label: "Definition",
+        title: "What a peptide is",
+        body: "A peptide is a short chain of amino acids — the same parts proteins are built from. The difference from a protein is mostly one of size: a few dozen parts rather than hundreds or thousands. The order of those parts, the sequence, is what identifies each peptide, and changing one produces a different molecule.",
+      },
+      why: {
+        index: "02",
+        label: "Context",
+        title: "Why they are studied",
+        body: "Because they combine two uncommon properties: they are specific, since their sequence determines what they interact with, and they are synthesisable, since their size makes them reproducible to produce and purify. That combination makes them laboratory tools with a degree of control larger molecules do not allow.",
+      },
+      condition: {
+        index: "03",
+        label: "Condition",
+        title: "Research use only",
+        body: "The whole catalogue is sold under this condition, with no exceptions. This site publishes no usage amounts, methods or indications, and no page claims that a compound diagnoses, treats, cures or prevents anything. Before an order is registered we ask for an explicit confirmation of the condition, which is recorded with the order.",
+      },
+      quality: {
+        index: "04",
+        label: "Documentation",
+        title: "How we document",
+        body: "Analytical documentation belongs to a specific lot and presentation, never to the compound in the abstract, and appears on the product page when it exists. Where no document exists, no seal appears: a purity figure with no report behind it is exactly the kind of data this site does not publish.",
+        action: "See the full model",
+      },
+      handling: {
+        index: "05",
+        label: "Handling",
+        title: "Handling and shipping",
+        body: "Material travels lyophilised and sealed, protected from light and impact. Lyophilised materials are kept dry, cold and in the dark, and the steadiness of the temperature matters as much as its value. The specific conditions for a compound are a documented fact and appear on its page when that document exists.",
+      },
+      catalogue: {
+        index: "06",
+        label: "Catalogue",
+        title: "Where to start",
+        body: "The catalogue is organised by research area. Every compound appears with its exact name, its presentations and whatever documentation it carries.",
+        action: "See the catalogue",
+      },
+    },
+    notes: {
+      title: "Notes",
+      lede: "Four short reads on vocabulary, documentation and handling.",
+      action: "All notes",
+    },
+    faq: {
+      title: "Frequently asked questions",
+      action: "See all questions",
+    },
+  },
+
+  editorial: {
+    eyebrow: "NEOGEN Research",
+    title: "Notes",
+    lede: "Vocabulary, documentation and the handling of laboratory materials. What can be explained honestly, explained.",
+    index: "All notes",
+    topics: {
+      vocabulary: "Vocabulary",
+      documentation: "Documentation",
+      handling: "Handling",
+      "research-use": "Research use",
+    },
+    published: "Published",
+    updated: "Updated",
+    readNext: "Read next",
+    backToIndex: "Back to notes",
+    relatedProducts: "Related compounds",
+    relatedAreas: "Related areas",
+    readingNote: "A NEOGEN editorial note. It does not describe the use of any compound.",
+  },
+
+  faq: {
+    eyebrow: "Help",
+    title: "Frequently asked questions",
+    lede: "What people ask before buying, answered with what we actually know.",
+    topics: {
+      peptides: "About peptides",
+      "research-use": "Research use",
+      documentation: "Documentation and quality",
+      ordering: "Orders and payment",
+      shipping: "Shipping",
+      handling: "Handling and storage",
+      contact: "Contact",
+    },
+    contactTitle: "Question not here?",
+    contactBody: "The phone is the support channel operating today.",
+  },
+
   /**
    * DISCOVERY — customer-facing merchandising copy.
    *
@@ -1885,6 +2014,9 @@ const en: Dictionary = {
     links: {
       allCompounds: "All compounds",
       documentation: "Documentation",
+      peptides: "What is a peptide",
+      notes: "Notes",
+      faq: "Frequently asked questions",
     },
   },
 

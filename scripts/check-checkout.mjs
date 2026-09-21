@@ -22,6 +22,8 @@
  *
  *   npm run check:checkout
  */
+import { readFileSync } from "node:fs";
+
 import {
   canEnter,
   createDraft,
@@ -55,6 +57,7 @@ import { memoryOrderRepository, __resetOrderStore } from "../src/domain/order/ad
 import {
   accept,
   acknowledgements,
+  isPublishable,
   publicAcknowledgements,
   requiredAcknowledgements,
 } from "../src/domain/acknowledgements/index.ts";
@@ -81,6 +84,13 @@ const eq = (actual, expected, what) => {
 };
 const ok = (condition, what, detail = "false") => {
   if (!condition) fail(what, detail);
+};
+/* `eq` is strict equality — fine for scalars, useless for the list assertions
+   below. This is the deep form, and it is separate so the cheap check stays
+   cheap and nobody accidentally deep-compares two drafts. */
+const deepEq = (actual, expected, what) => {
+  if (JSON.stringify(actual) !== JSON.stringify(expected))
+    fail(what, `expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
 };
 
 /* A real, priced variant to build fixtures from — taken from the registry so
@@ -372,8 +382,33 @@ let ready = withSnapshot(createDraft("ready"), bigEnough.snapshot, []);
 ready = touch(ready, { contact: CONTACT, address: ADDRESS });
 ready = touch(ready, { delivery: select(methodsFor(ADDRESS, bigEnough.snapshot.subtotal)[0]) });
 ready = markAttempted(ready, "payment");
-eq(placementBlock(ready), null, "a complete quotable draft can place an order");
-eq(missingAcknowledgements(ready).length, 0, "no acknowledgements are required today");
+
+/*
+ * THE RESEARCH-USE DECLARATION NOW BLOCKS PLACEMENT, and that is the point of
+ * it: a draft that is complete in every other respect still cannot become an
+ * order until the condition is accepted. The order of these three assertions
+ * is the proof — blocked, then accepted, then clear.
+ */
+eq(
+  placementBlock(ready),
+  "acknowledgements_missing",
+  "a complete draft is still blocked until the research-use condition is accepted",
+);
+deepEq(
+  missingAcknowledgements(ready).map((id) => id.split("@")[0]),
+  ["research-use"],
+  "and it is the research-use declaration that is missing",
+);
+
+/* Accepting it the way the server action does — through `accept`, never by
+   trusting the posted ids. */
+ready = touch(ready, { acknowledged: accept(["research-use"]) });
+eq(
+  placementBlock(ready),
+  null,
+  "a complete quotable draft with the declaration can place an order",
+);
+eq(missingAcknowledgements(ready).length, 0, "nothing is outstanding once it is accepted");
 
 /* ---- order creation ----------------------------------------------------- */
 
@@ -580,24 +615,101 @@ eq(await memoryDraftStore.get(ready.id), null, "a deleted draft is gone");
 
 /* ---- acknowledgements -------------------------------------------------- */
 
-eq(publicAcknowledgements().length, 0, "NO acknowledgement is publishable — none is approved");
-eq(requiredAcknowledgements().length, 0, "and none is required");
-ok(acknowledgements.length > 0, "the framework nevertheless declares candidates");
-/* An unapproved declaration cannot be recorded even if its id is posted. */
-eq(
-  accept(acknowledgements.map((a) => a.id)).length,
-  0,
-  "posting an unapproved acknowledgement id records nothing",
+deepEq(
+  publicAcknowledgements().map((a) => a.id),
+  ["research-use"],
+  "exactly one declaration is publishable: the research-use condition",
 );
-eq(accept(["age-18", "made-up-id"]).length, 0, "an unknown acknowledgement id records nothing");
+deepEq(
+  requiredAcknowledgements().map((a) => `${a.id}@${a.version}`),
+  ["research-use@1"],
+  "it is required, and its accepted version is pinned",
+);
+eq(
+  publicAcknowledgements()[0].kind,
+  "condition-of-sale",
+  "it publishes as a CONDITION OF SALE — a statement about the buyer, not consent to a document",
+);
+ok(acknowledgements.length > 1, "the framework still declares the candidates that are not ready");
+
+/*
+ * THE WORDING MUST EXIST IN EVERY LOCALE.
+ *
+ * A published, required declaration with no copy would render as a checkbox
+ * with no statement on it — and the review step drops such an item, which
+ * would leave the customer with a disabled button and nothing to tick. Caught
+ * here rather than survived at runtime.
+ */
+for (const locale of ["es", "en"]) {
+  const source = readFileSync(`src/i18n/dictionaries/${locale}.ts`, "utf8");
+  for (const ack of publicAcknowledgements()) {
+    ok(
+      new RegExp(`"${ack.id}":\\s*\n?\\s*"[^"]{40,}"`).test(source),
+      `the ${locale} dictionary carries the wording for \`${ack.id}\``,
+    );
+  }
+}
+
+/* An unapproved declaration cannot be recorded even if its id is posted. */
+deepEq(
+  accept(acknowledgements.map((a) => a.id)).map((a) => a.id),
+  ["research-use"],
+  "posting every id records only the publishable one",
+);
+eq(accept(["age-18", "made-up-id"]).length, 0, "an unknown or unapproved id records nothing");
+eq(accept(["research-use"])[0].version, "1", "what is recorded is the id AND the version");
 for (const ack of acknowledgements) {
-  ok(ack.status !== "approved", `\`${ack.id}\` must not be approved without counsel review`);
+  if (ack.kind === "agreement") {
+    ok(
+      !isPublishable(ack),
+      `\`${ack.id}\` is an agreement and cannot publish while its policy is unapproved`,
+    );
+  }
   if (ack.policy) {
     const policy = policies.find((p) => p.id === ack.policy);
     ok(policy !== undefined, `\`${ack.id}\` points at a declared policy`);
     ok(!isApproved(policy), `\`${ack.id}\` cannot be published while its policy is unapproved`);
   }
 }
+
+/*
+ * NEGATIVE CONTROLS — the gate has to reject what it exists to reject.
+ * A condition of sale that points at an unapproved document is NOT exempt,
+ * and neither kind publishes without approved status.
+ */
+ok(
+  !isPublishable({
+    id: "fixture",
+    kind: "condition-of-sale",
+    version: "1",
+    required: true,
+    policy: "terms",
+    status: "approved",
+  }),
+  "a condition of sale naming an unapproved policy is still unpublishable",
+);
+ok(
+  !isPublishable({
+    id: "fixture",
+    kind: "condition-of-sale",
+    version: "1",
+    required: true,
+    policy: null,
+    status: "owner-review",
+  }),
+  "an unapproved condition of sale is unpublishable",
+);
+ok(
+  !isPublishable({
+    id: "fixture",
+    kind: "agreement",
+    version: "1",
+    required: true,
+    policy: null,
+    status: "approved",
+  }),
+  "an agreement with no document behind it is unpublishable",
+);
 
 /* ---- policies ---------------------------------------------------------- */
 
@@ -667,6 +779,6 @@ if (failures.length) {
 }
 console.log(
   `checkout check passed — 6 steps, ${policies.length} policy slots (0 approved), ` +
-    `${acknowledgements.length} declarations (0 publishable), ` +
+    `${acknowledgements.length} declarations (${publicAcknowledgements().length} publishable), ` +
     `${DOCUMENTS.length} documents declared, payment ${paymentAvailable() ? "ENABLED" : "disabled"}`,
 );

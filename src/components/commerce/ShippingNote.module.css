@@ -1,0 +1,33 @@
+/*
+ * THE SHIPPING PROPOSITION.
+ *
+ * A label and up to three short rows. No icons, no truck, no badge: the
+ * proposition is a set of facts, and facts are set in the mono register like
+ * every other stated figure on this site.
+ */
+
+.note {
+  display: grid;
+  gap: var(--space-3xs);
+  border-block-start: 1px solid var(--border-subtle);
+  padding-block-start: var(--space-2xs);
+}
+
+.label {
+  color: var(--ink-secondary);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-mono, 0.08em);
+}
+
+.lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3xs);
+}
+
+.line {
+  color: var(--ink-muted);
+  max-inline-size: 52ch;
+}

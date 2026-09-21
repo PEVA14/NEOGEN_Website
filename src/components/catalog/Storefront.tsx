@@ -64,10 +64,22 @@ export function StoreMasthead({
   copy,
   signatures,
   resultsId,
+  conditions,
 }: {
   copy: StoreCopy;
   signatures: readonly StoreSignature[];
   resultsId: string;
+  /**
+   * The conditions of the sale — fulfilment and research use — on the store
+   * front itself.
+   *
+   * They sit at the FOOT of the masthead rather than under the title: a
+   * customer arriving at the catalogue is looking for products, and the two
+   * facts that change whether they keep looking ("do you ship to me", "what
+   * am I allowed to do with this") belong at the end of the introduction
+   * rather than in front of it.
+   */
+  conditions?: React.ReactNode;
 }) {
   return (
     <section className={styles.masthead} data-surface="dark" aria-labelledby="catalog-title">
@@ -89,6 +101,7 @@ export function StoreMasthead({
             <a href={`#${resultsId}`} className={styles.browseAll}>
               {copy.browseAll} <span aria-hidden="true">↓</span>
             </a>
+            {conditions ? <div className={styles.conditions}>{conditions}</div> : null}
           </div>
 
           {signatures.length > 0 ? (

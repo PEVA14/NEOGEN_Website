@@ -56,13 +56,18 @@ export function SiteFooter({ locale, dict }: SiteFooterProps) {
       links: [
         { label: dict.nav.research, href: routes.research },
         { label: dict.footer.links.documentation, href: routes.research },
+        { label: dict.footer.links.notes, href: routes.articles },
       ],
     },
     {
       heading: dict.footer.columns.help,
       // SYSTEM STATUS V1: BAG, not Cart. The header, the page title and this
       // link have to agree; only the ROUTE stays /carrito.
-      links: [{ label: dict.cart.title, href: routes.cart }],
+      links: [
+        { label: dict.footer.links.peptides, href: routes.peptides },
+        { label: dict.footer.links.faq, href: routes.faq },
+        { label: dict.cart.title, href: routes.cart },
+      ],
     },
   ];
 
@@ -128,6 +133,19 @@ export function SiteFooter({ locale, dict }: SiteFooterProps) {
         <div className={styles.rule} />
 
         <div className={styles.legal}>
+          {/*
+           * THE RESEARCH-USE CONDITION, ON EVERY PAGE.
+           *
+           * In the legal bar rather than as a banner: a condition of sale
+           * belongs where a reader looks for the terms of the shop, and a
+           * site-wide strip at the top would be the "wall of disclaimers" this
+           * design explicitly avoids. It is stated again, and more loudly, at
+           * the two points where it matters — the product page and the
+           * checkout, where it has to be accepted.
+           */}
+          <Mono size="2xs" className={styles.condition}>
+            {dict.researchUse.label} — {dict.researchUse.statement}
+          </Mono>
           <Mono size="2xs" className={styles.pending}>
             © {new Date().getFullYear()} {dict.meta.siteName}
           </Mono>

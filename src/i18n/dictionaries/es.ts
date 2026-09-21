@@ -35,6 +35,11 @@ const es = {
         "Documentación de calidad de NEOGEN, vinculada a la presentación y al lote exactos que examina.",
       research:
         "Índice de compuestos NEOGEN, áreas de investigación y el modelo con que se documenta la calidad de cada presentación.",
+      peptides:
+        "Qué es un péptido, por qué se estudian y bajo qué condición se venden los compuestos de NEOGEN en México.",
+      faq: "Envíos, documentación, pagos y uso en investigación: las preguntas frecuentes de NEOGEN México.",
+      articles:
+        "Notas de NEOGEN sobre vocabulario de laboratorio, documentación analítica y manejo de materiales liofilizados.",
       cart: "Tu bag de NEOGEN México.",
       checkout: "Proceso de pago de NEOGEN México.",
     },
@@ -371,6 +376,8 @@ const es = {
     home: "Inicio",
     products: "Productos",
     research: "Investigación",
+    peptides: "Péptidos",
+    faq: "Preguntas",
     atlas: "Atlas",
     cart: "Carrito",
     checkout: "Pago",
@@ -1152,6 +1159,14 @@ const es = {
         lede: "Un documento se vincula a lo más específico que examina: la presentación, o el lote. Nada se extiende de una presentación a otra, y ningún estado aparece sin un documento detrás.",
         explorer: "Explorar documentación",
       },
+      notes: {
+        index: "06",
+        label: "Notas",
+        qualifier: "Lectura",
+        title: "Notas de NEOGEN",
+        lede: "Vocabulario, documentación y manejo, explicados sin jerga. Lectura breve para entender qué es lo que se está comprando.",
+        all: "Todas las notas",
+      },
       references: {
         index: "05",
         label: "Referencias",
@@ -1478,6 +1493,17 @@ const es = {
         acknowledgements: {
           title: "Declaraciones",
           requiredNote: "Las declaraciones marcadas son obligatorias.",
+          /*
+           * EL TEXTO EXACTO QUE SE ACEPTA, por id de declaración.
+           *
+           * Cambiar una palabra de aquí obliga a subir la versión en
+           * `domain/acknowledgements`: lo aceptado se guarda como `id@version`
+           * y un texto nuevo no hereda el consentimiento del anterior.
+           */
+          declarations: {
+            "research-use":
+              "Confirmo que adquiero estos materiales para uso exclusivo en investigación y que no los destinaré a consumo ni a uso humano o veterinario.",
+          },
         },
         blocked: {
           title: "Falta un paso",
@@ -1850,6 +1876,154 @@ const es = {
   },
 
   /**
+   * LA CONDICIÓN DE INVESTIGACIÓN — una sola redacción para todo el sitio.
+   *
+   * La usa `components/commerce/ResearchUseNotice` en catálogo, ficha de
+   * producto, bag, guía y preguntas frecuentes. Si cambia aquí, cambia en
+   * todas partes: es exactamente lo que evita que la misma condición se diga
+   * de tres maneras distintas en tres pantallas.
+   *
+   * La declaración que se acepta al comprar NO está aquí: vive en
+   * `checkout.steps.review.acknowledgements.declarations`, con su versión.
+   */
+  researchUse: {
+    label: "Uso exclusivo en investigación",
+    statement:
+      "Materiales destinados a trabajo de laboratorio. No son medicamentos, suplementos ni cosméticos, y no se venden para consumo ni para uso humano o veterinario.",
+    readMore: "Qué significa",
+  },
+
+  /**
+   * ENVÍOS — plantillas, no promesas.
+   *
+   * Los valores ({zone}, {days}, {amount}) los rellena
+   * `components/commerce/ShippingNote` desde `config/site` y
+   * `domain/fulfilment`, que son las mismas fuentes que cotiza el checkout.
+   * Ninguna cadena de aquí puede afirmar una cobertura que el dominio no
+   * respalde: `check:content` falla si aparece una promesa de 24 horas
+   * nacionales o de entrega el mismo día.
+   */
+  shipping: {
+    label: "Envíos",
+    national: "Envíos a todo México.",
+    priority: "{zone}: entrega estimada en {days} día hábil.",
+    standard: "Resto del país: hasta {days} días hábiles.",
+    free: "Envío sin costo desde {amount}.",
+    and: "y",
+  },
+
+  /**
+   * GUÍA DE PÉPTIDOS — la página que explica de qué trata este catálogo.
+   *
+   * Texto general y definicional. No describe lo que hace ningún compuesto:
+   * eso se documenta producto por producto, con referencias.
+   */
+  peptides: {
+    eyebrow: "Guía NEOGEN",
+    title: "Péptidos, explicados",
+    lede: "Qué son, por qué se estudian y bajo qué condición se venden. Sin promesas, sin jerga y sin rodeos.",
+    sections: {
+      what: {
+        index: "01",
+        label: "Definición",
+        title: "Qué es un péptido",
+        body: "Un péptido es una cadena corta de aminoácidos, las mismas piezas con las que se construyen las proteínas. La diferencia con una proteína es sobre todo de tamaño: unas decenas de piezas frente a cientos o miles. El orden de esas piezas —la secuencia— es lo que identifica a cada péptido, y cambiar una sola produce una molécula distinta.",
+      },
+      why: {
+        index: "02",
+        label: "Contexto",
+        title: "Por qué se estudian",
+        body: "Porque combinan dos propiedades poco frecuentes: son específicos, porque su secuencia determina con qué interactúan, y son sintetizables, porque su tamaño permite producirlos y purificarlos de forma reproducible. Esa combinación los convierte en herramientas de laboratorio con un grado de control que moléculas más grandes no permiten.",
+      },
+      condition: {
+        index: "03",
+        label: "Condición",
+        title: "Uso exclusivo en investigación",
+        body: "Todo el catálogo se vende bajo esta condición, sin excepciones. Este sitio no publica cantidades de uso, formas de empleo ni indicaciones, y ninguna página afirma que un compuesto sirva para diagnosticar, tratar, curar o prevenir algo. Antes de registrar un pedido pedimos una confirmación explícita de la condición, que queda asociada al pedido.",
+      },
+      quality: {
+        index: "04",
+        label: "Documentación",
+        title: "Cómo documentamos",
+        body: "La documentación analítica pertenece a un lote y a una presentación concretos, nunca al compuesto en abstracto, y aparece en la ficha del producto cuando existe. Donde no existe un documento, no aparece un sello: una cifra de pureza sin informe detrás es exactamente el tipo de dato que este sitio no publica.",
+        action: "Ver el modelo completo",
+      },
+      handling: {
+        index: "05",
+        label: "Manejo",
+        title: "Manejo y envío",
+        body: "El material viaja liofilizado y sellado, protegido de la luz y del golpe. Los materiales liofilizados se conservan secos, fríos y en oscuridad, y la estabilidad de la temperatura importa tanto como su valor. Las condiciones concretas de un compuesto son un dato documentado y aparecen en su ficha cuando existe el documento.",
+      },
+      catalogue: {
+        index: "06",
+        label: "Catálogo",
+        title: "Por dónde entrar",
+        body: "El catálogo está organizado por áreas de investigación. Cada compuesto aparece con su nombre exacto, sus presentaciones y la documentación que tenga.",
+        action: "Ver el catálogo",
+      },
+    },
+    notes: {
+      title: "Notas",
+      lede: "Cuatro lecturas breves sobre vocabulario, documentación y manejo.",
+      action: "Todas las notas",
+    },
+    faq: {
+      title: "Preguntas frecuentes",
+      action: "Ver todas las preguntas",
+    },
+  },
+
+  /**
+   * NOTAS — la sección editorial.
+   *
+   * Vive bajo /investigacion porque una nota es material de lectura del mismo
+   * tipo que el índice de referencias, no una sección de marketing aparte.
+   */
+  editorial: {
+    eyebrow: "NEOGEN Research",
+    title: "Notas",
+    lede: "Vocabulario, documentación y manejo de materiales de laboratorio. Lo que se puede explicar con honestidad, explicado.",
+    index: "Todas las notas",
+    topics: {
+      vocabulary: "Vocabulario",
+      documentation: "Documentación",
+      handling: "Manejo",
+      "research-use": "Uso en investigación",
+    },
+    published: "Publicado",
+    updated: "Actualizado",
+    readNext: "Seguir leyendo",
+    backToIndex: "Volver a las notas",
+    relatedProducts: "Compuestos relacionados",
+    relatedAreas: "Áreas relacionadas",
+    readingNote: "Nota editorial de NEOGEN. No describe el uso de ningún compuesto.",
+  },
+
+  /**
+   * PREGUNTAS FRECUENTES.
+   *
+   * Las preguntas y respuestas viven en `content/faq`, no aquí: llevan estado
+   * de revisión y valores interpolados desde los hechos confirmados. Aquí solo
+   * está el marco de la página.
+   */
+  faq: {
+    eyebrow: "Ayuda",
+    title: "Preguntas frecuentes",
+    lede: "Lo que la gente pregunta antes de comprar, respondido con lo que realmente sabemos.",
+    topics: {
+      peptides: "Sobre los péptidos",
+      "research-use": "Uso en investigación",
+      documentation: "Documentación y calidad",
+      ordering: "Pedidos y pago",
+      shipping: "Envíos",
+      handling: "Manejo y almacenamiento",
+      contact: "Contacto",
+    },
+    contactTitle: "¿No está tu pregunta?",
+    contactBody: "El teléfono es el canal de atención que opera hoy.",
+  },
+
+  /**
    * DISCOVERY — customer-facing merchandising copy.
    *
    * DRAFT COPY, PENDING OWNER REVIEW. Area names and descriptions are
@@ -2071,6 +2245,9 @@ const es = {
     links: {
       allCompounds: "Todos los compuestos",
       documentation: "Documentación",
+      peptides: "Qué es un péptido",
+      notes: "Notas",
+      faq: "Preguntas frecuentes",
     },
   },
 

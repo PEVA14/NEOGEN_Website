@@ -8,6 +8,7 @@ import {
   type StoreArea,
 } from "@/components/catalog/Storefront";
 import { HideWhileSearching } from "@/components/catalog/StoreSearch";
+import { ResearchUseNotice, ShippingNote } from "@/components/commerce";
 import { routes } from "@/config/routes";
 import { worldIds } from "@/config/worlds";
 import { commerceStill } from "@/content/media";
@@ -127,6 +128,15 @@ export default async function ProductsPage({ params }: { params: Promise<{ local
         }}
         signatures={signatures}
         resultsId={RESULTS_ID}
+        conditions={
+          <>
+            <ShippingNote copy={dict.shipping} localeTag={localeTags[locale]} />
+            <ResearchUseNotice
+              copy={dict.researchUse}
+              href={localizePath(routes.article("uso-exclusivo-en-investigacion"), locale)}
+            />
+          </>
+        }
       />
 
       <HideWhileSearching>

@@ -2,6 +2,7 @@ import { features } from "@/config/features";
 import { routes } from "@/config/routes";
 import { siteConfig } from "@/config/site";
 import { publishedProducts } from "@/data/catalog";
+import { publicArticles } from "@/content/editorial";
 import { publicPolicies } from "@/content/policies";
 import { researchReferenceIndex } from "@/content/research";
 import { publicEvidenceIndex } from "@/domain/quality";
@@ -29,6 +30,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     routes.home,
     routes.products,
     routes.research,
+    /*
+     * The guide and the questions: both are static, indexable and among the
+     * few pages here that answer a query someone actually types.
+     */
+    routes.peptides,
+    routes.faq,
     ...(features.atlas ? [routes.atlas] : []),
     routes.cart,
     /*
@@ -49,6 +56,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...(publicEvidenceIndex(publishedProducts).length > 0 ? [routes.qualityExplorer] : []),
     /* The reference index exists only once a public reference is cited. */
     ...(researchReferenceIndex().length > 0 ? [routes.researchReferences] : []),
+    /*
+     * The notes. Listed from `publicArticles()` — the same accessor
+     * `generateStaticParams` builds the routes from — so the sitemap cannot
+     * advertise a note that does not exist, and a draft note is absent here
+     * for exactly the reason its URL 404s. The index goes in only when it has
+     * something to index.
+     */
+    ...(publicArticles().length > 0 ? [routes.articles] : []),
+    ...publicArticles().map((article) => routes.article(article.slug)),
   ];
 
   return paths.flatMap((path) =>

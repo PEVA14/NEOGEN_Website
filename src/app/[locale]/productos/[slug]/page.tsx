@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 
 import { SectionHeader } from "@/components/layout";
 import { Container, Section } from "@/components/primitives";
-import { AddToBag } from "@/components/commerce";
+import { AddToBag, ResearchUseNotice, ShippingNote } from "@/components/commerce";
 import {
   CommercePanel,
   FlagshipInterlude,
@@ -300,6 +300,15 @@ export default async function ProductPage({
         documentationHref: "#calidad",
         placeholder,
       }}
+      conditions={
+        <>
+          <ShippingNote copy={dict.shipping} localeTag={localeTags[locale]} />
+          <ResearchUseNotice
+            copy={dict.researchUse}
+            href={path(routes.article("uso-exclusivo-en-investigacion"))}
+          />
+        </>
+      }
     >
       <AddToBag
         slug={product.slug}

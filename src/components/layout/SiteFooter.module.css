@@ -165,3 +165,14 @@
   gap: var(--space-sm);
   padding-block-start: var(--space-lg);
 }
+
+/*
+ * The research-use condition takes the whole first row of the legal bar: it is
+ * a sentence, not a chip, and wrapping it between the copyright and the market
+ * would break it into fragments.
+ */
+.condition {
+  flex-basis: 100%;
+  color: var(--ink-secondary);
+  max-inline-size: 78ch;
+}

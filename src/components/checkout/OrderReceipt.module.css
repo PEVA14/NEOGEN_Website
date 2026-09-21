@@ -271,6 +271,16 @@
   padding: 0;
 }
 
+/* The accepted sentence, then its identifier and moment beneath it. */
+.ack {
+  display: grid;
+  gap: var(--space-3xs);
+}
+
+.ack + .ack {
+  margin-block-start: var(--space-2xs);
+}
+
 /* --- actions ------------------------------------------------------------- */
 
 .actions {

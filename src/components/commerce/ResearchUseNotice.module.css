@@ -1,0 +1,79 @@
+/*
+ * THE RESEARCH-USE CONDITION.
+ *
+ * Structure from a hairline and alignment, like everything else in Quiet Mode:
+ * no card, no radius, no tinted "warning" surface. The condition is a fact
+ * about the sale, not an alarm, and the moment it is styled as an alarm every
+ * product beside it starts to look like one too.
+ *
+ * Both registers inherit their ink, so the notice reads correctly on paper, on
+ * warm stone and inside a dark section without a second set of rules.
+ */
+
+/* --- line: commerce surfaces --------------------------------------------- */
+
+.line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2xs);
+  margin: 0;
+  /*
+   * The leading hairline is what makes one mono row read as a stated
+   * condition rather than as a caption that drifted under the price.
+   */
+  border-block-start: 1px solid var(--border-subtle);
+  padding-block-start: var(--space-2xs);
+}
+
+.lineLabel {
+  color: var(--ink-secondary);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-mono, 0.08em);
+  white-space: nowrap;
+}
+
+.lineText {
+  color: var(--ink-muted);
+  /* Reading measure even in mono: the statement is a sentence, not a label. */
+  max-inline-size: 62ch;
+}
+
+/* --- panel: pages whose subject is the condition -------------------------- */
+
+.panel {
+  display: grid;
+  gap: var(--space-2xs);
+  border-inline-start: 2px solid var(--border-strong);
+  padding-inline-start: var(--space-md);
+  margin: 0;
+}
+
+.label {
+  color: var(--ink-secondary);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-mono, 0.08em);
+}
+
+.statement {
+  color: var(--ink-primary);
+  max-inline-size: 60ch;
+  margin: 0;
+}
+
+.link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--border-default);
+}
+
+.link:hover {
+  text-decoration-color: currentColor;
+}
+
+.panel .link {
+  justify-self: start;
+  color: var(--ink-secondary);
+}

@@ -1,0 +1,126 @@
+/*
+ * ONE NOTE — a single column, held at reading measure and pulled slightly
+ * left of centre so the page keeps the site's asymmetry rather than becoming
+ * a centred blog post.
+ */
+
+.note {
+  display: grid;
+  gap: var(--space-xl);
+  max-inline-size: 48rem;
+}
+
+.head {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  align-items: baseline;
+  border-block-end: 1px solid var(--border-default);
+  padding-block-end: var(--space-2xs);
+}
+
+.topic {
+  color: var(--ink-primary);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+}
+
+.date {
+  color: var(--ink-muted);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-5xl);
+  line-height: 0.95;
+  letter-spacing: var(--tracking-display);
+  color: var(--ink-primary);
+  text-wrap: balance;
+}
+
+.summary {
+  margin: 0;
+  color: var(--ink-secondary);
+  max-inline-size: 44ch;
+}
+
+.foot {
+  display: grid;
+  gap: var(--space-md);
+  border-block-start: 1px solid var(--border-default);
+  padding-block-start: var(--space-md);
+}
+
+.readingNote {
+  color: var(--ink-muted);
+}
+
+.related {
+  display: grid;
+  gap: var(--space-md);
+}
+
+@media (min-width: 48rem) {
+  .related {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2xl);
+  }
+}
+
+.relatedGroup {
+  display: grid;
+  gap: var(--space-2xs);
+  align-content: start;
+}
+
+.relatedLabel {
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+}
+
+.relatedList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3xs);
+}
+
+.relatedLink {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--ink-primary);
+  text-decoration: underline;
+  text-decoration-color: var(--border-default);
+  text-underline-offset: 0.25em;
+  text-decoration-thickness: 1px;
+}
+
+.relatedLink:hover {
+  text-decoration-color: currentColor;
+}
+
+.next {
+  display: grid;
+  gap: var(--space-sm);
+  margin-block-start: var(--space-3xl);
+}
+
+.nextLabel {
+  color: var(--ink-secondary);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+}
+
+.back {
+  justify-self: start;
+}

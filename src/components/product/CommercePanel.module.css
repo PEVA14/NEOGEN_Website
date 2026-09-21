@@ -253,15 +253,27 @@
   text-transform: uppercase;
 }
 
+/*
+ * The foot now carries the documentation link AND the conditions of sale
+ * (fulfilment, research use), so it stacks rather than sitting on one row:
+ * two sentences side by side would each be squeezed to a column too narrow
+ * to read on anything but a desktop.
+ */
 .foot {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
+  display: grid;
   gap: var(--space-sm);
+  justify-items: start;
   margin-block-start: var(--space-md);
   padding-block-start: var(--space-md);
   border-block-start: 1px solid var(--border-subtle);
+}
+
+.foot > * {
+  inline-size: 100%;
+}
+
+.foot > a {
+  inline-size: auto;
 }
 
 @media (max-width: 47.999rem) {

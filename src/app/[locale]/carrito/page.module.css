@@ -1,0 +1,11 @@
+/*
+ * The conditions of the sale, under the bag. Two blocks at reading measure,
+ * separated from the totals by the section's own rhythm rather than by a box.
+ */
+
+.conditions {
+  display: grid;
+  gap: var(--space-md);
+  margin-block-start: var(--space-2xl);
+  max-inline-size: 42rem;
+}
