@@ -47,7 +47,8 @@ const STRIP = 458;
  *
  * The drawing below is measured against the canonical container's label mesh:
  * its band shows the printed strip at 1:1, so a 458px strip fills it. A
- * different export can map the same sheet differently — `reta-v3.glb` has a
+ * different export can map the same sheet differently — `reta-v4.glb` (the V3
+ * export) has a
  * taller band (149 mm against 115 mm) whose UVs stretch the sheet across it,
  * so the 458px strip covered only the top of the label and the rest came out
  * blank paper.
@@ -78,8 +79,8 @@ interface LabelSheet {
 const CANONICAL: LabelSheet = { scale: 1, centre: 965, room: 560 };
 
 const SHEETS: Readonly<Record<string, LabelSheet>> = {
-  /* reta-v3: a taller band, and its front sits a little left of canonical. */
-  "/models/reta-v3.glb": { scale: 2.25, centre: 1012, room: 520 },
+  /* The V3 vial: a taller band, its front a little left of canonical. */
+  "/models/reta-v4.glb": { scale: 2.25, centre: 1012, room: 520 },
 };
 
 /** The calibration for one model, or the canonical 1:1. */
@@ -303,9 +304,7 @@ export function drawLabel(
   if (size < s(56) && words.length > 1) {
     const cut = Math.ceil(words.length / 2);
     const lines = [words.slice(0, cut).join(" "), words.slice(cut).join(" ")];
-    size = Math.min(
-      ...lines.map((part) => fit(ctx, part, family, 600, s(74), room, 0.14, s(34))),
-    );
+    size = Math.min(...lines.map((part) => fit(ctx, part, family, 600, s(74), room, 0.14, s(34))));
     const top = s(160) + NAME_DROP;
     vertical(ctx, lines[0], top, centre, `600 ${size}px ${family}`, size * 0.14, INK);
     vertical(ctx, lines[1], top + size * 1.08, centre, `600 ${size}px ${family}`, size * 0.14, INK);

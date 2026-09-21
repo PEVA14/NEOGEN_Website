@@ -18,9 +18,15 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
   /*
    * RETA — the third-generation vial (owner export, 2026-09-21).
    *
-   * `reta-v3.glb` supersedes `reta-v2.glb`, which superseded `reta.glb`. The
-   * filename carries the version because models are served with a one-year
-   * immutable cache — a changed file under the old name would never be fetched.
+   * `reta-v4.glb` supersedes `reta-v2.glb`, which superseded `reta.glb`.
+   *
+   * THE FILE IS v4 AND THE EXPORT IS V3, which looks like a mistake and is
+   * not. Models are served `immutable, max-age=31536000`, so the URL IS the
+   * cache key: this same export shipped for one commit with a different label
+   * baked in, under `reta-v3.glb`, and a browser that fetched it holds that
+   * copy for a year. Re-writing those bytes in place is precisely what the
+   * versioning rule exists to prevent — the number counts SERVED FILES, not
+   * Blender exports.
    *
    * V3 SETTLES IN BLENDER WHAT THE BUILD WAS DOING BY HAND: it carries ONE
    * closure, so the `--drop` of the interpenetrating autosampler lid is gone,
@@ -59,7 +65,7 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
    * which is why this is null rather than a rough render.
    */
   reta: {
-    model: "/models/reta-v3.glb",
+    model: "/models/reta-v4.glb",
     /*
      * THE STUDIO STILL (prototype, 2026-09-18, awaiting owner approval).
      *
@@ -74,7 +80,7 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
      * and the local dev server — looking at the previous picture.
      */
     studio: {
-      src: "/images/products/reta/studio-v4.jpg",
+      src: "/images/products/reta/studio-v5.jpg",
       alt: "Vial RETA de NEOGEN: render de estudio del modelo 3D, etiqueta al frente, sobre fondo azul oscuro.",
       width: 1600,
       height: 2000,
@@ -163,7 +169,7 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
  */
 export const DEMO_ARTWORK: readonly { model: string; says: string; why: string }[] = [
   {
-    model: "/models/reta-v3.glb",
+    model: "/models/reta-v4.glb",
     says: "RETATRUTIDE · 10 ML · INJECTABLE PEPTIDE ● 99% PURITY · SUBCUTANEOUS USE",
     why:
       "Routes of administration for human use, a purity figure no analysis supports, " +

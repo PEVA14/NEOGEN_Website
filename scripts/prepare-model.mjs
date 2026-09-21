@@ -53,6 +53,7 @@ const drops = [];
 const scales = [];
 let jpegQuality = null;
 let labelArt = null;
+let force = false;
 let dry = false;
 
 function isFlagValue(arg) {
@@ -67,6 +68,7 @@ for (let i = 0; i < args.length; i += 1) {
   if (args[i] === "--scale-node") scales.push({ name: args[i + 1], factor: Number(args[i + 2]) });
   if (args[i] === "--jpeg") jpegQuality = Number(args[i + 1] ?? 92);
   if (args[i] === "--label") labelArt = args[i + 1] ?? null;
+  if (args[i] === "--force") force = true;
   if (args[i] === "--dry") dry = true;
 }
 
@@ -74,7 +76,32 @@ const [source, destination] = positional;
 if (!source || !destination) {
   console.error(
     "usage: node scripts/prepare-model.mjs <source.glb> <dest.glb> [--drop NAME]... " +
-      "[--scale-node NAME 0.92] [--label sheet.png] [--jpeg 92] [--dry]",
+      "[--scale-node NAME 0.92] [--label sheet.png] [--jpeg 92] [--force] [--dry]",
+  );
+  process.exit(1);
+}
+
+/*
+ * REFUSE TO OVERWRITE A SERVED FILE — the versioning rule, enforced.
+ *
+ * `next.config.ts` serves everything under /models with
+ * `immutable, max-age=31536000`, so the URL is the cache key and the bytes
+ * behind a name are a promise. Rewriting `reta-v3.glb` with different geometry
+ * or a different label leaves every browser that already fetched it — the
+ * owner's included — on the old asset for a year, with no error anywhere to
+ * say so. It happened on 2026-09-21 and cost a confused round trip.
+ *
+ * So a destination that exists is a stop, not a warning. `--force` is for
+ * re-running the SAME recipe to the same bytes (a rebuild after a script
+ * change), which is the only case where overwriting is not a lie.
+ */
+if (existsSync(destination) && !force && !args.includes("--dry")) {
+  console.error(
+    `  ! ${destination} already exists.\n` +
+      "    Models are served with a one-year immutable cache, so a changed file under\n" +
+      "    an old name never reaches a browser that has seen it. Bump the version in\n" +
+      "    the filename (and in `content/media/registry.ts`), or pass --force if the\n" +
+      "    bytes are genuinely the same recipe.",
   );
   process.exit(1);
 }

@@ -2,9 +2,9 @@
  * EXPORT A DRAWN LABEL SHEET — the texture, not the photograph.
  *
  *   npm run dev
- *   node scripts/export-label.mjs reta --model /models/reta-v3.glb --out "3d assets/reta-v3-label.png"
+ *   node scripts/export-label.mjs reta --model /models/reta-v4.glb --out "3d assets/reta-v3-label.png"
  *   node scripts/prepare-model.mjs "3d assets/NEOGEN_RETA_VIAL_V3.glb" \
- *     public/models/reta-v3.glb --label "3d assets/reta-v3-label.png" --jpeg 92
+ *     public/models/reta-v5.glb --label "3d assets/reta-v3-label.png" --jpeg 92
  *
  * WHY THIS EXISTS. `studio/label.ts` draws a label from registry data — the
  * brand lockup, the product's name, its presentation range — and it draws it

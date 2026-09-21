@@ -23,6 +23,7 @@
  *   --quality 88                   JPEG quality (macOS `sips`)
  *   --name studio                  file basename, WITHOUT extension
  *   --query "model=…&label=drawn"  extra studio-page overrides
+ *   --force                        overwrite an existing still (see below)
  *   --out public/images/products   destination root
  *
  * VERSION THE NAME WHEN THE RENDER CHANGES (`--name studio-v2`). Images are
@@ -57,11 +58,12 @@ const name = flag("name", "studio");
  * Extra query for the studio page, for photographing something the registry
  * does not point at yet:
  *
- *   --query "model=/models/reta-v3.glb&label=drawn"
+ *   --query "model=/models/reta-v4.glb&label=drawn"
  *
  * The page's own overrides are development-only, so this is too.
  */
 const query = flag("query", "");
+const force = args.includes("--force");
 
 if (!slugs.length) {
   console.error(
@@ -128,6 +130,29 @@ try {
     const directory = path.join(outRoot, slug);
     mkdirSync(directory, { recursive: true });
     const jpg = path.join(directory, `${name}.jpg`);
+    /*
+     * REFUSE TO OVERWRITE A PUBLISHED STILL.
+     *
+     * The comment at the top of this file has always said to version the name
+     * when the render changes; saying it was not enough. Next's optimizer
+     * caches by URL and the file is served with a long max-age, so re-writing
+     * `studio-v4.jpg` leaves the browser — and the dev server — showing the
+     * previous picture with nothing to indicate it. That is exactly what
+     * happened on 2026-09-21 with this product.
+     *
+     * `--force` exists for re-running the same shot after a rig tweak that has
+     * not shipped yet.
+     */
+    if (existsSync(jpg) && !force) {
+      console.error(
+        `  ! ${jpg} already exists.\n` +
+          "    Images are cached by URL, so a re-render under the same name never\n" +
+          "    reaches a browser that has seen it. Use --name studio-v<N+1> and point\n" +
+          "    `content/media/registry.ts` at it, or pass --force.",
+      );
+      failures += 1;
+      continue;
+    }
     const previous = existsSync(jpg) ? statSync(jpg).size : null;
 
     execFileSync(

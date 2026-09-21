@@ -6,7 +6,7 @@ Lightweight `.glb` product assets, one per product, named by its **slug**:
 public/models/<product-slug>.glb
 ```
 
-Today: `reta-v3.glb`, `ghk-cu.glb` and `glow.glb` are what the site serves,
+Today: `reta-v4.glb`, `ghk-cu.glb` and `glow.glb` are what the site serves,
 with `reta-v2.glb` kept as the CANONICAL CONTAINER — the shape every
 non-flagship product is rendered on, and the one `studio/label.ts` is measured
 against. All of them are the same NEOGEN vial.
@@ -18,7 +18,7 @@ Nothing there is served. The served file is derived from one by:
 
 ```bash
 node scripts/prepare-model.mjs "3d assets/NEOGEN_RETA_VIAL_V3.glb" \
-  public/models/reta-v3.glb --jpeg 92
+  public/models/reta-v4.glb --jpeg 92
 ```
 
 That script drops nodes the web build should not carry, re-encodes label
@@ -38,7 +38,7 @@ Current recipes:
 
 | Served file   | Source export             | Extra                                                            |
 | ------------- | ------------------------- | ---------------------------------------------------------------- |
-| `reta-v3.glb` | `NEOGEN_RETA_VIAL_V3.glb` | `--jpeg 92` only. No drop, no cap scale — see below; and (3)     |
+| `reta-v4.glb` | `NEOGEN_RETA_VIAL_V3.glb` | `--jpeg 92` only. No drop, no cap scale — see below; and (3)     |
 | `reta-v2.glb` | `NEOGEN_RETA_VIAL_V2.glb` | `--drop "0.75 Dram Autosampler Lid"` (1), `--scale-node` cap (2) |
 | `ghk-cu.glb`  | `NEOGEN_GHK-Cu_VIAL.glb`  | `--scale-node` cap (2)                                           |
 | `glow.glb`    | `NEOGEN_GLOW_VIAL.glb`    | `--scale-node` cap (2)                                           |
@@ -89,10 +89,10 @@ this same geometry:
 
 ```bash
 npm run dev
-node scripts/export-label.mjs reta --model /models/reta-v3.glb \
+node scripts/export-label.mjs reta --model /models/reta-v4.glb \
   --out "3d assets/reta-v3-label.png"
 node scripts/prepare-model.mjs "3d assets/NEOGEN_RETA_VIAL_V3.glb" \
-  public/models/reta-v3.glb --label "3d assets/reta-v3-label.png" --jpeg 92
+  public/models/reta-v5.glb --label "3d assets/reta-v3-label.png" --jpeg 92
 ```
 
 `export-label.mjs` renders the label `studio/label.ts` draws — the brand
@@ -135,7 +135,7 @@ for anyone without WebGL or with reduced motion.
 
 ## Budget and versioning
 
-Keep exports under ~500 KB. `reta-v3.glb` is 508 KB — a little over, because
+Keep exports under ~500 KB. `reta-v4.glb` is 508 KB — a little over, because
 it carries more geometry than V2 (16.7k triangles against 15.4k) and a heavier
 label strip; the other three are ~460 KB. The raw exports are 0.8–1.0 MB, so
 the preparation step is what keeps them anywhere near budget. (Dropping the
@@ -145,3 +145,14 @@ Files are served with a one-year immutable cache header (`next.config.ts`), so
 **version the filename whenever the geometry or the label changes** — as
 `reta.glb` → `reta-v2.glb` did. Overwriting in place means returning visitors
 keep the old asset.
+
+**THE NUMBER COUNTS SERVED FILES, NOT EXPORTS.** `reta-v4.glb` is the V3
+export: the same export shipped for one commit with a different label baked
+in, under `reta-v3.glb`, so that name is spent. A browser that fetched it holds
+those bytes for a year.
+
+`prepare-model.mjs` and `capture-studio.mjs` now REFUSE to overwrite an
+existing destination, because the rule above was documented and still broken —
+on 2026-09-21, twice in one session, and the symptom was a page that would not
+change in the owner's browser with nothing in any log to explain it. `--force`
+is for re-running the same recipe to the same bytes.

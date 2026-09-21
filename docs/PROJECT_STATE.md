@@ -284,7 +284,7 @@ also encoded in `src/config/site.ts`; anything undecided there is `null`.
    not a determination.
 6. **Legal policies:** Terms, Privacy, returns (with the 18+ line). None are
    approved, so none render.
-   6a. **Draft label artwork on a served model.** `reta-v3.glb` carries a
+   6a. **Draft label artwork on a served model.** `reta-v4.glb` carries a
    mock-up strip reading "10 ML · INJECTABLE PEPTIDE ● 99% PURITY ·
    SUBCUTANEOUS USE" — two routes of administration, a purity figure nothing
    supports, and a volume the catalogue does not sell. Shipped deliberately
