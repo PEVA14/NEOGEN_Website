@@ -806,15 +806,19 @@ to a file.
   registry data — the brand lockup (§19), the product name and its presentation
   range — in the real label's measured layout. Never print placeholders, lots
   or claims.
-- **A printed label is content, and it is checked like content.** What an
-  export prints is read by a customer, so it is held to the same rule as any
-  other public sentence: no route of administration, no purity figure, no
-  quantity the catalogue does not sell. When an export fails that — RETA V3
-  arrived reading "INJECTABLE PEPTIDE · 99% PURITY · SUBCUTANEOUS USE" — the
-  drawn sheet is BAKED INTO THE FILE (`export-label.mjs`, then
-  `prepare-model.mjs --label`), never overridden per render path: four
-  surfaces read that texture and only one has a material pass. See
-  `public/models/README.md`.
+- **A printed label is content, and it is held to the same rule.** What an
+  export prints is read by a customer: no route of administration, no purity
+  figure, no quantity the catalogue does not sell. RETA V3 arrived reading
+  "INJECTABLE PEPTIDE · 99% PURITY · SUBCUTANEOUS USE" and ships that way while
+  the owner designs the packaging — **declared in `DEMO_ARTWORK`**, which
+  `check:media` prints on every run and which `PROJECT_STATE.md` §6 carries as
+  a launch blocker. Draft artwork may ship on a site nobody can reach; it may
+  not go public, and the way it stays visible is a declaration rather than
+  somebody's memory.
+- **When a label has to be corrected in code, it is baked into the file**
+  (`export-label.mjs`, then `prepare-model.mjs --label`), never overridden per
+  render path: four surfaces read that texture and only the studio has a
+  material pass. See `public/models/README.md`.
 - **Capture.** `node scripts/capture-studio.mjs <slug>... [--name studio-v4]`,
   with the dev server running. It opens `/[locale]/estudio/[slug]`, waits for
   `window.__studio.ready`, takes the frame the page exposes and writes the JPEG

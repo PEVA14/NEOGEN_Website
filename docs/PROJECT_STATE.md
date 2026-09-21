@@ -23,11 +23,12 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 ### Start here: handoff of 2026-09-20
 
 - **Latest (2026-09-21): RETA V3 (§8z).** The new export is live on the product
-  page, the homepage and the catalogue card. Its mock-up label —
-  "INJECTABLE PEPTIDE · 99% PURITY · SUBCUTANEOUS USE", over a volume the
-  catalogue does not sell — was REPLACED at build time with a sheet drawn from
-  registry data. Corrected artwork is an owner action; §8z says exactly what it
-  may carry.
+  page, the homepage and the catalogue card, WITH ITS DRAFT LABEL — the owner
+  is designing the packaging and asked to see it in place. That strip reads
+  "10 ML · INJECTABLE PEPTIDE ● 99% PURITY · SUBCUTANEOUS USE" and is NOT
+  publishable: it is declared in `DEMO_ARTWORK`, printed by `check:media` on
+  every run, and listed as launch blocker §6.6a. The replacement path is built
+  and tested — two commands in `public/models/README.md`.
 - **Education, editorial, FAQ and the research-use gate (§8y).** `/peptidos`, `/investigacion/notas`, `/preguntas`, the RUO notice
   across the journey, and a REQUIRED research-use declaration that blocks order
   creation. Two requested claims were refused for want of evidence —
@@ -283,6 +284,12 @@ also encoded in `src/config/site.ts`; anything undecided there is `null`.
    not a determination.
 6. **Legal policies:** Terms, Privacy, returns (with the 18+ line). None are
    approved, so none render.
+   6a. **Draft label artwork on a served model.** `reta-v3.glb` carries a
+   mock-up strip reading "10 ML · INJECTABLE PEPTIDE ● 99% PURITY ·
+   SUBCUTANEOUS USE" — two routes of administration, a purity figure nothing
+   supports, and a volume the catalogue does not sell. Shipped deliberately
+   while the owner designs the packaging (§8z) and declared in `DEMO_ARTWORK`,
+   which `check:media` prints on every run. Replace before the site is public.
 7. **Persistence:** the Postgres adapters are built (§8t); approve and
    provision Neon (see `docs/PERSISTENCE_RECOMMENDATION.md`), and
    get counsel's answer on the privacy notice and international transfer under
@@ -2081,10 +2088,21 @@ Four problems, and the first two are the serious ones:
 3. "10 ML" matches no presentation: RETA sells 5–60 MG in packs of ten.
 4. The name overran the visible band.
 
-The owner confirmed the label is a mock-up and not yet printed, and asked for
-the vial on the page. So the vial shipped and the strip did not.
+**It ships as drawn, on the owner's instruction** (2026-09-21): "do not change
+the label in the new reta vial, put it as is, it is a demo we'll adapt it later
+but I want to visualize it." The packaging is being designed and is easier to
+judge in place. The site is not public — no domain, no processor, the
+classification review outstanding — so the only reader is the owner.
 
-**How it shipped: the label is baked, not overridden**
+It is declared in `DEMO_ARTWORK` (`content/media/registry.ts`) so it cannot
+become permanent by inattention: `check:media` prints the strip's text on every
+run, and it is a launch blocker in §6. **It must not be the label the site
+launches with.**
+
+**The replacement path exists and is one command**
+
+Built and verified on this model before the owner chose the draft, so it is
+ready when the artwork is:
 
 - `scripts/export-label.mjs` (new) renders the sheet `studio/label.ts` draws
   from registry data — brand lockup, product name, presentation range — and
@@ -2094,8 +2112,7 @@ the vial on the page. So the vial shipped and the strip did not.
   material points at. UVs, meshes and every other material are untouched.
 - Baked rather than swapped at render time because FOUR paths read that
   texture — catalogue still, product page viewer, homepage moment, studio —
-  and only one has a material pass. The served file is correct in all four by
-  construction, and the repository does not carry artwork it will not show.
+  and only one has a material pass.
 - `studio/label.ts` gained a per-model calibration (`SHEETS`): V3's taller band
   stretches the sheet, so the drawn strip is scaled 2.25× and its panel
   re-centred. Without it the label filled the top of the band and left the
@@ -2105,12 +2122,13 @@ the vial on the page. So the vial shipped and the strip did not.
 
 **What the owner should decide**
 
-- Corrected artwork. The label may carry: the NEOGEN lockup, the compound name
-  as the registry states it, and the presentation. It may not carry a route of
-  administration, a purity figure, or a volume the catalogue does not sell.
-  "For research use only" is the one extra line that is both true and
-  consistent with the rest of the site. When it arrives, drop `--label` and
-  re-run the recipe.
+- **Corrected artwork, before the site is public.** The label may carry: the
+  NEOGEN lockup, the compound name as the registry states it, and the
+  presentation. It may not carry a route of administration, a purity figure, or
+  a volume the catalogue does not sell. "For research use only" is the one
+  extra line that is both true and consistent with the rest of the site.
+  Either re-export it from Blender, or run the two commands in
+  `public/models/README.md` to put the drawn sheet on this same geometry.
 - Whether V3 becomes the CANONICAL CONTAINER for non-flagship products.
   `reta-v2.glb` still holds that job, and `studio/label.ts`'s 1:1 geometry is
   measured against it; promoting V3 means re-capturing every neutral still.

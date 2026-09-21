@@ -14,7 +14,7 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 
 import { products } from "../src/data/catalog/index.ts";
-import { MEDIA } from "../src/content/media/registry.ts";
+import { DEMO_ARTWORK, MEDIA } from "../src/content/media/registry.ts";
 
 const PUBLIC = "public";
 const IMAGE_TYPES = new Set([".jpg", ".jpeg", ".png", ".webp", ".avif"]);
@@ -186,6 +186,27 @@ for (const [slug, entry] of Object.entries(MEDIA)) {
   }
 }
 
+/* ------------------------------------------------------------ draft art --- */
+
+/*
+ * DRAFT ARTWORK IS ANNOUNCED, NOT REMEMBERED.
+ *
+ * A model may carry a label that is still being designed — useful to look at,
+ * not publishable as it stands. The entry has to point at a model the registry
+ * actually declares, so the list cannot rot into a note about a file nobody
+ * serves any more; and the gate prints it every run, so it is in front of
+ * whoever is about to take the site public.
+ */
+for (const draft of DEMO_ARTWORK) {
+  const used = Object.values(MEDIA).some((m) => m.model === draft.model);
+  if (!used) {
+    fail(
+      "DEMO_ARTWORK names a model no product declares",
+      `${draft.model} — remove the entry, or point a product at it`,
+    );
+  }
+}
+
 /* ---------------------------------------------------------------- report --- */
 
 const declared = Object.keys(MEDIA).length;
@@ -200,3 +221,7 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(`media check passed — ${summary}`);
+for (const draft of DEMO_ARTWORK) {
+  console.log(`  ! DRAFT ARTWORK — ${draft.model} prints: ${draft.says}`);
+  console.log(`    ${draft.why}`);
+}

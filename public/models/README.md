@@ -18,7 +18,7 @@ Nothing there is served. The served file is derived from one by:
 
 ```bash
 node scripts/prepare-model.mjs "3d assets/NEOGEN_RETA_VIAL_V3.glb" \
-  public/models/reta-v3.glb --label "3d assets/reta-v3-label.png" --jpeg 92
+  public/models/reta-v3.glb --jpeg 92
 ```
 
 That script drops nodes the web build should not carry, re-encodes label
@@ -38,7 +38,7 @@ Current recipes:
 
 | Served file   | Source export             | Extra                                                            |
 | ------------- | ------------------------- | ---------------------------------------------------------------- |
-| `reta-v3.glb` | `NEOGEN_RETA_VIAL_V3.glb` | `--label` (3). No drop, no cap scale — see below                 |
+| `reta-v3.glb` | `NEOGEN_RETA_VIAL_V3.glb` | `--jpeg 92` only. No drop, no cap scale — see below; and (3)     |
 | `reta-v2.glb` | `NEOGEN_RETA_VIAL_V2.glb` | `--drop "0.75 Dram Autosampler Lid"` (1), `--scale-node` cap (2) |
 | `ghk-cu.glb`  | `NEOGEN_GHK-Cu_VIAL.glb`  | `--scale-node` cap (2)                                           |
 | `glow.glb`    | `NEOGEN_GLOW_VIAL.glb`    | `--scale-node` cap (2)                                           |
@@ -72,14 +72,20 @@ each and they must agree.
 If the owner would rather the proportion lived in Blender, drop the flag and
 ask for it in the export; nothing in the web layer depends on it.
 
-(3) `--label "3d assets/reta-v3-label.png"` — **the printed strip, replaced.**
+(3) **The printed strip, and how to replace it** (`--label`).
 
-The V3 export arrived carrying a mock-up label: "RETATRUTIDE · 10 ML ·
-INJECTABLE PEPTIDE ● 99% PURITY · SUBCUTANEOUS USE". Two of those lines are
-administration claims this site does not make, the purity figure is analytical
-evidence that does not exist for any product, and the volume matches no
-presentation in the catalogue — RETA sells 5–60 MG in packs of ten. So the
-served file wears a sheet drawn from registry data instead:
+V3 carries a mock-up label: "RETATRUTIDE · 10 ML · INJECTABLE PEPTIDE ● 99%
+PURITY · SUBCUTANEOUS USE". Two of those lines are administration claims this
+site does not make, the purity figure is analytical evidence that does not
+exist for any product, and the volume matches no presentation in the catalogue
+— RETA sells 5–60 MG in packs of ten.
+
+**It ships as exported, deliberately** (owner, 2026-09-21): the packaging is
+being designed and is easier to judge in place, and the site is not public. It
+is declared in `DEMO_ARTWORK` (`content/media/registry.ts`) so `check:media`
+names it on every run, and it is launch blocker §6.6a. **Replace it before the
+site goes public** — either re-export from Blender, or put the drawn sheet on
+this same geometry:
 
 ```bash
 npm run dev
@@ -100,8 +106,9 @@ moment and the studio — and only one of them has a material pass. Replacing it
 in the file makes the served model correct in all four by construction, and
 means the repository does not carry artwork it will not show.
 
-**IT IS A STOPGAP, NOT A DESIGN.** When corrected artwork is exported, drop
-`--label` and re-run; the label geometry calibration in `studio/label.ts`
+**THE DRAWN SHEET IS A STOPGAP, NOT A DESIGN.** It is what the site can print
+honestly while real artwork is being drawn. When corrected artwork is exported,
+drop `--label` and re-run; the label geometry calibration in `studio/label.ts`
 (`SHEETS`) is only consulted while a drawn label is in use.
 
 ## Declaring one
@@ -128,10 +135,11 @@ for anyone without WebGL or with reduced motion.
 
 ## Budget and versioning
 
-Keep exports under ~500 KB. `reta-v3.glb` is 482 KB and the other three are
-~460 KB. The raw exports are 0.8–1.0 MB, so the preparation step is what keeps
-them in budget — and on V3 the replaced label is part of that: the mock-up
-strip re-encoded to 187 KB against the drawn sheet's 161 KB.
+Keep exports under ~500 KB. `reta-v3.glb` is 508 KB — a little over, because
+it carries more geometry than V2 (16.7k triangles against 15.4k) and a heavier
+label strip; the other three are ~460 KB. The raw exports are 0.8–1.0 MB, so
+the preparation step is what keeps them anywhere near budget. (Dropping the
+texture to q88 saves 3 KB, so the quality setting is not the lever.)
 
 Files are served with a one-year immutable cache header (`next.config.ts`), so
 **version the filename whenever the geometry or the label changes** — as

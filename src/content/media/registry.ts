@@ -29,16 +29,23 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
    * band is taller and lower on the body, which is why the printing reads
    * larger.
    *
-   * ITS PRINTED LABEL WAS REPLACED AT BUILD TIME, and that is the part to
-   * know. The export arrived carrying a mock-up strip — "INJECTABLE PEPTIDE ·
-   * 99% PURITY · SUBCUTANEOUS USE", over a volume matching no presentation in
-   * the catalogue. Two of those are administration claims this site does not
-   * make; the third is analytical evidence that does not exist; the fourth
-   * contradicts the product record, which sells 5–60 MG. So the served file
-   * wears the sheet drawn from registry data instead (`prepare-model.mjs
-   * --label`, see `public/models/README.md`). Nothing overrides it at render
-   * time: the file itself is correct, in the catalogue still, on the product
-   * page, on the homepage and in the studio alike.
+   * ITS PRINTED LABEL IS A MOCK-UP, AND IT IS NOT PUBLISHABLE COPY. The strip
+   * reads "RETATRUTIDE · 10 ML · INJECTABLE PEPTIDE ● 99% PURITY ·
+   * SUBCUTANEOUS USE". Two of those lines are routes of administration for
+   * human use, the purity figure is analytical evidence that exists for no
+   * product here, and the volume matches no presentation — this product sells
+   * 5–60 MG in packs of ten.
+   *
+   * It ships anyway, on purpose: the owner is designing the packaging and
+   * asked to see the artwork in place while it is still a draft (2026-09-21).
+   * THE SITE IS NOT PUBLIC — no domain, no processor, classification review
+   * outstanding — so nobody is reading it but the owner.
+   *
+   * It is declared in `DEMO_ARTWORK` below, which is what keeps it from
+   * becoming permanent by inattention: `check:media` names it on every run,
+   * and it is a launch blocker in `PROJECT_STATE.md` §6. One command puts a
+   * compliant label on the same geometry when the draft is settled —
+   * `public/models/README.md`, "the printed strip, replaced".
    *
    * `reta-v2.glb` STAYS: it is the canonical container every non-flagship
    * product is rendered on, and the label geometry `studio/label.ts` is
@@ -140,3 +147,28 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
     },
   },
 };
+
+/**
+ * ARTWORK THAT IS A DRAFT, AND MUST NOT GO PUBLIC AS IT IS.
+ *
+ * A printed label is read by a customer, so what it says is content and is
+ * held to the same rule as any other public sentence. A model can nevertheless
+ * be useful with draft artwork on it — the owner is designing the packaging
+ * and needs to see it in place — so the file ships and the debt is DECLARED
+ * rather than remembered.
+ *
+ * `check:media` prints every entry here on every run, and §6 of
+ * `PROJECT_STATE.md` carries it as a launch blocker. An empty list is the
+ * normal state; an entry is a promise to come back.
+ */
+export const DEMO_ARTWORK: readonly { model: string; says: string; why: string }[] = [
+  {
+    model: "/models/reta-v3.glb",
+    says: "RETATRUTIDE · 10 ML · INJECTABLE PEPTIDE ● 99% PURITY · SUBCUTANEOUS USE",
+    why:
+      "Routes of administration for human use, a purity figure no analysis supports, " +
+      "and a volume matching no presentation (this product sells 5-60 MG). Owner is " +
+      "iterating on the packaging (2026-09-21); replace the strip before the site is " +
+      "public - `prepare-model.mjs --label`, see public/models/README.md.",
+  },
+];
