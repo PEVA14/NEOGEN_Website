@@ -111,6 +111,39 @@ honestly while real artwork is being drawn. When corrected artwork is exported,
 drop `--label` and re-run; the label geometry calibration in `studio/label.ts`
 (`SHEETS`) is only consulted while a drawn label is in use.
 
+## Assets from somewhere else
+
+A file that did not come out of the owner's Blender scene arrives speaking a
+different language. The render layer finds parts by what their material IS —
+glass is anything carrying `KHR_materials_transmission`, the cap is anything
+with `metalness > 0.5`, the label is matched by name — and a Sketchfab or Maya
+export satisfies none of that. Its body has no transmission at all, so it
+renders as an opaque cylinder.
+
+`--retag "<material>=<role>"` brings such a file far enough into this project's
+vocabulary to be LOOKED AT. Roles: `glass` (names it, clears the tint, adds
+transmission and an IOR of 1.45), `metal`, `label`, `plastic`.
+
+```bash
+node scripts/prepare-model.mjs "3d assets/vial.glb" public/models/vial-trial.glb \
+  --retag "aiStandardSurface1SG=glass" \
+  --retag "aiStandardSurface2SG=metal" \
+  --retag "aiStandardSurface3SG=label" --jpeg 92
+```
+
+**It is a comparison tool, not a pipeline.** Nothing NEOGEN serves should need
+it: a served model comes from the owner's Blender file with its materials
+already named. If a foreign shape is ever adopted, the tagging belongs back in
+the source, not in a flag.
+
+**What retagging cannot fix: missing UVs.** A mesh with no `TEXCOORD_0` cannot
+carry a label at all — no printed sheet, no drawn one, nothing. Check before
+spending time on a shape:
+
+```bash
+node scripts/inspect-model.mjs <file.glb>   # reports UVs per part
+```
+
 ## Declaring one
 
 A file here does nothing until it is named in `src/content/media/registry.ts`

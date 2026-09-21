@@ -132,6 +132,15 @@ function inspect(file) {
               ? (g.materials[primitive.material].name ?? `material ${primitive.material}`)
               : "(none)",
           tris: Math.round(count),
+          /*
+           * WHETHER THIS PART CAN CARRY A LABEL AT ALL.
+           *
+           * A mesh with no TEXCOORD_0 has no UVs, and a texture cannot be
+           * applied to it — not the printed sheet, not the drawn one. It is
+           * invisible in a render (the band just comes out blank paper) and
+           * cost an afternoon to diagnose once, so it is reported here.
+           */
+          uv: primitive.attributes.TEXCOORD_0 !== undefined,
         });
         if (!position.min) continue;
         for (let corner = 0; corner < 8; corner += 1) {
@@ -186,7 +195,8 @@ function inspect(file) {
     );
     for (const m of part.materials)
       console.log(
-        `    ${"  ".repeat(part.depth)}  · ${m.tris.toLocaleString("en-US")} tris → ${m.name}`,
+        `    ${"  ".repeat(part.depth)}  · ${m.tris.toLocaleString("en-US")} tris → ${m.name}` +
+          (m.uv ? "" : "  [no UVs — cannot take a texture]"),
       );
   }
 

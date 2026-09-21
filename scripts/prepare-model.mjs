@@ -44,7 +44,11 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { NodeIO, PropertyType } from "@gltf-transform/core";
-import { KHRONOS_EXTENSIONS } from "@gltf-transform/extensions";
+import {
+  KHRONOS_EXTENSIONS,
+  KHRMaterialsIOR,
+  KHRMaterialsTransmission,
+} from "@gltf-transform/extensions";
 import { dedup, prune } from "@gltf-transform/functions";
 
 const args = process.argv.slice(2);
@@ -54,6 +58,7 @@ const scales = [];
 let jpegQuality = null;
 let labelArt = null;
 let force = false;
+const retags = [];
 let dry = false;
 
 function isFlagValue(arg) {
@@ -61,7 +66,12 @@ function isFlagValue(arg) {
   if (i <= 0) return false;
   /* `--scale-node` takes TWO values (name, factor), so both follow it. */
   if (args[i - 1] === "--scale-node" || args[i - 2] === "--scale-node") return true;
-  return args[i - 1] === "--drop" || args[i - 1] === "--jpeg" || args[i - 1] === "--label";
+  return (
+    args[i - 1] === "--drop" ||
+    args[i - 1] === "--jpeg" ||
+    args[i - 1] === "--label" ||
+    args[i - 1] === "--retag"
+  );
 }
 for (let i = 0; i < args.length; i += 1) {
   if (args[i] === "--drop") drops.push(args[i + 1]);
@@ -69,6 +79,14 @@ for (let i = 0; i < args.length; i += 1) {
   if (args[i] === "--jpeg") jpegQuality = Number(args[i + 1] ?? 92);
   if (args[i] === "--label") labelArt = args[i + 1] ?? null;
   if (args[i] === "--force") force = true;
+  if (args[i] === "--retag") {
+    const [material, role] = (args[i + 1] ?? "").split("=");
+    if (!material || !role) {
+      console.error('  ! --retag expects "<material name>=<role>"');
+      process.exit(1);
+    }
+    retags.push({ material, role });
+  }
   if (args[i] === "--dry") dry = true;
 }
 
@@ -76,7 +94,8 @@ const [source, destination] = positional;
 if (!source || !destination) {
   console.error(
     "usage: node scripts/prepare-model.mjs <source.glb> <dest.glb> [--drop NAME]... " +
-      "[--scale-node NAME 0.92] [--label sheet.png] [--jpeg 92] [--force] [--dry]",
+      "[--scale-node NAME 0.92] [--label sheet.png] [--retag MATERIAL=glass] " +
+      "[--jpeg 92] [--force] [--dry]",
   );
   process.exit(1);
 }
@@ -203,6 +222,77 @@ for (const { name, factor } of scales) {
   console.log(
     `  resized "${name}" to ${(factor * 100).toFixed(0)}% → Ø${width.toFixed(0)} × ${height.toFixed(0)} mm`,
   );
+}
+
+/* ---- 2a. material roles --------------------------------------------------- */
+
+/**
+ * RETAG A FOREIGN ASSET'S MATERIALS (`--retag "aiStandardSurface1SG=glass"`).
+ *
+ * The render layer identifies parts by what their material IS, not by which
+ * mesh it sits on: glass is anything carrying KHR_materials_transmission, the
+ * cap is anything with `metalness > 0.5`, and the label is matched by name.
+ * That works because every NEOGEN export comes out of the same Blender file
+ * with the same material names.
+ *
+ * An asset from anywhere else does not. A Sketchfab round-trip arrives with
+ * `aiStandardSurface1SG` and no transmission at all — so the glass renders as
+ * an opaque cylinder, the label as untagged plastic, and the model looks
+ * nothing like the vials it is being compared with. Retagging is how such a
+ * file is brought far enough into this project's vocabulary to be LOOKED AT.
+ *
+ * IT IS A COMPARISON TOOL, NOT A PIPELINE. Nothing shipped should need it: a
+ * model NEOGEN serves comes from the owner's Blender file, already tagged. If
+ * a retagged asset is ever adopted, the tagging belongs back in the source.
+ */
+const ROLES = {
+  glass: (material, document) => {
+    material.setName("Clear Glass");
+    material.setMetallicFactor(0);
+    material.setRoughnessFactor(0);
+    /* A tinted base colour would tint the glass; the rig owns its colour. */
+    material.setBaseColorFactor([1, 1, 1, 1]);
+    const transmission = document
+      .createExtension(KHRMaterialsTransmission)
+      .createTransmission()
+      .setTransmissionFactor(1);
+    material.setExtension("KHR_materials_transmission", transmission);
+    const ior = document.createExtension(KHRMaterialsIOR).createIOR().setIOR(1.45);
+    material.setExtension("KHR_materials_ior", ior);
+  },
+  metal: (material) => {
+    material.setName("NEOGEN - Satin Aluminum");
+    material.setMetallicFactor(1);
+  },
+  label: (material) => {
+    material.setName("NEOGEN - Label Paper");
+    material.setMetallicFactor(0);
+  },
+  plastic: (material) => {
+    material.setName("Lid - Shiny Black Plastic");
+    material.setMetallicFactor(0);
+  },
+};
+
+for (const { material: name, role } of retags) {
+  const apply = ROLES[role];
+  if (!apply) {
+    console.error(`  ! unknown role "${role}" — expected ${Object.keys(ROLES).join(", ")}`);
+    process.exit(1);
+  }
+  const material = root.listMaterials().find((m) => m.getName() === name);
+  if (!material) {
+    console.error(
+      `  ! no material named "${name}". This file has: ` +
+        root
+          .listMaterials()
+          .map((m) => m.getName())
+          .join(", "),
+    );
+    process.exit(1);
+  }
+  apply(material, document);
+  console.log(`  retagged "${name}" as ${role} → "${material.getName()}"`);
 }
 
 /* ---- 2b. the label sheet -------------------------------------------------- */
