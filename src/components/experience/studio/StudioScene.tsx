@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas, useLoader, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   BackSide,
   Box3,
@@ -25,7 +25,7 @@ import {
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLightUniformsLib.js";
 
-import { drawLabel, type StudioLabel } from "./label";
+import { drawLabel, labelSheet, type StudioLabel } from "./label";
 
 import type { StudioRig } from "./rig";
 
@@ -212,6 +212,8 @@ function useStudioModel(modelPath: string, rig: StudioRig, label: StudioLabel | 
     root.position.set(-centre.x * scale, -centre.y * scale, -centre.z * scale);
 
     const materials: MeshStandardMaterial[] = [];
+    /* The label sheet this render drew, if it drew one. */
+    let sheet: HTMLCanvasElement | null = null;
     root.traverse((child) => {
       // glTF materials with no extension load as MeshStandardMaterial (the
       // label, the black top); only glass and aluminium are physical.
@@ -259,7 +261,13 @@ function useStudioModel(modelPath: string, rig: StudioRig, label: StudioLabel | 
           const family =
             getComputedStyle(document.documentElement).getPropertyValue("--font-instrument-sans") ||
             "sans-serif";
-          m.map = drawLabel(label, family);
+          /* The calibration belongs to the MODEL's label mesh, so it is
+             looked up from the path rather than passed down the tree. */
+          const texture = drawLabel(label, family, labelSheet(modelPath));
+          m.map = texture;
+          /* Kept so the sheet can be exported and baked into the model —
+             see `scripts/export-label.mjs`. */
+          if (texture.image instanceof HTMLCanvasElement) sheet = texture.image;
         }
         if (m.map) {
           m.map.anisotropy = gl.capabilities.getMaxAnisotropy();
@@ -268,20 +276,26 @@ function useStudioModel(modelPath: string, rig: StudioRig, label: StudioLabel | 
       }
     });
 
-    return { root, materials };
-  }, [gltf, gl, rig, label]);
+    return { root, materials, sheet };
+  }, [gltf, gl, rig, label, modelPath]);
 }
 
 function Subject({
   modelPath,
   rig,
   label,
+  onSheet,
 }: {
   modelPath: string;
   rig: StudioRig;
   label: StudioLabel | null;
+  /** Hands the drawn label sheet up, so `window.__studio.label()` can export it. */
+  onSheet?: (sheet: HTMLCanvasElement | null) => void;
 }) {
-  const { root, materials } = useStudioModel(modelPath, rig, label);
+  const { root, materials, sheet } = useStudioModel(modelPath, rig, label);
+  useEffect(() => {
+    onSheet?.(sheet);
+  }, [onSheet, sheet]);
   // The reflection is the same object, mirrored through the floor plane (y = -0.5).
   const mirror = useMemo(() => root.clone(true), [root]);
   useEffect(() => () => materials.forEach((m) => m.dispose()), [materials]);
@@ -345,12 +359,24 @@ function Subject({
 
 declare global {
   interface Window {
-    __studio?: { ready: boolean; capture: () => string };
+    __studio?: {
+      ready: boolean;
+      capture: () => string;
+      /**
+       * The drawn LABEL SHEET, for baking into a model.
+       *
+       * Null when the model wears its own printed label. Exported by
+       * `scripts/export-label.mjs`, which hands it to `prepare-model.mjs
+       * --label` — that is how a mock-up strip the product record cannot
+       * support gets replaced in the served file rather than at render time.
+       */
+      label: () => string | null;
+    };
   }
 }
 
 /** Renders a settled frame and exposes it for capture. */
-function Capture() {
+function Capture({ sheet }: { sheet: HTMLCanvasElement | null }) {
   const { gl, scene, camera, invalidate } = useThree();
   useEffect(() => {
     let frames = 0;
@@ -367,6 +393,7 @@ function Capture() {
             gl.render(scene, camera);
             return gl.domElement.toDataURL("image/png");
           },
+          label: () => sheet?.toDataURL("image/png") ?? null,
         };
     };
     raf = requestAnimationFrame(tick);
@@ -374,7 +401,7 @@ function Capture() {
       cancelAnimationFrame(raf);
       window.__studio = undefined;
     };
-  }, [gl, scene, camera, invalidate]);
+  }, [gl, scene, camera, invalidate, sheet]);
   return null;
 }
 
@@ -398,6 +425,10 @@ export default function StudioScene({
   label?: StudioLabel | null;
   dpr?: number;
 }) {
+  const [sheet, setSheet] = useState<HTMLCanvasElement | null>(null);
+  /* Stable, so Subject's effect fires on the SHEET changing and not on every
+     render of the scene. */
+  const onSheet = useCallback((next: HTMLCanvasElement | null) => setSheet(next), []);
   return (
     <Canvas
       dpr={dpr}
@@ -414,8 +445,8 @@ export default function StudioScene({
       <Environment rig={rig} />
       <ambientLight intensity={0.04} />
       <Softboxes rig={rig} />
-      <Subject modelPath={modelPath} rig={rig} label={label} />
-      <Capture />
+      <Subject modelPath={modelPath} rig={rig} label={label} onSheet={onSheet} />
+      <Capture sheet={sheet} />
     </Canvas>
   );
 }

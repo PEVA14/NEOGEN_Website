@@ -22,6 +22,7 @@
  *   --width 800                    CSS width; the frame is 4:5 at 2× (1600×2000)
  *   --quality 88                   JPEG quality (macOS `sips`)
  *   --name studio                  file basename, WITHOUT extension
+ *   --query "model=…&label=drawn"  extra studio-page overrides
  *   --out public/images/products   destination root
  *
  * VERSION THE NAME WHEN THE RENDER CHANGES (`--name studio-v2`). Images are
@@ -52,6 +53,15 @@ const width = Number(flag("width", 800));
 const quality = Number(flag("quality", 88));
 const outRoot = flag("out", "public/images/products");
 const name = flag("name", "studio");
+/*
+ * Extra query for the studio page, for photographing something the registry
+ * does not point at yet:
+ *
+ *   --query "model=/models/reta-v3.glb&label=drawn"
+ *
+ * The page's own overrides are development-only, so this is too.
+ */
+const query = flag("query", "");
 
 if (!slugs.length) {
   console.error(
@@ -97,7 +107,7 @@ try {
     const errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
 
-    const url = `${base}/es/estudio/${slug}?w=${width}&dpr=2`;
+    const url = `${base}/es/estudio/${slug}?w=${width}&dpr=2${query ? `&${query}` : ""}`;
     await page.goto(url, { waitUntil: "load" });
 
     /* The page exposes the shutter once the transmission buffer and the

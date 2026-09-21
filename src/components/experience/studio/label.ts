@@ -41,6 +41,51 @@ export interface StudioLabel {
 
 const SHEET = 2048;
 const STRIP = 458;
+
+/**
+ * HOW MUCH OF THE SHEET THE BAND ACTUALLY SHOWS, per container.
+ *
+ * The drawing below is measured against the canonical container's label mesh:
+ * its band shows the printed strip at 1:1, so a 458px strip fills it. A
+ * different export can map the same sheet differently — `reta-v3.glb` has a
+ * taller band (149 mm against 115 mm) whose UVs stretch the sheet across it,
+ * so the 458px strip covered only the top of the label and the rest came out
+ * blank paper.
+ *
+ * `scale` multiplies everything on the STRIP AXIS — positions, type sizes, the
+ * hairlines — and nothing on the axis that runs around the container, because
+ * the circumference did not change. The type therefore grows uniformly rather
+ * than stretching: a font size scales a glyph in both directions.
+ *
+ * Measured from a render, not derived: photograph the model with a drawn label
+ * and compare the printed area against the band.
+ */
+interface LabelSheet {
+  scale: number;
+  /**
+   * Where the front of the label sits on the sheet's other axis, and how much
+   * of that axis the camera actually sees.
+   *
+   * A mesh can put its seam anywhere, so the band the lens is looking at is
+   * not necessarily centred on the canonical 965. `room` is the run the type
+   * is allowed before it disappears around the side — tuned by rendering, not
+   * derived, because it depends on how far round the curve stays legible.
+   */
+  centre: number;
+  room: number;
+}
+
+const CANONICAL: LabelSheet = { scale: 1, centre: 965, room: 560 };
+
+const SHEETS: Readonly<Record<string, LabelSheet>> = {
+  /* reta-v3: a taller band, and its front sits a little left of canonical. */
+  "/models/reta-v3.glb": { scale: 2.25, centre: 1012, room: 520 },
+};
+
+/** The calibration for one model, or the canonical 1:1. */
+export function labelSheet(modelPath: string | null): LabelSheet {
+  return (modelPath && SHEETS[modelPath]) || CANONICAL;
+}
 const PAPER = "#f8f7f4";
 const INK = "#2b2b2c";
 const MUTED = "#6d6c69";
@@ -182,9 +227,12 @@ function fit(
   max: number,
   room: number,
   tracking: number,
+  /* The floor scales with the sheet: on a stretched band a "small" size is
+     proportionally larger, and a fixed floor would stop the search early. */
+  floor = 34,
 ) {
   let size = max;
-  for (; size > 34; size -= 2) {
+  for (; size > floor; size -= 2) {
     ctx.font = `${weight} ${size}px ${family}`;
     ctx.letterSpacing = `${size * tracking}px`;
     if (ctx.measureText(text).width <= room) break;
@@ -192,27 +240,36 @@ function fit(
   return size;
 }
 
-export function drawLabel(label: StudioLabel, family: string): Texture {
+export function drawLabel(
+  label: StudioLabel,
+  family: string,
+  sheet: LabelSheet = CANONICAL,
+): Texture {
   const canvas = document.createElement("canvas");
   canvas.width = SHEET;
   canvas.height = SHEET;
   const ctx = canvas.getContext("2d")!;
+
+  /* Every measurement below is on the strip axis, so each passes through `s`.
+     The axis that runs around the container is untouched. */
+  const k = sheet.scale;
+  const s = (value: number) => value * k;
 
   ctx.fillStyle = PAPER;
   ctx.fillRect(0, 0, SHEET, SHEET);
 
   // The printed strip's edge hairlines and panel dividers, as on the real label.
   ctx.fillStyle = RULE;
-  ctx.fillRect(17, 0, 2, SHEET);
-  ctx.fillRect(STRIP - 14, 0, 2, SHEET);
-  ctx.fillRect(34, 588, STRIP - 68, 1);
-  ctx.fillRect(34, 1342, STRIP - 68, 1);
+  ctx.fillRect(s(17), 0, s(2), SHEET);
+  ctx.fillRect(s(STRIP - 14), 0, s(2), SHEET);
+  ctx.fillRect(s(34), 588, s(STRIP - 68), 1);
+  ctx.fillRect(s(34), 1342, s(STRIP - 68), 1);
 
   const name = label.name.toUpperCase();
   const line = label.line;
 
-  /* FRONT PANEL — centred on y 965, as RETA's is. */
-  const centre = 965;
+  /* FRONT PANEL — on the canonical sheet this is y 965, as RETA's is. */
+  const centre = sheet.centre;
   /*
    * 84px tall — the lockup occupies x 40–124, where the wordmark (62–88) and
    * the hairline that divided it from the headline (97) used to sit together.
@@ -226,7 +283,7 @@ export function drawLabel(label: StudioLabel, family: string): Texture {
    * x 18, and 40 leaves the same margin above the brand that the old wordmark
    * had. Everything below shifts by NAME_DROP to keep the gap it had.
    */
-  identity(ctx, 82, centre, 84, family);
+  identity(ctx, s(82), centre, s(84), family);
 
   /*
    * How far the name block moved down to make room for the lockup. It is one
@@ -234,38 +291,42 @@ export function drawLabel(label: StudioLabel, family: string): Texture {
    * two-line branch is the one nobody looks at while tuning, and it is the one
    * that overflows the panel if it is forgotten.
    */
-  const NAME_DROP = 24;
+  const NAME_DROP = s(24);
 
   // The headline: as large as RETA's where it fits, tracked like it, and split
   // over two lines only when one line would drop below a legible size.
-  const room = 560;
-  let size = fit(ctx, name, family, 600, 104, room, 0.16);
+  /* The run AROUND the container. It does not scale with the strip, but it
+     does depend on how much of the circumference this mesh shows. */
+  const room = sheet.room;
+  let size = fit(ctx, name, family, 600, s(104), room, 0.16, s(34));
   const words = name.split(" ");
-  if (size < 56 && words.length > 1) {
+  if (size < s(56) && words.length > 1) {
     const cut = Math.ceil(words.length / 2);
     const lines = [words.slice(0, cut).join(" "), words.slice(cut).join(" ")];
-    size = Math.min(...lines.map((part) => fit(ctx, part, family, 600, 74, room, 0.14)));
-    const top = 160 + NAME_DROP;
+    size = Math.min(
+      ...lines.map((part) => fit(ctx, part, family, 600, s(74), room, 0.14, s(34))),
+    );
+    const top = s(160) + NAME_DROP;
     vertical(ctx, lines[0], top, centre, `600 ${size}px ${family}`, size * 0.14, INK);
     vertical(ctx, lines[1], top + size * 1.08, centre, `600 ${size}px ${family}`, size * 0.14, INK);
-    vertical(ctx, line, top + 12 + size * 2, centre, `400 22px ${family}`, 4, MUTED);
+    vertical(ctx, line, top + s(12) + size * 2, centre, `400 ${s(22)}px ${family}`, s(4), MUTED);
   } else {
-    vertical(ctx, name, 180 + NAME_DROP, centre, `600 ${size}px ${family}`, size * 0.16, INK);
-    vertical(ctx, line, 255 + NAME_DROP, centre, `400 22px ${family}`, 4, MUTED);
+    vertical(ctx, name, s(180) + NAME_DROP, centre, `600 ${size}px ${family}`, size * 0.16, INK);
+    vertical(ctx, line, s(255) + NAME_DROP, centre, `400 ${s(22)}px ${family}`, s(4), MUTED);
     // RETA's short accent rule, in graphite: a neutral product carries no colour.
     ctx.fillStyle = MUTED;
-    ctx.fillRect(279 + NAME_DROP, centre - 43, 2, 86);
+    ctx.fillRect(s(279) + NAME_DROP, centre - 43, s(2), 86);
   }
 
   /* TOP PANEL — the identity at small size. */
-  identity(ctx, 90, 410, 38, family);
-  const small = fit(ctx, name, family, 600, 22, 230, 0.12);
-  vertical(ctx, name, 126, 410, `600 ${small}px ${family}`, small * 0.12, INK);
-  vertical(ctx, line, 151, 410, `400 13px ${family}`, 2, MUTED);
+  identity(ctx, s(90), 410, s(38), family);
+  const small = fit(ctx, name, family, 600, s(22), 230, 0.12, s(10));
+  vertical(ctx, name, s(126), 410, `600 ${small}px ${family}`, small * 0.12, INK);
+  vertical(ctx, line, s(151), 410, `400 ${s(13)}px ${family}`, s(2), MUTED);
 
   /* BOTTOM PANEL — the mark. */
-  if (inked) verticalArt(ctx, inked.mark, 88, 1780, 46);
-  else vertical(ctx, "NEOGEN", 85, 1780, `500 15px ${family}`, 5, INK);
+  if (inked) verticalArt(ctx, inked.mark, s(88), 1780, s(46));
+  else vertical(ctx, "NEOGEN", s(85), 1780, `500 ${s(15)}px ${family}`, s(5), INK);
 
   const texture = new CanvasTexture(canvas);
   texture.colorSpace = SRGBColorSpace;

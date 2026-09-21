@@ -50,11 +50,27 @@ export function StudioView({
 }) {
   const params = useSearchParams();
   const flagship = FLAGSHIPS[slug];
+  /*
+   * TWO DEVELOPMENT OVERRIDES, for trying an export before committing to it:
+   *
+   *   ?model=/models/reta-v3.glb   photograph a file the registry does not
+   *                                point at yet
+   *   ?label=drawn                 ignore the model's PRINTED label and use
+   *                                the one drawn from registry data
+   *
+   * The second earns its place: a flagship's printed label is artwork that
+   * arrives from Blender, and what it says has to be checked against the
+   * product record before it reaches a customer. Being able to render the same
+   * geometry with the generated label is how a bad strip gets caught — and how
+   * the vial can ship while corrected artwork is still being drawn.
+   */
+  const modelOverride = params.get("model");
+  const drawnLabel = params.get("label") === "drawn";
   const entry = {
-    model: model ?? CONTAINER,
+    model: modelOverride ?? model ?? CONTAINER,
     rig: flagship ?? NEUTRAL_RIG,
-    // A flagship's model carries its own printed label.
-    label: flagship ? null : label,
+    // A flagship's model carries its own printed label, unless asked otherwise.
+    label: flagship && !drawnLabel ? null : label,
   };
   /*
    * The label is drawn — in the site's face, over the brand artwork — so both

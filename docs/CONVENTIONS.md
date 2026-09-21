@@ -802,9 +802,19 @@ to a file.
   container otherwise. Rendering every product on the container put RETA's
   printed label on GLOW.
 - **Labels.** A flagship's GLB carries its printed label; `label.ts` never
-  touches one. Every other product wears a label DRAWN from registry data — the
-  brand lockup (§19), the product name and its presentation range — in the real
-  label's measured layout. Never print placeholders, lots or claims.
+  touches one at render time. Every other product wears a label DRAWN from
+  registry data — the brand lockup (§19), the product name and its presentation
+  range — in the real label's measured layout. Never print placeholders, lots
+  or claims.
+- **A printed label is content, and it is checked like content.** What an
+  export prints is read by a customer, so it is held to the same rule as any
+  other public sentence: no route of administration, no purity figure, no
+  quantity the catalogue does not sell. When an export fails that — RETA V3
+  arrived reading "INJECTABLE PEPTIDE · 99% PURITY · SUBCUTANEOUS USE" — the
+  drawn sheet is BAKED INTO THE FILE (`export-label.mjs`, then
+  `prepare-model.mjs --label`), never overridden per render path: four
+  surfaces read that texture and only one has a material pass. See
+  `public/models/README.md`.
 - **Capture.** `node scripts/capture-studio.mjs <slug>... [--name studio-v4]`,
   with the dev server running. It opens `/[locale]/estudio/[slug]`, waits for
   `window.__studio.ready`, takes the frame the page exposes and writes the JPEG
@@ -902,6 +912,7 @@ Asset pipelines — run by hand, and their output is committed:
 npm run brand                                    # public/branding/ + the favicon
 node scripts/prepare-model.mjs <src> <dest> ...  # 3d assets/ -> public/models/
 node scripts/inspect-model.mjs <file.glb>        # parts in mm, triangles, transmission
+node scripts/export-label.mjs <slug> --out x.png # the drawn label sheet (dev server up)
 node scripts/capture-studio.mjs <slug>...        # the studio still (dev server must be up)
 ```
 

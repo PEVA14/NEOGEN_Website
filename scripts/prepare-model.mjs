@@ -39,7 +39,7 @@
  * without it the script says so and leaves textures untouched).
  */
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync, statSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -52,6 +52,7 @@ const positional = args.filter((a) => !a.startsWith("--") && !isFlagValue(a));
 const drops = [];
 const scales = [];
 let jpegQuality = null;
+let labelArt = null;
 let dry = false;
 
 function isFlagValue(arg) {
@@ -59,19 +60,21 @@ function isFlagValue(arg) {
   if (i <= 0) return false;
   /* `--scale-node` takes TWO values (name, factor), so both follow it. */
   if (args[i - 1] === "--scale-node" || args[i - 2] === "--scale-node") return true;
-  return args[i - 1] === "--drop" || args[i - 1] === "--jpeg";
+  return args[i - 1] === "--drop" || args[i - 1] === "--jpeg" || args[i - 1] === "--label";
 }
 for (let i = 0; i < args.length; i += 1) {
   if (args[i] === "--drop") drops.push(args[i + 1]);
   if (args[i] === "--scale-node") scales.push({ name: args[i + 1], factor: Number(args[i + 2]) });
   if (args[i] === "--jpeg") jpegQuality = Number(args[i + 1] ?? 92);
+  if (args[i] === "--label") labelArt = args[i + 1] ?? null;
   if (args[i] === "--dry") dry = true;
 }
 
 const [source, destination] = positional;
 if (!source || !destination) {
   console.error(
-    "usage: node scripts/prepare-model.mjs <source.glb> <dest.glb> [--drop NAME]... [--jpeg 92] [--dry]",
+    "usage: node scripts/prepare-model.mjs <source.glb> <dest.glb> [--drop NAME]... " +
+      "[--scale-node NAME 0.92] [--label sheet.png] [--jpeg 92] [--dry]",
   );
   process.exit(1);
 }
@@ -173,6 +176,54 @@ for (const { name, factor } of scales) {
   console.log(
     `  resized "${name}" to ${(factor * 100).toFixed(0)}% → Ø${width.toFixed(0)} × ${height.toFixed(0)} mm`,
   );
+}
+
+/* ---- 2b. the label sheet -------------------------------------------------- */
+
+/**
+ * REPLACE THE PRINTED LABEL (`--label sheet.png`).
+ *
+ * WHY A BUILD STEP AND NOT A RUNTIME SWAP. A label is read by a customer on
+ * the product page, in the catalogue card, on the homepage and in the studio
+ * still — four render paths, one of which is a plain `useLoader` with no
+ * material pass at all. Overriding it in each is four chances to miss one, and
+ * the file itself would still carry the artwork it was meant to replace.
+ * Baking it means the served model is correct everywhere by construction.
+ *
+ * WHEN IT IS USED. When an export's printed strip says something the product
+ * record does not support — `NEOGEN_RETA_VIAL_V3.glb` arrived with a mock-up
+ * strip reading "INJECTABLE PEPTIDE · 99% PURITY · SUBCUTANEOUS USE" and a
+ * volume that matches no presentation in the catalogue. The sheet drawn from
+ * registry data (`studio/label.ts`, exported by `scripts/export-label.mjs`)
+ * replaces it until corrected artwork arrives.
+ *
+ * It swaps the image on the texture the LABEL material points at, so the UVs,
+ * the mesh and every other material are untouched.
+ */
+if (labelArt) {
+  if (!existsSync(labelArt)) {
+    console.error(`  ! label sheet not found: ${labelArt}`);
+    process.exit(1);
+  }
+  const labelMaterials = root
+    .listMaterials()
+    .filter((m) => (m.getName() ?? "").toLowerCase().includes("label"));
+  if (labelMaterials.length === 0) {
+    console.error("  ! no material with `label` in its name — nothing to replace");
+    process.exit(1);
+  }
+  const bytes = new Uint8Array(readFileSync(labelArt));
+  for (const material of labelMaterials) {
+    const texture = material.getBaseColorTexture();
+    if (!texture) {
+      console.error(`  ! "${material.getName()}" has no base colour texture`);
+      process.exit(1);
+    }
+    texture.setImage(bytes).setMimeType("image/png");
+    console.log(
+      `  label "${material.getName()}": replaced with ${path.basename(labelArt)} (${kb(bytes.byteLength)})`,
+    );
+  }
 }
 
 /* ---- 3. textures --------------------------------------------------------- */

@@ -22,8 +22,13 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 
 ### Start here: handoff of 2026-09-20
 
-- **Latest (2026-09-20): education, editorial, FAQ and the research-use gate
-  (§8y).** `/peptidos`, `/investigacion/notas`, `/preguntas`, the RUO notice
+- **Latest (2026-09-21): RETA V3 (§8z).** The new export is live on the product
+  page, the homepage and the catalogue card. Its mock-up label —
+  "INJECTABLE PEPTIDE · 99% PURITY · SUBCUTANEOUS USE", over a volume the
+  catalogue does not sell — was REPLACED at build time with a sheet drawn from
+  registry data. Corrected artwork is an owner action; §8z says exactly what it
+  may carry.
+- **Education, editorial, FAQ and the research-use gate (§8y).** `/peptidos`, `/investigacion/notas`, `/preguntas`, the RUO notice
   across the journey, and a REQUIRED research-use declaration that blocks order
   creation. Two requested claims were refused for want of evidence —
   certification and 24-hour nationwide delivery; §8y lists what the owner must
@@ -127,7 +132,8 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 | `1ca7620`   | Product page copy: purchasing waits on the regulatory review, not on a payment processor (§8t, §6)                              |
 | `1fd202d`   | Studio rigs for GLOW and GHK-Cu, the cap at 92%, and the brand mark applied across the site and the drawn labels (§8w, §8x)     |
 | `2d650d1`   | Documentation caught up with the 3D and product-media work                                                                      |
-| _this_      | Peptide guide, editorial notes, FAQ, shipping facts, and the blocking research-use declaration (§8y)                            |
+| `ae3c8af`   | Peptide guide, editorial notes, FAQ, shipping facts, and the blocking research-use declaration (§8y)                            |
+| _this_      | RETA V3, with its mock-up label replaced at build time (§8z)                                                                    |
 
 **Current priority (owner, 2026-09-17): V1 completion.** Make NEOGEN V1 as
 complete, polished and commercially effective as possible with the
@@ -2040,6 +2046,74 @@ accepted wording and the moment it was accepted.
    version 1; changing a word means bumping the version, which deliberately
    stops inheriting consent given to the old text.
 8. Shipping rate below MX$10,000, and the cold-chain determination.
+
+## 8z. RETA V3, and a label that could not ship (2026-09-21)
+
+Owner dropped `NEOGEN_RETA_VIAL_V3.glb` into `3d assets/`: "apply the same
+settings as the current one I like it a lot".
+
+**The model is better, and settles two open decisions in Blender**
+
+- ONE closure. The interpenetrating `0.75 Dram Autosampler Lid` is gone, so the
+  `--drop` is gone and the open question from §8u is answered: the narrow
+  NEOGEN cap is the silhouette.
+- The cap is already Ø112.0 mm, against the Ø113.2 mm `--scale-node … 0.92`
+  was producing. The approved proportion is now in the export, so that flag is
+  gone too.
+- Its label band is taller and lower on the body (31.5–180.8 mm against
+  48.7–163.5), which is why the printing reads much larger.
+- Prepared: 482 KB, inside the budget.
+
+**The printed label could not be published**
+
+The export's strip is a mock-up reading:
+
+    RETATRUTIDE · 10 ML · INJECTABLE PEPTIDE ● 99% PURITY · SUBCUTANEOUS USE
+
+Four problems, and the first two are the serious ones:
+
+1. "INJECTABLE PEPTIDE" and "SUBCUTANEOUS USE" are administration instructions
+   for human use — the vocabulary `check:content` refuses in copy, on a
+   product image, one screen above a checkout box where the customer declares
+   they will NOT direct the material to human use (§8y).
+2. "99% PURITY" is analytical evidence. No COA, lot or laboratory analysis
+   exists for any product (§6, items 9–10).
+3. "10 ML" matches no presentation: RETA sells 5–60 MG in packs of ten.
+4. The name overran the visible band.
+
+The owner confirmed the label is a mock-up and not yet printed, and asked for
+the vial on the page. So the vial shipped and the strip did not.
+
+**How it shipped: the label is baked, not overridden**
+
+- `scripts/export-label.mjs` (new) renders the sheet `studio/label.ts` draws
+  from registry data — brand lockup, product name, presentation range — and
+  writes the 2048² PNG. It has to run in a browser: that is where the canvas,
+  the webfont and the brand artwork are.
+- `prepare-model.mjs --label <png>` (new) swaps it onto the texture the LABEL
+  material points at. UVs, meshes and every other material are untouched.
+- Baked rather than swapped at render time because FOUR paths read that
+  texture — catalogue still, product page viewer, homepage moment, studio —
+  and only one has a material pass. The served file is correct in all four by
+  construction, and the repository does not carry artwork it will not show.
+- `studio/label.ts` gained a per-model calibration (`SHEETS`): V3's taller band
+  stretches the sheet, so the drawn strip is scaled 2.25× and its panel
+  re-centred. Without it the label filled the top of the band and left the
+  rest blank paper. The canonical container is unchanged at 1:1.
+- `StudioView` gained two development overrides — `?model=` and `?label=drawn`
+  — for photographing an export before the registry points at it.
+
+**What the owner should decide**
+
+- Corrected artwork. The label may carry: the NEOGEN lockup, the compound name
+  as the registry states it, and the presentation. It may not carry a route of
+  administration, a purity figure, or a volume the catalogue does not sell.
+  "For research use only" is the one extra line that is both true and
+  consistent with the rest of the site. When it arrives, drop `--label` and
+  re-run the recipe.
+- Whether V3 becomes the CANONICAL CONTAINER for non-flagship products.
+  `reta-v2.glb` still holds that job, and `studio/label.ts`'s 1:1 geometry is
+  measured against it; promoting V3 means re-capturing every neutral still.
 
 ## 9. Recommendation for Phase 13 (not approved)
 

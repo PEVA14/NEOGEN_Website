@@ -16,12 +16,33 @@ import type { ProductMedia } from "./types";
  */
 export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
   /*
-   * RETA — the second-generation vial (owner export, 2026-09-19).
+   * RETA — the third-generation vial (owner export, 2026-09-21).
    *
-   * `reta-v2.glb` replaces `reta.glb`: the same container, re-exported with the
-   * printed NEOGEN PEPTIDES label instead of the faint first-generation art.
-   * The filename carries the version because models are served with a one-year
+   * `reta-v3.glb` supersedes `reta-v2.glb`, which superseded `reta.glb`. The
+   * filename carries the version because models are served with a one-year
    * immutable cache — a changed file under the old name would never be fetched.
+   *
+   * V3 SETTLES IN BLENDER WHAT THE BUILD WAS DOING BY HAND: it carries ONE
+   * closure, so the `--drop` of the interpenetrating autosampler lid is gone,
+   * and its cap is already Ø112.0 mm against the Ø113.2 mm that
+   * `--scale-node … 0.92` was producing, so that flag is gone too. Its label
+   * band is taller and lower on the body, which is why the printing reads
+   * larger.
+   *
+   * ITS PRINTED LABEL WAS REPLACED AT BUILD TIME, and that is the part to
+   * know. The export arrived carrying a mock-up strip — "INJECTABLE PEPTIDE ·
+   * 99% PURITY · SUBCUTANEOUS USE", over a volume matching no presentation in
+   * the catalogue. Two of those are administration claims this site does not
+   * make; the third is analytical evidence that does not exist; the fourth
+   * contradicts the product record, which sells 5–60 MG. So the served file
+   * wears the sheet drawn from registry data instead (`prepare-model.mjs
+   * --label`, see `public/models/README.md`). Nothing overrides it at render
+   * time: the file itself is correct, in the catalogue still, on the product
+   * page, on the homepage and in the studio alike.
+   *
+   * `reta-v2.glb` STAYS: it is the canonical container every non-flagship
+   * product is rendered on, and the label geometry `studio/label.ts` is
+   * measured against.
    *
    * There is no photograph and no rendered poster, so the viewer falls back to
    * the diagrammatic silhouette while it loads and for anyone without WebGL.
@@ -31,7 +52,7 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
    * which is why this is null rather than a rough render.
    */
   reta: {
-    model: "/models/reta-v2.glb",
+    model: "/models/reta-v3.glb",
     /*
      * THE STUDIO STILL (prototype, 2026-09-18, awaiting owner approval).
      *
@@ -40,13 +61,13 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
      * at 1600×2000 from `/es/estudio/reta`. A render, not a photograph: it is
      * the catalogue card's image and never the product's `primary`.
      *
-     * VERSIONED FILENAME, re-captured on the second-generation vial
-     * (2026-09-20). Images carry a one-year immutable cache and the optimizer
+     * VERSIONED FILENAME, re-captured on the third-generation vial
+     * (2026-09-21). Images carry a one-year immutable cache and the optimizer
      * keys on the URL, so re-rendering into the old name leaves every visitor —
      * and the local dev server — looking at the previous picture.
      */
     studio: {
-      src: "/images/products/reta/studio-v3.jpg",
+      src: "/images/products/reta/studio-v4.jpg",
       alt: "Vial RETA de NEOGEN: render de estudio del modelo 3D, etiqueta al frente, sobre fondo azul oscuro.",
       width: 1600,
       height: 2000,
