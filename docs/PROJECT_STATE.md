@@ -20,17 +20,18 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 `docs/NEOGEN_DESIGN_BIBLE.md` → `docs/NEOGEN_MVP_SCOPE.md` →
 `docs/CONVENTIONS.md`.
 
-### Start here: handoff of 2026-09-18
+### Start here: handoff of 2026-09-20
 
-- **Latest (2026-09-20): the brand mark, applied (§8x). NOT COMMITTED.** The
+- **Latest (2026-09-20): the brand mark (§8x) and the studio rigs for GLOW
+  and GHK-Cu with the cap at 92% (§8w), committed together as `1fd202d`.** The
   owner's logo files are in `public/branding/`; the mark is now on the header,
   the footer, the favicon, the drawn `SpecimenPlate` and the rendered label of
   every product without artwork of its own. The three flagships' labels are
-  printed in Blender and are an export away, not a code change.
-- **Also uncommitted (§8w): studio rigs for GLOW and GHK-Cu, and the cap at
-  92%.** All four studio stills re-captured; `prepare-model.mjs` gained
-  `--scale-node`. The cap was judged only in headless software rendering — see
-  §8w before changing the factor.
+  printed in Blender and are an export away, not a code change. All four studio
+  stills were re-captured under versioned names; what shipped is
+  `reta/studio-v3.jpg`, `semaglutide/studio-v5.jpg`, `glow/studio-v2.jpg` and
+  `ghk-cu/studio-v2.jpg`. The cap was judged only in headless software
+  rendering — see §8w before changing the factor.
 - **Flagship vials in their homepage moments (§8v).** GLOW
   and GHK-Cu now show their own vial where the drawn plate was, and both
   catalogue cards were re-captured from the new model. Committed.
@@ -43,15 +44,17 @@ Read order for a fresh session: `CLAUDE.md` → this file →
   put its TEST credentials in `.env.local` (`docs/PAYMENTS.md` §9–§11), then
   run one test purchase. Homepage review round 2 (§8s) is committed separately
   just before it.
-- **Tree.** `main`. The storefront follow-ups (§8q) and the product-media
-  studio (§8r) are committed together. Nothing is pushed. Every gate passed;
-  axe and overflow were clean on the catalogue, the area pages and the
-  homepage at 375 and 1440.
+- **Tree.** `main`, clean, at `1fd202d`. Everything through §8x is committed,
+  and the owner has PUSHED: `origin/main` is at the same commit. Check
+  `git status -sb` rather than trusting this line. Every gate passed; axe and
+  overflow were clean on the catalogue, the area pages and the homepage at 375
+  and 1440.
 - **Where the owner left it (2026-09-18).**
   - The `/productos` storefront (§8q) is **approved and frozen**. Do not
     redesign its layout, hierarchy, filters, area strip, cards or composition.
-  - The RETA studio still (§8r) is **approved**. `reta.glb` is NEOGEN's
-    canonical physical container.
+  - The RETA studio still (§8r) is **approved**. The canonical physical
+    container is now `reta-v2.glb` (§8u), which superseded and replaced
+    `reta.glb`.
   - The neutral studio prototype (Semaglutide only, §8r) is **"good for now"**.
     It is still not propagated across the catalogue — but GLOW and GHK-Cu now
     have their own studio rigs (§8w), so every flagship can be photographed.
@@ -114,6 +117,9 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 | `53ced06` … | Homepage pass and owner review rounds: gateway, RETA, GLOW, GHK-Cu, catalogue directory, area caps, performance (§8s)           |
 | `eef099d`   | Mercado Pago checkout: Orders API + Card Payment Brick, webhook HMAC, Postgres adapters, review-before-payment (§8t)            |
 | `0bcbaf7`   | Second-generation vials: RETA V2, GHK-Cu, GLOW; model prep and inspection tooling; satin cap metal (§8u)                        |
+| `d29af23`   | Flagship vials in their homepage moments; the capture script; the dedup regression (§8v)                                        |
+| `1ca7620`   | Product page copy: purchasing waits on the regulatory review, not on a payment processor (§8t, §6)                              |
+| `1fd202d`   | Studio rigs for GLOW and GHK-Cu, the cap at 92%, and the brand mark applied across the site and the drawn labels (§8w, §8x)     |
 
 **Current priority (owner, 2026-09-17): V1 completion.** Make NEOGEN V1 as
 complete, polished and commercially effective as possible with the
@@ -1297,7 +1303,12 @@ header change affects every page.
 `/en/productos`, search mode, an area page and the homepage. Horizontal
 overflow: 0 on all of them. Area pages and the homepage keep the default card.
 
-## 8r. Product media: the RETA studio (prototype, awaiting owner review)
+## 8r. Product media: the RETA studio (approved; container now `reta-v2.glb`)
+
+**Status.** The owner approved this direction on 2026-09-18. The `reta.glb`
+named below was replaced by `reta-v2.glb` in §8u, and the rig set grew to one
+per flagship in §8w; the pipeline itself is written up in `CONVENTIONS.md`
+§17b.
 
 **Owner direction (2026-09-18).** The catalogue is frozen. Next is product
 media, starting with RETA only:
@@ -1351,9 +1362,11 @@ GLOW, GHK-Cu, generic product media, the homepage and backend are untouched.
 - The white key keeps the label accurate. The blue lives in an off-centre pool
   behind the right shoulder and the right kicker, never in the key.
 
-**Approved (owner, 2026-09-18).** RETA's studio direction is approved, and
-`reta.glb` is NEOGEN's real physical container. It is canonical for every
-product in the same packaging.
+**Approved (owner, 2026-09-18).** RETA's studio direction is approved, and the
+RETA GLB is NEOGEN's real physical container, canonical for every product in
+the same packaging. The file named here was `reta.glb`; the canonical file is
+now `reta-v2.glb` (§8u), and GHK-Cu and GLOW ship the same container with their
+own printed labels.
 
 **Neutral prototype (awaiting review; not propagated).** Semaglutide, one
 generic product, is rendered on the canonical container by `NEUTRAL_RIG`:
@@ -1378,9 +1391,10 @@ unchanged.
 
 **Open for the owner**
 
-- **Shape mismatch** (resolved: the GLB is canonical). The catalogue's vector product object is drawn as a
-  narrow vial, but `reta.glb` is a wide jar. The studio shows the real asset.
-  Decide which shape NEOGEN's packaging is before propagating.
+- **Shape mismatch** (resolved: the GLB is canonical). The catalogue's vector
+  product object is drawn as a narrow vial, but the GLB is a wide jar. The
+  studio shows the real asset. Decide which shape NEOGEN's packaging is before
+  propagating.
 - **Label placeholders.** The label texture's side panels carry the asset's own
   "[LOT] [PRODUCT ID] [FORMAT]" placeholders. They are invisible at the front
   view; any turned view would show them.
@@ -1810,9 +1824,11 @@ not scroll that far fetches none of them.
 **Open**
 
 - GLOW and GHK-Cu have no `poster` still, so their sections show the drawn
-  plate while the GLB is in flight. Capturing one needs a rig entry per world
-  (`studio/rig.ts` has RETA and NEUTRAL) and their slugs added to the studio
-  page's `PROTOTYPES` list.
+  plate while the GLB is in flight. §8w closed the prerequisites this entry
+  listed — both worlds have a rig and both slugs are in the studio page's
+  `PROTOTYPES` — so what is left is capturing a still of the settled HOMEPAGE
+  pose and registering it as `poster`. The `studio` stills they now have are
+  the catalogue shot, a different framing.
 - The homepage sections' composition was not otherwise touched: the object box,
   its size and its place in the grid are exactly where §8s left them.
 
@@ -1831,8 +1847,10 @@ current model, adapt GHK-Cu and GLOW the same way, and Semaglutide too —
 - `StudioView` takes the product's OWN model. It used to render every product
   on the canonical container, which put RETA's printed label on GLOW.
 - `estudio/[slug]` lists all four prototypes.
-- All four stills re-captured under versioned names (`reta/studio-v3.jpg`,
-  `semaglutide/studio-v3.jpg`, `glow/studio-v2.jpg`, `ghk-cu/studio-v2.jpg`).
+- All four stills re-captured under versioned names: `reta/studio-v3.jpg`,
+  `glow/studio-v2.jpg`, `ghk-cu/studio-v2.jpg`, and Semaglutide, which was
+  re-captured again in the same session for the brand lockup and shipped as
+  `semaglutide/studio-v5.jpg` (§8x).
   `check:media` was rewritten to accept `studio-v<N>`; three negative controls
   proved the relaxed rule still rejects the shapes it is there to reject.
 
@@ -1897,8 +1915,9 @@ declared; nothing new was downloaded.
   `icon.svg`, a hand-drawn dot with a comment explaining that the dot WAS the
   identity. It is not, any more.
 - **The drawn label** — `studio/label.ts` prints the real lockup where it used
-  to set the word "NEOGEN" in the site's face. Semaglutide re-captured as
-  `studio-v4.jpg`.
+  to set the word "NEOGEN" in the site's face. Semaglutide re-captured; the
+  render that shipped is `studio-v5.jpg` — the intermediate numbers were
+  superseded within the session and never committed.
 
 **Two things the label needed**
 

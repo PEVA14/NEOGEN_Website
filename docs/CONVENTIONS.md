@@ -313,8 +313,10 @@ resolves at runtime but has no types, so it silently degrades to `any`.
 
 ## 10. The 3D layer (Phase 2)
 
-Established by the RETA scene. GLOW and GHK-Cu reuse this rig by passing their
-own `WorldEnvironment` — no new scene code should be needed.
+Established by the RETA scene. GLOW and GHK-Cu reuse it by passing their own
+`WorldEnvironment`; what they needed on top of that was a HOST, not a scene —
+`MomentStage` drops the same canvas into a homepage section's existing object
+box, with that section's drawn plate as its first paint and fallback.
 
 - **All 3D lives in `src/components/experience/`.** Nothing else imports three.
 - **`three` is never in the initial payload.** `RetaCanvas` is loaded through
@@ -336,6 +338,21 @@ own `WorldEnvironment` — no new scene code should be needed.
   the §5 exception, not a breach of it.
 - **Never mutate objects returned from R3F hooks.** Attach declaratively
   (`<primitive attach="environment">`) or set the property on the material.
+- **One WebGL context per page, and the stages arbitrate for it.**
+  `useVialStage` holds a module-level registry: every stage publishes how much
+  of itself is on screen and the most visible one is granted the canvas.
+  Intersection alone is not enough — with a generous root margin two stages
+  overlap for a whole scroll stretch, and the page runs two renderers and two
+  transmission passes for a composition where one is ever visible. Three
+  stages share the homepage this way.
+- **Select a material by what it IS, not by its name.** `VialModel` and
+  `StudioScene` match metal on `metalness > 0.5`. Names are content the export
+  pipeline may legitimately rewrite, and a rename once repainted RETA's
+  aluminium band as black plastic.
+- **World data drives light; a product name never does.** A world whose
+  `atmosphere` is `luminous` emits from behind the object, which the glass
+  transmits. Any future luminous world inherits it and the other two are
+  untouched.
 
 ### Consequence: `as` props take `DOMTag`, not `ElementType`
 
@@ -367,12 +384,12 @@ What a V1 product viewer does:
 
 - holds a stable composition, anchored to a measured DOM box;
 - turns slowly and passively — the `presenter` variant in `choreography.ts`;
-- answers the cursor on fine pointers only, damped, and never required. Both
+- answers the cursor on fine pointers only, damped, and never required. The
   live stages are TURNTABLES, and they share one drive: horizontal travel is
   ACCUMULATED at one revolution per stage width and damped in (`TURN_SETTLE`),
   so the object keeps the angle it was left at. Mapping cursor position to an
   angle instead is the trap — it spins the object backwards the moment the
-  cursor leaves. The two stages differ only in what surrounds the turn:
+  cursor leaves. The stages differ only in what surrounds the turn:
   - **`sequence` (the homepage RETA section)** holds one centred pose at ~39%
     of canvas height. It no longer travels or crops across four camera states,
     because an object that travels cannot also be one you turn — scroll and
@@ -380,6 +397,10 @@ What a V1 product viewer does:
   - **`presenter` (the PDP)** keeps its measured anchor in the media well and
     adds pitch and parallax on top, at vitrine amplitude and still falling back
     to zero on exit: depth cues on other axes, never rotation;
+  - **`moment` (the GLOW and GHK-Cu homepage sections)** is centred in the
+    section's own object box and arrives with a slight rise as the section is
+    scrolled through, then holds and turns — neither full-bleed like the
+    sequence nor anchored like the presenter;
 - resolves to a held pose under `prefers-reduced-motion`, with
   `frameloop="demand"`;
 - degrades to a static silhouette with no WebGL, and takes the cheap glass path
