@@ -1,8 +1,18 @@
 "use client";
 
 import { useThree } from "@react-three/fiber";
-import { useEffect, useMemo } from "react";
-import { CanvasTexture, Color, SRGBColorSpace } from "three";
+import { useCallback, useEffect, useMemo } from "react";
+import {
+  CanvasTexture,
+  Color,
+  MeshBasicMaterial,
+  SRGBColorSpace,
+  type BufferGeometry,
+  type Camera,
+  type Material,
+  type Scene,
+  type WebGLRenderer,
+} from "three";
 
 import type { StageTier } from "@/hooks/useStageTier";
 
@@ -160,6 +170,66 @@ export function Backdrop({
         transparent={scope === "local"}
         depthWrite={scope === "full"}
       />
+    </mesh>
+  );
+}
+
+/**
+ * WHAT THE GLASS SEES THROUGH ITSELF, ON A SEE-THROUGH CANVAS.
+ *
+ * The `local` backdrop is transparent on purpose — the product page and the
+ * hero sit over HTML the canvas must not paint out. But transmission samples
+ * an off-screen render of the OPAQUE scene only, and on a transparent canvas
+ * three.js clears that render to half-white (`setClearColor(0xffffff, 0.5)`
+ * in WebGLRenderer's transmission pass). With nothing opaque behind the vial,
+ * that white is what the glass refracted: the body read as frosted plastic.
+ * The jar mostly hid it behind a label that went all the way round; V4's clear
+ * sides showed it plainly.
+ *
+ * This plane fixes it without touching the page: it is opaque and exactly
+ * `--world-void` — the section's own CSS background — so the glass refracts
+ * what is really behind it; and it draws ONLY while the transmission target is
+ * bound. In the main pass it writes neither colour nor depth, so the canvas
+ * stays as transparent as before and the page's grid and watermark still show.
+ */
+export function RefractionGround({ palette }: { palette: WorldPalette }) {
+  const viewport = useThree((state) => state.viewport);
+  const z = BACKDROP_Z - 0.2;
+  // Larger than the frame by the ratio of distances, with generous margin:
+  // refraction can look well past the silhouette.
+  const scale = ((CAMERA_Z - z) / CAMERA_Z) * 1.6;
+
+  const material = useMemo(
+    () => new MeshBasicMaterial({ color: new Color(palette.void), toneMapped: false }),
+    [palette.void],
+  );
+  useEffect(() => () => material.dispose(), [material]);
+
+  /*
+   * Toggles the material three is about to draw with — the one it hands to
+   * the callback — rather than the memoised instance, which React treats as
+   * immutable once a hook has returned it. They are the same object.
+   */
+  const onBeforeRender = useCallback(
+    (
+      renderer: WebGLRenderer,
+      _scene: Scene,
+      _camera: Camera,
+      _geometry: BufferGeometry,
+      drawn: Material,
+    ) => {
+      /* The transmission pass renders into its own target; the main pass
+         renders to the canvas, where the target is null. */
+      const refractionPass = renderer.getRenderTarget() !== null;
+      drawn.colorWrite = refractionPass;
+      drawn.depthWrite = refractionPass;
+    },
+    [],
+  );
+
+  return (
+    <mesh position={[0, 0, z]} material={material} onBeforeRender={onBeforeRender}>
+      <planeGeometry args={[viewport.width * scale, viewport.height * scale]} />
     </mesh>
   );
 }

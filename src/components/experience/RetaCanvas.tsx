@@ -8,7 +8,7 @@ import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLigh
 import type { WorldEnvironment } from "@/config/worlds";
 import type { StageTier } from "@/hooks/useStageTier";
 
-import { Backdrop } from "./Backdrop";
+import { Backdrop, RefractionGround } from "./Backdrop";
 import {
   CAMERA_Z,
   poseTrack,
@@ -313,6 +313,11 @@ export default function RetaCanvas({
         // PDP specimen both sit over DOM the canvas must not paint out.
         scope={variant === "sequence" ? "full" : "local"}
       />
+
+      {/* The see-through scopes leave the glass nothing opaque to refract, so
+          it saw three.js's half-white fill. This draws only in the refraction
+          pass — see `RefractionGround`. */}
+      {variant === "sequence" ? null : <RefractionGround palette={palette} />}
 
       {/* NEUTRAL, not the world's light tone. Ambient is uniform: colouring it
           tints every surface at once, which is one of the ways the glass came

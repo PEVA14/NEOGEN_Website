@@ -357,6 +357,12 @@ box, with that section's drawn plate as its first paint and fallback.
   carrying artwork — and marks it transparent at full opacity, which excludes
   it. Both renderers apply it; the studio floor carries a `renderOrder` so it
   still draws over the label's reflection.
+- **A see-through canvas still needs an opaque ground for the glass.** On a
+  transparent canvas three.js clears the transmission image to half-white, so
+  glass with nothing opaque behind it refracts white and reads as frosted
+  plastic. The `local` backdrop is transparent by design (the page shows
+  through), so `RefractionGround` adds a `--world-void` plane that draws ONLY
+  while the transmission target is bound — invisible in the main pass.
 - **World data drives light; a product name never does.** A world whose
   `atmosphere` is `luminous` emits from behind the object, which the glass
   transmits. Any future luminous world inherits it and the other two are
