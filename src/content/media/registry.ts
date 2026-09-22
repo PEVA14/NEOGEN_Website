@@ -17,13 +17,14 @@ import type { ProductMedia } from "./types";
 export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
   /*
    * RETA — the fourth-generation vial (owner export `RETA_VIAL_V4.glb`,
-   * 2026-09-21), served as `reta-v6.glb`.
+   * 2026-09-21), served as `reta-v7.glb`.
    *
    * THE NUMBER COUNTS SERVED FILES, NOT BLENDER EXPORTS. Models are served
    * `immutable, max-age=31536000`, so the URL is the cache key and a name is
    * spent the moment a browser fetches it: `reta-v3.glb` went out with two
    * different labels, `reta-v4.glb` was the V3 export, and `reta-v5.glb` was
-   * an earlier cut of this V4 opened in a preview. Re-writing bytes under any
+   * an earlier cut of this V4 opened in a preview, and `reta-v6.glb` the
+   * cut before this one. Re-writing bytes under any
    * of those names would leave a browser on the old picture.
    *
    * A DIFFERENT CONTAINER. V4 is a crimp-top vial — shouldered body, narrow
@@ -64,7 +65,7 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
    * which is why this is null rather than a rough render.
    */
   reta: {
-    model: "/models/reta-v6.glb",
+    model: "/models/reta-v7.glb",
     /*
      * THE STUDIO STILL (prototype, 2026-09-18, awaiting owner approval).
      *
@@ -79,7 +80,7 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
      * and the local dev server — looking at the previous picture.
      */
     studio: {
-      src: "/images/products/reta/studio-v6.jpg",
+      src: "/images/products/reta/studio-v7.jpg",
       alt: "Vial RETA de NEOGEN: render de estudio del modelo 3D, etiqueta al frente, sobre fondo azul oscuro.",
       width: 1600,
       height: 2000,
@@ -168,7 +169,7 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
  */
 export const DEMO_ARTWORK: readonly { model: string; says: string; why: string }[] = [
   {
-    model: "/models/reta-v6.glb",
+    model: "/models/reta-v7.glb",
     says:
       "RETATRUTIDE · 70 MG · INJECTABLE PEPTIDE • 99% PURITY · SUBCUTANEOUS USE · " +
       "LOT NUMBER 064 · EXP 12/2028 · REFRIGERATE 2-8°C · US flag",

@@ -2,7 +2,7 @@
  * EXPORT A DRAWN LABEL SHEET — the texture, not the photograph.
  *
  *   npm run dev
- *   node scripts/export-label.mjs reta --model /models/reta-v6.glb --out "3d assets/reta-v3-label.png"
+ *   node scripts/export-label.mjs reta --model /models/reta-v7.glb --out "3d assets/reta-v3-label.png"
  *   node scripts/prepare-model.mjs "3d assets/NEOGEN_RETA_VIAL_V3.glb" \
  *     public/models/reta-v5.glb --label "3d assets/reta-v3-label.png" --jpeg 92
  *

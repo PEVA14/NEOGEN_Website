@@ -6,7 +6,7 @@ Lightweight `.glb` product assets, one per product, named by its **slug**:
 public/models/<product-slug>.glb
 ```
 
-Today: `reta-v6.glb`, `ghk-cu.glb` and `glow.glb` are what the site serves,
+Today: `reta-v7.glb`, `ghk-cu.glb` and `glow.glb` are what the site serves,
 with `reta-v2.glb` kept as the CANONICAL CONTAINER — the shape every
 non-flagship product is rendered on, and the one `studio/label.ts` is measured
 against. RETA's is now a different shape — the V4 crimp-top — so until GLOW
@@ -19,7 +19,7 @@ Nothing there is served. The served file is derived from one by:
 
 ```bash
 node scripts/prepare-model.mjs "3d assets/RETA_VIAL_V4.glb" \
-  public/models/reta-v6.glb --jpeg 92
+  public/models/reta-v7.glb --jpeg 92
 ```
 
 That script drops nodes the web build should not carry, re-encodes label
@@ -39,7 +39,7 @@ Current recipes:
 
 | Served file   | Source export             | Extra                                                            |
 | ------------- | ------------------------- | ---------------------------------------------------------------- |
-| `reta-v6.glb` | `RETA_VIAL_V4.glb`        | `--jpeg 92` only — a crimp-top with its own UVs; see (3)         |
+| `reta-v7.glb` | `RETA_VIAL_V4.glb`        | `--jpeg 92` only — a crimp-top with its own UVs; see (3)         |
 | `reta-v2.glb` | `NEOGEN_RETA_VIAL_V2.glb` | `--drop "0.75 Dram Autosampler Lid"` (1), `--scale-node` cap (2) |
 | `ghk-cu.glb`  | `NEOGEN_GHK-Cu_VIAL.glb`  | `--scale-node` cap (2)                                           |
 | `glow.glb`    | `NEOGEN_GLOW_VIAL.glb`    | `--scale-node` cap (2)                                           |
@@ -169,7 +169,7 @@ for anyone without WebGL or with reduced motion.
 
 ## Budget and versioning
 
-Keep exports under ~500 KB. `reta-v6.glb` is 657 KB — over, because its label
+Keep exports under ~500 KB. `reta-v7.glb` is 652 KB — over, because its label
 is a 2048² PNG that does not get smaller as JPEG (flat artwork compresses well
 as PNG); packing the art tighter on the sheet in Blender is the lever. The other
 three are ~460 KB. The raw exports are 0.8–1.0 MB, so
@@ -183,8 +183,8 @@ keep the old asset.
 
 **THE NUMBER COUNTS SERVED FILES, NOT EXPORTS.** `reta-v3.glb` shipped with
 two different labels, `reta-v4.glb` was the V3 export, `reta-v5.glb` was an
-earlier cut of V4 opened in a preview — all spent. `reta-v6.glb` is the V4
-export. A browser that fetched any of them holds those bytes for a year.
+earlier cut of V4 opened in a preview, `reta-v6.glb` the cut after that — all
+spent. `reta-v7.glb` is the current V4 export. A browser that fetched any of them holds those bytes for a year.
 
 `prepare-model.mjs` and `capture-studio.mjs` now REFUSE to overwrite an
 existing destination, because the rule above was documented and still broken —

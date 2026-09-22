@@ -53,7 +53,7 @@ export function StudioView({
   /*
    * TWO DEVELOPMENT OVERRIDES, for trying an export before committing to it:
    *
-   *   ?model=/models/reta-v6.glb   photograph a file the registry does not
+   *   ?model=/models/reta-v7.glb   photograph a file the registry does not
    *                                point at yet
    *   ?label=drawn                 ignore the model's PRINTED label and use
    *                                the one drawn from registry data

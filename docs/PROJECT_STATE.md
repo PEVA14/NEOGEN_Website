@@ -22,7 +22,7 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 
 ### Start here: handoff of 2026-09-20
 
-- **Latest (2026-09-21, later): RETA V4 is live, served as `reta-v6.glb`.**
+- **Latest (2026-09-21, later): RETA V4 is live, served as `reta-v7.glb`.**
   A different container — a crimp-top vial, not the wide jar — brought through
   the owner's Blender from a third-party shape, with glass, metal and a UV'd
   2048² label already set up. It ships with its draft label (declared in
@@ -292,7 +292,7 @@ also encoded in `src/config/site.ts`; anything undecided there is `null`.
    not a determination.
 6. **Legal policies:** Terms, Privacy, returns (with the 18+ line). None are
    approved, so none render.
-   6a. **Draft label artwork on a served model.** `reta-v6.glb` (the V4
+   6a. **Draft label artwork on a served model.** `reta-v7.glb` (the V4
    crimp-top) carries a mock-up strip reading "70 MG · INJECTABLE PEPTIDE •
    99% PURITY · SUBCUTANEOUS USE", with a lot number, an expiry, a storage
    instruction and a US flag — routes of administration, evidence nothing
