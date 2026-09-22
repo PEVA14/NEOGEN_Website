@@ -55,6 +55,25 @@ export interface StudioRig {
   };
   /** Brightness of the reflection room around the set, relative to its edge colour. */
   room: number;
+  /**
+   * BRIGHT-FIELD FLAGS — dark cards the glass sees only by REFRACTION.
+   *
+   * On a light set clear glass is defined by its dark contour: the edges bend
+   * the view sideways onto black cards standing behind and beside the object,
+   * out of the lens's direct view. The reflection panels above cannot do that
+   * — refraction samples the scene, not the reflection map — so these are real
+   * planes, drawn only into the transmission image (see `RefractionFlags`).
+   * Mirrored at ±x. Omit on a dark set, which is already dark-field.
+   */
+  refractionFlags?: { x: number; z: number; width: number; height: number; color: string };
+  /**
+   * NEGATIVE FILL — black cards in the reflection map only.
+   *
+   * A bright set on every side leaves metal nothing dark to reflect, and
+   * aluminium with nothing dark in it reads as grey paint. These give the cap
+   * and the glass rims their dark bands.
+   */
+  negativeFill?: readonly { position: [number, number, number]; width: number; height: number }[];
   materials: {
     glass: {
       roughness: number;
@@ -332,13 +351,20 @@ export const NEUTRAL_RIG: StudioRig = {
     shadow: 0.5,
   },
   room: 1.3,
+  refractionFlags: { x: 0.47, z: -0.9, width: 0.2, height: 1.6, color: "#1c1c20" },
+  negativeFill: [
+    { position: [-2.6, 0.2, 0.3], width: 1.3, height: 3.4 },
+    { position: [2.6, 0.2, 0.3], width: 1.3, height: 3.4 },
+  ],
   materials: {
     glass: {
       roughness: 0.05,
-      thickness: 0.5,
+      /* A thin wall. On a light set glass reads as glass by its CONTOUR, and a
+         deep volume smears the flags across the whole body into smoked glass. */
+      thickness: 0.32,
       ior: 1.5,
-      attenuation: "#e4e5e7",
-      reflect: 1.1,
+      attenuation: "#eeeff1",
+      reflect: 1.8,
     },
     metal: { color: "#d2d5da", roughness: 0.32 },
     label: { roughness: 0.62 },

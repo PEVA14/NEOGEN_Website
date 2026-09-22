@@ -336,3 +336,113 @@ export function drawLabel(
   texture.flipY = false;
   return texture;
 }
+
+/* ---- the upright sheet ---------------------------------------------------- */
+
+/**
+ * HOW A CONTAINER MAPS ITS LABEL, read from the mesh rather than configured.
+ *
+ *   `strip` — the jar (`reta-v2.glb`): the printed strip is a narrow band down
+ *             the left of the sheet (u ≈ 0–0.22) with the type turned 90°.
+ *             `drawLabel` above.
+ *   `sheet` — the V4 crimp-top: the WHOLE sheet wraps the label upright — top
+ *             of the image is the top of the label, left-to-right runs round
+ *             the vial (≈ −63° to +63°). `drawSheetLabel` below.
+ *
+ * Decided from the label primitive's UV extent, so a re-exported model under a
+ * new filename needs no configuration — the thing that broke every time a
+ * calibration was keyed to a path.
+ */
+export type LabelLayout = "strip" | "sheet";
+
+export function layoutFromUvs(uMin: number, uMax: number): LabelLayout {
+  return uMax - uMin > 0.6 ? "sheet" : "strip";
+}
+
+/**
+ * A NEOGEN label for the upright sheet, from registry data only.
+ *
+ * It follows the composition of the owner's V4 artwork — the lockup at the
+ * head, the compound name large and tracked over a hairline, the presentation
+ * beneath it, and a dark band across the foot — so a generic product sits in
+ * the same family as RETA. What it deliberately does NOT carry from that
+ * artwork: a route of administration, a purity figure, a lot, an expiry, a
+ * storage condition, a flag or a web address. None of those is a fact this
+ * repository holds. The band states the one condition that is true of every
+ * product: research use only.
+ *
+ * Neutral by rule: graphite, not RETA blue — a generic product carries no
+ * world colour. The paper gets a faint grain, because a flat #fff sheet under
+ * studio light reads as plastic.
+ */
+export function drawSheetLabel(label: StudioLabel, family: string): Texture {
+  const canvas = document.createElement("canvas");
+  canvas.width = SHEET;
+  canvas.height = SHEET;
+  const ctx = canvas.getContext("2d")!;
+  const W = SHEET;
+
+  /* Paper, with grain: ±3 levels of luminance noise, invisible as noise and
+     visible only as the absence of a plastic sheen. */
+  ctx.fillStyle = PAPER;
+  ctx.fillRect(0, 0, W, W);
+  const grain = ctx.getImageData(0, 0, W, W);
+  for (let i = 0; i < grain.data.length; i += 4) {
+    const n = (Math.random() - 0.5) * 6;
+    grain.data[i] += n;
+    grain.data[i + 1] += n;
+    grain.data[i + 2] += n;
+  }
+  ctx.putImageData(grain, 0, 0);
+
+  const centred = (text: string, y: number, font: string, tracking: number, color: string) => {
+    ctx.font = font;
+    ctx.letterSpacing = `${tracking}px`;
+    ctx.fillStyle = color;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "alphabetic";
+    // letterSpacing adds trailing space after the last glyph; nudge it back.
+    ctx.fillText(text, W / 2 + tracking / 2, y);
+  };
+
+  /* The lockup at the head. */
+  if (inked) {
+    const h = 290;
+    const w = (inked.logo.width / inked.logo.height) * h;
+    ctx.drawImage(inked.logo, (W - w) / 2, 200, w, h);
+  } else {
+    centred("NEOGEN", 420, `600 200px ${family}`, 30, INK);
+  }
+
+  /* The name: as large as fits the front of the vial, which is roughly the
+     middle two-thirds of the sheet — the rest wraps round the sides. */
+  const name = label.name.toUpperCase();
+  const room = W * 0.64;
+  let size = 190;
+  for (; size > 70; size -= 4) {
+    ctx.font = `500 ${size}px ${family}`;
+    ctx.letterSpacing = `${size * 0.1}px`;
+    if (ctx.measureText(name).width <= room) break;
+  }
+  centred(name, 980, `500 ${size}px ${family}`, size * 0.1, INK);
+
+  /* The hairline under the name, as on the V4 artwork. */
+  ctx.fillStyle = RULE;
+  ctx.fillRect(W * 0.04, 1030, W * 0.92, 3);
+
+  /* The presentation. */
+  centred(label.line, 1150, `600 84px ${family}`, 10, INK);
+
+  /* The band across the foot: the research-use condition. */
+  const band = ctx.createLinearGradient(0, 0, W, 0);
+  band.addColorStop(0, "#0e0e10");
+  band.addColorStop(1, "#3a3a3e");
+  ctx.fillStyle = band;
+  ctx.fillRect(0, 1700, W, 150);
+  centred("FOR RESEARCH USE ONLY", 1800, `500 58px ${family}`, 14, PAPER);
+
+  const texture = new CanvasTexture(canvas);
+  texture.colorSpace = SRGBColorSpace;
+  texture.flipY = false;
+  return texture;
+}

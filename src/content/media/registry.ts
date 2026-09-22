@@ -102,9 +102,17 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
    * their baked artwork; this is what closes the gap for every product that
    * wears a generated label.
    */
+  /*
+   * SEMAGLUTIDE — the generic-product still, on RETA's current vial (the V4
+   * crimp-top), under NEUTRAL_RIG, wearing a label drawn from its registry
+   * data in the upright layout V4's UVs call for: the lockup, the name, the
+   * presentation range and a research-use band — nothing the record does not
+   * hold. Bright-field: the glass is defined by thin dark contours from
+   * refraction-only flags, and the cap by black negative fill (rig.ts).
+   */
   semaglutide: {
     studio: {
-      src: "/images/products/semaglutide/studio-v5.jpg",
+      src: "/images/products/semaglutide/studio-v6.jpg",
       alt: "Vial de Semaglutide de NEOGEN: render de estudio del envase NEOGEN, etiqueta al frente, sobre fondo neutro.",
       width: 1600,
       height: 2000,

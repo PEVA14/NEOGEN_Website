@@ -800,9 +800,24 @@ Commerce surfaces never run WebGL. A product's catalogue image is a **studio
 still**: its 3D container rendered once as a product photograph and captured
 to a file.
 
-- **The container.** `public/models/reta-v2.glb` is NEOGEN's real physical
-  container (owner, 2026-09-18). Products in the same packaging render on it.
-  Do not remodel it; web code owns camera, lighting and materials.
+- **The container is RETA's vial, whichever one RETA currently ships.**
+  `StudioView` reads it from the registry (`MEDIA.reta.model`); `reta-v2.glb`
+  is only the fallback. Every non-flagship product is photographed on it, and
+  always wears its own drawn label, never RETA's printed one. Do not remodel
+  it; web code owns camera, lighting and materials.
+- **Drawn labels follow the mesh's own UVs.** `layoutFromUvs` reads the label
+  primitive: a narrow strip (the jar) uses `drawLabel`, the whole sheet wrapped
+  upright (V4) uses `drawSheetLabel`. No path-keyed configuration to go stale
+  when a model is re-exported under a new name.
+- **Glass depth is scaled to the model.** `thickness` is local-space and the
+  root is normalised to height 1, so the studio multiplies the rig's value by
+  the model's height over the jar's (`TUNED_HEIGHT`). Without it V4, authored
+  ~10× larger, refracted nothing.
+- **Bright-field needs refraction-only flags.** On the neutral set clear glass
+  is defined by dark contours it REFRACTS from cards beside it. The rig's
+  reflection panels cannot do that, so `refractionFlags` are real planes drawn
+  only into the transmission image, and `negativeFill` puts black cards in the
+  reflection map for the metal cap.
 - **The rig is data.** `components/experience/studio/rig.ts` describes the
   shot: lens, turn, softboxes (diffuse `intensity` and a separate `reflection`
   brightness), sweep, floor and material response.

@@ -18,6 +18,9 @@ import {
   Scene,
   SRGBColorSpace,
   Vector3,
+  type BufferGeometry,
+  type Camera,
+  type Material,
   type RectAreaLight,
   type Texture,
   type WebGLRenderer,
@@ -27,7 +30,7 @@ import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLigh
 
 import { isLabelMaterial, keepOutOfRefraction } from "../labelMaterial";
 
-import { drawLabel, labelSheet, type StudioLabel } from "./label";
+import { drawLabel, drawSheetLabel, labelSheet, layoutFromUvs, type StudioLabel } from "./label";
 
 import type { StudioRig } from "./rig";
 
@@ -138,6 +141,15 @@ function studioEnvironment(renderer: WebGLRenderer, rig: StudioRig): Texture {
     scene.add(panel);
   }
 
+  // Negative fill: black cards for the metal and the glass rims to reflect.
+  for (const card of rig.negativeFill ?? []) {
+    const panel = new Mesh(new PlaneGeometry(card.width, card.height), new MeshBasicMaterial());
+    (panel.material as MeshBasicMaterial).color.set("#000000");
+    panel.position.copy(new Vector3(...card.position).multiplyScalar(1.8));
+    panel.lookAt(0, 0, 0);
+    scene.add(panel);
+  }
+
   const pmrem = new PMREMGenerator(renderer);
   const target = pmrem.fromScene(scene, 0.015);
   pmrem.dispose();
@@ -200,6 +212,12 @@ function Softboxes({ rig }: { rig: StudioRig }) {
 
 /* ---- the object ----------------------------------------------------------- */
 
+/**
+ * The raw height, in its own units, of the container the glass was tuned on
+ * (`reta-v2.glb`, 287.9 mm authored in metres). See the glass branch below.
+ */
+const TUNED_HEIGHT = 0.2879;
+
 function useStudioModel(modelPath: string, rig: StudioRig, label: StudioLabel | null) {
   const gltf = useLoader(GLTFLoader, modelPath);
   const gl = useThree((state) => state.gl);
@@ -229,7 +247,16 @@ function useStudioModel(modelPath: string, rig: StudioRig, label: StudioLabel | 
         // Clear glass: near-smooth, real volume, a whisper of cool tint so its
         // thick base reads as glass rather than as nothing.
         m.roughness = rig.materials.glass.roughness;
-        m.thickness = rig.materials.glass.thickness;
+        /*
+         * DEPTH IN THE MODEL'S OWN UNITS, scaled to its size. `thickness` is a
+         * local-space length, and the root is normalised to a height of 1, so
+         * the same number means ten times less glass on a model built ten
+         * times larger. V4 is authored at 3.0 units tall where the jar the rig
+         * was tuned on is 0.288, and it came out as a flat shell that bent
+         * nothing. Scaling by the model's own height gives every container the
+         * optical depth the approved jar has.
+         */
+        m.thickness = rig.materials.glass.thickness * (size.y / TUNED_HEIGHT);
         m.ior = rig.materials.glass.ior;
         m.attenuationColor = new Color(rig.materials.glass.attenuation);
         m.attenuationDistance = 1.1;
@@ -267,7 +294,20 @@ function useStudioModel(modelPath: string, rig: StudioRig, label: StudioLabel | 
             "sans-serif";
           /* The calibration belongs to the MODEL's label mesh, so it is
              looked up from the path rather than passed down the tree. */
-          const texture = drawLabel(label, family, labelSheet(modelPath));
+          /* Which way this mesh wraps its label, read off its own UVs. */
+          const uv = child.geometry.getAttribute("uv");
+          let uMin = 1;
+          let uMax = 0;
+          if (uv) {
+            for (let i = 0; i < uv.count; i += 1) {
+              uMin = Math.min(uMin, uv.getX(i));
+              uMax = Math.max(uMax, uv.getX(i));
+            }
+          }
+          const texture =
+            layoutFromUvs(uMin, uMax) === "sheet"
+              ? drawSheetLabel(label, family)
+              : drawLabel(label, family, labelSheet(modelPath));
           m.map = texture;
           /* Kept so the sheet can be exported and baked into the model —
              see `scripts/export-label.mjs`. */
@@ -282,6 +322,56 @@ function useStudioModel(modelPath: string, rig: StudioRig, label: StudioLabel | 
 
     return { root, materials, sheet };
   }, [gltf, gl, rig, label, modelPath]);
+}
+
+/**
+ * BRIGHT-FIELD FLAGS, seen only through the glass.
+ *
+ * Two dark cards beside and behind the object. They draw ONLY while the
+ * transmission target is bound, so the lens never sees them directly — the
+ * sweep stays clean cream — but the glass edges, which bend the view sideways,
+ * pick them up as the dark contour that makes clear glass read as glass on a
+ * light set. The same pass-gating as `RefractionGround` on the live stage.
+ *
+ * Set-fixed, outside the object's yaw: turning the product must not swing a
+ * flag into the middle of the glass.
+ */
+function RefractionFlags({ rig }: { rig: StudioRig }) {
+  const flags = rig.refractionFlags;
+  const material = useMemo(
+    () => new MeshBasicMaterial({ color: new Color(flags?.color ?? "#000000"), toneMapped: false }),
+    [flags?.color],
+  );
+  useEffect(() => () => material.dispose(), [material]);
+  const gate = useCallback(
+    (
+      renderer: WebGLRenderer,
+      _scene: Scene,
+      _camera: Camera,
+      _geometry: BufferGeometry,
+      drawn: Material,
+    ) => {
+      const refractionPass = renderer.getRenderTarget() !== null;
+      drawn.colorWrite = refractionPass;
+      drawn.depthWrite = refractionPass;
+    },
+    [],
+  );
+  if (!flags) return null;
+  return (
+    <>
+      {[-1, 1].map((side) => (
+        <mesh
+          key={side}
+          position={[side * flags.x, 0, flags.z]}
+          material={material}
+          onBeforeRender={gate}
+        >
+          <planeGeometry args={[flags.width, flags.height]} />
+        </mesh>
+      ))}
+    </>
+  );
 }
 
 function Subject({
@@ -455,6 +545,9 @@ export default function StudioScene({
       <Environment rig={rig} />
       <ambientLight intensity={0.04} />
       <Softboxes rig={rig} />
+      {/* Fixed to the set, not to the object: a photographer's flags stay where
+          they were put when the product is turned. */}
+      <RefractionFlags rig={rig} />
       <Subject modelPath={modelPath} rig={rig} label={label} onSheet={onSheet} />
       <Capture sheet={sheet} />
     </Canvas>

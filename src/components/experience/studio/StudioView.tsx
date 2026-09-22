@@ -4,6 +4,8 @@ import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+import { MEDIA } from "@/content/media/registry";
+
 import { loadBrandArtwork, type StudioLabel } from "./label";
 import { GHK_RIG, GLOW_RIG, NEUTRAL_RIG, RETA_RIG, type StudioRig } from "./rig";
 
@@ -15,7 +17,20 @@ const StudioScene = dynamic(() => import("./StudioScene"), { ssr: false });
  * as the first (x 18, 455px of 2048), which is what `drawLabel` is calibrated
  * to — so the neutral rig's generated labels still land on the same panel.
  */
-const CONTAINER = "/models/reta-v2.glb";
+/*
+ * THE CANONICAL CONTAINER IS RETA'S VIAL — whichever one RETA currently ships.
+ *
+ * The owner's rule (2026-09-18) is that RETA's model IS NEOGEN's physical
+ * packaging and every product in that packaging is photographed on it. That
+ * used to be a hard-coded path, which silently left generic products on the
+ * old jar when RETA moved to the V4 crimp-top. Reading it from the registry
+ * keeps the two in step; `reta-v2.glb` is only the fallback.
+ *
+ * The flagship's PRINTED label never reaches a generic product: a product
+ * without artwork of its own always wears the label drawn from its registry
+ * data (`label` below), whatever the container prints.
+ */
+const CONTAINER = MEDIA.reta?.model ?? "/models/reta-v2.glb";
 
 /**
  * Flagships have their own rig; every other product is the neutral rig on the
