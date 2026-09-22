@@ -113,10 +113,12 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
    * presentation — measured off the artwork so they land on the same baselines
    * in the same colour; everything else is the design as drawn. The result is
    * baked into `semaglutide-v1.glb`, which is the V4 container carrying that
-   * sheet. Re-capture with:
+   * sheet. Shot STRAIGHT ON (owner, 2026-09-22: "center the render so it goes
+   * straight forward"): `yaw=0` overrides the rig's −0.17 turn, and at 0 the
+   * label paper is centred on the vial's axis to the pixel. Re-capture with:
    *
    *   node scripts/capture-studio.mjs semaglutide --name studio-v<N+1> \
-   *     --query "model=/models/semaglutide-v1.glb&label=printed"
+   *     --query "model=/models/semaglutide-v1.glb&label=printed&yaw=0"
    *
    * The rest of that artwork is still the RETA mock-up — a route of
    * administration, a purity figure, a lot, an expiry, a storage line and a
@@ -124,7 +126,7 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
    */
   semaglutide: {
     studio: {
-      src: "/images/products/semaglutide/studio-v7.jpg",
+      src: "/images/products/semaglutide/studio-v8.jpg",
       alt: "Vial de Semaglutide de NEOGEN: render de estudio del envase NEOGEN, etiqueta al frente, sobre fondo neutro.",
       width: 1600,
       height: 2000,
@@ -196,7 +198,7 @@ export const DEMO_ARTWORK: readonly {
   why: string;
 }[] = [
   {
-    image: "/images/products/semaglutide/studio-v7.jpg",
+    image: "/images/products/semaglutide/studio-v8.jpg",
     says:
       "SEMAGLUTIDE · 5 – 30 MG (correct) over the RETA mock-up's remaining lines: " +
       "INJECTABLE PEPTIDE • 99% PURITY · SUBCUTANEOUS USE · LOT NUMBER 064 · " +
