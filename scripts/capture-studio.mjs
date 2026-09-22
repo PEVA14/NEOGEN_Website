@@ -58,7 +58,7 @@ const name = flag("name", "studio");
  * Extra query for the studio page, for photographing something the registry
  * does not point at yet:
  *
- *   --query "model=/models/reta-v4.glb&label=drawn"
+ *   --query "model=/models/reta-v6.glb&label=drawn"
  *
  * The page's own overrides are development-only, so this is too.
  */

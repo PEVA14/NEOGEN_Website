@@ -16,31 +16,30 @@ import type { ProductMedia } from "./types";
  */
 export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
   /*
-   * RETA — the third-generation vial (owner export, 2026-09-21).
+   * RETA — the fourth-generation vial (owner export `RETA_VIAL_V4.glb`,
+   * 2026-09-21), served as `reta-v6.glb`.
    *
-   * `reta-v4.glb` supersedes `reta-v2.glb`, which superseded `reta.glb`.
+   * THE NUMBER COUNTS SERVED FILES, NOT BLENDER EXPORTS. Models are served
+   * `immutable, max-age=31536000`, so the URL is the cache key and a name is
+   * spent the moment a browser fetches it: `reta-v3.glb` went out with two
+   * different labels, `reta-v4.glb` was the V3 export, and `reta-v5.glb` was
+   * an earlier cut of this V4 opened in a preview. Re-writing bytes under any
+   * of those names would leave a browser on the old picture.
    *
-   * THE FILE IS v4 AND THE EXPORT IS V3, which looks like a mistake and is
-   * not. Models are served `immutable, max-age=31536000`, so the URL IS the
-   * cache key: this same export shipped for one commit with a different label
-   * baked in, under `reta-v3.glb`, and a browser that fetched it holds that
-   * copy for a year. Re-writing those bytes in place is precisely what the
-   * versioning rule exists to prevent — the number counts SERVED FILES, not
-   * Blender exports.
+   * A DIFFERENT CONTAINER. V4 is a crimp-top vial — shouldered body, narrow
+   * neck, crimped aluminium cap — where V2 and V3 were the wide straight-sided
+   * jar. The web layer normalises height and position, so it drops in; but it
+   * is not the canonical container `NEUTRAL_RIG` renders generic products on
+   * (`reta-v2.glb`), and the flagships no longer share one shape until GLOW
+   * and GHK-Cu are re-exported to match. Its label has UVs and a 2048² sheet;
+   * the preparation step is `--jpeg 92` and nothing else.
    *
-   * V3 SETTLES IN BLENDER WHAT THE BUILD WAS DOING BY HAND: it carries ONE
-   * closure, so the `--drop` of the interpenetrating autosampler lid is gone,
-   * and its cap is already Ø112.0 mm against the Ø113.2 mm that
-   * `--scale-node … 0.92` was producing, so that flag is gone too. Its label
-   * band is taller and lower on the body, which is why the printing reads
-   * larger.
-   *
-   * ITS PRINTED LABEL IS A MOCK-UP, AND IT IS NOT PUBLISHABLE COPY. The strip
-   * reads "RETATRUTIDE · 10 ML · INJECTABLE PEPTIDE ● 99% PURITY ·
-   * SUBCUTANEOUS USE". Two of those lines are routes of administration for
-   * human use, the purity figure is analytical evidence that exists for no
-   * product here, and the volume matches no presentation — this product sells
-   * 5–60 MG in packs of ten.
+   * ITS PRINTED LABEL IS A MOCK-UP, AND IT IS NOT PUBLISHABLE COPY. It reads
+   * "RETATRUTIDE · 70 MG · INJECTABLE PEPTIDE • 99% PURITY · SUBCUTANEOUS USE",
+   * with a lot number, an expiry date, a storage instruction and a US flag.
+   * Routes of administration for human use; a purity figure, lot and expiry no
+   * record supports; a strength the catalogue does not sell (5–60 MG); a
+   * storage condition nobody has determined; an origin nobody has stated.
    *
    * It ships anyway, on purpose: the owner is designing the packaging and
    * asked to see the artwork in place while it is still a draft (2026-09-21).
@@ -65,7 +64,7 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
    * which is why this is null rather than a rough render.
    */
   reta: {
-    model: "/models/reta-v4.glb",
+    model: "/models/reta-v6.glb",
     /*
      * THE STUDIO STILL (prototype, 2026-09-18, awaiting owner approval).
      *
@@ -80,7 +79,7 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
      * and the local dev server — looking at the previous picture.
      */
     studio: {
-      src: "/images/products/reta/studio-v5.jpg",
+      src: "/images/products/reta/studio-v6.jpg",
       alt: "Vial RETA de NEOGEN: render de estudio del modelo 3D, etiqueta al frente, sobre fondo azul oscuro.",
       width: 1600,
       height: 2000,
@@ -169,12 +168,14 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
  */
 export const DEMO_ARTWORK: readonly { model: string; says: string; why: string }[] = [
   {
-    model: "/models/reta-v4.glb",
-    says: "RETATRUTIDE · 10 ML · INJECTABLE PEPTIDE ● 99% PURITY · SUBCUTANEOUS USE",
+    model: "/models/reta-v6.glb",
+    says:
+      "RETATRUTIDE · 70 MG · INJECTABLE PEPTIDE • 99% PURITY · SUBCUTANEOUS USE · " +
+      "LOT NUMBER 064 · EXP 12/2028 · REFRIGERATE 2-8°C · US flag",
     why:
-      "Routes of administration for human use, a purity figure no analysis supports, " +
-      "and a volume matching no presentation (this product sells 5-60 MG). Owner is " +
-      "iterating on the packaging (2026-09-21); replace the strip before the site is " +
-      "public - `prepare-model.mjs --label`, see public/models/README.md.",
+      "Routes of administration for human use; a purity figure, lot and expiry no " +
+      "record supports; a strength the catalogue does not sell (5-60 MG); a storage " +
+      "condition and an origin nobody has confirmed. Owner is iterating on the " +
+      "packaging (2026-09-21); replace the strip before the site is public.",
   },
 ];

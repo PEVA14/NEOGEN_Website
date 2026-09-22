@@ -22,7 +22,15 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 
 ### Start here: handoff of 2026-09-20
 
-- **Latest (2026-09-21): RETA V3 (§8z).** The new export is live on the product
+- **Latest (2026-09-21, later): RETA V4 is live, served as `reta-v6.glb`.**
+  A different container — a crimp-top vial, not the wide jar — brought through
+  the owner's Blender from a third-party shape, with glass, metal and a UV'd
+  2048² label already set up. It ships with its draft label (declared in
+  `DEMO_ARTWORK`, blocker §6.6a). GLOW and GHK-Cu are still on the jar until
+  the owner re-exports them. `reta-v2.glb` stays the canonical container for
+  generic products. `public/models/vial-trial.glb` (the raw Sketchfab shape,
+  retagged for comparison) is untracked and can be deleted.
+- **RETA V3 (§8z), now superseded by V4.** The new export is live on the product
   page, the homepage and the catalogue card, WITH ITS DRAFT LABEL — the owner
   is designing the packaging and asked to see it in place. That strip reads
   "10 ML · INJECTABLE PEPTIDE ● 99% PURITY · SUBCUTANEOUS USE" and is NOT
@@ -284,10 +292,11 @@ also encoded in `src/config/site.ts`; anything undecided there is `null`.
    not a determination.
 6. **Legal policies:** Terms, Privacy, returns (with the 18+ line). None are
    approved, so none render.
-   6a. **Draft label artwork on a served model.** `reta-v4.glb` carries a
-   mock-up strip reading "10 ML · INJECTABLE PEPTIDE ● 99% PURITY ·
-   SUBCUTANEOUS USE" — two routes of administration, a purity figure nothing
-   supports, and a volume the catalogue does not sell. Shipped deliberately
+   6a. **Draft label artwork on a served model.** `reta-v6.glb` (the V4
+   crimp-top) carries a mock-up strip reading "70 MG · INJECTABLE PEPTIDE •
+   99% PURITY · SUBCUTANEOUS USE", with a lot number, an expiry, a storage
+   instruction and a US flag — routes of administration, evidence nothing
+   supports, a strength the catalogue does not sell, an origin nobody stated. Shipped deliberately
    while the owner designs the packaging (§8z) and declared in `DEMO_ARTWORK`,
    which `check:media` prints on every run. Replace before the site is public.
 7. **Persistence:** the Postgres adapters are built (§8t); approve and
