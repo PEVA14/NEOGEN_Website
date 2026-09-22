@@ -80,7 +80,7 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
      * and the local dev server — looking at the previous picture.
      */
     studio: {
-      src: "/images/products/reta/studio-v7.jpg",
+      src: "/images/products/reta/studio-v8.jpg",
       alt: "Vial RETA de NEOGEN: render de estudio del modelo 3D, etiqueta al frente, sobre fondo azul oscuro.",
       width: 1600,
       height: 2000,

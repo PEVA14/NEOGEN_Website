@@ -349,6 +349,14 @@ box, with that section's drawn plate as its first paint and fallback.
   `StudioScene` match metal on `metalness > 0.5`. Names are content the export
   pipeline may legitimately rewrite, and a rename once repainted RETA's
   aluminium band as black plastic.
+- **The label is kept out of the glass's refraction image.** Transmissive
+  glass samples an off-screen render of every OPAQUE object; an opaque label is
+  in it, so where the glass is bare the refraction shows a mirrored ghost of
+  the printing inside the wall (RETA V4, whose label wraps only the front).
+  `labelMaterial.ts` identifies the label by what it is — opaque, not metal,
+  carrying artwork — and marks it transparent at full opacity, which excludes
+  it. Both renderers apply it; the studio floor carries a `renderOrder` so it
+  still draws over the label's reflection.
 - **World data drives light; a product name never does.** A world whose
   `atmosphere` is `luminous` emits from behind the object, which the glass
   transmits. Any future luminous world inherits it and the other two are

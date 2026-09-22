@@ -2,9 +2,18 @@
 
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, type RefObject } from "react";
-import { Box3, Group, MathUtils, Mesh, MeshPhysicalMaterial, Vector3 } from "three";
+import {
+  Box3,
+  Group,
+  MathUtils,
+  Mesh,
+  MeshPhysicalMaterial,
+  MeshStandardMaterial,
+  Vector3,
+} from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
+import { isLabelMaterial, keepOutOfRefraction } from "./labelMaterial";
 import type { StageTier } from "@/hooks/useStageTier";
 
 import {
@@ -157,7 +166,7 @@ export function VialModel({
     const root = gltf.scene.clone(true);
 
     // Cloned materials are ours to dispose; the cached originals are not.
-    const clones: MeshPhysicalMaterial[] = [];
+    const clones: MeshStandardMaterial[] = [];
 
     const box = new Box3().setFromObject(root);
     const size = box.getSize(new Vector3());
@@ -176,6 +185,20 @@ export function VialModel({
       child.receiveShadow = false;
 
       const source = child.material;
+      /*
+       * THE LABEL, before the physical-only branch below: an export without
+       * material extensions loads its label as MeshStandardMaterial, and it
+       * still has to be kept out of the glass's refraction image or a mirrored
+       * copy of it floats in the bare glass at the vial's edges.
+       */
+      if (source instanceof MeshStandardMaterial && isLabelMaterial(source)) {
+        const label = source.clone();
+        child.material = label;
+        clones.push(label);
+        label.envMapIntensity = envIntensity;
+        keepOutOfRefraction(label);
+        return;
+      }
       if (!(source instanceof MeshPhysicalMaterial)) return;
 
       /*

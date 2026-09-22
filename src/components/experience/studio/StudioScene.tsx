@@ -25,6 +25,8 @@ import {
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLightUniformsLib.js";
 
+import { isLabelMaterial, keepOutOfRefraction } from "../labelMaterial";
+
 import { drawLabel, labelSheet, type StudioLabel } from "./label";
 
 import type { StudioRig } from "./rig";
@@ -251,10 +253,12 @@ function useStudioModel(modelPath: string, rig: StudioRig, label: StudioLabel | 
         // The flip-off top: a deep gloss black that holds a crisp highlight.
         m.roughness = 0.1;
         m.envMapIntensity = 1.3;
-      } else if (name.includes("label")) {
+      } else if (isLabelMaterial(m)) {
         // Paper: matte, and the printed type kept sharp at an angle.
         m.roughness = rig.materials.label.roughness;
         m.envMapIntensity = 0.35;
+        // Out of the glass's refraction image — see `labelMaterial.ts`.
+        keepOutOfRefraction(m);
         // A product without printed artwork of its own wears its registry data
         // in the real label's layout (see `./label`).
         if (label) {
@@ -329,8 +333,14 @@ function Subject({
       <group position={[0, -1, 0]} scale={[1, -1, 1]}>
         <primitive object={mirror} />
       </group>
-      {/* The floor: darkens the reflection with distance and dissolves into the sweep. */}
-      <mesh position={[0, -0.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      {/*
+       * The floor: darkens the reflection with distance and dissolves into the
+       * sweep. `renderOrder` pins it AFTER the mirrored vial: the label is a
+       * transparent material now (it has to be, to stay out of the glass's
+       * refraction — see `labelMaterial.ts`), and left to depth sorting its
+       * reflection drew on top of the floor at full strength instead of under it.
+       */}
+      <mesh position={[0, -0.5, 0]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={10}>
         <planeGeometry args={[4.4, 4.4]} />
         <meshBasicMaterial
           color={rig.floor.color}
@@ -341,7 +351,7 @@ function Subject({
         />
       </mesh>
       {/* Contact shadow: where the base meets the floor. */}
-      <mesh position={[0, -0.499, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh position={[0, -0.499, 0]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={11}>
         <planeGeometry args={[0.98, 0.98]} />
         <meshBasicMaterial
           color="#000000"
