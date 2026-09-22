@@ -145,6 +145,33 @@ spending time on a shape:
 node scripts/inspect-model.mjs <file.glb>   # reports UVs per part
 ```
 
+## One design, many products
+
+A product in the same packaging needs the same label with its OWN name and
+presentation. Rather than re-drawing the sheet from registry data (which loses
+the design) or exporting one per product in Blender (work per product),
+`relabel-sheet.mjs` keeps the artwork and replaces exactly two lines:
+
+```bash
+npm run dev
+node scripts/relabel-sheet.mjs --sheet "3d assets/reta-v4-label.png" \
+  --name SEMAGLUTIDE --line "5 – 30 MG" --out "3d assets/semaglutide-label.png"
+node scripts/prepare-model.mjs "3d assets/RETA_VIAL_V4.glb" \
+  public/models/semaglutide-v1.glb --retag "aiStandardSurface3SG=label" \
+  --label "3d assets/semaglutide-label.png" --jpeg 92
+```
+
+The rows it clears are MEASURED off the sheet, not guessed (`LAYOUT` in that
+script), so the replacements land on the same baselines, at the same cap
+height, in the same colour, and the hairline between them survives. It sets
+them in NEOGEN's own display face, which is close to — not identical with —
+the artwork's own.
+
+**Everything else on the sheet stays as drawn.** If the artwork carries a lot,
+an expiry, a purity figure or a route of administration, the re-lettered sheet
+carries them too, so whatever is produced this way stays declared in
+`DEMO_ARTWORK` (`content/media/registry.ts`) until the design is corrected.
+
 ## Declaring one
 
 A file here does nothing until it is named in `src/content/media/registry.ts`

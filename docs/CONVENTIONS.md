@@ -805,6 +805,11 @@ to a file.
   is only the fallback. Every non-flagship product is photographed on it, and
   always wears its own drawn label, never RETA's printed one. Do not remodel
   it; web code owns camera, lighting and materials.
+- **One label design, many products.** `relabel-sheet.mjs` keeps the owner's
+  artwork and replaces only the compound name and the presentation, on rows
+  measured off the sheet; `prepare-model.mjs --label` bakes the result into a
+  per-product copy of the container. Everything else on that sheet is still
+  whatever it was drawn for, so the result stays in `DEMO_ARTWORK`.
 - **Drawn labels follow the mesh's own UVs.** `layoutFromUvs` reads the label
   primitive: a narrow strip (the jar) uses `drawLabel`, the whole sheet wrapped
   upright (V4) uses `drawSheetLabel`. No path-keyed configuration to go stale

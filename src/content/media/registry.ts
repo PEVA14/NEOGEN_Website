@@ -103,16 +103,28 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
    * wears a generated label.
    */
   /*
-   * SEMAGLUTIDE — the generic-product still, on RETA's current vial (the V4
-   * crimp-top), under NEUTRAL_RIG, wearing a label drawn from its registry
-   * data in the upright layout V4's UVs call for: the lockup, the name, the
-   * presentation range and a research-use band — nothing the record does not
-   * hold. Bright-field: the glass is defined by thin dark contours from
-   * refraction-only flags, and the cap by black negative fill (rig.ts).
+   * SEMAGLUTIDE — the generic-product still, on the V4 crimp-top under
+   * NEUTRAL_RIG. Bright-field: the glass is defined by thin dark contours from
+   * refraction-only flags, the cap by black negative fill (`rig.ts`).
+   *
+   * IT WEARS THE OWNER'S OWN LABEL ARTWORK, re-lettered (owner, 2026-09-22:
+   * "swap the name and strength, keep the design"). `relabel-sheet.mjs` takes
+   * the V4 sheet and replaces exactly two lines — the compound name and the
+   * presentation — measured off the artwork so they land on the same baselines
+   * in the same colour; everything else is the design as drawn. The result is
+   * baked into `semaglutide-v1.glb`, which is the V4 container carrying that
+   * sheet. Re-capture with:
+   *
+   *   node scripts/capture-studio.mjs semaglutide --name studio-v<N+1> \
+   *     --query "model=/models/semaglutide-v1.glb&label=printed"
+   *
+   * The rest of that artwork is still the RETA mock-up — a route of
+   * administration, a purity figure, a lot, an expiry, a storage line and a
+   * flag — so the still is declared in `DEMO_ARTWORK` below.
    */
   semaglutide: {
     studio: {
-      src: "/images/products/semaglutide/studio-v6.jpg",
+      src: "/images/products/semaglutide/studio-v7.jpg",
       alt: "Vial de Semaglutide de NEOGEN: render de estudio del envase NEOGEN, etiqueta al frente, sobre fondo neutro.",
       width: 1600,
       height: 2000,
@@ -175,7 +187,26 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
  * `PROJECT_STATE.md` carries it as a launch blocker. An empty list is the
  * normal state; an entry is a promise to come back.
  */
-export const DEMO_ARTWORK: readonly { model: string; says: string; why: string }[] = [
+export const DEMO_ARTWORK: readonly {
+  /** A served model whose printed label is a draft. */
+  model?: string;
+  /** A published image of one — a still is as public as the model it renders. */
+  image?: string;
+  says: string;
+  why: string;
+}[] = [
+  {
+    image: "/images/products/semaglutide/studio-v7.jpg",
+    says:
+      "SEMAGLUTIDE · 5 – 30 MG (correct) over the RETA mock-up's remaining lines: " +
+      "INJECTABLE PEPTIDE • 99% PURITY · SUBCUTANEOUS USE · LOT NUMBER 064 · " +
+      "EXP 12/2028 · REFRIGERATE 2-8°C · US flag",
+    why:
+      "The name and presentation were re-lettered from the registry; everything else " +
+      "is still the RETA draft artwork and belongs to no Semaglutide record. Replace " +
+      "when the label design is finalised - `relabel-sheet.mjs`, then " +
+      "`prepare-model.mjs --label`.",
+  },
   {
     model: "/models/reta-v7.glb",
     says:

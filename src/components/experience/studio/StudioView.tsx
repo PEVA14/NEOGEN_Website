@@ -80,12 +80,16 @@ export function StudioView({
    * the vial can ship while corrected artwork is still being drawn.
    */
   const modelOverride = params.get("model");
-  const drawnLabel = params.get("label") === "drawn";
+  const labelMode = params.get("label");
+  const drawnLabel = labelMode === "drawn";
+  /* `printed` keeps whatever the GLB prints, even on a product that would
+     normally wear a label drawn from its own registry data. */
+  const printedLabel = labelMode === "printed";
   const entry = {
     model: modelOverride ?? model ?? CONTAINER,
     rig: flagship ?? NEUTRAL_RIG,
     // A flagship's model carries its own printed label, unless asked otherwise.
-    label: flagship && !drawnLabel ? null : label,
+    label: printedLabel || (flagship && !drawnLabel) ? null : label,
   };
   /*
    * The label is drawn — in the site's face, over the brand artwork — so both

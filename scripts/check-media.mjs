@@ -198,11 +198,22 @@ for (const [slug, entry] of Object.entries(MEDIA)) {
  * whoever is about to take the site public.
  */
 for (const draft of DEMO_ARTWORK) {
-  const used = Object.values(MEDIA).some((m) => m.model === draft.model);
-  if (!used) {
+  /* An entry names either a served model or a published image of one, and what
+     it names has to be something a product actually declares — otherwise the
+     list rots into notes about files nobody serves. */
+  const subject = draft.model ?? draft.image;
+  const used = Object.values(MEDIA).some(
+    (m) =>
+      m.model === draft.model ||
+      (draft.image !== undefined &&
+        IMAGE_ROLES.some((role) => m[role] && m[role].src === draft.image)),
+  );
+  if (!subject) {
+    fail("DEMO_ARTWORK entry names nothing", "give it a `model` or an `image`");
+  } else if (!used) {
     fail(
-      "DEMO_ARTWORK names a model no product declares",
-      `${draft.model} — remove the entry, or point a product at it`,
+      "DEMO_ARTWORK names something no product declares",
+      `${subject} — remove the entry, or point a product at it`,
     );
   }
 }
@@ -222,6 +233,6 @@ if (failures.length) {
 }
 console.log(`media check passed — ${summary}`);
 for (const draft of DEMO_ARTWORK) {
-  console.log(`  ! DRAFT ARTWORK — ${draft.model} prints: ${draft.says}`);
+  console.log(`  ! DRAFT ARTWORK — ${draft.model ?? draft.image} prints: ${draft.says}`);
   console.log(`    ${draft.why}`);
 }
