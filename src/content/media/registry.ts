@@ -130,7 +130,7 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
    */
   semaglutide: {
     studio: {
-      src: "/images/products/semaglutide/studio-v9.jpg",
+      src: "/images/products/semaglutide/studio-v10.jpg",
       alt: "Vial de Semaglutide de NEOGEN: render de estudio del envase NEOGEN, etiqueta al frente, sobre fondo neutro.",
       width: 1600,
       height: 2000,
@@ -202,7 +202,7 @@ export const DEMO_ARTWORK: readonly {
   why: string;
 }[] = [
   {
-    image: "/images/products/semaglutide/studio-v9.jpg",
+    image: "/images/products/semaglutide/studio-v10.jpg",
     says:
       "SEMAGLUTIDE · 5 – 30 MG (correct) over the RETA mock-up's remaining lines: " +
       "INJECTABLE PEPTIDE • 99% PURITY · SUBCUTANEOUS USE · LOT NUMBER 064 · " +

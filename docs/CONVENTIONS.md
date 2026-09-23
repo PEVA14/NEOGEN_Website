@@ -370,7 +370,8 @@ box, with that section's drawn plate as its first paint and fallback.
   stored Z-up — plus a spun-aluminium roughness and normal map: rings on the
   skirt, concentric rings on the crown, a faint grain. Both renderers apply
   it; each sets the average roughness for its own light (live 0.32, the
-  neutral studio 0.42).
+  neutral studio 0.34 with a lower
+  reflection, or a satin cap on a white set goes white).
 - **World data drives light; a product name never does.** A world whose
   `atmosphere` is `luminous` emits from behind the object, which the glass
   transmits. Any future luminous world inherits it and the other two are

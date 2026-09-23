@@ -83,7 +83,14 @@ export interface StudioRig {
       /** How strongly the glass reflects the studio. */
       reflect: number;
     };
-    metal: { color: string; roughness: number };
+    metal: {
+      color: string;
+      roughness: number;
+      /* How strongly the metal reflects the studio (envMapIntensity). A satin
+         cap on a bright set reflects mostly light, so it needs this lower
+         than a dark set does or it washes out to white. Default 1.4. */
+      reflect?: number;
+    };
     label: { roughness: number };
   };
 }
@@ -366,7 +373,11 @@ export const NEUTRAL_RIG: StudioRig = {
       attenuation: "#eeeff1",
       reflect: 1.8,
     },
-    metal: { color: "#d2d5da", roughness: 0.42 },
+    /* Satin aluminium on a bright set (owner, 2026-09-22: "too bright").
+       Rougher than this and the black cards blur away, so the cap reflects
+       only light and goes white; a darker tint and a lower reflection keep
+       it grey, with the dark bands that give it its shape. */
+    metal: { color: "#b4b7bc", roughness: 0.34, reflect: 0.9 },
     label: { roughness: 0.62 },
   },
 };

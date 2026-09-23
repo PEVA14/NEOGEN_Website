@@ -278,7 +278,7 @@ function useStudioModel(modelPath: string, rig: StudioRig, label: StudioLabel | 
         // Spun-aluminium relief and grain, and the rig's roughness as its
         // average — see `capFinish.ts`.
         finishCap(child, m, rig.materials.metal.roughness);
-        m.envMapIntensity = 1.4;
+        m.envMapIntensity = rig.materials.metal.reflect ?? 1.4;
       } else if (name.includes("black plastic")) {
         // The flip-off top: a deep gloss black that holds a crisp highlight.
         m.roughness = 0.1;
