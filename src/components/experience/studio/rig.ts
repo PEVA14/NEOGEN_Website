@@ -366,7 +366,7 @@ export const NEUTRAL_RIG: StudioRig = {
       attenuation: "#eeeff1",
       reflect: 1.8,
     },
-    metal: { color: "#d2d5da", roughness: 0.32 },
+    metal: { color: "#d2d5da", roughness: 0.42 },
     label: { roughness: 0.62 },
   },
 };

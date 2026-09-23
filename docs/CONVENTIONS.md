@@ -363,6 +363,14 @@ box, with that section's drawn plate as its first paint and fallback.
   plastic. The `local` backdrop is transparent by design (the page shows
   through), so `RefractionGround` adds a `--world-void` plane that draws ONLY
   while the transmission target is bound — invisible in the main pass.
+- **The cap's finish is web code, not the export's.** No export has shipped a
+  cap roughness anyone chose (1.0 made grey paint, V4's 0.095 a mirror), and
+  none ships cap UVs. `capFinish.ts` gives every metal part UVs from its own
+  shape — measured in the model's upright frame, because V4's vertices are
+  stored Z-up — plus a spun-aluminium roughness and normal map: rings on the
+  skirt, concentric rings on the crown, a faint grain. Both renderers apply
+  it; each sets the average roughness for its own light (live 0.32, the
+  neutral studio 0.42).
 - **World data drives light; a product name never does.** A world whose
   `atmosphere` is `luminous` emits from behind the object, which the glass
   transmits. Any future luminous world inherits it and the other two are

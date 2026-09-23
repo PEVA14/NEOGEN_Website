@@ -28,6 +28,7 @@ import {
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLightUniformsLib.js";
 
+import { finishCap } from "../capFinish";
 import { isLabelMaterial, keepOutOfRefraction } from "../labelMaterial";
 
 import { drawLabel, drawSheetLabel, labelSheet, layoutFromUvs, type StudioLabel } from "./label";
@@ -273,8 +274,10 @@ function useStudioModel(modelPath: string, rig: StudioRig, label: StudioLabel | 
          * catalogue card came back with a black cap on a silver vial.
          */
         m.metalness = 1;
-        m.roughness = rig.materials.metal.roughness;
         m.color = new Color(rig.materials.metal.color);
+        // Spun-aluminium relief and grain, and the rig's roughness as its
+        // average — see `capFinish.ts`.
+        finishCap(child, m, rig.materials.metal.roughness);
         m.envMapIntensity = 1.4;
       } else if (name.includes("black plastic")) {
         // The flip-off top: a deep gloss black that holds a crisp highlight.

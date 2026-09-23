@@ -10,9 +10,11 @@ import {
   MeshPhysicalMaterial,
   MeshStandardMaterial,
   Vector3,
+  type BufferGeometry,
 } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
+import { finishCap } from "./capFinish";
 import { isLabelMaterial, keepOutOfRefraction } from "./labelMaterial";
 import type { StageTier } from "@/hooks/useStageTier";
 
@@ -45,9 +47,6 @@ const FIT_IN_PANEL = 0.62;
  * NEOGEN's near-black worlds has nothing to reflect and goes murky.
  */
 const CAP_ROUGHNESS = 0.32;
-
-/** A metal at or above this roughness was never given a value; treat it as unset. */
-const UNTUNED_METAL = 0.9;
 
 /*
  * PRESENTER MOTION — a museum display, not a 3D toy.
@@ -167,6 +166,8 @@ export function VialModel({
 
     // Cloned materials are ours to dispose; the cached originals are not.
     const clones: MeshStandardMaterial[] = [];
+    // So is a cap's geometry, which is re-made with UVs (`finishCap`).
+    const geometries: BufferGeometry[] = [];
 
     const box = new Box3().setFromObject(root);
     const size = box.getSize(new Vector3());
@@ -220,21 +221,21 @@ export function VialModel({
       // the scene object and it must not be mutated from a component.
       material.envMapIntensity = envIntensity;
 
-      if (material.metalness > 0.5 && material.roughness >= UNTUNED_METAL) {
+      if (material.metalness > 0.5) {
         /*
-         * SATIN ALUMINIUM — the cap, which was reading as painted grey.
+         * SATIN ALUMINIUM — the cap, neither painted grey nor chrome.
          *
-         * The caps are authored `metalness: 1` AND `roughness: 1`. A fully
-         * rough metal scatters every ray and so forms no reflection at all:
-         * it renders as flat grey paint, which is exactly what the vials
-         * showed. It is the same class of export artefact as the glass
-         * arriving at roughness 0 below — a default that survived rather than
-         * a value someone chose. Real anodised lab caps sit near 0.3.
-         *
-         * Only a metal left at FULL roughness is corrected, so an asset that
-         * deliberately ships a softer metal keeps what it was given.
+         * No export has shipped a cap roughness anyone chose. The first vials
+         * were authored `roughness: 1`, which scatters every ray and renders
+         * as flat grey paint; V4 arrives at 0.095, a Maya default that made a
+         * mirror (owner, 2026-09-22: "too shiny"). Both are the same class of
+         * artefact as the glass arriving at roughness 0 below, so the value is
+         * set here, always, together with the spun-aluminium relief and grain
+         * the cap needs to read as metal rather than as a render of metal —
+         * see `capFinish.ts`.
          */
-        material.roughness = CAP_ROUGHNESS;
+        finishCap(child, material, CAP_ROUGHNESS);
+        geometries.push(child.geometry);
         /*
          * The export also carries KHR_materials_specular at 0.4, halving the
          * reflection that describes the cap's edge and crown. Metal has no
@@ -282,11 +283,17 @@ export function VialModel({
       }
     });
 
-    return { root, clones };
+    return { root, clones, geometries };
   }, [gltf, tier, envIntensity]);
 
-  // Release the cloned materials when the tier changes or the scene unmounts.
-  useEffect(() => () => model.clones.forEach((material) => material.dispose()), [model]);
+  // Release the cloned materials and cap geometry when the tier changes or the scene unmounts.
+  useEffect(
+    () => () => {
+      model.clones.forEach((material) => material.dispose());
+      model.geometries.forEach((geometry) => geometry.dispose());
+    },
+    [model],
+  );
 
   /*
    * Reduced motion runs `frameloop="demand"` — exactly one frame, then nothing.
