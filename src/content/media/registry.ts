@@ -78,9 +78,13 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
      * (2026-09-21). Images carry a one-year immutable cache and the optimizer
      * keys on the URL, so re-rendering into the old name leaves every visitor —
      * and the local dev server — looking at the previous picture.
+     *
+     * v9 (2026-09-22): the spun-aluminium cap (`capFinish.ts`). It also carries
+     * the glass-depth scaling that landed after v8, which reads the V4 body
+     * darker and more refractive — owner-approved with the re-capture.
      */
     studio: {
-      src: "/images/products/reta/studio-v8.jpg",
+      src: "/images/products/reta/studio-v9.jpg",
       alt: "Vial RETA de NEOGEN: render de estudio del modelo 3D, etiqueta al frente, sobre fondo azul oscuro.",
       width: 1600,
       height: 2000,
