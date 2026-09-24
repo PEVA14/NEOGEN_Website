@@ -79,8 +79,10 @@
   html {
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
-    /* Header is sticky; anchored headings must not slide under it. */
-    scroll-padding-block-start: var(--space-3xl);
+    /* Header is sticky; anchored headings, focused fields and error
+       summaries must land BELOW it. Its height differs by breakpoint (two
+       rows on a phone), so the offset follows the token, not a guess. */
+    scroll-padding-block-start: calc(var(--header-height) + var(--space-lg));
   }
 
   body {

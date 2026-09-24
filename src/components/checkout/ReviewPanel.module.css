@@ -76,6 +76,23 @@
   min-inline-size: 32rem;
 }
 
+/*
+ * On a phone the unit-price column goes: quantity and line total are what a
+ * customer confirms, the unit price is already on the bag and the summary,
+ * and four columns fit where five had to be panned — the table used to open
+ * with the amounts cut off at the edge.
+ */
+@media (max-width: 39.999rem) {
+  .table {
+    min-inline-size: 0;
+  }
+
+  .table th:nth-child(4),
+  .table td:nth-child(4) {
+    display: none;
+  }
+}
+
 .table th,
 .table td {
   border-block-end: 1px solid var(--border-subtle);

@@ -113,7 +113,9 @@ export function OrderReceipt({
             {state.badge}
           </Mono>
         </header>
-        <h2 className={styles.stateTitle}>{state.title}</h2>
+        {/* No second headline: the page's h1 already IS this state's title
+            (`copy.states[state].title`), so repeating it here said the same
+            sentence twice, one screen apart. */}
         <Body tone="muted" className={styles.stateBody}>
           {state.body}
         </Body>

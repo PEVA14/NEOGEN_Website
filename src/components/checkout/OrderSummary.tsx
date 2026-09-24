@@ -21,6 +21,8 @@ export interface SummaryCopy {
   total: string;
   totalPending: string;
   estimate: string;
+  /** "{n} día hábil" / "{n} días hábiles". */
+  estimateDays: { one: string; many: string };
   /** "{amount} más para envío gratis" */
   freeShippingRemaining: string;
   freeShippingReached: string;
@@ -176,7 +178,10 @@ export function OrderSummary({
               {copy.estimate}
             </Mono>
             <Mono as="dd" size="2xs" className={styles.value}>
-              {String(delivery.estimateDays)}
+              {(delivery.estimateDays === 1
+                ? copy.estimateDays.one
+                : copy.estimateDays.many
+              ).replace("{n}", String(delivery.estimateDays))}
             </Mono>
           </div>
         ) : null}

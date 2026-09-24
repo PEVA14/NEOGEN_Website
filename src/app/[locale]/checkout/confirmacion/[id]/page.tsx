@@ -128,7 +128,7 @@ export default async function ConfirmationPage({
   }
 
   return (
-    <Section mode="quiet" aria-labelledby="confirmation-title">
+    <Section mode="quiet" rhythm="record" aria-labelledby="confirmation-title">
       <Container width="full">
         <SectionHeader
           index={copy.index}
@@ -136,6 +136,7 @@ export default async function ConfirmationPage({
           title={copy.states[order.state].title}
           id="confirmation-title"
           as="h1"
+          scale="record"
         />
 
         {order.state === "paid" ||

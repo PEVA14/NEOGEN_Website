@@ -917,7 +917,7 @@ const es = {
       unit: "{price} por vial · empaque de {n}",
       freeReached: "Con este empaque, tu pedido alcanza el envío gratis",
       freeFrom: "Envío gratis en pedidos desde {price}",
-      add: "Añadir al carrito",
+      add: "Añadir a la bag",
       added: "Añadido",
       view: "Ver producto",
     },
@@ -1883,7 +1883,7 @@ const es = {
      * here: the amounts are the server's, recomputed from the catálogo, and
      * nothing in the browser decides what anyone pays.
      */
-    lede: "Seis pasos. Cada importe se calcula en el servidor a partir del catálogo, no en tu navegador.",
+    lede: "Contacto, envío y entrega; revisas el pedido y pagas al final.",
 
     progress: {
       label: "Progreso de la compra",
@@ -2049,7 +2049,7 @@ const es = {
             },
             embedded: {
               title: "Tarjeta de crédito o débito",
-              body: "Los campos siguientes pertenecen a Mercado Pago. El cargo es por el total del pedido, calculado en el servidor.",
+              body: "Los campos siguientes pertenecen a Mercado Pago. El cargo es exactamente el total de tu pedido.",
               mountLabel: "Campos seguros de Mercado Pago",
             },
             redirect: {
@@ -2149,7 +2149,8 @@ const es = {
       shippingPending: "Por confirmar",
       total: "Total",
       totalPending: "Por confirmar",
-      estimate: "Días hábiles",
+      estimate: "Entrega estimada",
+      estimateDays: { one: "{n} día hábil", many: "{n} días hábiles" },
       freeShippingRemaining: "{amount} más para envío gratis",
       freeShippingReached: "Envío gratis alcanzado",
       note: "Los precios incluirán IVA cuando queden confirmados. No se añade impuesto por separado.",
@@ -2427,7 +2428,8 @@ const es = {
     shippingPending: "Se calcula al pagar",
     freeShippingRemaining: "Faltan {amount} para envío gratis",
     freeShippingReached: "Envío gratis alcanzado",
-    totalsNote: "Importes en MXN. IVA incluido en el precio mostrado.",
+    totalsNote:
+      "Importes en MXN. Los precios incluirán IVA cuando queden confirmados; no se añade impuesto por separado.",
   },
 
   /** Commerce controls on a product page. */

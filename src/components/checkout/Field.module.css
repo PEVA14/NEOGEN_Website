@@ -144,6 +144,7 @@
 
 .summary {
   border-inline-start: 2px solid var(--status-error);
+  outline: none;
   margin-block-end: var(--space-lg);
   padding-inline-start: var(--space-sm);
 }

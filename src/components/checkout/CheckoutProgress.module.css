@@ -6,30 +6,87 @@
  * is the Quiet Mode reading of "clear numbered progression": structure carried
  * by rules and mono numerals, no fills, no radius, no chevrons.
  *
- * It SCROLLS horizontally rather than wrapping or truncating. Six steps at
- * 375px cannot all be legible at once, and the two alternatives are worse:
- * wrapping turns a linear process into a paragraph, and hiding steps removes
- * the only thing that tells a customer how much is left.
+ * Six labels do not fit a phone. Below 40rem the band becomes one line —
+ * "Paso 5 de 6 · Pago" — over six segments, so position and what remains are
+ * both in the first screen. From 40rem the full scale shows, scrolling
+ * sideways only if a narrow tablet needs it.
  */
 .progress {
-  border-block-end: 1px solid var(--border-subtle);
   margin-block-end: var(--space-xl);
+}
+
+.list {
+  border-block-end: 1px solid var(--border-subtle);
+  display: flex;
+  gap: var(--space-lg);
+  list-style: none;
+  margin: 0;
+  padding: 0;
   /* Own scroll container, so the page body never scrolls sideways. */
   overflow-x: auto;
   scrollbar-width: none;
 }
 
-.progress::-webkit-scrollbar {
+.list::-webkit-scrollbar {
   display: none;
 }
 
-.list {
+/* --- the phone reading --------------------------------------------------- */
+.compact {
+  display: none;
+}
+
+@media (max-width: 39.99rem) {
+  .compact {
+    display: grid;
+    gap: var(--space-xs);
+  }
+
+  .list {
+    display: none;
+  }
+}
+
+.compactLine {
+  align-items: baseline;
   display: flex;
-  gap: var(--space-lg);
-  list-style: none;
+  gap: var(--space-xs);
   margin: 0;
-  min-inline-size: max-content;
-  padding: 0;
+}
+
+.compactCount {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.compactName {
+  color: var(--ink-primary);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 600;
+  letter-spacing: var(--tracking-display);
+}
+
+.segments {
+  display: grid;
+  gap: 3px;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+}
+
+.segment {
+  background: var(--border-default);
+  block-size: 3px;
+}
+
+.segment[data-state="complete"] {
+  background: var(--ink-secondary);
+}
+
+.segment[data-state="current"] {
+  background: var(--ink-primary);
 }
 
 .step {
@@ -79,16 +136,24 @@
   color: var(--ink-secondary);
 }
 
-/* The completed marker: a filled square under the index. Reads as "done" the
-   way a ticked box does, without importing an icon set. */
+/* Completed steps read as a FILLED TRACK: a rule under the whole step, one
+   weight lighter than the current one, so the band fills from the left like a
+   scale being read — rather than the short tick it used to be, which looked
+   like a stray underscore. */
 .step[data-state="complete"]::after {
   background: var(--ink-secondary);
-  block-size: 3px;
+  block-size: 1px;
   content: "";
-  inline-size: 0.5rem;
+  inline-size: calc(100% + var(--space-lg));
   inset-block-end: -1px;
   inset-inline-start: 0;
   position: absolute;
+}
+
+/* Decorative for assistive technology: the visually hidden text already
+   says "completed". */
+.step[data-state="complete"] .index::before {
+  content: "✓\00a0" / "";
 }
 
 .step[data-state="current"] .index,

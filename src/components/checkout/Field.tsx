@@ -1,5 +1,7 @@
 import { Mono } from "@/components/typography";
 
+import { FocusOnMount } from "./FocusOnMount";
+
 import styles from "./Field.module.css";
 
 import type { IssueCode, ValidationIssue } from "@/domain/checkout";
@@ -8,7 +10,9 @@ import type { IssueCode, ValidationIssue } from "@/domain/checkout";
  * CHECKOUT FORM PRIMITIVES.
  *
  * These are server components rendering plain HTML controls inside a plain
- * `<form>` — no client JavaScript anywhere in the checkout's field layer.
+ * `<form>` — no client JavaScript in the checkout's field layer, with one
+ * enhancement: `FocusOnMount` moves focus to the error summary after a failed
+ * submit. Without JavaScript the summary still renders; it just is not focused.
  * Validation happens in the server action and its result comes back as the
  * next render, so the error a customer sees is produced by the same code that
  * decides whether the order may be created. There is no client-side copy of
@@ -228,7 +232,8 @@ export function ErrorSummary({
 }) {
   if (entries.length === 0) return null;
   return (
-    <div className={styles.summary} role="alert">
+    <div className={styles.summary} role="alert" id="checkout-errors" tabIndex={-1}>
+      <FocusOnMount targetId="checkout-errors" />
       <Mono size="2xs" className={styles.summaryTitle}>
         {title}
       </Mono>

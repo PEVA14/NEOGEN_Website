@@ -69,7 +69,7 @@ export function OrderStatus({
       </div>
 
       <section className={styles.now} data-headline={view.headline} aria-live="polite">
-        <h2 className={styles.headline}>{copy.headline[view.headline]}</h2>
+        {/* The headline is the page's h1; this block says what it means. */}
         <p className={styles.body}>{copy.body[view.headline]}</p>
         {view.refund ? (
           <p className={styles.body}>

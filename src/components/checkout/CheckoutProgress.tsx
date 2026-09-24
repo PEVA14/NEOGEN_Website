@@ -52,10 +52,41 @@ export function CheckoutProgress({
    * take focus, so the bar itself does — or a keyboard user could not scroll it.
    */
   const anyLinked = steps.some((s) => s.complete && !s.current && hrefFor(s.id) !== null);
+  const currentIndex = Math.max(
+    0,
+    steps.findIndex((s) => s.current),
+  );
+  const current = steps[currentIndex];
 
   return (
-    <nav aria-label={copy.label} className={styles.progress} tabIndex={anyLinked ? undefined : 0}>
-      <ol className={styles.list}>
+    <nav aria-label={copy.label} className={styles.progress}>
+      {/*
+       * ON A PHONE: one line and a segmented bar — where you are and how much
+       * is left, in the first screen. Six labels side by side do not fit at
+       * 375px, and a sideways scroller that opens on steps 01–03 while you are
+       * on 05 hides the one thing progress exists to show. The list below is
+       * not rendered at this width (display: none), so this line is also what
+       * a screen reader hears there; the segments are decoration.
+       */}
+      <div className={styles.compact}>
+        <p className={styles.compactLine}>
+          <Mono size="2xs" className={styles.compactCount}>
+            {copy.stepOf.replace("{n}", String(currentIndex + 1)).replace("{total}", String(total))}
+          </Mono>
+          <span className={styles.compactName}>{current ? copy.steps[current.id] : null}</span>
+        </p>
+        <span className={styles.segments} aria-hidden="true">
+          {steps.map((step) => (
+            <span
+              key={step.id}
+              className={styles.segment}
+              data-state={step.current ? "current" : step.complete ? "complete" : "pending"}
+            />
+          ))}
+        </span>
+      </div>
+
+      <ol className={styles.list} tabIndex={anyLinked ? undefined : 0}>
         {steps.map((step, index) => {
           const href = hrefFor(step.id);
           /* Linked only if it is DONE and not where we already are. */

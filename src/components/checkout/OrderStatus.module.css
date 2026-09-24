@@ -57,21 +57,18 @@
   border-inline-start-color: var(--status-error);
 }
 
-.headline {
-  font-family: var(--font-display);
-  font-size: var(--text-2xl);
-  font-stretch: var(--font-stretch-display);
-  font-weight: 700;
-  letter-spacing: var(--tracking-display);
-  line-height: var(--leading-tight);
-  margin: 0;
-}
-
 .body {
   color: var(--ink-secondary);
   font-size: var(--text-base);
   line-height: var(--leading-relaxed);
   margin: 0;
+}
+
+/* The headline moved up to the page's h1; the sentence that explains it is
+   now the lead of this block. */
+.now .body:first-child {
+  color: var(--ink-primary);
+  font-size: var(--text-lg);
 }
 
 /* ---- the rail ------------------------------------------------------------ */

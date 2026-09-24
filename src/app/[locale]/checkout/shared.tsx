@@ -158,15 +158,17 @@ export function CheckoutShell({
     : null;
 
   return (
-    <Section mode="quiet" aria-labelledby="checkout-title">
+    <Section mode="quiet" rhythm="record" aria-labelledby="checkout-title">
       <Container width="full">
+        {/* Record scale and no lede: a checkout's first screen belongs to the
+            step being completed, not to a masthead about the process. */}
         <SectionHeader
           index={checkout.index}
           label={`${checkout.label} // ${checkout.qualifier}`}
           title={checkout.title}
           id="checkout-title"
-          lede={checkout.lede}
           as="h1"
+          scale="record"
         />
 
         <CheckoutProgress
@@ -237,15 +239,17 @@ export function OrderShell({
   }));
 
   return (
-    <Section mode="quiet" aria-labelledby="checkout-title">
+    <Section mode="quiet" rhythm="record" aria-labelledby="checkout-title">
       <Container width="full">
+        {/* Record scale and no lede: a checkout's first screen belongs to the
+            step being completed, not to a masthead about the process. */}
         <SectionHeader
           index={checkout.index}
           label={`${checkout.label} // ${checkout.qualifier}`}
           title={checkout.title}
           id="checkout-title"
-          lede={checkout.lede}
           as="h1"
+          scale="record"
         />
 
         <CheckoutProgress steps={steps} copy={checkout.progress} hrefFor={() => null} />

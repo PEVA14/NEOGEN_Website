@@ -1749,7 +1749,7 @@ const en: Dictionary = {
     label: "Purchase",
     qualifier: "Process",
     title: "Purchase",
-    lede: "Six steps. Every amount is computed on the server from the catalogue, not in your browser.",
+    lede: "Contact, shipping and delivery; you review the order and pay last.",
 
     progress: {
       label: "Checkout progress",
@@ -1891,7 +1891,7 @@ const en: Dictionary = {
             },
             embedded: {
               title: "Credit or debit card",
-              body: "The fields below belong to Mercado Pago. The charge is the order total, computed on the server.",
+              body: "The fields below belong to Mercado Pago. The charge is exactly your order total.",
               mountLabel: "Mercado Pago secure fields",
             },
             redirect: {
@@ -1988,7 +1988,8 @@ const en: Dictionary = {
       shippingPending: "To be confirmed",
       total: "Total",
       totalPending: "To be confirmed",
-      estimate: "Business days",
+      estimate: "Delivery estimate",
+      estimateDays: { one: "{n} business day", many: "{n} business days" },
       freeShippingRemaining: "{amount} more for free shipping",
       freeShippingReached: "Free shipping reached",
       note: "Prices will include IVA once confirmed. No tax is added separately.",
@@ -2260,7 +2261,8 @@ const en: Dictionary = {
     shippingPending: "Calculated at checkout",
     freeShippingRemaining: "{amount} more for free shipping",
     freeShippingReached: "Free shipping unlocked",
-    totalsNote: "Amounts in MXN. VAT included in the displayed price.",
+    totalsNote:
+      "Amounts in MXN. Prices will include VAT once they are confirmed; no tax is added separately.",
   },
 
   /** Commerce controls on a product page. */

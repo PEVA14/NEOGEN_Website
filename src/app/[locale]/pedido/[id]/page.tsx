@@ -85,14 +85,17 @@ export default async function OrderStatusPage({
 
   const view = customerView(order);
   return (
-    <Section mode="quiet" aria-labelledby="order-status-title">
+    <Section mode="quiet" rhythm="record" aria-labelledby="order-status-title">
       <Container width="full">
+        {/* The h1 is the answer — "Tu pedido va en camino" — not the page's
+            name. "Is my order okay?" is the question this page exists for. */}
         <SectionHeader
           index={copy.index}
           label={`${copy.label} // ${copy.qualifier}`}
-          title={copy.title}
+          title={copy.headline[view.headline]}
           id="order-status-title"
           as="h1"
+          scale="record"
         />
         {isPayable(order.state) && paymentAvailable() && view.headline === "unpaid" ? (
           <a href={path(routes.orderPayment(order.id))} className={styles.payAction}>
