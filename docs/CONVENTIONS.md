@@ -538,6 +538,47 @@ declarations, and that is the correct output.
 cookie, which was enough for the build to prerender the whole checkout as
 static HTML.
 
+## 12b. Operations after checkout
+
+Full reference: `docs/OPERATIONS.md`.
+
+**Three axes, never one enum.** Payment (`order.state`), fulfilment
+(`order.fulfilment.state`) and shipment (`order.shipments`) are separate and
+combine freely. Only a provider answer moves payment. Only dispatching a
+shipment reaches `fulfilled`. Nothing on the fulfilment or shipment axis
+moves for an unpaid order.
+
+**Operations are pure, and `operate` persists them.** Every operation in
+`domain/order/operations.ts` takes an order and returns an order or a coded
+refusal. `server/orders.ts#operate` runs it under the version lock and then
+calls `afterOrderChange`. That re-derives stock holds (`desiredHold`) and
+owed messages (`messagesOwed`) from the order's state. Both are
+level-triggered and idempotent, so a lost step is repaired by the next
+change. Add new behaviour by adding a pure operation, not by writing to the
+repository from a route.
+
+**Money is never claimed by NEOGEN.** A refund is requested, then submitted,
+and becomes confirmed only from the provider's payment state. A message is
+`sent` only when a channel reports the provider accepted it.
+
+**External ids are attached, never adopted.** Payment, shipment, ERP and
+invoice ids live on their own records or in `externalRefs`. The `NG-` id is
+the order.
+
+**Stored orders are upgraded on read** (`upgradeOrder`), in both
+repositories, and migrations backfill list columns the same way. Adding a
+field to `Order` means adding its default there.
+
+**Boundaries with honest defaults:** `ShippingProvider` (none),
+`NotificationChannel` (none), `AnalyticsSink` (none), `InvoiceProvider`
+(none), and signal sinks (a console JSON line). None of them returns a
+made-up value.
+
+**The console** (`/ops`) is its own root layout, Spanish, off until
+configured. Every action is a server action that re-checks the session.
+Customer order status is `/{locale}/pedido/{id}`: owner cookie or signed
+link, token stripped by redirect.
+
 ## 13. Trust and content (Phase 11)
 
 **One resolver decides every quality state.** `domain/quality/resolveEvidence`
@@ -991,10 +1032,12 @@ npm run check:quality   # evidence resolver, lots, Janoshik rules, media readine
 npm run check:content   # references, sourced statements, forbidden vocabulary, notifications
 npm run check:media     # media declarations vs real files
 npm run check:payments  # Mercado Pago vocabulary, webhook HMAC, charge integrity, reconciliation
+npm run check:operations  # fulfilment, shipments, refunds, inventory race, outbox, access links, ops auth
 npm run check:atlas     # questionnaire, profile, privacy, projections, no-leak sweep, policies, engines
 npm run check:output    # what the build actually emitted
 npm run format       # Prettier
 npm run db:migrate   # apply db/migrations to DATABASE_URL
+npm run ops:account -- <name>  # print an OPS_ACCOUNTS entry (password typed at a prompt)
 ```
 
 Asset pipelines — run by hand, and their output is committed:

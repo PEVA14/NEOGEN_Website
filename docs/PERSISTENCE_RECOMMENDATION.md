@@ -6,8 +6,13 @@ schema `db/migrations/001_orders.sql`, applied with `npm run db:migrate`, and
 selected by `DATABASE_URL` in `src/server/persistence.ts`. They are tested on
 a real Postgres engine (PGlite) in `check:payments`. What is NOT done:
 choosing the vendor and provisioning the database — that still needs owner
-approval. Live Mercado Pago payments refuse to run without it. The
-notification outbox is still in memory.
+approval. Live Mercado Pago payments refuse to run without it.
+
+**2026-09-23:** `db/migrations/002_operations.sql` adds the operations
+columns on orders, inventory (levels, holds, ledger) and the notification
+outbox, so with `DATABASE_URL` set every store — orders, drafts, stock and
+messages — is in the same database (`src/server/persistence.ts`). See
+`docs/OPERATIONS.md` §11.
 
 **Question:** what should replace the in-memory adapters behind
 `OrderRepository`, `DraftStore` and `NotificationOutbox` (see

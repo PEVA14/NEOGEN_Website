@@ -1,6 +1,9 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-09-22**: **NEOGEN Research is now a knowledge system** —
+Last updated **2026-09-23**: **the operational layer around orders exists**
+— fulfilment, shipments recorded by hand, inventory, lots, refunds,
+notifications, customer order status and the `/ops` console (§8ab,
+`docs/OPERATIONS.md`). Before that, 2026-09-22: **NEOGEN Research is now a knowledge system** —
 compendium, compound records, research lines, glossary, handling reference and
 Start Here (§8aa). Before that, 2026-09-20: **all three flagships ship a real vial, live on
 their own homepage sections** (§8u, §8v), **the brand mark is applied across
@@ -24,7 +27,17 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 
 ### Start here: handoff of 2026-09-20
 
-- **Latest (2026-09-22/23): the research/education pass (§8aa), committed on
+- **Latest (2026-09-23, overnight brief): commerce + operations pass
+  (§8ab).** Committed in logical commits, not pushed, not deployed. The
+  NEOGEN order now has separate payment / fulfilment / shipment axes, an
+  extended audit trail, a protected operations console at `/ops`, opt-in
+  inventory with race-safe holds before any charge, lot assignment (registry
+  still empty), manual shipments behind a `ShippingProvider` boundary, full
+  refunds through Mercado Pago (confirmed only by its state), a durable
+  outbox with ES/EN email templates (nothing sent: no provider), signed
+  customer order-status links, a funnel analytics taxonomy (no vendor) and
+  redacted operational signals. What is blocked and why is in §8ab.
+- **2026-09-22/23: the research/education pass (§8aa), committed on
   the owner's request, not pushed.** Six new routes
   under `/investigacion` (compendium with quick view, 62 compound records, 35
   research lines, a 63-term glossary, laboratory handling, Start Here), a
@@ -316,6 +329,15 @@ also encoded in `src/config/site.ts`; anything undecided there is `null`.
    Mercado Pago refuses to run on it); the notification outbox is in memory
    regardless.
 8. **Email provider** and the internal operations destination (inbox or chat).
+   Every owed message waits in the outbox as `pending` (§8ab).
+   8b. **Operations console access:** set `OPS_ACCOUNTS` / `OPS_SESSION_SECRET`
+   (and `ORDER_ACCESS_SECRET` for customer links) per `docs/OPERATIONS.md`;
+   decide who operates and whether host-level protection is added.
+   8c. **Refunds policy** (legal) before any live refund; live refunds also
+   need `OPS_LIVE_REFUNDS=enabled`.
+   8d. **National courier / shipping provider**, rates, and whether lot
+   assignment is mandatory before dispatch. **Invoicing (CFDI):** PAC and
+   the accountant's SAT keys (`docs/INVOICING_READINESS.md`).
    8a. **Atlas questionnaire v4 asks for sensitive data** (§8k). None of it leaves
    the browser and none of it is used, but asking still needs counsel on the
    privacy notice and consent for datos sensibles (health, sexual health), and
@@ -2275,6 +2297,69 @@ dictionaries).
    `CONFIRMED_TYPE` is empty; the record's "Tipo" row inherits that honesty.
 5. Cold-chain determination (§6) — the handling page cannot say more until it
    exists.
+
+## 8ab. Commerce + operations pass (2026-09-23)
+
+Owner brief (overnight, substantial autonomy): build NEOGEN's own
+provider-independent order operations around the existing Mercado Pago
+checkout — order model, event history, operations console, fulfilment,
+inventory, lots, shipping boundary, customer status, notifications,
+refunds/disputes, analytics, observability, CFDI readiness — without new
+vendors, invented data, or weakening payment safeguards. Full reference:
+**`docs/OPERATIONS.md`**; invoicing: **`docs/INVOICING_READINESS.md`**.
+
+**What existed and was preserved:** the NEOGEN order id and frozen snapshot;
+the payment state machine, `reconcileSnapshot` (amount + reference checks),
+attempt claiming with idempotency keys, global provider-event dedupe, the
+webhook, the Postgres adapters; the outbox abstraction and `none` channel;
+the lot registry and its supplier-reference privacy; the ownership-cookie
+access model. `transition()` still refuses `paid`.
+
+**Changed deliberately (deviations, with reasons):**
+
+- The dormant `status` field (always `placed`) is replaced by `fulfilment`;
+  stored orders are upgraded on read and migration 002 backfills list
+  columns. `order.state` keeps its name as the payment axis.
+- `submitPayment` now holds stock before calling the provider; a short
+  tracked SKU closes the attempt as `out_of_stock` (a new NEOGEN decline
+  reason) without a charge. Untracked SKUs behave exactly as before.
+- Mercado Pago `processed/refunded` maps to `refunded` (the refund
+  reference and the status page disagree; see PAYMENTS §3). Documented
+  refund 409s count as submitted.
+- Notifications are now level-triggered from the order's state; the
+  order-placed message ids are unchanged.
+- `scripts/lib/ts-resolve.mjs` maps `next/headers|navigation|server` so the
+  checks can import modules that use them.
+
+**Gates:** new `check:operations` (313 assertions) in `npm run check`;
+`check:payments` 208 (stock holds around real submissions, signal
+redaction, refund mapping); `check:content` scans email and console copy.
+Negative control: removing the paid guard from `advanceFulfilment` or the
+pending-shipment cancel failed exactly those assertions.
+
+**Browser QA (production build, scratchpad server with seeded memory
+orders, 1440 and 375):** sign-in (wrong password refused, cookie httpOnly /
+Strict / `/ops`), every list view and search, queued → preparing → ready →
+dispatch with tracking (http URL refused), two tabs pressing "ready to ship"
+(one transition, one refusal), refund without confirmation and without a
+configured provider refused, disputed attention, notes, packing slip (also
+printed to PDF), inventory write-off below reserved refused, receipt
+recorded, outbox all "not sent", preview sandboxed, sign-out. Customer
+status: no cookie / wrong-order token / forged token → "not found"; signed
+link → status with the token stripped; ES and EN. axe: 0 violations on every
+console and status page at both widths. One 375px overflow on the console
+list (hidden labels escaping the table scroller) was fixed.
+
+**Not built, on purpose:** any carrier, email, analytics, monitoring, ERP or
+PAC integration; partial refunds; warehouse locations; stock by lot;
+backorders; customer accounts; a customer "look up by email" form (weaker
+than the signed link); cron jobs; seeded stock or lots.
+
+**Owner decisions / data now blocking** (also §6): email provider and
+operations destination; courier and rates; refunds policy; who operates the
+console; lot receiving process and whether lots are mandatory before
+dispatch; first stock counts; analytics product (and consent); monitoring
+vendor; PAC and SAT keys; database provisioning (unchanged).
 
 ## 9. Recommendation for Phase 13 (not approved)
 

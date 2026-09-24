@@ -76,18 +76,19 @@ webhook → /api/payments/webhook → verify HMAC → GET /v1/orders/{id} → re
 Order-level `status` / `status_detail` → NEOGEN `PaymentState`
 (`vocabulary.ts`; `check:payments` asserts every documented row):
 
-| Mercado Pago order                                                             | NEOGEN                    | Notes                                                   |
-| ------------------------------------------------------------------------------ | ------------------------- | ------------------------------------------------------- |
-| `created`                                                                      | no change                 | Nothing processed yet                                   |
-| `processing` / any, `in_review`                                                | `payment_processing`      | Page refreshes itself; no second charge possible        |
-| `action_required` / `waiting_payment`, `waiting_transfer`, `pending_challenge` | `pending_payment`         | The payer must act                                      |
-| `action_required` / `waiting_capture`, `waiting_retry`                         | `payment_processing`      | Processor or seller acts next                           |
-| `processed` / `accredited`, `partially_refunded`                               | `paid`                    | Only if amount and external reference match (§5)        |
-| `failed`                                                                       | `payment_failed` + reason | Retryable                                               |
-| `canceled`, `expired`                                                          | `payment_failed` + reason | A failed **attempt**; the NEOGEN order is not cancelled |
-| `refunded`                                                                     | `refunded`                |                                                         |
-| `charged_back`                                                                 | `disputed` (new state)    | Operator decides; `disputed → paid / refunded`          |
-| anything undocumented                                                          | no change                 | Never guessed                                           |
+| Mercado Pago order                                                             | NEOGEN                    | Notes                                                                                                                                    |
+| ------------------------------------------------------------------------------ | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `created`                                                                      | no change                 | Nothing processed yet                                                                                                                    |
+| `processing` / any, `in_review`                                                | `payment_processing`      | Page refreshes itself; no second charge possible                                                                                         |
+| `action_required` / `waiting_payment`, `waiting_transfer`, `pending_challenge` | `pending_payment`         | The payer must act                                                                                                                       |
+| `action_required` / `waiting_capture`, `waiting_retry`                         | `payment_processing`      | Processor or seller acts next                                                                                                            |
+| `processed` / `accredited`, `partially_refunded`                               | `paid`                    | Only if amount and external reference match (§5)                                                                                         |
+| `failed`                                                                       | `payment_failed` + reason | Retryable                                                                                                                                |
+| `canceled`, `expired`                                                          | `payment_failed` + reason | A failed **attempt**; the NEOGEN order is not cancelled                                                                                  |
+| `refunded`                                                                     | `refunded`                |                                                                                                                                          |
+| `processed` / `refunded`                                                       | `refunded`                | The "Refund order" reference's answer to a full refund (2026-09-23); the status page lists `refunded`/`refunded` instead — both map here |
+| `charged_back`                                                                 | `disputed` (new state)    | Operator decides; `disputed → paid / refunded`                                                                                           |
+| anything undocumented                                                          | no change                 | Never guessed                                                                                                                            |
 
 Transaction `status_detail` → `DeclineReason` (one customer sentence each, ES/EN):
 
@@ -291,11 +292,16 @@ scripted Orders API and PGlite. It runs inside `npm run check`.
 6. **Shipping rates below MX$10,000.** Such orders cannot be totalled today.
 7. **Legal texts:** Terms, Privacy notice (including the 2025 LFPDPPP
    international-transfer question), returns and refunds. None are approved.
-8. **Email provider**, for customer and operator messages. Today they are
-   queued as `pending` in an in-memory outbox and **not sent**.
-9. **Operations:** there is no admin UI to see paid orders, act on
-   `disputed` or `paid_on_earlier_attempt`, or trigger refunds. The adapter's
-   `refund()` exists but nothing calls it.
+8. **Email provider**, for customer and operator messages. Messages are
+   queued as `pending` in the outbox (durable in Postgres since 2026-09-23)
+   and **not sent**.
+9. ~~Operations~~ Built 2026-09-23 (`docs/OPERATIONS.md`): the `/ops`
+   console shows paid orders, flags `disputed` and `paid_on_earlier_attempt`,
+   and submits FULL refunds through `refund()`
+   (`POST /v1/orders/{id}/refund`, no body, idempotency key = refund id),
+   marking them confirmed only when Mercado Pago reports the order refunded.
+   Live-mode refunds need `OPS_LIVE_REFUNDS=enabled`. Remaining blocker: an
+   approved refunds policy.
 
 ## 13. Architected, not enabled
 
