@@ -12,7 +12,9 @@
   inset-block-start: 0;
   z-index: var(--z-header);
   border-block-end: 1px solid var(--border-subtle);
-  background-color: color-mix(in oklab, var(--surface-base) 88%, transparent);
+  /* Nearly opaque: at 88% the catalogue's vials and area washes bled through
+     the two-row phone header and made the nav read as noise. */
+  background-color: color-mix(in oklab, var(--surface-base) 96%, transparent);
   backdrop-filter: blur(8px);
   /* Interface tier: this is state feedback, so it survives reduced motion. */
   transition:

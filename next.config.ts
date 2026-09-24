@@ -4,6 +4,16 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
 
   /*
+   * A branded 404 for URLs that match no route. With two root layouts
+   * (`[locale]` and `/ops`) there is no single layout to compose one from, so
+   * Next's documented convention is `app/global-not-found.tsx`. Without it an
+   * unmatched address showed Next's own unbranded English page with no `lang`.
+   */
+  experimental: {
+    globalNotFound: true,
+  },
+
+  /*
    * IMAGE OPTIMISATION — configured for product photography that does not
    * exist yet, so the first photograph lands on a pipeline rather than
    * starting a conversation about one.

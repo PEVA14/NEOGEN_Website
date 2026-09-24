@@ -76,6 +76,14 @@
   color: var(--ink-muted);
 }
 
+/* In the phone strip the count follows the name on one line; a separator
+   keeps "MECANISMO 2" from reading as a section called "Mecanismo 2". */
+@media (max-width: 63.999rem) {
+  .meta::before {
+    content: "·\00a0" / "";
+  }
+}
+
 @media (min-width: 64rem) {
   .index {
     background: transparent;

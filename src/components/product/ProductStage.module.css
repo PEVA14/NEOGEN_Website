@@ -294,4 +294,14 @@
     justify-items: stretch;
     inline-size: 100%;
   }
+
+  /*
+   * No ghosted name when stacked. Centred on a stage that is now a column,
+   * it lands behind the format picker and the price instead of behind the
+   * object — reading as a stray band across the controls, not as a poster.
+   * The name is already the page's heading two lines above.
+   */
+  .wordmarkLayer {
+    display: none;
+  }
 }

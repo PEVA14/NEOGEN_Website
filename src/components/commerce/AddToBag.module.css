@@ -162,6 +162,9 @@
   display: grid;
   gap: var(--space-3xs);
   justify-items: end;
+  /* Stays on the right edge even when a narrow column wraps it under the
+     quantity — right-aligned text floating mid-column read as a mistake. */
+  margin-inline-start: auto;
   text-align: end;
 }
 

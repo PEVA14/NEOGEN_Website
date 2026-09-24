@@ -10,16 +10,33 @@
   align-items: start;
 }
 
+/*
+ * Two columns from a tablet up. Stacked at 768px, a 4:5 plate across the page
+ * was ~850px tall and put the name, the price and the action below the first
+ * screen with a strip of dead space beside the buy box; side by side, the
+ * object and the purchase arrive together, as they do on a laptop.
+ */
+@media (min-width: 48rem) {
+  .plate {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--space-xl);
+  }
+
+  /* The same hairline the flagship page uses between media and commerce. */
+  .commerce {
+    padding-inline-start: var(--space-xl);
+    border-inline-start: 1px solid var(--border-subtle);
+  }
+}
+
 @media (min-width: 64rem) {
   .plate {
     grid-template-columns: minmax(0, 1.06fr) minmax(0, 1fr);
     gap: var(--space-4xl);
   }
 
-  /* The same hairline the flagship page uses between media and commerce. */
   .commerce {
     padding-inline-start: var(--space-2xl);
-    border-inline-start: 1px solid var(--border-subtle);
   }
 }
 
@@ -89,7 +106,7 @@
   justify-items: start;
 }
 
-@media (max-width: 63.999rem) {
+@media (max-width: 47.999rem) {
   .commerce {
     justify-items: stretch;
     inline-size: 100%;
