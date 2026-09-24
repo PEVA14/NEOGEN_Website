@@ -1,3 +1,4 @@
+import type { OrderView } from "./attention";
 import type { Order } from "./types";
 
 /**
@@ -50,6 +51,23 @@ export interface OrderRepository {
    * provider event id is unique on the provider's side.
    */
   hasProviderEvent(providerEventId: string): Promise<boolean>;
+  /**
+   * The operations console's lists: newest first, at most `limit`.
+   *
+   * `search` matches an order id (prefix, case-insensitive) or a customer
+   * email (exact, case-insensitive) — the two things an operator is handed
+   * on the phone. `now` decides the time-based attention reason.
+   */
+  list(query: OrderQuery): Promise<{ orders: Order[]; truncated: boolean }>;
+  /** How many orders each view holds, for the console's tabs. */
+  counts(now: string): Promise<Record<OrderView, number>>;
+}
+
+export interface OrderQuery {
+  view: OrderView;
+  search?: string | null;
+  limit?: number;
+  now: string;
 }
 
 /**

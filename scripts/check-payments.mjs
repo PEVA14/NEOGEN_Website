@@ -33,7 +33,7 @@
  *
  *   npm run check:payments
  */
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 /* ---- environment: set BEFORE any application module is imported --------- */
@@ -45,6 +45,9 @@ process.env.MERCADOPAGO_ACCESS_TOKEN = "APP_USR-0000-test-access-token";
 process.env.MERCADOPAGO_PUBLIC_KEY = "APP_USR-test-public-key";
 process.env.MERCADOPAGO_WEBHOOK_SECRET = WEBHOOK_SECRET;
 delete process.env.DATABASE_URL;
+/* Operational signals are captured, not printed (see `server/observe.ts`). */
+const signals = [];
+globalThis.__neogen_signal_sinks__ = [{ write: (r) => signals.push(r) }];
 
 const failures = [];
 let passed = 0;
@@ -323,6 +326,8 @@ const DOCUMENTED = [
   ["expired", "expired", "payment_failed"],
   ["failed", "failed", "payment_failed"],
   ["refunded", "refunded", "refunded"],
+  /* The "Refund order" reference answers a full refund as processed/refunded. */
+  ["processed", "refunded", "refunded"],
 ];
 for (const [status, detail, expected] of DOCUMENTED) {
   eq(stateFor(status, detail), expected, `Mercado Pago ${status}/${detail} → ${expected}`);
@@ -848,6 +853,66 @@ __resetOutbox();
 }
 
 /* ======================================================================== */
+/* 8b. STOCK — held before the charge, released on a decline                  */
+/* ======================================================================== */
+
+{
+  const { memoryInventoryStore, __resetInventory } =
+    await import("../src/domain/inventory/adapters/memory.ts");
+  __resetInventory();
+  const inv = memoryInventoryStore;
+  const count = (quantity, id) =>
+    inv.adjust({
+      id,
+      variantId: "v1",
+      mode: "count",
+      quantity,
+      reason: "initial_count",
+      lotId: null,
+      actor: "t",
+      note: null,
+      at: "2026-09-19T09:00:00.000Z",
+    });
+
+  /* Untracked (no count yet): payment behaves exactly as before inventory. */
+  const free = await placed(12000);
+  eq((await submitPayment(free.id, card("APRO"))).kind, "paid", "an untracked SKU pays as before");
+
+  await count(0, "c-zero");
+  const empty = await placed(12000);
+  const posts = mp.posts.length;
+  const refusedPay = await submitPayment(empty.id, card("APRO"));
+  eq(
+    `${refusedPay.kind}:${refusedPay.reason}`,
+    "declined:out_of_stock",
+    "a tracked SKU with no units is refused",
+  );
+  eq(mp.posts.length, posts, "and Mercado Pago is never called — nothing can be charged");
+  const afterRefusal = await load(empty.id);
+  eq(afterRefusal.state, "payment_failed", "the order stays payable once stock returns");
+  eq(lastDecline(afterRefusal), "out_of_stock", "and says why");
+
+  await count(1, "c-one");
+  const declined = await placed(12000);
+  eq((await submitPayment(declined.id, card("OTHE"))).kind, "declined", "a card decline");
+  eq((await inv.level("v1")).reserved, 0, "releases the unit it held");
+
+  const bought = await placed(12000);
+  eq((await submitPayment(bought.id, card("APRO"))).kind, "paid", "the last unit sells");
+  eq((await inv.level("v1")).reserved, 1, "and stays reserved for the paid order");
+  eq((await load(bought.id)).fulfilment.state, "queued", "the paid order is queued for fulfilment");
+  const next = await placed(12000);
+  const p2 = mp.posts.length;
+  eq(
+    (await submitPayment(next.id, card("APRO"))).reason,
+    "out_of_stock",
+    "the next customer is refused",
+  );
+  eq(mp.posts.length, p2, "before any charge");
+  __resetInventory();
+}
+
+/* ======================================================================== */
 /* 9. POSTGRES — the durable adapters on a real Postgres engine (PGlite)       */
 /* ======================================================================== */
 
@@ -875,13 +940,16 @@ __resetOutbox();
       );
     },
   };
-  const migration = readFileSync(
-    path.resolve(import.meta.dirname, "../db/migrations/001_orders.sql"),
-    "utf8",
-  );
+  /* Every migration, in name order, exactly as `npm run db:migrate` applies them. */
+  const dir = path.resolve(import.meta.dirname, "../db/migrations");
+  const migration = readdirSync(dir)
+    .filter((f) => f.endsWith(".sql"))
+    .sort()
+    .map((f) => readFileSync(path.join(dir, f), "utf8"))
+    .join("\n");
   await db.exec(migration);
   await db.exec(migration);
-  passed += 1; /* the migration is idempotent: applying it twice did not throw */
+  passed += 1; /* the migrations are idempotent: applying them twice did not throw */
 
   const repo = createPostgresOrderRepository(client);
   const order = makeOrder(12000);
@@ -960,6 +1028,18 @@ __resetOutbox();
   eq(await drafts.get("d1"), null, "an expired draft reads as absent");
   await drafts.delete("d1");
   await db.close();
+}
+
+/* ---- observability: what the payment path logged ------------------------ */
+
+ok(signals.length > 0, "the payment path emits operational signals for failures");
+{
+  const logged = JSON.stringify(signals);
+  ok(!logged.includes(WEBHOOK_SECRET), "no signal carries the webhook secret");
+  ok(!logged.includes(process.env.MERCADOPAGO_ACCESS_TOKEN), "no signal carries the access token");
+  ok(!/tok-[A-Z]+-/.test(logged), "no signal carries a card token");
+  ok(!logged.includes("@"), "no signal carries an email address");
+  ok(!logged.includes("Calle"), "no signal carries an address");
 }
 
 /* ---- report --------------------------------------------------------------- */

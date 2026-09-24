@@ -17,9 +17,55 @@ import type { PaymentState } from "@/domain/order/types";
  * domain produces the facts an email may state, and rendering those facts into
  * words is the adapter's job, reviewed when an adapter exists.
  */
-export type NotificationKind = "order.placed.customer" | "order.placed.internal";
+export type NotificationKind =
+  /** Payment confirmed — the order is real. Sent once, on the first `paid`. */
+  | "order.placed.customer"
+  | "order.placed.internal"
+  /** A carrier has the parcel. Tracking included when it is known. */
+  | "order.shipped.customer"
+  /** Tracking arrived after the parcel shipped. */
+  | "order.tracking.customer"
+  | "order.delivered.customer"
+  /** Cancelled after the customer paid. An unpaid, abandoned order sends nothing. */
+  | "order.cancelled.customer"
+  /** The provider confirmed the money went back — never on a request alone. */
+  | "order.refunded.customer"
+  /** A chargeback: operations must act. Never sent to the customer. */
+  | "order.disputed.internal";
 
-export interface OrderPlacedFacts {
+export const NOTIFICATION_KINDS: readonly NotificationKind[] = [
+  "order.placed.customer",
+  "order.placed.internal",
+  "order.shipped.customer",
+  "order.tracking.customer",
+  "order.delivered.customer",
+  "order.cancelled.customer",
+  "order.refunded.customer",
+  "order.disputed.internal",
+];
+
+/**
+ * WHAT IS DELIBERATELY NOT A MESSAGE: "preparing", "ready to ship", a failed
+ * payment (the customer is on the page when it fails), a refund merely
+ * requested (money has not moved), and every internal hold or lot change.
+ * A customer hears about their order when something happened to it that they
+ * would want to know, not every time an operator clicks.
+ */
+
+/** The shipment a shipping message is about. Only what the customer needs. */
+export interface ShipmentFacts {
+  id: string;
+  carrier: string | null;
+  service: string | null;
+  trackingNumber: string | null;
+  trackingUrl: string | null;
+  shippedAt: string | null;
+  deliveredAt: string | null;
+}
+
+export type OrderPlacedFacts = OrderFacts;
+
+export interface OrderFacts {
   orderId: string;
   placedAt: string;
   /** Stated plainly in both messages. With no processor this is `created`. */
@@ -30,6 +76,10 @@ export interface OrderPlacedFacts {
   total: Money;
   deliveryMethod: string;
   estimateDays: number;
+  /** Shipping messages only. */
+  shipment?: ShipmentFacts;
+  /** Refund messages only: the amount the provider confirmed. */
+  refunded?: Money;
 }
 
 /**
@@ -51,7 +101,7 @@ export interface NotificationMessage {
   locale: Locale;
   recipient: NotificationRecipient;
   createdAt: string;
-  facts: OrderPlacedFacts;
+  facts: OrderFacts;
   /**
    * Internal messages only: where it ships and how to reach the customer.
    * Kept off the customer message, which does not need to repeat their own
@@ -103,4 +153,8 @@ export interface NotificationOutbox {
   markSent(id: string, providerMessageId: string, at: string): Promise<void>;
   markFailed(id: string, error: string, at: string): Promise<void>;
   pending(): Promise<readonly OutboxEntry[]>;
+  /** Every entry for one order, oldest first — the console's message history. */
+  forOrder(orderId: string): Promise<readonly OutboxEntry[]>;
+  /** The most recent entries, any status — the console's outbox view. */
+  recent(limit: number): Promise<readonly OutboxEntry[]>;
 }

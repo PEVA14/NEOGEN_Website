@@ -1,4 +1,8 @@
+import { ORDER_VIEWS, orderColumns, STALLED_PAYMENT_MS, VIEW_PREDICATES } from "../attention";
+import { upgradeOrder } from "../upgrade";
+
 import type { SqlClient } from "@/lib/sql";
+import type { OrderView } from "../attention";
 import type { Order } from "../types";
 import type { OrderRepository, SaveResult } from "../repository";
 
@@ -26,7 +30,41 @@ interface OrderRow {
 }
 
 function toOrder(row: OrderRow): Order {
-  return { ...row.data, version: Number(row.version) } as Order;
+  return upgradeOrder({ ...row.data, version: Number(row.version) } as Order);
+}
+
+/**
+ * A view as a WHERE clause over the indexed columns, from the same predicate
+ * table the memory store interprets. Parameters are appended to `params`;
+ * nothing from a request is ever interpolated into the SQL text.
+ */
+function viewClause(view: OrderView, params: unknown[], now: string): string {
+  const p = VIEW_PREDICATES[view];
+  const parts: string[] = [];
+  const bind = (value: unknown) => {
+    params.push(value);
+    return `$${params.length}`;
+  };
+  if (p.attention) {
+    /* The stored column holds state and event reasons; the time-based one —
+       a provider-answered payment unsettled for too long — is decided here. */
+    const cutoff = new Date(Date.parse(now) - STALLED_PAYMENT_MS).toISOString();
+    parts.push(
+      `(attention or (state = 'payment_processing' and provider_ref is not null and updated_at < ${bind(cutoff)}))`,
+    );
+  }
+  if (p.payment) parts.push(`state = any(${bind([...p.payment])}::text[])`);
+  if (p.fulfilment) parts.push(`fulfilment_state = any(${bind([...p.fulfilment])}::text[])`);
+  if (p.notFulfilment) {
+    parts.push(`not (fulfilment_state = any(${bind([...p.notFulfilment])}::text[]))`);
+  }
+  if (p.shipment) parts.push(`shipment_state = any(${bind([...p.shipment])}::text[])`);
+  return parts.length ? parts.join(" and ") : "true";
+}
+
+function columnValues(order: Order): [string, string, boolean] {
+  const c = orderColumns(order);
+  return [c.fulfilment, c.shipment, c.attention];
 }
 
 function payload(order: Order): string {
@@ -58,12 +96,14 @@ export function createPostgresOrderRepository(sql: SqlClient): OrderRepository {
   }
 
   const repository: OrderRepository = {
-    async create(order) {
+    async create(input) {
+      const order = upgradeOrder(input);
       return sql.transaction(async (tx) => {
         const inserted = await tx.query<{ id: string }>(
           `insert into neogen_orders
-             (id, version, state, provider, provider_ref, total_amount, created_at, updated_at, data)
-           values ($1, 1, $2, $3, $4, $5, $6, $7, $8::jsonb)
+             (id, version, state, provider, provider_ref, total_amount, created_at, updated_at, data,
+              fulfilment_state, shipment_state, attention)
+           values ($1, 1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11)
            on conflict (id) do nothing
            returning id`,
           [
@@ -75,6 +115,7 @@ export function createPostgresOrderRepository(sql: SqlClient): OrderRepository {
             order.createdAt,
             order.updatedAt,
             payload(order),
+            ...columnValues(order),
           ],
         );
         if (inserted.rows.length === 0) return { ok: false as const, reason: "exists" as const };
@@ -92,12 +133,14 @@ export function createPostgresOrderRepository(sql: SqlClient): OrderRepository {
       return found.rows[0] ? toOrder(found.rows[0]) : null;
     },
 
-    async save(order): Promise<SaveResult> {
+    async save(input): Promise<SaveResult> {
+      const order = upgradeOrder(input);
       return sql.transaction(async (tx) => {
         const updated = await tx.query<{ version: number }>(
           `update neogen_orders
               set version = version + 1, state = $3, provider = $4, provider_ref = $5,
-                  updated_at = $6, data = $7::jsonb
+                  updated_at = $6, data = $7::jsonb,
+                  fulfilment_state = $8, shipment_state = $9, attention = $10
             where id = $1 and version = $2
           returning version`,
           [
@@ -108,6 +151,7 @@ export function createPostgresOrderRepository(sql: SqlClient): OrderRepository {
             order.providerRef,
             order.updatedAt,
             payload(order),
+            ...columnValues(order),
           ],
         );
         if (updated.rows.length === 0) {
@@ -139,6 +183,39 @@ export function createPostgresOrderRepository(sql: SqlClient): OrderRepository {
         [providerEventId],
       );
       return found.rows.length > 0;
+    },
+
+    async list({ view, search, limit = 100, now }) {
+      const params: unknown[] = [];
+      let where = viewClause(view, params, now);
+      const q = search?.trim().toLowerCase();
+      if (q) {
+        params.push(`${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`, q);
+        where += ` and (lower(id) like $${params.length - 1} or lower(data -> 'contact' ->> 'email') = $${params.length})`;
+      }
+      params.push(limit + 1);
+      const found = await sql.query<OrderRow>(
+        `select version, data from neogen_orders where ${where}
+          order by created_at desc limit $${params.length}`,
+        params,
+      );
+      const orders = found.rows.map(toOrder);
+      return { orders: orders.slice(0, limit), truncated: orders.length > limit };
+    },
+
+    async counts(now) {
+      const params: unknown[] = [];
+      const selects = ORDER_VIEWS.map(
+        (view) => `count(*) filter (where ${viewClause(view, params, now)})::int as "${view}"`,
+      );
+      const found = await sql.query<Record<OrderView, number>>(
+        `select ${selects.join(", ")} from neogen_orders`,
+        params,
+      );
+      const row = found.rows[0];
+      return Object.fromEntries(
+        ORDER_VIEWS.map((view) => [view, Number(row?.[view] ?? 0)]),
+      ) as Record<OrderView, number>;
     },
   };
 

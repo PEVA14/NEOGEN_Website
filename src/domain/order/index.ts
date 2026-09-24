@@ -8,15 +8,34 @@ import type { CheckoutDraft, DeliverySelection, PricedLine } from "@/domain/chec
 import type { Order, OrderLine, OrderTotals, PaymentState } from "./types";
 
 export type {
+  AttentionAck,
+  Cancellation,
+  CancellationReason,
+  EventAxis,
+  EventMeta,
+  EventSource,
+  EventState,
+  ExternalReference,
+  Fulfilment,
+  FulfilmentState,
+  HoldReason,
+  InternalNote,
+  LotAssignment,
+  Milestone,
   Order,
   OrderEvent,
   OrderEventKind,
   OrderLine,
-  OrderStatus,
   OrderTotals,
   PaymentAttempt,
   PaymentAttemptOutcome,
   PaymentState,
+  Refund,
+  RefundReason,
+  RefundStatus,
+  Shipment,
+  ShipmentState,
+  ShipmentSummary,
 } from "./types";
 export { canTransition, isPayable, isSettled, PAYABLE_STATES, TRANSITIONS } from "./types";
 export {
@@ -33,7 +52,23 @@ export {
   type ApplyResult,
   type NormalisedPaymentEvent,
 } from "./events";
-export { mutate, type OrderRepository, type SaveResult } from "./repository";
+export { mutate, type OrderQuery, type OrderRepository, type SaveResult } from "./repository";
+export { initialFulfilment, upgradeOrder } from "./upgrade";
+export * from "./operations";
+export {
+  ACKNOWLEDGEABLE,
+  acknowledgeAttention,
+  attentionReasons,
+  isOrderView,
+  matchesView,
+  ORDER_VIEWS,
+  orderColumns,
+  STALLED_PAYMENT_MS,
+  VIEW_PREDICATES,
+  type AttentionReason,
+  type OrderColumns,
+  type OrderView,
+} from "./attention";
 
 const mxn = (amount: number): Money => ({ amount, currency: "MXN" });
 
@@ -107,6 +142,7 @@ export function createOrder(
   locale: Order["locale"],
   now: () => string = () => new Date().toISOString(),
   id: () => string = newOrderId,
+  nonce: () => string = newAccessNonce,
 ): Order | null {
   const totals = quote(draft.snapshot.lines, draft.delivery);
   if (!totals || !draft.delivery) return null;
@@ -120,7 +156,16 @@ export function createOrder(
        complete and never carries an undefined version. */
     version: 1,
     state: "created",
-    status: "placed",
+    schema: 2,
+    fulfilment: { state: "unfulfilled", hold: null, lots: [] },
+    shipments: [],
+    cancellation: null,
+    refunds: [],
+    milestones: {},
+    access: { nonce: nonce() },
+    externalRefs: [],
+    notes: [],
+    acks: [],
     lines: draft.snapshot.lines.map(freeze),
     totals,
     contact,
@@ -133,9 +178,32 @@ export function createOrder(
     provider: null,
     attempts: [],
     events: [
-      { seq: 1, at, kind: "created", providerEventId: null, from: null, to: "created", note: null },
+      {
+        seq: 1,
+        at,
+        kind: "created",
+        providerEventId: null,
+        from: null,
+        to: "created",
+        note: null,
+        axis: "order",
+        source: "customer",
+        actor: null,
+      },
     ],
   };
+}
+
+/**
+ * 128 random bits, base64url. The order-status link is an HMAC over the order
+ * id and this nonce (`server/orderAccess.ts`); the nonce alone grants nothing.
+ */
+export function newAccessNonce(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  let bin = "";
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
 /** Copy a line so an order cannot share structure with the draft it came from. */

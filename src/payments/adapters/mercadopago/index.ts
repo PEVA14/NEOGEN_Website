@@ -266,9 +266,34 @@ export function createMercadoPagoProvider(
           signal: AbortSignal.timeout(CHARGE_TIMEOUT_MS),
           cache: "no-store",
         });
-        return response.ok
-          ? { ok: true }
-          : { ok: false, error: error("provider_error", `Refund refused (${response.status}).`) };
+        if (response.ok) return { ok: true };
+        /*
+         * 409 answers documented by the "Refund order" reference (2026-09-23):
+         * `idempotency_key_already_used` (this refund was already sent under
+         * its stable key), `order_already_refunded` and
+         * `order_refund_already_in_process`. Each means the refund request
+         * exists at Mercado Pago, so the NEOGEN refund is `submitted`; the
+         * payment state fetched next decides whether it is confirmed.
+         * `cannot_refund_order` is a real refusal.
+         */
+        if (response.status === 409) {
+          const body = (await readJson(response)) as { errors?: { code?: unknown }[] } | null;
+          const code = body?.errors?.[0]?.code;
+          if (
+            code === "idempotency_key_already_used" ||
+            code === "order_already_refunded" ||
+            code === "order_refund_already_in_process"
+          ) {
+            return { ok: true };
+          }
+        }
+        return {
+          ok: false,
+          error: error(
+            response.status === 409 || response.status === 400 ? "declined" : "provider_error",
+            `Refund refused (${response.status}).`,
+          ),
+        };
       } catch {
         return { ok: false, error: error("provider_error", "No answer from Mercado Pago.") };
       }

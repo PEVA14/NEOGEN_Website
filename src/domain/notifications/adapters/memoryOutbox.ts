@@ -62,6 +62,18 @@ export function memoryOutbox(): NotificationOutbox {
         .filter((e) => e.status !== "sent")
         .map((e) => structuredClone(e));
     },
+    async forOrder(orderId) {
+      return [...store().values()]
+        .filter((e) => e.message.orderId === orderId)
+        .sort((a, b) => (a.message.createdAt < b.message.createdAt ? -1 : 1))
+        .map((e) => structuredClone(e));
+    },
+    async recent(limit) {
+      return [...store().values()]
+        .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))
+        .slice(0, limit)
+        .map((e) => structuredClone(e));
+    },
   };
 }
 

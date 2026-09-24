@@ -56,6 +56,14 @@ export function stateFor(status: string, detail: string): PaymentState | null {
           return "pending_payment";
       }
     case "processed":
+      /*
+       * A FULL REFUND. The "Order status" page lists a fully refunded order as
+       * `refunded`/`refunded`, but the "Refund order" API reference (read
+       * 2026-09-23) shows the refund response as `processed` with detail
+       * `refunded`. The two pages disagree; whichever the API sends, a detail
+       * of `refunded` never means money was kept, so both map to `refunded`.
+       */
+      if (detail === "refunded") return "refunded";
       /* `accredited` and `partially_refunded` both mean money was taken. A
          partial refund leaves the order paid; the refund is an operator's
          record, not a customer state. */

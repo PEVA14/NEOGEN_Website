@@ -1969,6 +1969,8 @@ const en: Dictionary = {
           cancelled: "The payment attempt was cancelled. You can try again.",
           unconfirmed:
             "We received no answer to the previous attempt and no payment is recorded. You can try again.",
+          out_of_stock:
+            "One of the presentations in your order no longer has enough stock. Nothing was charged.",
           generic: "The payment was declined. Try again or use another card.",
         },
         back: "Edit the bag",
@@ -2084,12 +2086,13 @@ const en: Dictionary = {
         },
       },
       statuses: {
-        placed: "Registered",
-        in_review: "In review",
-        preparing: "Preparing",
-        shipped: "Shipped",
-        delivered: "Delivered",
-        closed: "Closed",
+        unfulfilled: "Registered",
+        queued: "Confirmed",
+        preparing: "Being prepared",
+        ready_to_ship: "Ready to ship",
+        fulfilled: "Shipped",
+        on_hold: "Under review",
+        cancelled: "Cancelled",
       },
       nextSteps: {
         title: "What happens next",

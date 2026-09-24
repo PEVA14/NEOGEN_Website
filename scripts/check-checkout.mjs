@@ -415,7 +415,14 @@ eq(missingAcknowledgements(ready).length, 0, "nothing is outstanding once it is 
 const order = createOrder(ready, normaliseContact(CONTACT), normaliseAddress(ADDRESS), "es");
 ok(order !== null, "a ready draft creates an order");
 eq(order.state, "created", "a new order starts in `created`, never `paid`");
-eq(order.status, "placed", "fulfilment status starts at `placed`");
+eq(
+  order.fulfilment.state,
+  "unfulfilled",
+  "fulfilment starts `unfulfilled` — an unpaid order is not in the queue",
+);
+eq(order.schema, 2, "a new order is written at the current schema");
+eq(order.shipments.length, 0, "no shipment exists before one is recorded");
+ok(order.access && order.access.nonce.length >= 20, "the order carries a random access nonce");
 eq(order.provider, null, "no provider until one is attempted");
 eq(order.providerRef, null, "no provider reference until one is issued");
 eq(order.attempts.length, 0, "no attempts on a fresh order");

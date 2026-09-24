@@ -74,6 +74,8 @@ export type DeclineReason =
   | "expired"
   | "cancelled"
   | "unconfirmed"
+  /** NEOGEN's own: a tracked SKU had too few units, so no charge was attempted. */
+  | "out_of_stock"
   | "generic";
 
 export const DECLINE_REASONS: readonly DeclineReason[] = [
@@ -89,6 +91,7 @@ export const DECLINE_REASONS: readonly DeclineReason[] = [
   "expired",
   "cancelled",
   "unconfirmed",
+  "out_of_stock",
   "generic",
 ];
 

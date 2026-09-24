@@ -9,7 +9,7 @@ import styles from "./OrderReceipt.module.css";
 
 import { formatPhoneDisplay } from "@/domain/checkout";
 
-import type { Order, PaymentState } from "@/domain/order";
+import type { FulfilmentState, Order, PaymentState } from "@/domain/order";
 
 export interface ReceiptCopy {
   referenceLabel: string;
@@ -18,7 +18,8 @@ export interface ReceiptCopy {
   statusLabel: string;
   /** One block per payment state. `paid` is unreachable without a provider. */
   states: Record<PaymentState, { badge: string; title: string; body: string }>;
-  statuses: Record<Order["status"], string>;
+  /** The fulfilment axis, in customer words. */
+  statuses: Record<FulfilmentState, string>;
   nextSteps: { title: string; body: string; contactLabel: string };
   items: { title: string; quantity: string };
   contact: { title: string; email: string; phone: string };
@@ -97,7 +98,7 @@ export function OrderReceipt({
             {copy.placedLabel} — {placed}
           </Mono>
           <Mono size="2xs" className={styles.plateKey}>
-            {copy.statusLabel} — {copy.statuses[order.status]}
+            {copy.statusLabel} — {copy.statuses[order.fulfilment.state]}
           </Mono>
         </div>
       </div>

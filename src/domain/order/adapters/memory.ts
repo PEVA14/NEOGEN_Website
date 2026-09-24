@@ -1,3 +1,7 @@
+import { matchesView, ORDER_VIEWS, orderColumns } from "../attention";
+import { upgradeOrder } from "../upgrade";
+
+import type { OrderView } from "../attention";
 import type { Order } from "../types";
 import type { OrderRepository, SaveResult } from "../repository";
 
@@ -59,7 +63,14 @@ function store(): Store {
  * adapter is made to behave like the real thing rather than more forgivingly.
  */
 function clone(order: Order): Order {
-  return structuredClone(order);
+  return upgradeOrder(structuredClone(order));
+}
+
+/** Order-id prefix or exact email, case-insensitive. */
+export function matchesSearch(order: Order, search: string | null | undefined): boolean {
+  const q = search?.trim().toLowerCase();
+  if (!q) return true;
+  return order.id.toLowerCase().startsWith(q) || order.contact.email.toLowerCase() === q;
 }
 
 export const memoryOrderRepository: OrderRepository = {
@@ -103,6 +114,21 @@ export const memoryOrderRepository: OrderRepository = {
 
   async hasProviderEvent(providerEventId) {
     return store().providerEvents.has(providerEventId);
+  },
+
+  async list({ view, search, limit = 100, now }) {
+    const all = [...store().orders.values()]
+      .map(clone)
+      .filter((o) => matchesView(orderColumns(o, now), view) && matchesSearch(o, search))
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
+    return { orders: all.slice(0, limit), truncated: all.length > limit };
+  },
+
+  async counts(now) {
+    const columns = [...store().orders.values()].map((o) => orderColumns(clone(o), now));
+    return Object.fromEntries(
+      ORDER_VIEWS.map((view) => [view, columns.filter((c) => matchesView(c, view)).length]),
+    ) as Record<OrderView, number>;
   },
 };
 

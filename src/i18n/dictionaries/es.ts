@@ -2129,6 +2129,8 @@ const es = {
           cancelled: "El intento de pago fue cancelado. Puedes intentarlo de nuevo.",
           unconfirmed:
             "No recibimos respuesta del intento anterior y no hay ningún pago registrado. Puedes intentarlo de nuevo.",
+          out_of_stock:
+            "Una de las presentaciones de tu pedido ya no tiene existencias suficientes. No se realizó ningún cargo.",
           generic: "El pago fue rechazado. Prueba de nuevo o usa otra tarjeta.",
         },
         back: "Modificar la bag",
@@ -2251,12 +2253,13 @@ const es = {
         },
       },
       statuses: {
-        placed: "Registrado",
-        in_review: "En revisión",
+        unfulfilled: "Registrado",
+        queued: "Confirmado",
         preparing: "En preparación",
-        shipped: "Enviado",
-        delivered: "Entregado",
-        closed: "Cerrado",
+        ready_to_ship: "Listo para envío",
+        fulfilled: "Enviado",
+        on_hold: "En revisión",
+        cancelled: "Cancelado",
       },
       nextSteps: {
         title: "Qué sigue",

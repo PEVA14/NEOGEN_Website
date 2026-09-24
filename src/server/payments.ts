@@ -3,14 +3,20 @@ import "server-only";
 import {
   answerAttempt,
   beginAttempt,
+  followPayment,
+  markRefundFailed,
+  markRefundSubmitted,
   mutate,
   openAttempt,
   recoverStalledAttempt,
 } from "@/domain/order";
 import { activeProvider, paymentAvailable, providerById } from "@/payments";
 import { reconcileSnapshot } from "@/payments/reconcile";
-import { notifyOrderPlaced } from "@/server/notifications";
+import { signal } from "@/server/observe";
+import { afterOrderChange, holdForPayment } from "@/server/orders";
 import { orderRepository } from "@/server/persistence";
+
+import type { Actor } from "@/domain/order";
 
 import type { Order, OrderRepository } from "@/domain/order";
 import type {
@@ -57,9 +63,14 @@ function outcomeFor(order: Order, reason: DeclineReason | null): SubmitOutcome {
 }
 
 /**
- * Apply a snapshot under the order's optimistic lock, then run the side effects
- * a first transition to `paid` owes (the order-placed messages). Idempotent: a
- * snapshot already applied is a duplicate and writes nothing.
+ * Apply a snapshot under the order's optimistic lock, carry the payment change
+ * over to the other axes (`followPayment`: queue a paid order, hold a disputed
+ * one, confirm a refund), then bring stock and messages into line
+ * (`afterOrderChange`). Idempotent: a snapshot already applied is a duplicate
+ * and writes nothing.
+ *
+ * The payment transition itself is untouched: `reconcileSnapshot` decides it
+ * exactly as before, and `followPayment` only runs when it `applied`.
  */
 async function applySnapshot(
   repository: OrderRepository,
@@ -69,20 +80,26 @@ async function applySnapshot(
   extra?: (order: Order) => Order,
 ): Promise<{ ok: true; order: Order; outcome: string } | { ok: false; reason: string }> {
   let outcome = "unchanged";
-  let becamePaid = false;
   const result = await mutate(repository, orderId, (current) => {
     const base = extra ? extra(current) : current;
-    const applied = reconcileSnapshot(base, snapshot, provider.id, new Date().toISOString());
+    const at = new Date().toISOString();
+    const applied = reconcileSnapshot(base, snapshot, provider.id, at);
     outcome = applied.outcome;
-    becamePaid =
-      applied.outcome === "applied" && current.state !== "paid" && applied.order.state === "paid";
     /* Nothing changed at all → no write. `extra` alone still counts as a change. */
     if (applied.order === current) return null;
-    return applied.order;
+    return applied.outcome === "applied"
+      ? followPayment(applied.order, base.state, at)
+      : applied.order;
   });
-  if (!result.ok) return result;
-  if (becamePaid) await notifyOrderPlaced(result.order, result.order.locale);
-  return { ok: true, order: result.order, outcome };
+  if (!result.ok) {
+    signal("payment.not_persisted", "error", { orderId, reason: result.reason });
+    return result;
+  }
+  if (outcome === "rejected" || outcome === "mismatched_ref") {
+    signal("payment.webhook_rejected", "warn", { orderId, outcome });
+  }
+  const order = await afterOrderChange(result.order);
+  return { ok: true, order, outcome };
 }
 
 /**
@@ -123,6 +140,29 @@ export async function submitPayment(
   const attempt = openAttempt(claimed.order);
   if (!attempt?.idempotencyKey) return { kind: "error", code: "provider_error" };
 
+  /*
+   * HOLD THE STOCK before any money moves. Tracked SKUs are reserved, all or
+   * none; if a unit is not there, the attempt is closed as refused and the
+   * provider is never called — nothing can be charged for goods NEOGEN does
+   * not have. Untracked SKUs are never limited (see `domain/inventory`). If
+   * the store cannot be asked at all, the payment fails closed.
+   */
+  const held = await holdForPayment(claimed.order);
+  if (held !== "ok") {
+    const closed = await mutate(repository, orderId, (current) =>
+      answerAttempt(current, {
+        at: new Date().toISOString(),
+        outcome: "refused",
+        errorCode: "unavailable",
+        detail: held === "short" ? "out_of_stock" : "generic",
+      }),
+    );
+    if (closed.ok) await afterOrderChange(closed.order);
+    return held === "short"
+      ? { kind: "declined", orderId, reason: "out_of_stock" }
+      : { kind: "error", code: "unavailable" };
+  }
+
   const result = await provider.charge(claimed.order, instrument, attempt.idempotencyKey);
   const answeredAt = new Date().toISOString();
 
@@ -146,9 +186,18 @@ export async function submitPayment(
       detail: result.kind === "refused" ? (result.detail ?? "generic") : "unanswered",
     }),
   );
-  if (!saved.ok) return { kind: "error", code: "provider_error" };
+  if (!saved.ok) {
+    signal("payment.not_persisted", "error", { orderId, reason: saved.reason });
+    return { kind: "error", code: "provider_error" };
+  }
+  /* A refused attempt released its hold; an unanswered one keeps it. */
+  await afterOrderChange(saved.order);
+  if (result.kind === "unanswered") {
+    signal("payment.provider_error", "warn", { orderId, outcome: "unanswered" });
+  }
 
   if (result.kind === "refused" && result.error.code !== "declined") {
+    signal("payment.provider_error", "warn", { orderId, code: result.error.code });
     /* The provider refused for a reason that is not the card's — bad
        credentials, rate limiting. Nothing was charged; the customer may retry. */
     return { kind: "error", code: "provider_error" };
@@ -181,7 +230,7 @@ export async function refreshPayment(order: Order): Promise<Order> {
     const released = await mutate(repository, order.id, (current) =>
       recoverStalledAttempt(current, now),
     );
-    return released.ok ? released.order : order;
+    return released.ok ? afterOrderChange(released.order) : order;
   }
 
   const globals = globalThis as typeof globalThis & { [REFRESH_KEY]?: Map<string, number> };
@@ -224,6 +273,9 @@ export async function settleFromProvider(providerRef: string): Promise<Notificat
   if (!status.ok) {
     /* Not found at the provider: nothing will change on a retry. An outage
        is worth a retry, so it is the one case that answers non-2xx. */
+    if (status.reason !== "not_found") {
+      signal("payment.webhook_unsettled", "warn", { outcome: "provider_unreachable" });
+    }
     return status.reason === "not_found"
       ? { status: 200, outcome: "unknown_payment" }
       : { status: 503, outcome: "provider_unreachable" };
@@ -242,4 +294,82 @@ export async function settleFromProvider(providerRef: string): Promise<Notificat
   const applied = await applySnapshot(repository, order.id, snapshot, provider);
   if (!applied.ok) return { status: 503, outcome: "not_persisted" };
   return { status: 200, outcome: applied.outcome, state: applied.order.state };
+}
+
+/**
+ * SUBMIT A REFUND to the provider — an operator's decision, never automatic.
+ *
+ * What this does NOT do is mark money as returned. It sends the provider a
+ * FULL refund request under the refund's stable id as the idempotency key,
+ * records the refund as `submitted`, and then asks the provider for the
+ * payment's state. Only when that state is `refunded` does the order — and
+ * the refund record — say so (`followPayment`), exactly as `paid` works.
+ *
+ * LIVE MONEY IS OPT-IN. With live credentials, refunds are refused unless
+ * `OPS_LIVE_REFUNDS=enabled`: returning real money needs an approved refunds
+ * policy and a deliberate switch, not only a button.
+ */
+export type RefundOutcome =
+  | { ok: true; state: string }
+  | {
+      ok: false;
+      reason:
+        | "not_found"
+        | "refund_not_found"
+        | "refund_state"
+        | "not_paid"
+        | "no_provider"
+        | "live_refunds_disabled"
+        | "provider_refused"
+        | "conflict";
+    };
+
+export async function submitRefund(
+  orderId: string,
+  refundId: string,
+  actor: Actor,
+): Promise<RefundOutcome> {
+  const repository = orderRepository();
+  const order = await repository.get(orderId);
+  if (!order) return { ok: false, reason: "not_found" };
+  const refund = order.refunds.find((r) => r.id === refundId);
+  if (!refund) return { ok: false, reason: "refund_not_found" };
+  if (refund.status !== "requested" && refund.status !== "failed") {
+    return { ok: false, reason: "refund_state" };
+  }
+  if (order.state !== "paid") return { ok: false, reason: "not_paid" };
+
+  const provider = providerById(order.provider);
+  if (!provider || !order.providerRef) return { ok: false, reason: "no_provider" };
+  if (provider.mode() === "live" && process.env.OPS_LIVE_REFUNDS !== "enabled") {
+    return { ok: false, reason: "live_refunds_disabled" };
+  }
+
+  const answer = await provider.refund(order.providerRef, refund.id);
+  const at = new Date().toISOString();
+  const marked = await mutate(repository, orderId, (current) => {
+    const r = answer.ok
+      ? markRefundSubmitted(current, refundId, actor, at)
+      : markRefundFailed(current, refundId, answer.error?.code ?? "provider_error", actor, at);
+    return r.ok ? r.order : null;
+  });
+  if (!marked.ok) return { ok: false, reason: "conflict" };
+  if (!answer.ok) {
+    signal("refund.provider_error", "warn", { orderId, refundId, code: answer.error?.code });
+    await afterOrderChange(marked.order);
+    return { ok: false, reason: "provider_refused" };
+  }
+
+  /* Ask the provider where the payment stands now; apply it like any answer. */
+  try {
+    const status = await provider.fetchStatus(order.providerRef);
+    if (status.ok) {
+      const applied = await applySnapshot(repository, orderId, status.snapshot, provider);
+      if (applied.ok) return { ok: true, state: applied.order.state };
+    }
+  } catch {
+    /* The webhook will settle it. */
+  }
+  await afterOrderChange(marked.order);
+  return { ok: true, state: marked.order.state };
 }
