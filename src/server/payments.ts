@@ -10,6 +10,7 @@ import {
   openAttempt,
   recoverStalledAttempt,
 } from "@/domain/order";
+import { trackServer } from "@/analytics/server";
 import { activeProvider, paymentAvailable, providerById } from "@/payments";
 import { reconcileSnapshot } from "@/payments/reconcile";
 import { signal } from "@/server/observe";
@@ -80,6 +81,7 @@ async function applySnapshot(
   extra?: (order: Order) => Order,
 ): Promise<{ ok: true; order: Order; outcome: string } | { ok: false; reason: string }> {
   let outcome = "unchanged";
+  let newlyPaid = false;
   const result = await mutate(repository, orderId, (current) => {
     const base = extra ? extra(current) : current;
     const at = new Date().toISOString();
@@ -87,9 +89,11 @@ async function applySnapshot(
     outcome = applied.outcome;
     /* Nothing changed at all → no write. `extra` alone still counts as a change. */
     if (applied.order === current) return null;
-    return applied.outcome === "applied"
-      ? followPayment(applied.order, base.state, at)
-      : applied.order;
+    const next =
+      applied.outcome === "applied" ? followPayment(applied.order, base.state, at) : applied.order;
+    /* The FIRST time the provider confirms payment — once per order, ever. */
+    newlyPaid = !current.milestones.paid && Boolean(next.milestones.paid);
+    return next;
   });
   if (!result.ok) {
     signal("payment.not_persisted", "error", { orderId, reason: result.reason });
@@ -99,6 +103,17 @@ async function applySnapshot(
     signal("payment.webhook_rejected", "warn", { orderId, outcome });
   }
   const order = await afterOrderChange(result.order);
+  if (newlyPaid) {
+    trackServer({
+      name: "purchase_completed",
+      items: order.lines.map((l) => ({
+        sku: l.variantId,
+        quantity: l.quantity,
+        price: l.unitPrice.amount,
+      })),
+      value: order.totals.total.amount,
+    });
+  }
   return { ok: true, order, outcome };
 }
 
@@ -147,6 +162,7 @@ export async function submitPayment(
    * not have. Untracked SKUs are never limited (see `domain/inventory`). If
    * the store cannot be asked at all, the payment fails closed.
    */
+  trackServer({ name: "payment_attempted", value: claimed.order.totals.total.amount });
   const held = await holdForPayment(claimed.order);
   if (held !== "ok") {
     const closed = await mutate(repository, orderId, (current) =>

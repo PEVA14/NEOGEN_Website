@@ -17,6 +17,7 @@ import {
   validateContact,
   withSnapshot,
 } from "@/domain/checkout";
+import { trackServer } from "@/analytics/server";
 import { priceLines, reprice } from "@/domain/checkout/pricing";
 import { createOrder } from "@/domain/order";
 import { isLocale, type Locale } from "@/i18n/config";
@@ -128,6 +129,15 @@ export async function beginCheckout(
   if (snapshot.lines.length === 0) redirect(localizePath(routes.cart, target));
 
   await saveDraft(withSnapshot(draft, snapshot, adjustments));
+  trackServer({
+    name: "checkout_started",
+    items: snapshot.lines.map((l) => ({
+      sku: l.variantId,
+      quantity: l.quantity,
+      price: l.unitPrice.amount,
+    })),
+    value: snapshot.subtotal.amount,
+  });
   redirect(stepPath(target, "contact"));
 }
 
@@ -154,6 +164,7 @@ export async function submitContact(form: FormData): Promise<void> {
   await saveDraft(attempted);
 
   if (validateContact(contact).length > 0) redirect(stepPath(locale, "contact"));
+  trackServer({ name: "checkout_progressed", step: "contact" });
   redirect(stepPath(locale, "shipping"));
 }
 
@@ -186,6 +197,7 @@ export async function submitShipping(form: FormData): Promise<void> {
   await saveDraft(next);
 
   if (validateAddress(address).length > 0) redirect(stepPath(locale, "shipping"));
+  trackServer({ name: "checkout_progressed", step: "shipping" });
   redirect(stepPath(locale, "delivery"));
 }
 
@@ -215,6 +227,7 @@ export async function submitDelivery(form: FormData): Promise<void> {
   await saveDraft(next);
 
   if (!method) redirect(stepPath(locale, "delivery"));
+  trackServer({ name: "checkout_progressed", step: "delivery" });
   redirect(stepPath(locale, "review"));
 }
 
@@ -297,6 +310,7 @@ export async function placeOrder(form: FormData): Promise<void> {
   await saveDraft(touch(withAcks, { orderId: created.order.id }));
   await rememberOrder(created.order.id);
   await clearDraft();
+  trackServer({ name: "checkout_progressed", step: "review" });
 
   /*
    * The bag is NOT cleared here. Until the provider confirms a payment the

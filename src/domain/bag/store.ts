@@ -1,3 +1,5 @@
+import { track } from "@/analytics/client";
+
 import { addLine, clearBag, removeLine, setQuantity } from ".";
 import { EMPTY_BAG, readBag, writeBag } from "./storage";
 
@@ -81,6 +83,10 @@ export function getServerSnapshot(): BagSnapshot {
 
 export function add(line: Omit<BagLine, "quantity">, quantity = 1): void {
   commit(addLine(snapshot.bag, line, quantity), true);
+  track({
+    name: "bag_added",
+    item: { sku: line.variantId, quantity, price: line.unitPrice.amount },
+  });
 }
 
 export function setLineQuantity(variantId: string, quantity: number): void {

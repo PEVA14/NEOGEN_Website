@@ -1413,6 +1413,45 @@ const client = {
   }
 }
 
+/* ======================================================================== */
+/* 16. ANALYTICS — the funnel carries no personal data                       */
+/* ======================================================================== */
+
+{
+  const { sanitize, FUNNEL_EVENTS, noneSink } = await import("../src/analytics/events.ts");
+  eq(FUNNEL_EVENTS.length, 6, "six funnel events");
+  eq(noneSink.isConfigured(), false, "no analytics product is integrated");
+  const leaky = sanitize({
+    name: "purchase_completed",
+    value: 12000,
+    items: [{ sku: "reta-10mg", quantity: 2, price: 6000, name: "Cliente", email: "a@b.mx" }],
+    email: "a@b.mx",
+    address: "Calle 1",
+    orderId: "NG-X-001",
+  });
+  eq(
+    leaky,
+    {
+      name: "purchase_completed",
+      items: [{ sku: "reta-10mg", quantity: 2, price: 6000 }],
+      value: 12000,
+    },
+    "undeclared fields — email, address, order id — are dropped",
+  );
+  eq(
+    sanitize({ name: "bag_added", item: { sku: "<script>", quantity: 1, price: 1 } }),
+    null,
+    "a malformed SKU is refused",
+  );
+  eq(
+    sanitize({ name: "checkout_progressed", step: "payment-card-number" }),
+    null,
+    "only named steps",
+  );
+  const { noneInvoiceProvider } = await import("../src/domain/invoicing/types.ts");
+  eq((await noneInvoiceProvider.issue()).ok, false, "no invoicing provider is integrated");
+}
+
 /* ---- report --------------------------------------------------------------- */
 
 await db.close();

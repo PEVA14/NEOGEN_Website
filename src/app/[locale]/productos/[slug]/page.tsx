@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { SectionHeader } from "@/components/layout";
 import { Container, Section } from "@/components/primitives";
+import { TrackOnce } from "@/analytics/TrackOnce";
 import { AddToBag, ResearchUseNotice, ShippingNote } from "@/components/commerce";
 import {
   CommercePanel,
@@ -311,6 +312,7 @@ export default async function ProductPage({
         </>
       }
     >
+      <TrackOnce event={{ name: "product_viewed", product: product.slug, sku: null }} />
       <AddToBag
         slug={product.slug}
         name={product.name}
