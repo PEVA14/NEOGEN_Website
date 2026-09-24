@@ -1,12 +1,15 @@
 import "server-only";
 
+import { siteConfig } from "@/config/site";
 import { formatAddress } from "@/domain/checkout/validate";
 import { dispatch, messagesOwed } from "@/domain/notifications";
 import { noneChannel } from "@/domain/notifications/adapters/none";
 import { signal } from "@/server/observe";
-import { notificationOutbox } from "@/server/persistence";
+import { statusUrl } from "@/server/orderAccess";
+import { notificationOutbox, orderRepository } from "@/server/persistence";
 
 import type { NotificationChannel } from "@/domain/notifications";
+import type { RenderContext } from "@/domain/notifications/render";
 import type { Order } from "@/domain/order/types";
 
 /**
@@ -49,4 +52,18 @@ export async function notifyOrder(order: Order): Promise<void> {
   } catch {
     signal("notification.enqueue_failed", "error", { orderId: order.id });
   }
+}
+
+/**
+ * What a message needs at render time that must not be stored in the outbox:
+ * the signed status link (a bearer credential, re-derived for each send) and
+ * the contact line. A channel adapter calls this, then `renderEmail`.
+ */
+export async function renderContextFor(orderId: string): Promise<RenderContext> {
+  const order = await orderRepository().get(orderId);
+  return {
+    statusUrl: order ? statusUrl(order) : null,
+    phoneDisplay: siteConfig.contact.phoneDisplay,
+    phoneHref: `tel:${siteConfig.contact.phone}`,
+  };
 }

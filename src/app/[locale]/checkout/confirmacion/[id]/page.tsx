@@ -154,6 +154,12 @@ export default async function ConfirmationPage({
           </a>
         ) : null}
 
+        {order.state === "paid" ? (
+          <a href={path(routes.orderStatus(order.id))} className={styles.payAction}>
+            {dict.checkout.status.follow} →
+          </a>
+        ) : null}
+
         <OrderReceipt
           order={order}
           /* The declaration wording has ONE source — the review step's copy —

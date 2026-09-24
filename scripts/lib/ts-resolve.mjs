@@ -31,6 +31,17 @@ export async function resolve(specifier, context, next) {
     return { url: "data:text/javascript,export{}", format: "module", shortCircuit: true };
   }
 
+  /*
+   * Next's entry points (`next/headers`, `next/navigation`, `next/server`)
+   * are CommonJS files the package does not map for ESM, so a bare import
+   * fails under plain Node. The checks only import modules that USE them —
+   * the operator session, the order-access route — to test their pure parts;
+   * they never call them outside a request.
+   */
+  if (/^next\/(headers|navigation|server)$/.test(specifier)) {
+    return next(`${specifier}.js`, context);
+  }
+
   let base = null;
 
   if (specifier.startsWith("@/")) {

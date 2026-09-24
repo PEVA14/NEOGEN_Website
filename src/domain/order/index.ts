@@ -56,6 +56,13 @@ export { mutate, type OrderQuery, type OrderRepository, type SaveResult } from "
 export { initialFulfilment, upgradeOrder } from "./upgrade";
 export * from "./operations";
 export {
+  customerView,
+  type CustomerHeadline,
+  type CustomerStep,
+  type CustomerView,
+  type StepId,
+} from "./customer";
+export {
   ACKNOWLEDGEABLE,
   acknowledgeAttention,
   attentionReasons,

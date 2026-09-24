@@ -220,6 +220,21 @@ for (const field of [
  * dictionaries document what may NOT be written, and that documentation names
  * the forbidden words.
  */
+/*
+ * The transactional email copy and the operations console's vocabulary are
+ * customer- and operator-facing text too, held to the same list.
+ */
+for (const file of ["src/domain/notifications/copy.ts", "src/app/ops/copy.ts"]) {
+  const source = readFileSync(file, "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^\s*\/\/.*$/gm, "");
+  for (const [, value] of source.matchAll(/"((?:[^"\\]|\\.)*)"/g)) {
+    const term = forbiddenTermIn(value);
+    if (term) fail(`forbidden vocabulary in ${file}`, `"${term}" in "${value}"`);
+  }
+  assertions += 1;
+}
+
 for (const locale of ["es", "en"]) {
   const source = readFileSync(`src/i18n/dictionaries/${locale}.ts`, "utf8")
     .replace(/\/\*[\s\S]*?\*\//g, "")

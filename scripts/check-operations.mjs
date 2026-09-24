@@ -1159,6 +1159,260 @@ const client = {
   }
 }
 
+/* ======================================================================== */
+/* 12. CUSTOMER VIEW — never a step the order has not reached                 */
+/* ======================================================================== */
+
+{
+  const { customerView } = await import("../src/domain/order/customer.ts");
+  const steps = (o) =>
+    customerView(o)
+      .steps?.map((s) => `${s.id}:${s.status}`)
+      .join(" ") ?? null;
+  eq(customerView(fresh()).headline, "unpaid", "an unpaid order says so");
+  eq(steps(fresh()), null, "and draws no progress bar");
+  const paid = pay(fresh());
+  eq(customerView(paid).headline, "confirmed", "paid → confirmed");
+  eq(
+    steps(paid),
+    "paid:done preparing:upcoming shipped:upcoming delivered:upcoming",
+    "paying does not make anything shipped",
+  );
+  const prep = must(advanceFulfilment(paid, "preparing", OP, at(2)), "p");
+  eq(
+    steps(prep),
+    "paid:done preparing:current shipped:upcoming delivered:upcoming",
+    "preparing is the current step",
+  );
+  const ready = must(advanceFulfilment(prep, "ready_to_ship", OP, at(3)), "r");
+  eq(
+    [customerView(ready).headline, steps(ready)],
+    ["ready", "paid:done preparing:current shipped:upcoming delivered:upcoming"],
+    "ready to ship is still preparing to a customer",
+  );
+  const out = must(
+    recordShipment(
+      ready,
+      { provider: "manual", dispatched: true, trackingNumber: "T1" },
+      OP,
+      at(4),
+    ),
+    "o",
+  );
+  eq(
+    steps(out),
+    "paid:done preparing:done shipped:current delivered:upcoming",
+    "dispatch → on its way",
+  );
+  eq(customerView(out).shipment?.trackingNumber, "T1", "with its tracking");
+  const del = must(updateShipment(out, out.shipments[0].id, "delivered", OP, at(5)), "d");
+  eq(
+    steps(del),
+    "paid:done preparing:done shipped:done delivered:done",
+    "delivered completes the bar",
+  );
+  const held = must(holdFulfilment(prep, "stock_short", OP, at(3)), "h");
+  eq(
+    [customerView(held).headline, steps(held)],
+    ["review", null],
+    "a hold is 'under review', with no internal reason and no bar",
+  );
+  const cancelled = must(cancelOrder(paid, "customer_request", OP, at(2)), "c");
+  eq(
+    [customerView(cancelled).headline, customerView(cancelled).refund?.status],
+    ["cancelled", "requested"],
+    "a cancelled paid order shows its refund as not yet confirmed",
+  );
+  eq(
+    customerView(providerMoves(prep, "disputed", at(4))).headline,
+    "disputed",
+    "a dispute is stated, not hidden",
+  );
+}
+
+/* ======================================================================== */
+/* 13. GUEST ACCESS — a link that cannot be guessed, forged or moved          */
+/* ======================================================================== */
+
+{
+  const { accessToken, verifyAccessToken } = await import("../src/server/orderAccess.ts");
+  const KEY = "k".repeat(40);
+  const a = { id: "NG-AAAA-001", access: { nonce: "nonce-a-0123456789abcdef" } };
+  const b = { id: "NG-BBBB-002", access: { nonce: "nonce-b-0123456789abcdef" } };
+  const t = accessToken(a, KEY);
+  ok(/^[A-Za-z0-9_-]{43}$/.test(t), "a token is 256 bits, base64url");
+  ok(verifyAccessToken(a, t, KEY), "it opens its own order");
+  ok(!verifyAccessToken(b, t, KEY), "it does not open another order");
+  ok(
+    !verifyAccessToken({ ...a, access: { nonce: "rotated" } }, t, KEY),
+    "rotating the nonce revokes it",
+  );
+  ok(!verifyAccessToken(a, t, "x".repeat(40)), "another secret cannot verify it");
+  ok(
+    !verifyAccessToken(a, t.slice(0, -1) + (t.at(-1) === "A" ? "B" : "A"), KEY),
+    "a one-character change fails",
+  );
+  ok(!verifyAccessToken(a, null, KEY) && !verifyAccessToken(a, "", KEY), "no token, no access");
+  eq(accessToken(a, null), null, "without a secret, no link is issued");
+  eq(
+    accessToken({ id: "NG-X-001", access: null }, KEY),
+    null,
+    "an order without a nonce has no link",
+  );
+  ok(
+    !t.includes(a.id) && !t.includes(a.access.nonce),
+    "the token reveals neither the order nor the nonce",
+  );
+}
+
+/* ======================================================================== */
+/* 14. OPERATOR SIGN-IN — scrypt, signed session, lockout                     */
+/* ======================================================================== */
+
+{
+  const { randomBytes } = await import("node:crypto");
+  const auth = await import("../src/server/ops/auth.ts");
+  const salt = randomBytes(16);
+  const entry = `ana:${salt.toString("base64url")}:${auth.hashPassword("correct horse battery", salt).toString("base64url")}`;
+  const accounts = auth.parseAccounts(`${entry}, broken:entry, Bad:x:y`);
+  eq(
+    accounts.map((x) => x.name),
+    ["ana"],
+    "only well-formed accounts are read",
+  );
+  eq(
+    auth.verifyPassword(accounts, "ana", "correct horse battery"),
+    "ana",
+    "the right password signs in",
+  );
+  eq(
+    auth.verifyPassword(accounts, "ANA ", "correct horse battery"),
+    "ana",
+    "names are case- and space-insensitive",
+  );
+  eq(
+    auth.verifyPassword(accounts, "ana", "correct horse batterY"),
+    null,
+    "a wrong password does not",
+  );
+  eq(
+    auth.verifyPassword(accounts, "nobody", "correct horse battery"),
+    null,
+    "an unknown name does not",
+  );
+
+  const KEY = "s".repeat(40);
+  const now = Date.parse(T0);
+  const cookie = auth.issueSession("ana", KEY, now);
+  eq(auth.readSession(cookie, KEY, accounts, now + 1000), "ana", "a fresh session reads back");
+  eq(
+    auth.readSession(cookie, KEY, accounts, now + 13 * 3600_000),
+    null,
+    "it expires after 12 hours",
+  );
+  eq(auth.readSession(cookie, "t".repeat(40), accounts, now), null, "a rotated secret revokes it");
+  eq(auth.readSession(cookie, KEY, [], now), null, "removing the account revokes it");
+  const [payload, sig] = cookie.split(".");
+  const forged = Buffer.from(JSON.stringify({ n: "ana", e: now + 99e9 })).toString("base64url");
+  eq(
+    auth.readSession(`${forged}.${sig}`, KEY, accounts, now),
+    null,
+    "an edited payload fails the signature",
+  );
+  eq(auth.readSession(`${payload}.`, KEY, accounts, now), null, "a missing signature fails");
+  eq(auth.readSession(undefined, KEY, accounts, now), null, "no cookie, no session");
+
+  auth.__resetLockout();
+  const keys = ["ip:1.2.3.4", "name:ana"];
+  for (let i = 0; i < 4; i += 1) auth.recordFailure(keys, now);
+  ok(!auth.isLocked(keys, now), "four failures do not lock");
+  auth.recordFailure(keys, now);
+  ok(auth.isLocked(keys, now), "the fifth locks the name and the address");
+  ok(!auth.isLocked(keys, now + 16 * 60_000), "for 15 minutes");
+  auth.clearFailures(keys);
+  ok(!auth.isLocked(keys, now), "a successful sign-in clears the count");
+
+  delete process.env.OPS_ACCOUNTS;
+  delete process.env.OPS_SESSION_SECRET;
+  eq(auth.opsConfigured(), false, "without configuration the console is off (every route 404s)");
+  process.env.OPS_ACCOUNTS = entry;
+  process.env.OPS_SESSION_SECRET = "short";
+  eq(auth.opsConfigured(), false, "a short session secret keeps it off");
+  delete process.env.OPS_ACCOUNTS;
+  delete process.env.OPS_SESSION_SECRET;
+}
+
+/* ======================================================================== */
+/* 15. EMAIL — escaped, restrained, and never a promise                       */
+/* ======================================================================== */
+
+{
+  const { renderEmail, escapeHtml } = await import("../src/domain/notifications/render.ts");
+  const { EMAIL_COPY } = await import("../src/domain/notifications/copy.ts");
+  eq(escapeHtml(`<a href="x">'&`), "&lt;a href=&quot;x&quot;&gt;&#39;&amp;", "HTML is escaped");
+  const ctx = {
+    statusUrl: "https://neogen.mx/es/pedido/NG-1/acceso?t=abc",
+    phoneDisplay: "+52 33",
+    phoneHref: "tel:+5233",
+  };
+  const hostile = pay(
+    upgradeOrder({
+      ...legacyOrder(),
+      contact: { email: "x@y.mx", name: "<script>alert(1)</script>", phone: "52" },
+    }),
+  );
+  const [placed] = messagesOwed(hostile, () => "Calle 1");
+  const r = renderEmail(placed, ctx);
+  ok(!r.html.includes("<script>"), "a customer-supplied name cannot inject markup");
+  ok(r.html.includes("&lt;script&gt;"), "it is shown escaped");
+  ok(
+    !/<img|<script|<link|@import|url\(/i.test(r.html.replace(/&lt;script&gt;/g, "")),
+    "no images, scripts, trackers or remote styles",
+  );
+  ok(r.text.includes(hostile.id) && r.html.includes(hostile.id), "both parts carry the reference");
+  ok(
+    r.html.includes(ctx.statusUrl.replace(/&/g, "&amp;")),
+    "the signed status link is included when configured",
+  );
+  const noLink = renderEmail(placed, { ...ctx, statusUrl: null });
+  ok(
+    !noLink.html.includes("/acceso") && noLink.text.includes(EMAIL_COPY.es.statusLinkAbsent),
+    "without it, the email says to keep the reference",
+  );
+  ok(
+    !renderEmail(placed, { ...ctx, statusUrl: "http://evil.example/x" }).html.includes(
+      "evil.example",
+    ),
+    "a non-https link is never placed in an email",
+  );
+  const internal = messagesOwed(hostile, () => "Calle 1").find(
+    (m) => m.recipient.role === "internal",
+  );
+  const ri = renderEmail(internal, ctx);
+  ok(
+    ri.html.includes("Calle 1") && !ri.html.includes("/acceso"),
+    "the internal email has the address and no customer link",
+  );
+
+  /* No delivery promises, dates or guarantees in any template, either language. */
+  const all = JSON.stringify(EMAIL_COPY, (_k, v) =>
+    typeof v === "function" ? v("NG-X") + v.toString() : v,
+  );
+  for (const banned of [
+    /garantiz/i,
+    /guarante/i,
+    /\b24 ?h/i,
+    /mismo día|same[- ]day/i,
+    /llegará el|will arrive on/i,
+    /\bcura|\bcure|tratamiento|treatment|dosis|dosage/i,
+  ]) {
+    ok(!banned.test(all), `email copy makes no promise or claim matching ${banned}`);
+  }
+  for (const kind of Object.keys(EMAIL_COPY.es.kinds)) {
+    ok(kind in EMAIL_COPY.en.kinds, `${kind} exists in English too`);
+  }
+}
+
 /* ---- report --------------------------------------------------------------- */
 
 await db.close();

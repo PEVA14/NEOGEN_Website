@@ -19,6 +19,7 @@
     "check:payments": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-payments.mjs",
     "check:operations": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-operations.mjs",
     "db:migrate": "node scripts/db-migrate.mjs",
+    "ops:account": "node scripts/ops-account.mjs",
     "brand": "node scripts/prepare-brand.mjs",
     "check:quality": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-quality.mjs",
     "check:content": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-content.mjs",

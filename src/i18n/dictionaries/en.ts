@@ -2123,6 +2123,83 @@ const en: Dictionary = {
       },
     },
 
+    /* --- order status: following an order after checkout ----------- */
+    status: {
+      index: "07",
+      label: "Order",
+      qualifier: "Status",
+      title: "Order status",
+      referenceLabel: "Reference",
+      placedLabel: "Placed",
+      headline: {
+        unpaid: "Your order is waiting for payment",
+        confirmed: "Order confirmed",
+        preparing: "We are preparing your order",
+        ready: "Your order is ready to leave",
+        in_transit: "Your order is on its way",
+        exception: "The carrier reported an issue",
+        delivered: "Your order was delivered",
+        returned: "The parcel came back to NEOGEN",
+        review: "Your order is under review",
+        disputed: "The payment for this order is disputed",
+        cancelled: "Order cancelled",
+        refunded: "Order refunded",
+      },
+      body: {
+        unpaid: "Nothing has been charged yet. The order moves forward once payment is confirmed.",
+        confirmed:
+          "The payment processor confirmed your payment. The order is queued for preparation.",
+        preparing: "Your order is being prepared for shipping.",
+        ready: "Your order is packed and waiting for the carrier.",
+        in_transit: "The carrier has your order.",
+        exception:
+          "The carrier reported a delivery problem. For any question, call NEOGEN's phone line.",
+        delivered: "The carrier reports your order as delivered.",
+        returned: "The parcel came back to NEOGEN. For any question, call NEOGEN's phone line.",
+        review:
+          "Your order is under review before it continues. For any question, call NEOGEN's phone line.",
+        disputed:
+          "The cardholder disputed the charge with their bank. The order is paused until the dispute is resolved.",
+        cancelled: "This order was cancelled and will not ship.",
+        refunded: "The payment processor confirmed the refund for this order.",
+      },
+      steps: {
+        label: "Order progress",
+        paid: "Payment confirmed",
+        preparing: "Being prepared",
+        shipped: "On its way",
+        delivered: "Delivered",
+        done: "Done",
+        current: "Current step",
+        upcoming: "Upcoming",
+      },
+      refund: {
+        open: "The refund is recorded and not yet confirmed by the payment processor.",
+        confirmed: "The payment processor confirmed a refund of {amount}.",
+      },
+      tracking: {
+        title: "Shipment",
+        carrier: "Carrier",
+        number: "Tracking number",
+        link: "Track on the carrier's site",
+        none: "Tracking details will appear here once they exist.",
+      },
+      destination: "Destination",
+      items: "Items",
+      total: "Total",
+      payment: "Payment",
+      help: "For any question about your order, NEOGEN's direct channel is its phone line:",
+      pay: "Complete payment",
+      notFound: {
+        index: "—",
+        label: "Order // Not found",
+        title: "We could not find that order",
+        body: "The reference does not match an order from this browser, or the link is no longer valid. If you have the reference in writing, keep it and contact us by phone.",
+        catalogue: "Browse the catalogue",
+      },
+      follow: "Follow my order",
+    },
+
     review: {
       items: {
         title: "Items",

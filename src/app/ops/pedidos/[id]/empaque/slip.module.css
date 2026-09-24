@@ -1,0 +1,124 @@
+/* A4 / Letter, black on white, legible from arm's length. */
+.page {
+  background: #fff;
+  color: #111;
+  display: grid;
+  gap: var(--space-lg);
+  margin-inline: auto;
+  max-inline-size: 52rem;
+  padding: var(--space-lg) var(--space-md);
+}
+
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  justify-content: space-between;
+  margin: 0;
+}
+
+.head {
+  align-items: end;
+  border-block-end: 2px solid #111;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  justify-content: space-between;
+  padding-block-end: var(--space-md);
+}
+
+.reference {
+  font-family: var(--font-mono);
+  font-size: var(--text-3xl);
+  letter-spacing: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.state {
+  font-size: var(--text-sm);
+  margin: 0;
+  text-align: end;
+}
+
+.shipTo {
+  border: 1px solid #111;
+  padding: var(--space-md);
+}
+
+.address {
+  font-size: var(--text-lg);
+  line-height: var(--leading-snug);
+  margin: var(--space-xs) 0 0;
+}
+
+.notes {
+  border-block-start: 1px solid #ccc;
+  font-size: var(--text-sm);
+  margin: var(--space-sm) 0 0;
+  padding-block-start: var(--space-xs);
+}
+
+.table {
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  inline-size: 100%;
+}
+
+.table th,
+.table td {
+  border-block-end: 1px solid #999;
+  padding: var(--space-sm) var(--space-xs);
+  text-align: start;
+  vertical-align: middle;
+}
+
+.table th {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.sku {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  overflow-wrap: anywhere;
+}
+
+.qty {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  text-align: end !important;
+}
+
+.box {
+  block-size: 1.25rem;
+  border: 2px solid #111;
+  display: inline-block;
+  inline-size: 1.25rem;
+}
+
+.sign {
+  display: flex;
+  flex-wrap: wrap;
+  font-size: var(--text-sm);
+  gap: var(--space-lg);
+  justify-content: space-between;
+  padding-block-start: var(--space-xl);
+}
+
+@media (max-width: 40rem) {
+  .table th:nth-child(4),
+  .table td:nth-child(4) {
+    display: none;
+  }
+}
+
+@media print {
+  .page {
+    max-inline-size: none;
+    padding: 0;
+  }
+}

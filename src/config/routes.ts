@@ -123,6 +123,14 @@ export const routes = {
   /** The confirmation for one order. Not indexable, not guessable-by-sequence. */
   orderConfirmation: (orderId: string) => `/checkout/confirmacion/${orderId}`,
   /**
+   * Where a customer follows an order after checkout. Private like the
+   * confirmation: readable only by the browser that owns the order, or via
+   * the signed link in the order's emails (`orderAccess`), which is exchanged
+   * for that ownership cookie and never left in the address bar.
+   */
+  orderStatus: (orderId: string) => `/pedido/${orderId}`,
+  orderAccess: (orderId: string) => `/pedido/${orderId}/acceso`,
+  /**
    * A policy document.
    *
    * The route exists; the documents do not. `publicPolicyBySlug` returns

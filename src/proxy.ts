@@ -38,8 +38,26 @@ function negotiateLocale(header: string | null) {
   return defaultLocale;
 }
 
+/**
+ * The operations console lives outside the locales (`/ops`, Spanish, one
+ * audience) and is never cached, indexed, framed or leaked by referrer. The
+ * console's own pages still check the operator's session — these headers are
+ * defence in depth, not access control.
+ */
+function opsResponse(): NextResponse {
+  const response = NextResponse.next();
+  response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+  response.headers.set("Cache-Control", "no-store");
+  response.headers.set("Referrer-Policy", "no-referrer");
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  return response;
+}
+
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (pathname === "/ops" || pathname.startsWith("/ops/")) return opsResponse();
 
   const hasLocale = locales.some(
     (locale) => pathname === `/${locale}` || pathname.startsWith(`/${locale}/`),

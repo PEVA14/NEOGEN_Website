@@ -2290,6 +2290,83 @@ const es = {
       },
     },
 
+    /* --- order status: following an order after checkout ----------- */
+    status: {
+      index: "07",
+      label: "Pedido",
+      qualifier: "Estado",
+      title: "Estado del pedido",
+      referenceLabel: "Referencia",
+      placedLabel: "Registrado",
+      headline: {
+        unpaid: "Tu pedido espera el pago",
+        confirmed: "Pedido confirmado",
+        preparing: "Estamos preparando tu pedido",
+        ready: "Tu pedido está listo para salir",
+        in_transit: "Tu pedido va en camino",
+        exception: "La paquetería reportó una incidencia",
+        delivered: "Tu pedido fue entregado",
+        returned: "El envío regresó a NEOGEN",
+        review: "Tu pedido está en revisión",
+        disputed: "El pago de este pedido está en disputa",
+        cancelled: "Pedido cancelado",
+        refunded: "Pedido reembolsado",
+      },
+      body: {
+        unpaid: "Aún no se realizó ningún cargo. El pedido avanzará cuando el pago se confirme.",
+        confirmed: "El procesador confirmó tu pago. El pedido está en fila para prepararse.",
+        preparing: "Tu pedido se está preparando para el envío.",
+        ready: "Tu pedido está empacado y espera a la paquetería.",
+        in_transit: "La paquetería tiene tu pedido.",
+        exception:
+          "La paquetería reportó un problema con la entrega. Para cualquier pregunta, llama al teléfono de NEOGEN.",
+        delivered: "La paquetería reporta tu pedido como entregado.",
+        returned:
+          "El paquete regresó a NEOGEN. Para cualquier pregunta, llama al teléfono de NEOGEN.",
+        review:
+          "Tu pedido está en revisión antes de continuar. Para cualquier pregunta, llama al teléfono de NEOGEN.",
+        disputed:
+          "El titular de la tarjeta disputó el cargo con su banco. El pedido queda detenido hasta que la disputa se resuelva.",
+        cancelled: "Este pedido fue cancelado y no se enviará.",
+        refunded: "El procesador confirmó el reembolso de este pedido.",
+      },
+      steps: {
+        label: "Progreso del pedido",
+        paid: "Pago confirmado",
+        preparing: "En preparación",
+        shipped: "En camino",
+        delivered: "Entregado",
+        done: "Completado",
+        current: "Paso actual",
+        upcoming: "Pendiente",
+      },
+      refund: {
+        open: "El reembolso está registrado y aún no ha sido confirmado por el procesador.",
+        confirmed: "El procesador confirmó el reembolso de {amount}.",
+      },
+      tracking: {
+        title: "Envío",
+        carrier: "Paquetería",
+        number: "Número de rastreo",
+        link: "Rastrear en la página de la paquetería",
+        none: "Los datos de rastreo aparecerán aquí cuando existan.",
+      },
+      destination: "Destino",
+      items: "Artículos",
+      total: "Total",
+      payment: "Pago",
+      help: "Para cualquier pregunta sobre tu pedido, el canal directo de NEOGEN es su teléfono:",
+      pay: "Completar el pago",
+      notFound: {
+        index: "—",
+        label: "Pedido // No encontrado",
+        title: "No encontramos ese pedido",
+        body: "La referencia no corresponde a un pedido de este navegador, o el enlace ya no es válido. Si tienes la referencia por escrito, consérvala y comunícate por teléfono.",
+        catalogue: "Ver catálogo",
+      },
+      follow: "Seguir mi pedido",
+    },
+
     review: {
       items: {
         title: "Artículos",

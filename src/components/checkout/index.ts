@@ -20,6 +20,7 @@ export { AdjustmentNotice, BlockNotice, FlowNotice, type AdjustmentCopy } from "
 export { ReviewPanel, type ReviewCopy } from "./ReviewPanel";
 export { Acknowledgements, type AcknowledgementItem } from "./Acknowledgements";
 export { OrderReceipt, type ReceiptCopy } from "./OrderReceipt";
+export { OrderStatus, type OrderStatusCopy } from "./OrderStatus";
 export { DeliveryOptions, type DeliveryCopy } from "./DeliveryOptions";
 export { formatDays, type DayCount } from "./days";
 export { ClearBagOnOrder } from "./ClearBagOnOrder";

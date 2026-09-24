@@ -1,0 +1,279 @@
+/*
+ * ORDER STATUS — a phone screen first.
+ *
+ * One column: the reference plate, what is happening now in a sentence, the
+ * four steps as a vertical rail (vertical reads on a phone and needs no
+ * horizontal room), then the shipment, then the order. On a wide screen the
+ * rail turns horizontal. No motion; the state changes when the page loads.
+ */
+.status {
+  display: grid;
+  gap: var(--space-xl);
+  max-inline-size: 48rem;
+}
+
+.plate {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  display: grid;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+}
+
+.key {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.reference {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xl);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--tracking-tight);
+  line-height: 1;
+  margin: var(--space-3xs) 0 0;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.now {
+  border-inline-start: 3px solid var(--ink-primary);
+  display: grid;
+  gap: var(--space-xs);
+  padding-inline-start: var(--space-md);
+}
+
+.now[data-headline="cancelled"],
+.now[data-headline="refunded"],
+.now[data-headline="unpaid"] {
+  border-inline-start-color: var(--border-strong);
+}
+
+.now[data-headline="exception"],
+.now[data-headline="disputed"],
+.now[data-headline="returned"],
+.now[data-headline="review"] {
+  border-inline-start-color: var(--status-error);
+}
+
+.headline {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  letter-spacing: var(--tracking-display);
+  line-height: var(--leading-tight);
+  margin: 0;
+}
+
+.body {
+  color: var(--ink-secondary);
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  margin: 0;
+}
+
+/* ---- the rail ------------------------------------------------------------ */
+
+.steps {
+  display: grid;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.step {
+  column-gap: var(--space-sm);
+  display: grid;
+  grid-template-columns: 1rem minmax(0, 1fr);
+  min-block-size: 3.5rem;
+  position: relative;
+}
+
+/* The connecting line runs under the markers, from one to the next. */
+.step:not(:last-child)::after {
+  background: var(--border-default);
+  content: "";
+  inline-size: 1px;
+  inset-block: 1.1rem -0.1rem;
+  inset-inline-start: calc(0.5rem - 0.5px);
+  position: absolute;
+}
+
+.step[data-status="done"]:not(:last-child)::after {
+  background: var(--ink-primary);
+}
+
+.marker {
+  background: var(--surface-base);
+  block-size: 1rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  grid-row: span 2;
+  inline-size: 1rem;
+  margin-block-start: 0.15rem;
+  position: relative;
+  z-index: 1;
+}
+
+.step[data-status="done"] .marker {
+  background: var(--ink-primary);
+  border-color: var(--ink-primary);
+}
+
+.step[data-status="current"] .marker {
+  border: 4px solid var(--ink-primary);
+}
+
+.stepName {
+  font-size: var(--text-base);
+  font-weight: 600;
+}
+
+.step[data-status="upcoming"] .stepName {
+  color: var(--ink-muted);
+  font-weight: 400;
+}
+
+.stepMeta {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  padding-block-end: var(--space-sm);
+  text-transform: uppercase;
+}
+
+@media (min-width: 48rem) {
+  .steps {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .step {
+    column-gap: 0;
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--space-xs);
+  }
+
+  .marker {
+    grid-row: auto;
+  }
+
+  .step:not(:last-child)::after {
+    block-size: 1px;
+    inline-size: auto;
+    inset-block: 0.65rem auto;
+    inset-inline: 1rem 0;
+  }
+}
+
+/* ---- blocks ----------------------------------------------------------------- */
+
+.block {
+  border-block-start: 1px solid var(--border-default);
+  display: grid;
+  gap: var(--space-sm);
+  padding-block-start: var(--space-md);
+}
+
+.blockTitle {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: 400;
+  letter-spacing: var(--tracking-label);
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.facts {
+  display: grid;
+  gap: var(--space-2xs) var(--space-md);
+  grid-template-columns: max-content minmax(0, 1fr);
+  margin: 0;
+}
+
+.facts dt {
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+}
+
+.facts dd {
+  font-size: var(--text-sm);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  user-select: all;
+}
+
+.strong {
+  font-weight: 600;
+}
+
+.muted {
+  color: var(--ink-muted);
+}
+
+.lines {
+  display: grid;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.line {
+  border-block-end: 1px solid var(--border-subtle);
+  display: flex;
+  font-size: var(--text-sm);
+  gap: var(--space-sm);
+  justify-content: space-between;
+  padding-block: var(--space-xs);
+}
+
+.qty {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.action {
+  align-items: center;
+  border: 1px solid var(--ink-primary);
+  color: var(--ink-primary);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  justify-self: start;
+  letter-spacing: var(--tracking-label);
+  min-block-size: 2.75rem;
+  padding-inline: var(--space-md);
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.action:hover {
+  background: var(--ink-primary);
+  color: var(--surface-base);
+}
+
+.help {
+  color: var(--ink-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  margin: 0;
+}
+
+.help a {
+  color: var(--ink-primary);
+  display: inline-block;
+  min-block-size: 1.5rem;
+}
+
+.action:focus-visible,
+.help a:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}
