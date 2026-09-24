@@ -1,6 +1,7 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-09-23**: **the operational layer around orders exists**
+Last updated **2026-09-24**: **design and UX audit pass** (§8ac) — checkout,
+post-purchase, console and responsive fixes. Before that, 2026-09-23: **the operational layer around orders exists**
 — fulfilment, shipments recorded by hand, inventory, lots, refunds,
 notifications, customer order status and the `/ops` console (§8ab,
 `docs/OPERATIONS.md`). Before that, 2026-09-22: **NEOGEN Research is now a knowledge system** —
@@ -2297,6 +2298,66 @@ dictionaries).
    `CONFIRMED_TYPE` is empty; the record's "Tipo" row inherits that honesty.
 5. Cold-chain determination (§6) — the handling page cannot say more until it
    exists.
+
+## 8ac. Design and UX audit pass (2026-09-24)
+
+Owner brief: act as design director, audit the rendered product at 375 /
+430 / 768 / 1024 / 1440 in ES and EN, fix what matters, preserve what is
+strong, no brand rebuild, no behaviour changes. Audited on a production build
+with the shop switched on and placeholder test keys (no real payment), orders
+seeded in memory for post-purchase and the console.
+
+**Found and fixed**
+
+- Checkout exposed engineering ("every amount is computed on the server")
+  and spent a phone's first screen on a masthead; the step strip scrolled so
+  that on step 05 only 01–03 were visible; completed steps were marked by a
+  stray-looking dash; after a failed submit the error summary sat under the
+  sticky header with focus on `<body>`; the review table clipped its amounts
+  at 430px; the summary said "Días hábiles 1". Now: record-scale masthead
+  with no lede, "Paso 5 de 6 · Pago" plus segments on phones, a filled track
+  with ✓ on wider screens, the summary focused and scrolled clear of the
+  header, a four-column review table on phones, "Entrega estimada · 1 día
+  hábil".
+- The bag said "IVA incluido en el precio mostrado" while checkout said
+  prices WILL include IVA once confirmed. The bag now uses the checkout's
+  (conservative, owner-stated) wording. "Añadir al carrito" on the PDP's
+  "Los otros mundos" now says "bag" like every other surface.
+- Post-purchase: the confirmation printed its headline twice; the status
+  page's h1 was "Estado del pedido" with the answer below it. Both now lead
+  with the state sentence as h1 ("Tu pedido va en camino").
+- Operations console: sections were boxes with grey header bars; eleven view
+  tabs overflowed a laptop; phones saw three of nine columns; no obvious next
+  action; a developer note about `data/quality/lots.ts` shown to operators.
+  Now: ruled document sections, work-queue and record tab rows that wrap,
+  order blocks on phones with all three states, a "Siguiente paso" line with
+  the one likely action, secondary controls demoted, "Espera pago" instead of
+  "No elegible".
+- Storefront: on tablets the generic PDP stacked an ~850px plate above the
+  buy box (now two columns from 48rem); the flagship's ghosted name ran
+  through the format picker when stacked (removed below 64rem); the price
+  floated mid-column when the quantity row wrapped; the light header was
+  translucent enough for vials to show through the nav (88% → 96%); anchors
+  and focused fields landed under the phone header (scroll padding now
+  follows `--header-height`).
+- Unmatched URLs showed Next's unbranded English 404 with no `lang`
+  (pre-existing: two root layouts). Now `app/global-not-found.tsx`
+  (`experimental.globalNotFound`), bilingual, real 404 status.
+
+**Deliberately unchanged:** the homepage (approved; still strong), the
+catalogue and its phone shelf, flagship buy boxes and world bands, the
+research hub, compendium and records (one separator added to the phone
+section strip), the email templates, Mercado Pago's card fields.
+
+**Still worth a future pass:** the flagship product stage on tablets (the
+stacked 3D stage still pushes commerce down at 768px); the console's view
+tabs take several rows on a phone (a select may serve better); the
+specifications section repeats the presentation ladder twice; mono body
+copy in shipping notes is tiring at small sizes.
+
+**QA:** axe (WCAG 2.2 AA) and horizontal-overflow sweep, 0 problems, over 13
+public pages, 6 console pages and all 9 checkout/post-purchase screens at
+375, 768 and 1440; English checkout at 430; every gate passes.
 
 ## 8ab. Commerce + operations pass (2026-09-23)
 
