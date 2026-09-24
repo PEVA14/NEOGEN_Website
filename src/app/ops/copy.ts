@@ -57,7 +57,7 @@ export const OPS = {
   } satisfies Record<PaymentState, string>,
 
   fulfilment: {
-    unfulfilled: "No elegible",
+    unfulfilled: "Espera pago",
     queued: "En cola",
     preparing: "En preparación",
     ready_to_ship: "Listo para envío",

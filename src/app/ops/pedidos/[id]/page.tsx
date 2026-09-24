@@ -104,6 +104,108 @@ function Hidden({ order }: { order: Order }) {
 }
 
 /**
+ * THE NEXT STEP — the one action this order most likely needs, and where it
+ * stands if nothing is for NEOGEN to do. Every button here posts to the same
+ * server action its section uses; the section below still has the rest.
+ */
+function NextStep({ order, flagged }: { order: Order; flagged: boolean }) {
+  const f = order.fulfilment.state;
+  const paid = order.state === "paid";
+  const active = activeShipment(order);
+  const refund = openRefund(order);
+
+  let label = "Siguiente paso";
+  let title: string;
+  let action: React.ReactNode = null;
+  let tone: "act" | "wait" = "act";
+
+  const post = (
+    act: (form: FormData) => Promise<void>,
+    text: string,
+    fields: Record<string, string> = {},
+  ) => (
+    <form action={act}>
+      <Hidden order={order} />
+      {Object.entries(fields).map(([k, v]) => (
+        <input key={k} type="hidden" name={k} value={v} />
+      ))}
+      <button type="submit" className={styles.button}>
+        {text}
+      </button>
+    </form>
+  );
+  const jump = (href: string, text: string) => (
+    <a href={href} className={styles.button}>
+      {text}
+    </a>
+  );
+
+  if (refund && (refund.status === "requested" || refund.status === "failed")) {
+    title = `Reembolso de ${money(refund.amount.amount)} por enviar al procesador.`;
+    action = jump("#pago", "Ir al reembolso");
+  } else if (refund && refund.status === "submitted") {
+    title = "Reembolso enviado; espera la confirmación del procesador.";
+    tone = "wait";
+  } else if (order.state === "disputed") {
+    title = "Cargo en disputa. La preparación está detenida hasta que el banco resuelva.";
+    tone = "wait";
+  } else if (!paid && f !== "cancelled") {
+    title =
+      order.state === "payment_processing" || order.state === "pending_payment"
+        ? "El procesador está resolviendo el pago."
+        : "El cliente aún no paga. No hay nada que preparar.";
+    tone = "wait";
+  } else if (f === "on_hold") {
+    title = `En espera: ${order.fulfilment.hold ? OPS.holdReasons[order.fulfilment.hold.reason] : ""}.`;
+    action = post(resumeAction, "Reanudar");
+  } else if (f === "queued") {
+    title = "Pagado y en cola. Empieza a prepararlo.";
+    action = post(advanceAction, "Iniciar preparación", { to: "preparing" });
+  } else if (f === "preparing") {
+    title = "En preparación. Márcalo cuando esté empacado.";
+    action = post(advanceAction, "Listo para envío", { to: "ready_to_ship" });
+  } else if (f === "ready_to_ship" && (!active || active.state === "returned")) {
+    title = "Empacado. Registra el envío que contrataste.";
+    action = jump("#envio", "Registrar envío");
+  } else if (active?.state === "pending") {
+    title = "Envío reservado. Despáchalo cuando la paquetería lo recoja.";
+    action = post(shipmentStateAction, "Despachar", { shipmentId: active.id, to: "in_transit" });
+  } else if (active?.state === "in_transit" || active?.state === "exception") {
+    title =
+      active.state === "exception"
+        ? "La paquetería reportó una incidencia."
+        : "En tránsito. Márcalo cuando la paquetería confirme la entrega.";
+    action = post(shipmentStateAction, "Marcar entregado", {
+      shipmentId: active.id,
+      to: "delivered",
+    });
+  } else {
+    label = "Estado";
+    title =
+      active?.state === "delivered"
+        ? "Entregado. Nada pendiente."
+        : f === "cancelled"
+          ? "Cancelado. Nada pendiente."
+          : "Nada pendiente.";
+    tone = "wait";
+  }
+
+  /* Nothing to do, and the attention list above already says why: the line
+     would only repeat it. */
+  if (tone === "wait" && flagged && !action) return null;
+
+  return (
+    <div className={`${styles.next} ${styles.noPrint}`} data-tone={tone}>
+      <div className={styles.nextText}>
+        <span className={styles.nextLabel}>{label}</span>
+        <p className={styles.nextTitle}>{title}</p>
+      </div>
+      {action}
+    </div>
+  );
+}
+
+/**
  * ONE ORDER — its lifecycle made obvious.
  *
  * The three axes sit side by side at the top; anything that needs a person is
@@ -231,6 +333,8 @@ export default async function OrderPage({
         </ul>
       ) : null}
 
+      <NextStep order={order} flagged={reasons.length > 0} />
+
       <div className={styles.detail}>
         <div className={styles.column}>
           {/* ---------------------------------------------------- items */}
@@ -265,7 +369,7 @@ export default async function OrderPage({
                     const canAssign = paid && ["queued", "preparing", "ready_to_ship"].includes(f);
                     return (
                       <tr key={index}>
-                        <td className={styles.mono}>{line.variantId}</td>
+                        <td className={`${styles.mono} ${styles.nowrap}`}>{line.variantId}</td>
                         <td>
                           {line.name}
                           <br />
@@ -349,11 +453,6 @@ export default async function OrderPage({
                 </tbody>
               </table>
             </div>
-            <p className={styles.hint}>
-              El SKU es el identificador de la presentación. Los lotes vienen del registro de
-              calidad (<span className={styles.mono}>data/quality/lots.ts</span>); hoy está vacío,
-              así que no hay lote que asignar ni que inventar.
-            </p>
           </Panel>
 
           {/* ------------------------------------------------ fulfilment */}
@@ -376,7 +475,7 @@ export default async function OrderPage({
                 <form action={advanceAction}>
                   <Hidden order={order} />
                   <input type="hidden" name="to" value="preparing" />
-                  <button type="submit" className={styles.button}>
+                  <button type="submit" className={styles.button} data-variant="quiet">
                     {f === "ready_to_ship" ? "Reabrir preparación" : "Iniciar preparación"}
                   </button>
                 </form>
@@ -386,7 +485,7 @@ export default async function OrderPage({
                   <form action={advanceAction}>
                     <Hidden order={order} />
                     <input type="hidden" name="to" value="ready_to_ship" />
-                    <button type="submit" className={styles.button}>
+                    <button type="submit" className={styles.button} data-variant="quiet">
                       Listo para envío
                     </button>
                   </form>
@@ -402,31 +501,34 @@ export default async function OrderPage({
               {f === "on_hold" && paid ? (
                 <form action={resumeAction}>
                   <Hidden order={order} />
-                  <button type="submit" className={styles.button}>
+                  <button type="submit" className={styles.button} data-variant="quiet">
                     Reanudar
                   </button>
                 </form>
               ) : null}
             </div>
             {FULFILMENT_TRANSITIONS[f].includes("on_hold") ? (
-              <form action={holdAction} className={`${styles.form} ${styles.noPrint}`}>
-                <Hidden order={order} />
-                <div className={styles.formRow}>
-                  <label className={styles.label}>
-                    <span className={styles.labelText}>Poner en espera</span>
-                    <select name="reason" className={styles.select}>
-                      <option value="operator">{OPS.holdReasons.operator}</option>
-                      <option value="address_check">{OPS.holdReasons.address_check}</option>
-                      <option value="stock_short">{OPS.holdReasons.stock_short}</option>
-                    </select>
-                  </label>
-                </div>
-                <div>
-                  <button type="submit" className={styles.button} data-variant="quiet">
-                    En espera
-                  </button>
-                </div>
-              </form>
+              <details className={`${styles.details} ${styles.noPrint}`}>
+                <summary>Poner en espera…</summary>
+                <form action={holdAction} className={styles.form}>
+                  <Hidden order={order} />
+                  <div className={styles.formRow}>
+                    <label className={styles.label}>
+                      <span className={styles.labelText}>Motivo</span>
+                      <select name="reason" className={styles.select}>
+                        <option value="operator">{OPS.holdReasons.operator}</option>
+                        <option value="address_check">{OPS.holdReasons.address_check}</option>
+                        <option value="stock_short">{OPS.holdReasons.stock_short}</option>
+                      </select>
+                    </label>
+                  </div>
+                  <div>
+                    <button type="submit" className={styles.button} data-variant="quiet">
+                      En espera
+                    </button>
+                  </div>
+                </form>
+              </details>
             ) : null}
           </Panel>
 
@@ -482,13 +584,7 @@ export default async function OrderPage({
                           <Hidden order={order} />
                           <input type="hidden" name="shipmentId" value={s.id} />
                           <input type="hidden" name="to" value={to} />
-                          <button
-                            type="submit"
-                            className={styles.button}
-                            data-variant={
-                              to === "in_transit" && s.state === "pending" ? undefined : "quiet"
-                            }
-                          >
+                          <button type="submit" className={styles.button} data-variant="quiet">
                             {SHIPMENT_ACTIONS[to] ?? to}
                           </button>
                         </form>

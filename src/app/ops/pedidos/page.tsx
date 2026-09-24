@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { attentionReasons, isOrderView, ORDER_VIEWS, shipmentSummary } from "@/domain/order";
+import { attentionReasons, isOrderView, shipmentSummary } from "@/domain/order";
 import { requireOperator } from "@/server/ops/auth";
 import { orderRepository, storageKind } from "@/server/persistence";
 
@@ -12,6 +12,23 @@ import type { OrderView } from "@/domain/order";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+/* The work queue in the order an order moves through it, then the records. */
+const WORK_VIEWS: readonly OrderView[] = [
+  "attention",
+  "to_fulfil",
+  "preparing",
+  "ready_to_ship",
+  "in_transit",
+  "delivered",
+];
+const RECORD_VIEWS: readonly OrderView[] = [
+  "awaiting_payment",
+  "disputed",
+  "refunded",
+  "cancelled",
+  "all",
+];
 export const metadata: Metadata = { title: "Pedidos" };
 
 /**
@@ -63,22 +80,29 @@ export default async function OrdersPage({
 
       <Flash error={error} />
 
-      <nav aria-label="Vistas">
-        <ul className={styles.tabs}>
-          {ORDER_VIEWS.map((v) => (
-            <li key={v}>
-              <Link
-                href={href(v)}
-                className={styles.tab}
-                aria-current={v === view ? "page" : undefined}
-                data-alert={v === "attention" && counts.attention > 0 ? "true" : undefined}
-              >
-                {OPS.views[v]}
-                <span className={styles.count}>{counts[v]}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+      <nav aria-label="Vistas" className={styles.tabGroups}>
+        {(
+          [
+            ["queue", WORK_VIEWS],
+            ["records", RECORD_VIEWS],
+          ] as const
+        ).map(([group, views]) => (
+          <ul key={group} className={styles.tabs} data-group={group}>
+            {views.map((v) => (
+              <li key={v}>
+                <Link
+                  href={href(v)}
+                  className={styles.tab}
+                  aria-current={v === view ? "page" : undefined}
+                  data-alert={v === "attention" && counts.attention > 0 ? "true" : undefined}
+                >
+                  {OPS.views[v]}
+                  <span className={styles.count}>{counts[v]}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ))}
       </nav>
 
       <form className={styles.search} role="search" action="/ops/pedidos">
@@ -113,7 +137,7 @@ export default async function OrdersPage({
         </p>
       ) : (
         <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="Lista de pedidos">
-          <table className={styles.table}>
+          <table className={`${styles.table} ${styles.orderTable}`}>
             <caption className="sr-only">
               {OPS.views[view]}: {orders.length} pedidos
             </caption>
@@ -138,7 +162,7 @@ export default async function OrdersPage({
                 const attention = attentionReasons(o, now).length > 0;
                 return (
                   <tr key={o.id}>
-                    <td>
+                    <td data-cell="id">
                       {attention ? (
                         <span
                           className={styles.attentionDot}
@@ -150,20 +174,20 @@ export default async function OrdersPage({
                         {o.id}
                       </Link>
                     </td>
-                    <td>
+                    <td data-cell="age">
                       <span title={dateTime.format(new Date(o.createdAt))}>
                         {age(o.createdAt, nowMs)}
                       </span>
                     </td>
-                    <td>{o.contact.name}</td>
-                    <td>
+                    <td data-cell="who">{o.contact.name}</td>
+                    <td data-cell="where">
                       {o.shipping.city}, {o.shipping.state}
                       <br />
                       <span className={`${styles.mono} ${styles.muted}`}>
                         {o.route === "priority" ? "prioritaria" : "nacional"}
                       </span>
                     </td>
-                    <td>
+                    <td data-cell="items">
                       <span className={styles.mono}>
                         {units} u · {o.lines.length} SKU
                       </span>
@@ -176,14 +200,16 @@ export default async function OrdersPage({
                         {o.lines.length > 2 ? "…" : ""}
                       </span>
                     </td>
-                    <td className={styles.num}>{money(o.totals.total.amount)}</td>
-                    <td>
+                    <td data-cell="total" className={styles.num}>
+                      {money(o.totals.total.amount)}
+                    </td>
+                    <td data-cell="pay">
                       <AxisChip axis="payment" state={o.state} />
                     </td>
-                    <td>
+                    <td data-cell="ful">
                       <AxisChip axis="fulfilment" state={o.fulfilment.state} />
                     </td>
-                    <td>
+                    <td data-cell="ship">
                       <AxisChip axis="shipment" state={shipmentSummary(o)} />
                     </td>
                   </tr>

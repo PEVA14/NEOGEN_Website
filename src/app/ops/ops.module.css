@@ -160,22 +160,37 @@
 
 /* ---- tabs (views) --------------------------------------------------------- */
 
+/*
+ * Two rows of views: the work queue first (attention → delivered, in the
+ * order an order moves), then the records (awaiting payment, disputes,
+ * refunds, cancellations, all). They WRAP — eleven tabs in one scrolling row
+ * hid the last four even on a laptop.
+ */
 .tabs {
-  border-block-end: 1px solid var(--border-default);
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-3xs);
   list-style: none;
-  margin: 0 0 var(--space-md);
-  overflow-x: auto;
+  margin: 0;
   padding: 0;
-  position: relative;
-  scrollbar-width: thin;
+}
+
+.tabGroups {
+  border-block-end: 1px solid var(--border-default);
+  display: grid;
+  gap: var(--space-3xs);
+  margin-block-end: var(--space-md);
+  padding-block-end: var(--space-2xs);
+}
+
+.tabs[data-group="records"] .tab {
+  font-size: var(--text-xs);
+  min-block-size: 2.75rem;
 }
 
 .tab {
   align-items: center;
   border: 1px solid transparent;
-  border-block-end: 0;
   color: var(--ink-secondary);
   display: inline-flex;
   font-size: var(--text-sm);
@@ -187,10 +202,18 @@
 }
 
 .tab[aria-current="page"] {
-  background: var(--surface-raised);
+  background: var(--neogen-charcoal);
+  border-color: var(--neogen-charcoal);
+  color: var(--neogen-paper);
+}
+
+.tab[aria-current="page"] .count {
+  background: var(--neogen-graphite);
+  color: var(--neogen-paper);
+}
+
+.tab:hover:not([aria-current="page"]) {
   border-color: var(--border-default);
-  color: var(--ink-primary);
-  margin-block-end: -1px;
 }
 
 .tab[data-alert="true"] .count {
@@ -323,6 +346,106 @@
   white-space: nowrap;
 }
 
+.nowrap {
+  white-space: nowrap;
+}
+
+/*
+ * THE ORDER LIST ON A PHONE: each order becomes a block — reference and
+ * total, customer and destination, the three axis chips, then age and SKUs —
+ * instead of a nine-column table that showed three columns and hid the
+ * states off-screen.
+ */
+@media (max-width: 47.99rem) {
+  .orderTable thead {
+    display: none;
+  }
+
+  .orderTable,
+  .orderTable tbody {
+    display: block;
+  }
+
+  .orderTable tr {
+    border-block-end: 1px solid var(--border-subtle);
+    display: grid;
+    gap: var(--space-2xs) var(--space-sm);
+    grid-template-areas:
+      "id id total"
+      "who who who"
+      "where where where"
+      "pay ful ship"
+      "age items items";
+    grid-template-columns: auto auto minmax(0, 1fr);
+    padding: var(--space-sm);
+  }
+
+  .orderTable td {
+    border: 0;
+    padding: 0;
+  }
+
+  .orderTable [data-cell="id"] {
+    grid-area: id;
+  }
+
+  .orderTable [data-cell="total"] {
+    font-weight: 600;
+    grid-area: total;
+  }
+
+  .orderTable [data-cell="who"] {
+    grid-area: who;
+  }
+
+  .orderTable [data-cell="where"] {
+    color: var(--ink-secondary);
+    grid-area: where;
+  }
+
+  .orderTable [data-cell="where"] br {
+    display: none;
+  }
+
+  .orderTable [data-cell="where"] .mono {
+    margin-inline-start: var(--space-2xs);
+  }
+
+  .orderTable [data-cell="pay"] {
+    grid-area: pay;
+  }
+
+  .orderTable [data-cell="ful"] {
+    grid-area: ful;
+  }
+
+  .orderTable [data-cell="ship"] {
+    grid-area: ship;
+    justify-self: start;
+  }
+
+  .orderTable [data-cell="age"] {
+    color: var(--ink-muted);
+    font-size: var(--text-xs);
+    grid-area: age;
+  }
+
+  .orderTable [data-cell="items"] {
+    color: var(--ink-muted);
+    font-size: var(--text-xs);
+    grid-area: items;
+  }
+
+  .orderTable [data-cell="items"] {
+    text-align: end;
+  }
+
+  .orderTable [data-cell="items"] br,
+  .orderTable [data-cell="items"] .muted {
+    display: none;
+  }
+}
+
 .rowLink {
   color: var(--ink-primary);
   font-family: var(--font-mono);
@@ -453,21 +576,25 @@
   min-inline-size: 0;
 }
 
+/*
+ * A SECTION, NOT A BOX. Each part of an order is a ruled document section —
+ * a charcoal hairline, a mono title, the content — the same idiom as the
+ * storefront's record. Boxes-with-grey-headers made every section equally
+ * loud; rules let the content carry the hierarchy and cost no padding.
+ */
 .panel {
-  border: 1px solid var(--border-default);
+  border-block-start: 1px solid var(--ink-primary);
   min-inline-size: 0;
   scroll-margin-block-start: var(--space-lg);
 }
 
 .panelHead {
   align-items: baseline;
-  background: var(--surface-raised);
-  border-block-end: 1px solid var(--border-default);
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2xs) var(--space-sm);
   justify-content: space-between;
-  padding: var(--space-xs) var(--space-md);
+  padding-block: var(--space-xs) var(--space-sm);
 }
 
 .panelTitle {
@@ -482,12 +609,49 @@
 .panelBody {
   display: grid;
   gap: var(--space-md);
-  padding: var(--space-md);
+  padding-block-end: var(--space-sm);
 }
 
-.panelBody > .tableWrap {
-  margin-inline: calc(var(--space-md) * -1);
-  border-inline: 0;
+/* ---- the next action ---------------------------------------------------- */
+
+/*
+ * One line under the axes answering "what do I do with this order now?" —
+ * the single most likely legal action, as the only charcoal button on the
+ * page. Everything else stays where it lives, in its section.
+ */
+.next {
+  align-items: center;
+  background: var(--surface-raised);
+  border-inline-start: 3px solid var(--ink-primary);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm) var(--space-lg);
+  justify-content: space-between;
+  margin-block-end: var(--space-xl);
+  padding: var(--space-sm) var(--space-md);
+}
+
+.next[data-tone="wait"] {
+  border-inline-start-color: var(--border-strong);
+}
+
+.nextText {
+  display: grid;
+  gap: var(--space-3xs);
+}
+
+.nextLabel {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.nextTitle {
+  font-size: var(--text-base);
+  font-weight: 600;
+  margin: 0;
 }
 
 .facts {
