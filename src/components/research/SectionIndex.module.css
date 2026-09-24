@@ -1,0 +1,126 @@
+/*
+ * THE LOCAL INDEX.
+ * Phone: a sticky horizontal strip directly under the site header, one line
+ * of mono labels that scrolls sideways. Wide: a vertical list that sticks
+ * beside the document, each entry numbered, the current one marked by a
+ * heavier rule and full ink — shape and weight, never colour alone.
+ */
+
+.index {
+  min-inline-size: 0;
+  background: var(--surface-base);
+  border-block: 1px solid var(--border-default);
+  inset-block-start: var(--header-height);
+  margin-inline: calc(var(--gutter) * -1);
+  position: sticky;
+  z-index: var(--z-sticky);
+}
+
+.title {
+  block-size: 1px;
+  clip-path: inset(50%);
+  inline-size: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+}
+
+.list {
+  display: flex;
+  gap: var(--space-md);
+  list-style: none;
+  margin: 0;
+  overflow-x: auto;
+  padding: 0 var(--gutter);
+  scrollbar-width: none;
+}
+
+.list::-webkit-scrollbar {
+  display: none;
+}
+
+.link {
+  align-items: center;
+  border-block-end: 2px solid transparent;
+  color: var(--ink-muted);
+  display: flex;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  gap: var(--space-2xs);
+  letter-spacing: var(--tracking-label);
+  min-block-size: 2.75rem;
+  text-decoration: none;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.link:hover {
+  color: var(--ink-primary);
+}
+
+.link[aria-current="location"] {
+  border-block-end-color: var(--ink-primary);
+  color: var(--ink-primary);
+}
+
+.link:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: calc(var(--focus-ring-offset-width) * -1);
+}
+
+.number {
+  color: var(--ink-muted);
+}
+
+.meta {
+  color: var(--ink-muted);
+}
+
+@media (min-width: 64rem) {
+  .index {
+    background: transparent;
+    border: 0;
+    inset-block-start: calc(var(--header-height) + var(--space-lg));
+    margin-inline: 0;
+  }
+
+  .title {
+    block-size: auto;
+    clip-path: none;
+    color: var(--ink-primary);
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    inline-size: auto;
+    letter-spacing: var(--tracking-label);
+    margin: 0 0 var(--space-sm);
+    overflow: visible;
+    position: static;
+    text-transform: uppercase;
+    white-space: normal;
+  }
+
+  .list {
+    border-inline-start: 1px solid var(--border-default);
+    flex-direction: column;
+    gap: 0;
+    overflow: visible;
+    padding: 0;
+  }
+
+  .link {
+    border-block-end: 0;
+    border-inline-start: 2px solid transparent;
+    margin-inline-start: -1px;
+    min-block-size: 2.75rem;
+    padding-inline-start: var(--space-sm);
+    white-space: normal;
+  }
+
+  .link[aria-current="location"] {
+    border-inline-start-color: var(--ink-primary);
+  }
+
+  .meta {
+    margin-inline-start: auto;
+  }
+}

@@ -82,3 +82,13 @@
   outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: var(--focus-ring-offset-width);
 }
+
+/* Arriving from a citation marker: the entry clears the sticky header (and
+   the section strip on a phone), and is marked with the "you are here" rule. */
+.entry[id] {
+  scroll-margin-block-start: calc(var(--header-height) + 3.5rem);
+}
+
+.entry:target {
+  box-shadow: inset 2px 0 0 var(--ink-primary);
+}

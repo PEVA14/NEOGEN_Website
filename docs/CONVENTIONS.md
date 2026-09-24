@@ -932,6 +932,50 @@ inheriting the old text, and `check:checkout` asserts the wording exists in
 both dictionaries so a published declaration can never render as an unlabelled
 checkbox.
 
+## 17d. The knowledge system (NEOGEN Research)
+
+**Derived, never parallel.** `content/compendium.ts` reads the catalogue,
+`content/overview`, `content/references` and `content/functions`; it writes no
+sentence. A compound record is `compoundRecord(slug, locale)` — the sourced
+profile, with references numbered in first-citation order. A research line is
+`researchLine(id)` — a function's compounds, each with the statements that
+back its tag. If a profile changes, the record, its lines, the compendium row,
+the glossary backlinks and the counts all change with it.
+
+**Existence follows sources.** `recordSlugs()` (profile public in BOTH
+locales) and `lineIds()` drive `generateStaticParams` with
+`dynamicParams = false`, the sitemap and every link. A compound without a
+record is linked to its product page instead. `check:output` fails on a
+record or line page that should not exist, one that is missing, or any link
+into the archive that would 404.
+
+**The product page stays the only evidence surface.** Records summarise
+documentation as a count and link to `#calidad`; they never render
+`data-evidence-state`.
+
+**The glossary** (`content/glossary`) holds definitions only — the editorial
+`definition` class. `isPublicTerm` = approved + no forbidden vocabulary.
+Records list the terms their own text uses via `termsInText` (folded,
+whole-word `matches`); terms list the records that use them. Nothing rewrites
+a sourced sentence to insert links.
+
+**Identity** (`content/identity.ts`) — formula, mass, sequence, CAS — is empty
+and renders only with an approved source. No "pending" row, ever.
+
+**Components** (`components/research`): `KnowledgeHead` (breadcrumb, eyebrow,
+h1, lede, counts, aside), `SectionIndex` (sticky scroll-spy index; a strip
+under the header below 64rem), `KnowledgeDocument.module.css` (the shared
+document skeleton), `CompoundLibrary` (URL-state filters via `lib/useUrlSearch`,
+native-`<dialog>` quick view), `GlossaryExplorer`, `DepthMarks`,
+`CitationMarks`, `RouteList`, `PeptideDiagram`. A grid that holds a
+horizontally scrolling child needs an explicit `minmax(0, 1fr)` track, or
+the column sizes to the child's unscrolled width and the page overflows —
+found three times in this pass.
+
+**`--header-height` is per breakpoint** (4rem wide, 8.625rem below 40rem,
+where the header is two rows). Anything sticky or anchored under the header
+must read it.
+
 ## 18. Commands
 
 ```bash

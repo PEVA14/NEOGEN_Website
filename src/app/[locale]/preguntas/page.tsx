@@ -163,6 +163,8 @@ export default async function FaqPage({ params }: { params: Promise<{ locale: st
 
               <nav className={styles.more} aria-label={dict.peptides.title}>
                 <TextLink href={path(routes.peptides)}>{dict.peptides.title}</TextLink>
+                <TextLink href={path(routes.start)}>{dict.knowledge.start.title}</TextLink>
+                <TextLink href={path(routes.glossary)}>{dict.knowledge.glossary.title}</TextLink>
                 <TextLink href={path(routes.articles)}>{dict.editorial.title}</TextLink>
                 <TextLink href={path(routes.products)}>{dict.nav.products}</TextLink>
               </nav>

@@ -15,6 +15,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import { publicAreaOverview } from "../src/content/areas/index.ts";
+import { lineIds, recordSlugs } from "../src/content/compendium.ts";
 import { areaResearch, researchReferenceIndex } from "../src/content/research.ts";
 import { publishedProducts } from "../src/data/catalog/index.ts";
 import { productsInArea, publicAreas } from "../src/data/discovery/index.ts";
@@ -336,6 +337,80 @@ for (const area of publicAreas()) {
     ]) {
       if (phrase.test(html))
         fail("area page prints an aggregate trust claim", `${locale}/${area.slug} ${phrase}`);
+    }
+  }
+}
+
+/* ------------------------------------------- 7d. the knowledge system
+ *
+ * A compound record exists exactly for the compounds with a sourced profile in
+ * both locales, and a research line exactly for the lines a sourced statement
+ * backs. Read back from the build: every expected page was emitted, no other
+ * record or line page was, and no page anywhere links a record or a line that
+ * does not exist. The compendium's server-rendered index lists every
+ * published compound, so the archive is complete before any JavaScript runs.
+ */
+{
+  const records = new Set(recordSlugs());
+  const lines = new Set(lineIds());
+  for (const locale of ["es", "en"]) {
+    const under = (segment) =>
+      htmlFiles
+        .map((f) =>
+          f.match(
+            new RegExp(
+              `[\\\\/]${locale}[\\\\/]investigacion[\\\\/]${segment}[\\\\/]([^\\\\/]+)\\.html$`,
+            ),
+          ),
+        )
+        .filter(Boolean)
+        .map((m) => m[1]);
+    const builtRecords = new Set(under("compuestos"));
+    const builtLines = new Set(under("lineas"));
+    for (const slug of records) {
+      if (!builtRecords.has(slug)) fail("a record was not prerendered", `${locale}/${slug}`);
+    }
+    for (const slug of builtRecords) {
+      if (!records.has(slug))
+        fail("a record page exists without a sourced profile", `${locale}/${slug}`);
+    }
+    for (const id of lines) {
+      if (!builtLines.has(id)) fail("a research line was not prerendered", `${locale}/${id}`);
+    }
+    for (const id of builtLines) {
+      if (!lines.has(id)) fail("a line page exists with no sourced compound", `${locale}/${id}`);
+    }
+    for (const page of ["compuestos", "lineas", "glosario", "manejo", "empezar"]) {
+      if (
+        !htmlFiles.some((f) =>
+          new RegExp(`[\\\\/]${locale}[\\\\/]investigacion[\\\\/]${page}\\.html$`).test(f),
+        )
+      ) {
+        fail("a knowledge page was not prerendered", `${locale}/investigacion/${page}`);
+      }
+    }
+    const compendium = htmlFiles.find((f) =>
+      new RegExp(`[\\\\/]${locale}[\\\\/]investigacion[\\\\/]compuestos\\.html$`).test(f),
+    );
+    if (compendium) {
+      const html = readFileSync(compendium, "utf8");
+      for (const product of publishedProducts) {
+        if (!html.includes(`id="compound-${product.slug}"`)) {
+          fail("the compendium's server HTML is missing a compound", `${locale}/${product.slug}`);
+        }
+      }
+    }
+  }
+  /* No dead links into the archive, from any page. */
+  for (const file of htmlFiles) {
+    const html = readFileSync(file, "utf8");
+    for (const m of html.matchAll(/href="\/(?:es|en)\/investigacion\/compuestos\/([^"#?/]+)/g)) {
+      if (!records.has(m[1]))
+        fail("a page links a record that does not exist", `${m[1]} in ${file}`);
+    }
+    for (const m of html.matchAll(/href="\/(?:es|en)\/investigacion\/lineas\/([^"#?/]+)/g)) {
+      if (!lines.has(m[1]))
+        fail("a page links a research line that does not exist", `${m[1]} in ${file}`);
     }
   }
 }

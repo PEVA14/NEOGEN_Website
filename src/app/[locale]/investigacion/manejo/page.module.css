@@ -1,0 +1,180 @@
+/*
+ * LABORATORY HANDLING — what is specific to this reference. The skeleton is
+ * `KnowledgeDocument.module.css`, shared with the compound record.
+ */
+
+/* What arrives: four facts as a two-column spec list. */
+.facts {
+  display: grid;
+  margin: 0;
+  max-inline-size: 48rem;
+}
+
+.facts div {
+  border-block-start: 1px solid var(--border-subtle);
+  display: grid;
+  gap: var(--space-3xs) var(--space-md);
+  padding-block: var(--space-xs);
+}
+
+@media (min-width: 40rem) {
+  .facts div {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 5fr);
+  }
+}
+
+.facts dt {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.facts dd {
+  color: var(--ink-primary);
+  margin: 0;
+}
+
+/* What to record: a numbered checklist, one line each. */
+.checklist {
+  counter-reset: none;
+  display: grid;
+  list-style: none;
+  margin: 0;
+  max-inline-size: 48rem;
+  padding: 0;
+}
+
+.checklist li {
+  border-block-start: 1px solid var(--border-subtle);
+  color: var(--ink-primary);
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: 2rem minmax(0, 1fr);
+  line-height: var(--leading-relaxed);
+  padding-block: var(--space-sm);
+}
+
+.checkIndex {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  padding-block-start: 0.3em;
+}
+
+/* Stability: four factors in a 2×2 on wide screens, ruled like a spec sheet. */
+.factors {
+  border-block-start: 1px solid var(--border-default);
+  display: grid;
+  margin: 0;
+}
+
+@media (min-width: 48rem) {
+  .factors {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.factor {
+  border-block-end: 1px solid var(--border-subtle);
+  display: grid;
+  gap: var(--space-2xs);
+  padding: var(--space-md) var(--space-md) var(--space-md) 0;
+}
+
+@media (min-width: 48rem) {
+  .factor:nth-child(odd) {
+    border-inline-end: 1px solid var(--border-subtle);
+  }
+
+  .factor:nth-child(even) {
+    padding-inline-start: var(--space-md);
+  }
+}
+
+.factor dt {
+  color: var(--ink-primary);
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+}
+
+.factor dd {
+  color: var(--ink-secondary);
+  line-height: var(--leading-relaxed);
+  margin: 0;
+}
+
+/* Common errors: each one a short title and one sentence. */
+.errors {
+  display: grid;
+  list-style: none;
+  margin: 0;
+  max-inline-size: 48rem;
+  padding: 0;
+}
+
+.errors li {
+  border-block-start: 1px solid var(--border-subtle);
+  display: grid;
+  gap: var(--space-3xs);
+  padding-block: var(--space-sm);
+}
+
+.errorTitle {
+  color: var(--ink-primary);
+  font-weight: 600;
+  margin: 0;
+}
+
+.errorBody {
+  color: var(--ink-secondary);
+  line-height: var(--leading-relaxed);
+  margin: 0;
+}
+
+/* The boundary: the one set-apart statement on the page. */
+.boundary {
+  background: var(--surface-raised);
+  border-inline-start: 2px solid var(--ink-primary);
+  color: var(--ink-primary);
+  font-size: var(--text-lg);
+  line-height: var(--leading-relaxed);
+  margin: 0;
+  max-inline-size: 48rem;
+  padding: var(--space-md) var(--space-lg);
+}
+
+.questions {
+  display: grid;
+  max-inline-size: 48rem;
+}
+
+.question {
+  border-block-start: 1px solid var(--border-subtle);
+  display: grid;
+  gap: var(--space-2xs);
+  padding-block: var(--space-md);
+}
+
+.question h3 {
+  color: var(--ink-primary);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  margin: 0;
+}
+
+.question p {
+  color: var(--ink-secondary);
+  line-height: var(--leading-relaxed);
+  margin: 0;
+}
+
+.termsBlock {
+  display: grid;
+  gap: var(--space-sm);
+  margin-block-start: var(--space-md);
+}

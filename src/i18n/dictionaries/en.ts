@@ -37,6 +37,19 @@ const en: Dictionary = {
       faq: "Shipping, documentation, payment and research use: frequently asked questions for NEOGEN Mexico.",
       articles:
         "NEOGEN notes on laboratory vocabulary, analytical documentation and the handling of lyophilised materials.",
+      compendium:
+        "Compendium of {count} research compounds: search by name, area or research line, with scientific records and their sources.",
+      compound:
+        "{name}: scientific record with {statements} statements and {references} numbered references. NEOGEN Research.",
+      lines:
+        "NEOGEN research lines: receptors, pathways and processes the literature studies, with the compounds each one examines.",
+      line: "{name}: compounds studied in this research line, with the statement and source behind each one.",
+      glossary:
+        "NEOGEN glossary: {count} terms on structure, mechanism, studies, quality and materials, with the records that use them.",
+      handling:
+        "Laboratory handling of lyophilised materials: receipt, stability, common errors and storage. NEOGEN Research.",
+      start:
+        "Start here: what NEOGEN Research is, how it is organised, how to read a scientific record and how to weigh its documentation.",
       cart: "Your NEOGEN Mexico bag.",
       checkout: "NEOGEN Mexico payment process.",
     },
@@ -805,6 +818,7 @@ const en: Dictionary = {
       lede: "The references this page cites, and the areas to continue reading in.",
       routes: "Continue by area",
       hub: "NEOGEN Research index",
+      record: "Full scientific record",
     },
     quality: {
       label: "Quality",
@@ -1021,9 +1035,80 @@ const en: Dictionary = {
     hub: {
       index: "01",
       label: "Research",
-      qualifier: "Index and evidence",
+      qualifier: "Scientific archive",
       title: "NEOGEN Research",
-      lede: "The index of the catalogue's compounds, the areas they are studied in, and the model their quality is documented by.",
+      lede: "The catalogue's scientific archive: what each compound is, what the published literature has studied, from which sources and within which limits. Every statement cites its source; what has no source does not appear.",
+      search: {
+        label: "Search the compendium",
+        placeholder: "Compound, alias or presentation",
+        submit: "Search",
+      },
+      stats: {
+        label: "What the archive holds",
+        compounds: "Compounds",
+        records: "Scientific records",
+        references: "References",
+        lines: "Research lines",
+        terms: "Terms",
+      },
+      paths: {
+        index: "02",
+        label: "Routes",
+        qualifier: "Three ways in",
+        title: "Where to begin",
+        chooser: "Choose your way in",
+        begin: {
+          question: "I'm new to this",
+          label: "If this is your first time",
+          body: "What a peptide is, how the archive is organised and how a record is read.",
+          start: {
+            title: "Start here",
+            body: "Five steps, from zero to reading a record.",
+            meta: "5 steps",
+          },
+          peptides: {
+            title: "What a peptide is",
+            body: "The definition, with a diagram.",
+            meta: "Diagram and comparison",
+          },
+          glossary: { title: "Glossary", body: "{n} terms, with the records that use them." },
+        },
+        explore: {
+          question: "I'm looking for a compound",
+          label: "If you are looking for a compound",
+          flagships: "Records of the flagship compounds",
+          areasMeta: "{n} areas",
+          body: "The whole compendium, by name, area or research line.",
+          compendium: {
+            title: "Compendium",
+            body: "{n} compounds, {records} with a scientific record.",
+          },
+          lines: {
+            title: "Research lines",
+            body: "{n} receptors, pathways and processes studied.",
+          },
+          areas: { title: "Areas", body: "The catalogue's sections by field of study." },
+        },
+        evaluate: {
+          question: "I want to see the evidence",
+          label: "If you are weighing the evidence",
+          referencesMeta: "{n} sources",
+          qualityMeta: "4 levels",
+          handlingMeta: "Laboratory reference",
+          notesMeta: "{n} notes",
+          body: "Where each statement comes from and how quality is documented.",
+          references: { title: "References", body: "{n} sources, each with a DOI or PMID." },
+          quality: {
+            title: "Documentation model",
+            body: "How a document attaches to a presentation or a lot.",
+          },
+          handling: {
+            title: "Laboratory handling",
+            body: "Stability, receipt and storage of lyophilised materials.",
+          },
+          notes: { title: "Notes", body: "Short reads on vocabulary and documentation." },
+        },
+      },
       areas: {
         index: "02",
         label: "Areas",
@@ -1033,27 +1118,13 @@ const en: Dictionary = {
         references: "References",
         enter: "Enter",
       },
-      finder: {
+      lines: {
         index: "03",
-        label: "Compounds",
-        qualifier: "Index",
-        title: "Compound index",
-        searchLabel: "Search",
-        searchPlaceholder: "Name or presentation",
-        areaLabel: "Area",
-        areaAll: "All areas",
-        results: "{n} compounds",
-        result: "{n} compound",
-        empty: "No compound matches the search.",
-        clear: "Clear",
-        columns: {
-          compound: "Compound",
-          areas: "Areas",
-          presentations: "Presentations",
-          documentation: "Documentation",
-        },
-        documents: "{n} public documents",
-        document: "1 public document",
+        label: "Lines",
+        qualifier: "What is studied",
+        title: "Research lines",
+        lede: "Receptors, pathways and processes studied by the literature the records cite. A compound appears in a line only if a sourced statement in its record supports it.",
+        all: "All lines",
       },
       quality: {
         index: "04",
@@ -1064,7 +1135,7 @@ const en: Dictionary = {
         explorer: "Explore documentation",
       },
       notes: {
-        index: "06",
+        index: "05",
         label: "Notes",
         qualifier: "Reading",
         title: "NEOGEN notes",
@@ -1072,7 +1143,7 @@ const en: Dictionary = {
         all: "All notes",
       },
       references: {
-        index: "05",
+        index: "06",
         label: "References",
         qualifier: "Sources",
         title: "References",
@@ -1082,6 +1153,425 @@ const en: Dictionary = {
         /* "See all 74 references" */
         all: "See all {n} references",
         showing: "The {n} most recent",
+      },
+    },
+  },
+
+  knowledge: {
+    crumbs: {
+      research: "Research",
+      compendium: "Compendium",
+      lines: "Lines",
+    },
+    counts: {
+      compounds: "{n} compounds",
+      compound: "1 compound",
+      terms: "{n} terms",
+      term: "1 term",
+      references: "{n} references",
+      reference: "1 reference",
+      statements: "{n} statements",
+      statement: "1 statement",
+      lines: "{n} lines",
+      line: "1 line",
+    },
+
+    compendium: {
+      label: "Compendium",
+      qualifier: "Compound index",
+      title: "Compound compendium",
+      lede: "Every compound in the catalogue in one index. Open any of them for a quick view; those with a scientific record lead on to the full record, with its statements and numbered sources.",
+      legend: {
+        label: "How to read the index",
+        depth:
+          "The four marks show which sections a record holds: mechanism, published research, technical notes and references.",
+        none: "A dash means the compound has no scientific record: it has a product page, but no sourced statement has been published.",
+      },
+      controls: {
+        search: "Search",
+        searchPlaceholder: "Name, alias or presentation",
+        area: "Area",
+        areaAll: "All areas",
+        line: "Research line",
+        lineAll: "All lines",
+        record: "Only with a scientific record",
+        clear: "Clear filters",
+        filters: "Filters",
+        results: "{n} compounds",
+        result: "1 compound",
+        empty: "No compound matches. Try another name or remove a filter.",
+        letters: "Alphabetical index",
+      },
+      columns: {
+        compound: "Compound",
+        areas: "Area",
+        lines: "Research lines",
+        record: "Record",
+      },
+      depth: {
+        label: "Record sections",
+        mechanism: "Mechanism",
+        research: "Published research",
+        notes: "Technical notes",
+        references: "References",
+        none: "No scientific record",
+        refs: "{n} ref.",
+      },
+      preview: {
+        open: "Quick view",
+        dialog: "Quick view of {name}",
+        close: "Close",
+        previous: "Previous",
+        next: "Next",
+        position: "{i} of {n}",
+        identity: "Identity",
+        type: "Type",
+        alias: "Alternative designation",
+        composition: "Composition",
+        presentations: "Presentations",
+        areas: "Areas",
+        lines: "Research lines",
+        mechanism: "Mechanism, as the source describes it",
+        research: "Published research, as the source reports it",
+        sources: "{n} sources in the record",
+        source: "1 source in the record",
+        contents: "In the record",
+        record: "Open scientific record",
+        product: "View in the catalogue",
+        noRecord:
+          "This compound has no scientific record: no sourced statement about it has been published. Its product page carries its identity and presentations.",
+        documentation: "Documentation",
+        documentationNone: "No public documentation",
+      },
+    },
+
+    record: {
+      label: "Scientific record",
+      index: "In this record",
+      jump: "Jump to section",
+      sections: {
+        identity: "Identity",
+        mechanism: "Mechanism",
+        research: "Published research",
+        areas: "By research area",
+        notes: "Technical notes and limits",
+        references: "References",
+        documentation: "Documentation",
+        product: "In the catalogue",
+        related: "Keep exploring",
+      },
+      ledes: {
+        mechanism: "How the sources describe the compound's action, in their own terms.",
+        research:
+          "Which studies have been published, in which model and with what result, including the adverse events and limits they report.",
+        areas: "What the literature has examined in each area of the catalogue.",
+        notes: "What helps in reading the sources: what they actually studied and how far they go.",
+        references: "Numbered in the order they are cited. Each opens at its original source.",
+      },
+      identity: {
+        caption: "Compound identity",
+        name: "Name",
+        alias: "Alternative designation",
+        type: "Type",
+        composition: "Composition",
+        presentations: "Presentations",
+        areas: "Areas",
+        lines: "Research lines",
+        formula: "Molecular formula",
+        mass: "Molecular mass",
+        sequence: "Sequence",
+        cas: "CAS number",
+        source: "Source of identity",
+      },
+      citation: "Reference {n}",
+      documentation: {
+        body: "Analytical documentation attaches to a specific presentation or lot, and is consulted on the product page, where it is shown with its exact scope.",
+        link: "See the product's documentation",
+        count: "{n} public documents",
+        one: "1 public document",
+      },
+      product: {
+        body: "This record describes the compound NEOGEN sells in these presentations.",
+        link: "View product",
+      },
+      related: {
+        compounds: "Compounds in the same lines",
+        compoundsBody:
+          "Studied in at least one of this record's lines. It implies neither similar effects nor a combination.",
+        shared: "{n} lines in common",
+        sharedOne: "1 line in common",
+        terms: "Terms in this record",
+        termsBody: "Words from this record defined in the glossary.",
+        lines: "This record's lines",
+        back: "Back to the compendium",
+      },
+    },
+
+    lines: {
+      label: "Research lines",
+      qualifier: "What is studied",
+      title: "Research lines",
+      lede: "The receptors, pathways and processes studied by the literature the records cite, with the compounds each one examines.",
+      principle: {
+        label: "What a line is",
+        body: "A line groups compounds by what published research has studied in them, not by what might be combined. Each compound is in a line because a sourced statement in its own record supports it, and that statement is quoted on the line's page.",
+      },
+      open: "View line",
+      line: {
+        back: "All lines",
+        why: "Why it is here",
+        record: "Scientific record",
+        product: "View in the catalogue",
+        references: "References for this line",
+        others: "Other lines in the group",
+        compounds: "Compounds studied in this line",
+        note: "A line is not a recommendation. Compounds appear in catalogue order, and what is said about each one is backed by its own source.",
+      },
+    },
+
+    glossary: {
+      label: "Glossary",
+      qualifier: "Vocabulary",
+      title: "Glossary",
+      lede: "The words the records are written in, defined once. Each term shows which records use it.",
+      scope:
+        "General definitions. No term describes what a compound does: that is in its record, with its source.",
+      search: "Search for a term",
+      searchPlaceholder: "Term or abbreviation",
+      categories: {
+        all: "All",
+        structure: "Structure",
+        mechanism: "Mechanism",
+        evidence: "Studies and evidence",
+        quality: "Quality and documentation",
+        materials: "Materials",
+        framework: "How NEOGEN reads",
+      },
+      view: {
+        label: "Order",
+        category: "By topic",
+        alphabet: "A–Z",
+      },
+      results: "{n} terms",
+      result: "1 term",
+      empty: "No term matches the search.",
+      seeAlso: "See also",
+      usedIn: "In the records",
+      more: "and {n} more",
+      readMore: "Read the note",
+      letters: "Jump to letter",
+      destinations: {
+        peptides: "What a peptide is",
+        compendium: "Compendium",
+        lines: "Research lines",
+        handling: "Laboratory handling",
+        start: "Start here",
+        references: "References",
+        "quality-model": "Documentation model",
+      },
+    },
+
+    handling: {
+      label: "Laboratory reference",
+      qualifier: "Handling",
+      title: "Laboratory handling",
+      lede: "How a lyophilised material arrives, what affects its stability and what to record on receipt. A reference for laboratory work, and for no other use.",
+      index: "In this reference",
+      arrives: {
+        label: "Receipt",
+        title: "What arrives",
+        body: "Material travels lyophilised, in a sealed vial, protected from light and impact. A lyophilised material is a dry solid, and its stability depends above all on staying dry.",
+        facts: [
+          { term: "Form", value: "Lyophilised solid" },
+          { term: "Container", value: "Sealed glass vial" },
+          {
+            term: "Presentation",
+            value: "Amount per vial and vials per pack, as the product page states",
+          },
+          {
+            term: "Documentation",
+            value: "Attached to the presentation or the lot, on the product page",
+          },
+        ],
+      },
+      receiving: {
+        label: "Record",
+        title: "What to record on receipt",
+        items: [
+          "The presentation received against the one ordered: amount per vial and number of vials.",
+          "The state of the seal and the vial before storing it.",
+          "The date of receipt and the conditions it is stored in.",
+          "The lot, where the documentation states one, and the document that belongs to it.",
+        ],
+      },
+      stability: {
+        label: "Stability",
+        title: "What affects a lyophilised material",
+        lede: "The three factors any laboratory watches, and a fourth that is less obvious.",
+        factors: [
+          {
+            term: "Temperature",
+            body: "Cold slows chemical degradation. The steadiness of the temperature matters as much as its value: constant is better than low but fluctuating.",
+          },
+          {
+            term: "Humidity",
+            body: "Lyophilisation removes the water. A vial opened in a humid room takes some of it back, and with it the degradation route that had been removed.",
+          },
+          {
+            term: "Light",
+            body: "Some sequences are sensitive to ultraviolet light. Keeping material in the dark is standard practice precisely because it costs nothing.",
+          },
+          {
+            term: "Changes of condition",
+            body: "Every move from cold to room temperature, and back, exposes the material to condensation. Taking a vial out once is not the same as taking it out ten times.",
+          },
+        ],
+      },
+      errors: {
+        label: "Common errors",
+        title: "What tends to go wrong",
+        items: [
+          {
+            title: "Opening a vial while still cold",
+            body: "Opened before it reaches room temperature, the air's moisture condenses inside.",
+          },
+          {
+            title: "Moving material between conditions",
+            body: "Taking it out of the cold and back again repeatedly accumulates temperature changes and condensation.",
+          },
+          {
+            title: "Storing it in the light",
+            body: "A lit shelf exposes the material without anyone having decided to.",
+          },
+          {
+            title: "Reading a document as general",
+            body: "A certificate describes the lot analysed. It does not cover another presentation or another production of the same compound.",
+          },
+          {
+            title: "Assuming the conditions",
+            body: "A compound's specific conditions are a documented fact. Without the document, there is no figure to follow.",
+          },
+        ],
+      },
+      documented: {
+        label: "Per-compound data",
+        title: "Documented conditions",
+        body: "A specific compound's storage temperature and shelf life are facts from its documentation, and appear on its page beside the document that supports them. This reference gives no general figures because no general figure would be true for the whole catalogue.",
+      },
+      boundary: {
+        label: "Scope",
+        title: "What this reference does not include",
+        body: "There are no preparation procedures, amounts, calculations or instructions for use. That is not an omission: the catalogue is sold for research work, and a site that publishes how to employ a material has said what use it expects.",
+      },
+      materials: {
+        label: "Catalogue",
+        title: "Laboratory materials",
+        body: "What the catalogue sells as laboratory material, with its presentations.",
+      },
+      faq: {
+        label: "Questions",
+        title: "Questions about handling",
+      },
+      related: {
+        label: "Related",
+        title: "Keep reading",
+        terms: "Terms",
+      },
+    },
+
+    start: {
+      label: "Start here",
+      qualifier: "Walkthrough",
+      title: "Start here",
+      lede: "Five steps from not knowing what a peptide is to reading a scientific record and weighing its documentation. A few minutes, no jargon.",
+      progress: "Walkthrough steps",
+      what: {
+        index: "01",
+        label: "What this is",
+        title: "An archive of research compounds",
+        body: "NEOGEN sells compounds for laboratory work, and this archive explains what each one is according to the published literature. Most are peptides: short chains of amino acids whose sequence defines which molecule they are.",
+        condition:
+          "The whole catalogue is sold under one condition: research use only. No page in this archive describes how to employ a compound or what it would do in a person.",
+        peptides: "What a peptide is",
+        research: "What “research use” means",
+      },
+      map: {
+        index: "02",
+        label: "Organisation",
+        title: "How it is organised",
+        body: "Five levels, from the general to the specific. Each is a different way in, and each leads to the next.",
+        levels: {
+          areas: { title: "Areas", body: "The catalogue's sections by field of study." },
+          lines: {
+            title: "Research lines",
+            body: "Receptors, pathways and processes the literature studies.",
+          },
+          compounds: {
+            title: "Compounds",
+            body: "The whole catalogue, with identity and presentations.",
+          },
+          records: {
+            title: "Scientific records",
+            body: "What the sources report, statement by statement.",
+          },
+          references: { title: "References", body: "The published sources, with a DOI or PMID." },
+        },
+      },
+      anatomy: {
+        index: "03",
+        label: "Reading",
+        title: "How to read a record",
+        body: "A real excerpt from the record for {name}. Each part does a job.",
+        figure: "Excerpt from the record for {name}, annotated",
+        notes: {
+          section: {
+            title: "Section",
+            body: "Mechanism, published research, technical notes: the record separates how the compound's action is described from what has been measured.",
+          },
+          statement: {
+            title: "Sourced statement",
+            body: "It says what the source reports, in its terms: the model, the figure and the limit. Never what a compound would do for the reader.",
+          },
+          marker: {
+            title: "Citation marker",
+            body: "The number points to the record's reference list. Each reference opens at its original source.",
+          },
+          model: {
+            title: "The model matters",
+            body: "In vitro, in mice or in a phase 2 trial: the same result weighs differently depending on where it was obtained. The glossary explains each term.",
+          },
+        },
+        open: "Open the full record",
+      },
+      evidence: {
+        index: "04",
+        label: "Documentation",
+        title: "How to weigh documentation",
+        body: "An analytical document answers three questions, and belongs to the most specific thing it examines: a presentation or a lot, never the compound in the abstract.",
+        questions: [
+          "Which sample was analysed, and which lot does it come from?",
+          "By which method: HPLC for purity, mass spectrometry for identity?",
+          "Who signs it, and can the report be verified?",
+        ],
+        note: "How to read a certificate of analysis",
+      },
+      next: {
+        index: "05",
+        label: "Next",
+        title: "Where to go now",
+        compendium: { title: "Look up a compound", body: "The whole compendium, with quick view." },
+        lines: {
+          title: "Explore by what is studied",
+          body: "The research lines and their compounds.",
+        },
+        glossary: {
+          title: "Check a word",
+          body: "The glossary, with the records that use each term.",
+        },
+        handling: {
+          title: "Laboratory handling",
+          body: "Stability and storage of lyophilised materials.",
+        },
       },
     },
   },
@@ -1753,6 +2243,62 @@ const en: Dictionary = {
         title: "Why they are studied",
         body: "Because they combine two uncommon properties: they are specific, since their sequence determines what they interact with, and they are synthesisable, since their size makes them reproducible to produce and purify. That combination makes them laboratory tools with a degree of control larger molecules do not allow.",
       },
+      anatomy: {
+        index: "02",
+        label: "Structure",
+        title: "From amino acid to protein",
+        lede: "A diagram, not a real molecule: the same unit, joined in a chain, at three scales.",
+        diagram: {
+          label: "Diagram of a peptide chain",
+          aminoAcid: "Amino acid",
+          bond: "Peptide bond",
+          nTerm: "N-terminus",
+          cTerm: "C-terminus",
+          sequence: "Sequence: the order of the amino acids, from N to C",
+        },
+        scale: {
+          label: "Three scales",
+          aminoAcid: "One unit",
+          peptide: "Tens of units",
+          protein: "Hundreds or thousands, folded",
+        },
+        table: {
+          caption: "Amino acid, peptide and protein, compared",
+          property: "Property",
+          columns: ["Amino acid", "Peptide", "Protein"],
+          rows: [
+            {
+              label: "What it is",
+              values: [
+                "A molecule: the unit",
+                "A short chain of amino acids",
+                "A long chain of amino acids, folded",
+              ],
+            },
+            {
+              label: "Size",
+              values: ["One unit", "Tens of units", "Hundreds or thousands of units"],
+            },
+            {
+              label: "Shape",
+              values: ["—", "Often flexible", "A stable three-dimensional structure"],
+            },
+            {
+              label: "How it is made in the laboratory",
+              values: [
+                "Chemical synthesis or natural sources",
+                "Chemical synthesis, one amino acid after another",
+                "Usually, production in cells",
+              ],
+            },
+            {
+              label: "What identifies it",
+              values: ["Its chemical structure", "Its sequence", "Its sequence and its folding"],
+            },
+          ],
+        },
+        terms: "Terms in this section",
+      },
       condition: {
         index: "03",
         label: "Condition",
@@ -1784,6 +2330,12 @@ const en: Dictionary = {
       title: "Notes",
       lede: "Four short reads on vocabulary, documentation and handling.",
       action: "All notes",
+    },
+    continue: {
+      title: "Continue in NEOGEN Research",
+      start: "Start here",
+      glossary: "Glossary",
+      compendium: "Compound compendium",
     },
     faq: {
       title: "Frequently asked questions",
@@ -2012,6 +2564,11 @@ const en: Dictionary = {
       help: "Help",
     },
     links: {
+      compendium: "Compendium",
+      lines: "Research lines",
+      glossary: "Glossary",
+      start: "Start here",
+      handling: "Laboratory handling",
       allCompounds: "All compounds",
       documentation: "Documentation",
       peptides: "What is a peptide",

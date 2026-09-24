@@ -233,7 +233,7 @@ export function assembleAtlasView({
       case "catalogue":
         return path(routes.products);
       case "research-index":
-        return `${path(routes.research)}#indice`;
+        return path(routes.compendium);
       case "quality-model":
         return `${path(routes.research)}#calidad`;
       case "explorer":

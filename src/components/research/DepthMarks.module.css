@@ -1,0 +1,23 @@
+/* Four square marks, the width of a short word. Filled = the section exists. */
+
+.marks {
+  display: inline-flex;
+  gap: 3px;
+  vertical-align: middle;
+}
+
+.mark {
+  block-size: 0.5rem;
+  border: 1px solid var(--border-strong);
+  inline-size: 0.5rem;
+}
+
+.mark[data-filled="true"] {
+  background: var(--ink-primary);
+  border-color: var(--ink-primary);
+}
+
+.none {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+}

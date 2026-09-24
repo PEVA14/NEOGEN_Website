@@ -2,7 +2,9 @@ import { features } from "@/config/features";
 import { routes } from "@/config/routes";
 import { siteConfig } from "@/config/site";
 import { publishedProducts } from "@/data/catalog";
+import { lineIds, recordSlugs } from "@/content/compendium";
 import { publicArticles } from "@/content/editorial";
+import { publicGlossary } from "@/content/glossary";
 import { publicPolicies } from "@/content/policies";
 import { researchReferenceIndex } from "@/content/research";
 import { publicEvidenceIndex } from "@/domain/quality";
@@ -65,6 +67,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
      */
     ...(publicArticles().length > 0 ? [routes.articles] : []),
     ...publicArticles().map((article) => routes.article(article.slug)),
+    /*
+     * The knowledge system. Records and lines are listed from the SAME
+     * accessors their routes are generated from (`recordSlugs`, `lineIds`),
+     * so the sitemap cannot advertise a record or a line that 404s.
+     */
+    routes.compendium,
+    ...recordSlugs().map((slug) => routes.compound(slug)),
+    ...(lineIds().length > 0 ? [routes.lines] : []),
+    ...lineIds().map((id) => routes.line(id)),
+    ...(publicGlossary().length > 0 ? [routes.glossary] : []),
+    routes.handling,
+    routes.start,
   ];
 
   return paths.flatMap((path) =>

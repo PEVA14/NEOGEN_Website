@@ -1,0 +1,370 @@
+/*
+ * THE GLOSSARY.
+ * A reference, set like one: section headings in condensed caps (or a single
+ * large letter in the A–Z view), and each term as a two-column entry on wide
+ * screens — the word on the left, the definition and its links on the right —
+ * divided by hairlines. On a phone the columns stack and the controls stay in
+ * one ruled band above the list.
+ */
+
+.explorer {
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.controls {
+  border-block-end: 1px solid var(--border-default);
+  display: grid;
+  gap: var(--space-sm);
+  padding-block-end: var(--space-md);
+}
+
+@media (min-width: 64rem) {
+  .controls {
+    align-items: end;
+    grid-template-columns: minmax(0, 4fr) minmax(0, 7fr) auto;
+    gap: var(--space-lg);
+  }
+}
+
+.searchField {
+  display: grid;
+  gap: var(--space-3xs);
+}
+
+.label {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.input {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-block-end: 1px solid var(--border-strong);
+  border-radius: var(--radius-none);
+  color: var(--ink-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-lg);
+  min-block-size: 2.75rem;
+  padding-block: var(--space-2xs);
+}
+
+/* Category chips: one horizontal row that scrolls on a phone rather than
+   wrapping into four lines of buttons above the first definition. */
+.chips {
+  display: flex;
+  gap: var(--space-2xs);
+  margin-inline: calc(var(--gutter) * -1);
+  overflow-x: auto;
+  padding-inline: var(--gutter);
+  scrollbar-width: none;
+}
+
+.chips::-webkit-scrollbar {
+  display: none;
+}
+
+@media (min-width: 64rem) {
+  .chips {
+    flex-wrap: wrap;
+    margin-inline: 0;
+    overflow: visible;
+    padding-inline: 0;
+  }
+}
+
+.chip,
+.viewButton {
+  background: transparent;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-none);
+  color: var(--ink-secondary);
+  cursor: pointer;
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  min-block-size: 2.75rem;
+  padding-inline: var(--space-sm);
+  text-transform: uppercase;
+}
+
+.chip:hover,
+.viewButton:hover {
+  border-color: var(--border-strong);
+  color: var(--ink-primary);
+}
+
+.chip[aria-pressed="true"],
+.viewButton[aria-pressed="true"] {
+  background: var(--neogen-charcoal);
+  border-color: var(--neogen-charcoal);
+  color: var(--neogen-paper);
+}
+
+.view {
+  display: flex;
+}
+
+.view .viewButton + .viewButton {
+  border-inline-start: 0;
+}
+
+.input:focus-visible,
+.chip:focus-visible,
+.viewButton:focus-visible,
+.inline:focus-visible,
+.route:focus-visible,
+.letters a:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}
+
+.status {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs) var(--space-lg);
+  justify-content: space-between;
+}
+
+.count {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.letters {
+  max-inline-size: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.letters::-webkit-scrollbar {
+  display: none;
+}
+
+.letters ul {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.letters a {
+  align-items: center;
+  color: var(--ink-secondary);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  justify-content: center;
+  min-block-size: 2.75rem;
+  min-inline-size: 2rem;
+  text-decoration: none;
+}
+
+.letters a:hover {
+  color: var(--ink-primary);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.empty {
+  color: var(--ink-secondary);
+  margin: 0;
+  padding-block: var(--space-xl);
+}
+
+/* ---- sections and terms --------------------------------------------------- */
+
+.section {
+  border-block-start: 1px solid var(--border-default);
+  display: grid;
+  gap: var(--space-sm);
+  padding-block-start: var(--space-md);
+  scroll-margin-block-start: calc(var(--header-height) + var(--space-md));
+}
+
+@media (min-width: 64rem) {
+  .section {
+    gap: var(--space-lg);
+    grid-template-columns: minmax(0, 3fr) minmax(0, 9fr);
+    padding-block-start: var(--space-lg);
+  }
+}
+
+.heading {
+  color: var(--ink-primary);
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  letter-spacing: var(--tracking-tight);
+  line-height: 1.05;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.heading[data-view="alphabet"] {
+  font-size: var(--text-4xl);
+}
+
+@media (min-width: 64rem) {
+  .heading {
+    align-self: start;
+    inset-block-start: calc(var(--header-height) + var(--space-md));
+    position: sticky;
+  }
+}
+
+.terms {
+  display: grid;
+}
+
+.term {
+  border-block-start: 1px solid var(--border-subtle);
+  display: grid;
+  gap: var(--space-2xs);
+  padding-block: var(--space-md);
+  scroll-margin-block-start: calc(var(--header-height) + var(--space-lg));
+}
+
+.term:first-child {
+  border-block-start: 0;
+  padding-block-start: 0;
+}
+
+@media (min-width: 48rem) {
+  .term {
+    column-gap: var(--space-lg);
+    grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+  }
+
+  .definition,
+  .links,
+  .routes {
+    grid-column: 2;
+  }
+
+  .termName {
+    grid-row: span 3;
+  }
+}
+
+/* Arriving from a link — `/glosario#vida-media` — marks the term with the
+   same heavy rule the section index uses for "you are here". */
+.term:target {
+  border-inline-start: 2px solid var(--ink-primary);
+  padding-inline-start: var(--space-sm);
+}
+
+.termName {
+  align-items: baseline;
+  color: var(--ink-primary);
+  display: flex;
+  flex-wrap: wrap;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 600;
+  gap: var(--space-2xs);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-snug);
+  margin: 0;
+}
+
+.abbr {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-stretch: normal;
+  font-weight: 400;
+  letter-spacing: var(--tracking-label);
+  text-decoration: none;
+}
+
+.definition {
+  color: var(--ink-secondary);
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  margin: 0;
+  max-inline-size: 40rem;
+  text-wrap: pretty;
+}
+
+.links {
+  display: grid;
+  gap: var(--space-3xs);
+  margin: var(--space-2xs) 0 0;
+}
+
+.links div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-2xs);
+  font-size: var(--text-sm);
+}
+
+.links dt {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  line-height: 2.75rem;
+  text-transform: uppercase;
+}
+
+.links dd {
+  color: var(--ink-secondary);
+  line-height: 2.75rem;
+  margin: 0;
+}
+
+.inline {
+  color: var(--ink-primary);
+  display: inline-block;
+  text-decoration: underline;
+  text-decoration-color: var(--border-default);
+  text-underline-offset: 3px;
+}
+
+.inline:hover {
+  text-decoration-color: var(--ink-primary);
+}
+
+.more {
+  color: var(--ink-muted);
+}
+
+.routes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-lg);
+}
+
+.route {
+  align-items: center;
+  color: var(--ink-primary);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  gap: var(--space-2xs);
+  letter-spacing: var(--tracking-label);
+  min-block-size: 2.75rem;
+  text-decoration: underline;
+  text-decoration-color: var(--border-default);
+  text-transform: uppercase;
+  text-underline-offset: 4px;
+}
+
+.route:hover {
+  text-decoration-color: var(--ink-primary);
+}

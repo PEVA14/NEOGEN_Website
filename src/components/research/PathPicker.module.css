@@ -1,0 +1,529 @@
+/*
+ * THE PATH PICKER.
+ *
+ * Three tiles, each a sentence a reader might say. The chosen one inverts to
+ * charcoal and drops a notch into the panel beneath, so the panel reads as
+ * the tile's answer rather than a separate block. The panel lays the path's
+ * doors out as ruled cells, each with its count in mono above the title.
+ *
+ * Phone: the tiles stack as a compact segmented list (question and letter
+ * only), and the panel opens under them at full width.
+ */
+
+.picker {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.label {
+  color: var(--ink-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  margin: 0;
+  text-transform: uppercase;
+}
+
+/* ---- tiles --------------------------------------------------------------- */
+
+.tiles {
+  display: grid;
+  gap: var(--space-2xs);
+}
+
+@media (min-width: 48rem) {
+  .tiles {
+    gap: var(--space-sm);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.tile {
+  align-content: start;
+  background: var(--surface-base);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-object);
+  color: var(--ink-primary);
+  cursor: pointer;
+  display: grid;
+  font: inherit;
+  gap: var(--space-2xs) var(--space-sm);
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: var(--space-sm) var(--space-md);
+  position: relative;
+  text-align: start;
+  transition:
+    background-color var(--motion-duration-base) var(--ease-standard),
+    border-color var(--motion-duration-base) var(--ease-standard),
+    color var(--motion-duration-base) var(--ease-standard),
+    transform var(--motion-duration-base) var(--ease-standard);
+}
+
+@media (min-width: 48rem) {
+  .tile {
+    gap: var(--space-sm);
+    grid-template-columns: minmax(0, 1fr);
+    min-block-size: 15rem;
+    padding: var(--space-md) var(--space-md) var(--space-2xl);
+  }
+}
+
+.tile:hover {
+  background: var(--surface-raised);
+  border-color: var(--border-strong);
+}
+
+.tile[aria-selected="true"] {
+  background: var(--neogen-charcoal);
+  border-color: var(--neogen-charcoal);
+  color: var(--neogen-paper);
+}
+
+.tile:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}
+
+.tileTop {
+  align-items: center;
+  display: flex;
+  gap: var(--space-sm);
+  grid-column: 2;
+  grid-row: 1;
+  justify-content: space-between;
+}
+
+@media (min-width: 48rem) {
+  .tileTop {
+    grid-column: auto;
+    grid-row: auto;
+    margin-block-end: var(--space-lg);
+  }
+}
+
+/* The letter orders the tiles on a wide screen; on a phone the stacked list
+   already does, and the glyph is enough of a sign. */
+.letter {
+  display: none;
+}
+
+@media (min-width: 48rem) {
+  .letter {
+    display: inline-flex;
+  }
+}
+
+.letter {
+  align-items: center;
+  block-size: 1.75rem;
+  border: 1px solid currentColor;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  inline-size: 1.75rem;
+  justify-content: center;
+}
+
+.question {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  grid-column: 1;
+  grid-row: 1;
+  letter-spacing: var(--tracking-tight);
+  line-height: 1;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+@media (min-width: 48rem) {
+  .question {
+    font-size: var(--text-3xl);
+    grid-column: auto;
+    grid-row: auto;
+  }
+}
+
+.tileBody {
+  color: inherit;
+  font-size: var(--text-sm);
+  grid-column: 1 / -1;
+  line-height: var(--leading-normal);
+  opacity: 0.78;
+}
+
+/* On a phone the tiles are a compact list; the body belongs to the chosen one. */
+@media (max-width: 47.999rem) {
+  .tile:not([aria-selected="true"]) .tileBody {
+    display: none;
+  }
+}
+
+/* The notch: the chosen tile reaches down toward its panel. */
+.open {
+  display: none;
+}
+
+@media (min-width: 48rem) {
+  .open {
+    align-items: center;
+    display: flex;
+    gap: var(--space-2xs);
+    inset-block-end: var(--space-sm);
+    inset-inline: var(--space-md);
+    opacity: 0;
+    position: absolute;
+    transition: opacity var(--motion-duration-base) var(--ease-standard);
+  }
+
+  .openLine {
+    background: currentColor;
+    block-size: 1px;
+    flex: 1;
+    opacity: 0.4;
+  }
+
+  .openArrow {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+  }
+
+  .tile:hover .open,
+  .tile[aria-selected="true"] .open {
+    opacity: 1;
+  }
+
+  .tile[aria-selected="true"]::after {
+    background: var(--neogen-charcoal);
+    block-size: 0.75rem;
+    content: "";
+    inline-size: 1.5rem;
+    inset-block-start: 100%;
+    inset-inline-start: calc(50% - 0.75rem);
+    position: absolute;
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+  }
+}
+
+/* ---- glyphs ---------------------------------------------------------------- */
+
+.glyph {
+  align-items: center;
+  block-size: 1.75rem;
+  display: inline-flex;
+  flex: none;
+}
+
+/* Chain — four units being joined. They fill in order when chosen. */
+.glyph[data-glyph="chain"] {
+  gap: 0.35rem;
+  position: relative;
+}
+
+.glyph[data-glyph="chain"]::before {
+  background: currentColor;
+  block-size: 1px;
+  content: "";
+  inset-inline: 0.3rem;
+  opacity: 0.5;
+  position: absolute;
+}
+
+.glyph[data-glyph="chain"] span {
+  background: var(--surface-base);
+  block-size: 0.7rem;
+  border: 1.5px solid currentColor;
+  border-radius: var(--radius-pill);
+  inline-size: 0.7rem;
+  position: relative;
+  transition: background-color var(--motion-duration-base) var(--ease-standard);
+}
+
+.tile:hover .glyph[data-glyph="chain"] span {
+  background: var(--surface-raised);
+}
+
+.tile[aria-selected="true"] .glyph[data-glyph="chain"] span {
+  animation: chain-fill var(--motion-duration-slow) var(--ease-out) both;
+  background: var(--neogen-charcoal);
+}
+
+.tile[aria-selected="true"] .glyph[data-glyph="chain"] span:nth-child(2) {
+  animation-delay: 90ms;
+}
+.tile[aria-selected="true"] .glyph[data-glyph="chain"] span:nth-child(3) {
+  animation-delay: 180ms;
+}
+.tile[aria-selected="true"] .glyph[data-glyph="chain"] span:nth-child(4) {
+  animation-delay: 270ms;
+}
+
+@keyframes chain-fill {
+  from {
+    background: var(--neogen-charcoal);
+  }
+  to {
+    background: var(--neogen-paper);
+  }
+}
+
+.tile[aria-selected="true"] .glyph[data-glyph="chain"] span {
+  animation-fill-mode: forwards;
+}
+
+/* Index — four entries of different lengths, scanned top to bottom. */
+.glyph[data-glyph="index"] {
+  align-items: flex-end;
+  flex-direction: column;
+  gap: 0.2rem;
+  inline-size: 2.5rem;
+  justify-content: center;
+}
+
+.glyph[data-glyph="index"] span {
+  background: currentColor;
+  block-size: 2px;
+  opacity: 0.35;
+  transition:
+    opacity var(--motion-duration-base) var(--ease-standard),
+    inline-size var(--motion-duration-base) var(--ease-standard);
+}
+
+.glyph[data-glyph="index"] span:nth-child(1) {
+  inline-size: 100%;
+}
+.glyph[data-glyph="index"] span:nth-child(2) {
+  inline-size: 70%;
+}
+.glyph[data-glyph="index"] span:nth-child(3) {
+  inline-size: 85%;
+}
+.glyph[data-glyph="index"] span:nth-child(4) {
+  inline-size: 55%;
+}
+
+.tile[aria-selected="true"] .glyph[data-glyph="index"] span {
+  animation: index-scan calc(var(--motion-duration-slow) * 4) var(--ease-standard) 1 both;
+}
+.tile[aria-selected="true"] .glyph[data-glyph="index"] span:nth-child(2) {
+  animation-delay: 120ms;
+}
+.tile[aria-selected="true"] .glyph[data-glyph="index"] span:nth-child(3) {
+  animation-delay: 240ms;
+  opacity: 1;
+}
+.tile[aria-selected="true"] .glyph[data-glyph="index"] span:nth-child(4) {
+  animation-delay: 360ms;
+}
+
+@keyframes index-scan {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+.tile:hover .glyph[data-glyph="index"] span:nth-child(3) {
+  opacity: 1;
+}
+
+/* Cite — a citation marker; its number rises into place when chosen. */
+.glyph[data-glyph="cite"] {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  gap: 0.1rem;
+  overflow: hidden;
+}
+
+.citeText {
+  opacity: 0.6;
+}
+
+.citeNumber {
+  display: inline-block;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.tile[aria-selected="true"] .citeNumber {
+  animation: cite-rise var(--motion-duration-slow) var(--ease-out) both;
+}
+
+@keyframes cite-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.6em);
+  }
+}
+
+/* ---- the panel ----------------------------------------------------------- */
+
+.panel {
+  animation: panel-rise var(--motion-duration-slow) var(--ease-out) both;
+  background: var(--surface-raised);
+  border-block-start: 2px solid var(--neogen-charcoal);
+  display: grid;
+  gap: var(--space-md);
+  margin-block-start: var(--space-xs);
+  padding: var(--space-sm) var(--space-md) var(--space-md);
+}
+
+@media (min-width: 48rem) {
+  .panel {
+    padding: var(--space-md) var(--space-lg) var(--space-lg);
+  }
+}
+
+@keyframes panel-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+}
+
+.doors {
+  display: grid;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+@media (min-width: 48rem) {
+  .doors {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 64rem) {
+  .doors[data-count="3"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .doors[data-count="4"] {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.door {
+  animation: door-in var(--motion-duration-slow) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 50ms);
+  border-block-end: 1px solid var(--border-default);
+}
+
+@media (min-width: 48rem) {
+  .door {
+    border-block-end: 0;
+    border-inline-start: 1px solid var(--border-default);
+  }
+
+  .door:first-child {
+    border-inline-start: 0;
+  }
+
+  .door:first-child .doorLink {
+    padding-inline-start: 0;
+  }
+}
+
+@media (min-width: 48rem) and (max-width: 63.999rem) {
+  /* Two columns: the third door starts a row and loses its rule too. */
+  .door:nth-child(odd) {
+    border-inline-start: 0;
+  }
+
+  .door:nth-child(odd) .doorLink {
+    padding-inline-start: 0;
+  }
+}
+
+@keyframes door-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.35rem);
+  }
+}
+
+.doorLink {
+  color: var(--ink-primary);
+  display: grid;
+  gap: var(--space-3xs);
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-block-size: 2.75rem;
+  padding: var(--space-sm) 0;
+  text-decoration: none;
+}
+
+@media (min-width: 48rem) {
+  .doorLink {
+    align-content: start;
+    block-size: 100%;
+    gap: var(--space-2xs);
+    padding: var(--space-sm) var(--space-md);
+  }
+}
+
+.doorMeta {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  grid-column: 1;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.doorTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  grid-column: 1;
+  letter-spacing: var(--tracking-tight);
+  line-height: 1.05;
+}
+
+.doorBody {
+  color: var(--ink-secondary);
+  font-size: var(--text-sm);
+  grid-column: 1;
+  line-height: var(--leading-normal);
+}
+
+.doorArrow {
+  align-self: center;
+  color: var(--ink-muted);
+  grid-column: 2;
+  grid-row: 1 / span 3;
+  transition: transform var(--motion-duration-fast) var(--ease-standard);
+}
+
+.doorLink:hover .doorTitle {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.15em;
+}
+
+.doorLink:hover .doorArrow {
+  color: var(--ink-primary);
+  transform: translateX(4px);
+}
+
+.doorLink:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: calc(var(--focus-ring-width) * -1);
+}
+
+.extra {
+  border-block-start: 1px solid var(--border-default);
+  padding-block-start: var(--space-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .door {
+    animation-duration: var(--motion-duration-fast);
+    animation-delay: 0ms;
+  }
+}

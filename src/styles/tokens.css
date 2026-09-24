@@ -210,6 +210,21 @@
   --z-skip-link: 60;
 }
 
+/*
+ * THE HEADER IS TWO ROWS BELOW 40rem (SiteHeader: "the links move to their own
+ * row rather than vanishing"), so the single 4rem value was only true on wide
+ * screens. Everything sticky or anchored under the header reads this token,
+ * and at compact widths it put the FAQ's sticky topic headings, the catalogue's
+ * anchors and the research pages' section strip behind the bar. 8.625rem is
+ * the measured two-row height (138px at 375–639px). Below ~360px the nav row
+ * itself wraps and the bar grows again; that width is outside the QA range.
+ */
+@media (max-width: 39.999rem) {
+  :root {
+    --header-height: 8.625rem;
+  }
+}
+
 /* Breakpoint reference (CSS-first; these are documentation, not JS inputs).
    sm 40rem | md 48rem | lg 64rem | xl 80rem | 2xl 96rem
    Layout MUST be handled in CSS. JS viewport awareness is reserved for

@@ -8,6 +8,7 @@ import { Body, Mono } from "@/components/typography";
 import { TextLink } from "@/components/ui";
 import { routes } from "@/config/routes";
 import { siteConfig } from "@/config/site";
+import { hasRecord } from "@/content/compendium";
 import { publicArticle, publicArticles, relatedArticles } from "@/content/editorial";
 import { getProduct } from "@/data/catalog";
 import { getArea } from "@/data/discovery";
@@ -177,7 +178,11 @@ export default async function NotePage({
                         {products.map((product) => (
                           <li key={product.slug}>
                             <Link
-                              href={path(routes.product(product.slug))}
+                              href={
+                                hasRecord(product.slug)
+                                  ? path(routes.compound(product.slug))
+                                  : path(routes.product(product.slug))
+                              }
                               className={styles.relatedLink}
                             >
                               {product.name}
@@ -240,6 +245,12 @@ export default async function NotePage({
               />
               <div className={styles.back}>
                 <TextLink href={path(routes.articles)}>{copy.backToIndex}</TextLink>
+                {/* Every note's vocabulary is defined in the glossary, and the
+                    compendium is where the reading leads. */}
+                <TextLink href={path(routes.glossary)}>{dict.knowledge.glossary.title}</TextLink>
+                <TextLink href={path(routes.compendium)}>
+                  {dict.knowledge.compendium.title}
+                </TextLink>
               </div>
             </section>
           ) : null}

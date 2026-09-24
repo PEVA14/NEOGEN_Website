@@ -32,10 +32,16 @@ export function CitationRail({
   references,
   copy,
   startAt = 1,
+  anchorPrefix,
 }: {
   references: readonly Reference[];
   copy: CitationRailCopy;
   startAt?: number;
+  /**
+   * Gives each entry an id — `ref-01` — so citation markers in the text can
+   * link to it. Only where the page actually cites by number.
+   */
+  anchorPrefix?: string;
 }) {
   if (references.length === 0) return null;
 
@@ -48,7 +54,11 @@ export function CitationRail({
             ? `${ref.authors.slice(0, 3).join(", ")} ${copy.etAl}`
             : ref.authors.join(", ");
         return (
-          <li key={ref.id} className={styles.entry}>
+          <li
+            key={ref.id}
+            className={styles.entry}
+            id={anchorPrefix ? `${anchorPrefix}${String(startAt + i).padStart(2, "0")}` : undefined}
+          >
             <Mono size="2xs" className={styles.index} aria-hidden="true">
               [{String(startAt + i).padStart(2, "0")}]
             </Mono>

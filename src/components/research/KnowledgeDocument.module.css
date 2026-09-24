@@ -1,0 +1,210 @@
+/*
+ * A KNOWLEDGE DOCUMENT — the shared skeleton of the long research pages
+ * (a compound record, the handling reference, Start Here).
+ *
+ * Wide: a 3/9 grid, the local index sticky in the narrow column. Phone: the
+ * index is a sticky strip under the header and the document runs the full
+ * width. Sections are divided by a hairline and numbered in mono — the site's
+ * spine at the scale of a document. Prose never exceeds ~70 characters.
+ */
+
+.layout {
+  display: grid;
+  gap: 0;
+  /* An explicit track: without it the column sizes to its widest child —
+     the index strip's full, unscrolled width — and the page scrolls sideways. */
+  grid-template-columns: minmax(0, 1fr);
+  margin-block-start: var(--space-lg);
+}
+
+/* On a phone the rail dissolves so the index's sticky range is the whole
+   document, not the height of its own wrapper. */
+.rail {
+  display: contents;
+}
+
+@media (min-width: 64rem) {
+  .layout {
+    gap: var(--space-2xl);
+    grid-template-columns: minmax(0, 3fr) minmax(0, 9fr);
+    margin-block-start: var(--space-2xl);
+  }
+
+  .rail {
+    align-self: stretch;
+    display: block;
+  }
+}
+
+.document {
+  display: grid;
+  min-inline-size: 0;
+}
+
+.section {
+  border-block-start: 1px solid var(--border-default);
+  display: grid;
+  gap: var(--space-md);
+  padding-block: var(--space-xl);
+  scroll-margin-block-start: calc(var(--header-height) + 3.5rem);
+}
+
+.section:first-child {
+  border-block-start: 0;
+}
+
+@media (min-width: 64rem) {
+  .section {
+    padding-block: var(--space-2xl);
+    scroll-margin-block-start: calc(var(--header-height) + var(--space-lg));
+  }
+
+  .section:first-child {
+    padding-block-start: 0;
+  }
+}
+
+.sectionTitle {
+  align-items: baseline;
+  color: var(--ink-primary);
+  display: flex;
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  gap: var(--space-sm);
+  letter-spacing: var(--tracking-display);
+  line-height: 1;
+  margin: 0;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.sectionNumber {
+  color: var(--ink-muted);
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-stretch: normal;
+  font-weight: 400;
+  letter-spacing: var(--tracking-label);
+}
+
+.lede {
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  margin: 0;
+  max-inline-size: 40rem;
+}
+
+.body {
+  color: var(--ink-secondary);
+  font-size: var(--text-lg);
+  line-height: var(--leading-relaxed);
+  margin: 0;
+  max-inline-size: 44rem;
+  text-wrap: pretty;
+}
+
+.note {
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  margin: 0;
+  max-inline-size: 40rem;
+}
+
+.metaLine {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.textLink {
+  align-items: center;
+  color: var(--ink-primary);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  gap: var(--space-2xs);
+  justify-self: start;
+  letter-spacing: var(--tracking-label);
+  min-block-size: 2.75rem;
+  text-decoration: underline;
+  text-decoration-color: var(--border-default);
+  text-transform: uppercase;
+  text-underline-offset: 4px;
+}
+
+.textLink:hover {
+  text-decoration-color: var(--ink-primary);
+}
+
+.inline {
+  color: var(--ink-primary);
+  display: inline-block;
+  margin-block: -0.7rem;
+  padding-block: 0.7rem;
+  text-decoration: underline;
+  text-decoration-color: var(--border-default);
+  text-underline-offset: 3px;
+}
+
+.inline:hover {
+  text-decoration-color: var(--ink-primary);
+}
+
+.srOnly {
+  block-size: 1px;
+  clip-path: inset(50%);
+  inline-size: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+}
+
+/* Glossary terms as a row of chips — how every long page links its words. */
+.terms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.term {
+  align-items: center;
+  border: 1px solid var(--border-default);
+  color: var(--ink-primary);
+  display: inline-flex;
+  font-size: var(--text-sm);
+  min-block-size: 2.75rem;
+  padding-inline: var(--space-sm);
+  text-decoration: none;
+}
+
+.term:hover {
+  border-color: var(--ink-primary);
+}
+
+.groupTitle {
+  color: var(--ink-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: 400;
+  letter-spacing: var(--tracking-label);
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.textLink:focus-visible,
+.inline:focus-visible,
+.term:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}

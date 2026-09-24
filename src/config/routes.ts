@@ -64,6 +64,28 @@ export const routes = {
    */
   articles: "/investigacion/notas",
   article: (slug: string) => `/investigacion/notas/${slug}`,
+  /*
+   * THE KNOWLEDGE SYSTEM. Every page below is a static folder beside
+   * `investigacion/[slug]`, so the reserved-slug route keeps owning only
+   * `calidad` and `referencias`, and a static segment always wins.
+   *
+   *   compuestos          the compendium: search, filter, quick view
+   *   compuestos/<slug>   a compound's scientific record — built only for
+   *                       compounds with a sourced profile in both locales
+   *   lineas[/<id>]       research lines: compounds grouped by what the
+   *                       literature studies, never by what to combine
+   *   glosario            the vocabulary every other page links into
+   *   manejo              laboratory handling reference
+   *   empezar             the onboarding path for a first-time reader
+   */
+  compendium: "/investigacion/compuestos",
+  compound: (slug: string) => `/investigacion/compuestos/${slug}`,
+  lines: "/investigacion/lineas",
+  line: (id: string) => `/investigacion/lineas/${id}`,
+  glossary: "/investigacion/glosario",
+  glossaryTerm: (id: string) => `/investigacion/glosario#${id}`,
+  handling: "/investigacion/manejo",
+  start: "/investigacion/empezar",
   /**
    * The peptide guide — the one page that explains what this catalogue is.
    * Linked from the header, because "what is this" is the first question a

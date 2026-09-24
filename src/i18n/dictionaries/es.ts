@@ -40,6 +40,19 @@ const es = {
       faq: "Envíos, documentación, pagos y uso en investigación: las preguntas frecuentes de NEOGEN México.",
       articles:
         "Notas de NEOGEN sobre vocabulario de laboratorio, documentación analítica y manejo de materiales liofilizados.",
+      compendium:
+        "Compendio de {count} compuestos de investigación: búsqueda por nombre, área o línea de investigación, con registros científicos y sus fuentes.",
+      compound:
+        "{name}: registro científico con {statements} afirmaciones y {references} referencias numeradas. NEOGEN Research.",
+      lines:
+        "Líneas de investigación de NEOGEN: receptores, vías y procesos que estudia la literatura, con los compuestos que examina cada una.",
+      line: "{name}: compuestos estudiados en esta línea de investigación, con la afirmación y la fuente que sustentan cada uno.",
+      glossary:
+        "Glosario de NEOGEN: {count} términos de estructura, mecanismo, estudios, calidad y materiales, con los registros que los usan.",
+      handling:
+        "Manejo en laboratorio de materiales liofilizados: recepción, estabilidad, errores comunes y almacenamiento. NEOGEN Research.",
+      start:
+        "Empezar aquí: qué es NEOGEN Research, cómo se organiza, cómo leer un registro científico y cómo evaluar su documentación.",
       cart: "Tu bag de NEOGEN México.",
       checkout: "Proceso de pago de NEOGEN México.",
     },
@@ -851,6 +864,7 @@ const es = {
       lede: "Las referencias que cita esta página y las áreas donde continuar leyendo.",
       routes: "Continuar por área",
       hub: "Índice de NEOGEN Research",
+      record: "Registro científico completo",
     },
     quality: {
       label: "Calidad",
@@ -1109,17 +1123,88 @@ const es = {
       backToHub: "Volver a NEOGEN Research",
     },
     /*
-     * An index and an evidence model, not a blog. Every section below shows
-     * something that exists — areas, compounds, the rules documentation
-     * follows — and the reference index states its own rule rather than
-     * implying an archive is on its way.
+     * THE KNOWLEDGE HUB. An entry point with hierarchy, not a grid of links:
+     * a search into the compendium for the reader who knows what they want,
+     * three routes by reader for the one who does not, and then the areas,
+     * the lines, the quality model, the notes and the sources.
      */
     hub: {
       index: "01",
       label: "Investigación",
-      qualifier: "Índice y evidencia",
+      qualifier: "Archivo científico",
       title: "NEOGEN Research",
-      lede: "El índice de los compuestos del catálogo, las áreas en que se estudian y el modelo con que se documenta su calidad.",
+      lede: "El archivo científico del catálogo: qué es cada compuesto, qué ha estudiado la literatura publicada, con qué fuentes y bajo qué límites. Cada afirmación cita su fuente; lo que no tiene fuente no aparece.",
+      search: {
+        label: "Buscar en el compendio",
+        placeholder: "Compuesto, alias o presentación",
+        submit: "Buscar",
+      },
+      stats: {
+        label: "Contenido del archivo",
+        compounds: "Compuestos",
+        records: "Registros científicos",
+        references: "Referencias",
+        lines: "Líneas de investigación",
+        terms: "Términos",
+      },
+      paths: {
+        index: "02",
+        label: "Rutas",
+        qualifier: "Tres maneras de entrar",
+        title: "Por dónde empezar",
+        chooser: "Elige por dónde entrar",
+        begin: {
+          question: "Soy nuevo en esto",
+          label: "Si es tu primera vez",
+          body: "Qué es un péptido, cómo está organizado el archivo y cómo se lee un registro.",
+          start: {
+            title: "Empezar aquí",
+            body: "Cinco pasos, de cero a leer un registro.",
+            meta: "5 pasos",
+          },
+          peptides: {
+            title: "Qué es un péptido",
+            body: "La definición, con un esquema.",
+            meta: "Esquema y comparación",
+          },
+          glossary: { title: "Glosario", body: "{n} términos, con los registros que los usan." },
+        },
+        explore: {
+          question: "Busco un compuesto",
+          label: "Si buscas un compuesto",
+          flagships: "Registros de los compuestos insignia",
+          areasMeta: "{n} áreas",
+          body: "El compendio completo, por nombre, área o línea de investigación.",
+          compendium: {
+            title: "Compendio",
+            body: "{n} compuestos, {records} con registro científico.",
+          },
+          lines: {
+            title: "Líneas de investigación",
+            body: "{n} receptores, vías y procesos estudiados.",
+          },
+          areas: { title: "Áreas", body: "Las secciones del catálogo por campo de estudio." },
+        },
+        evaluate: {
+          question: "Quiero ver la evidencia",
+          label: "Si evalúas la evidencia",
+          referencesMeta: "{n} fuentes",
+          qualityMeta: "4 niveles",
+          handlingMeta: "Referencia de laboratorio",
+          notesMeta: "{n} notas",
+          body: "De dónde sale cada afirmación y cómo se documenta la calidad.",
+          references: { title: "Referencias", body: "{n} fuentes, cada una con DOI o PMID." },
+          quality: {
+            title: "Modelo de documentación",
+            body: "Cómo se vincula un documento a una presentación o a un lote.",
+          },
+          handling: {
+            title: "Manejo en laboratorio",
+            body: "Estabilidad, recepción y almacenamiento de liofilizados.",
+          },
+          notes: { title: "Notas", body: "Lecturas breves sobre vocabulario y documentación." },
+        },
+      },
       areas: {
         index: "02",
         label: "Áreas",
@@ -1129,27 +1214,13 @@ const es = {
         references: "Referencias",
         enter: "Entrar",
       },
-      finder: {
+      lines: {
         index: "03",
-        label: "Compuestos",
-        qualifier: "Índice",
-        title: "Índice de compuestos",
-        searchLabel: "Buscar",
-        searchPlaceholder: "Nombre o presentación",
-        areaLabel: "Área",
-        areaAll: "Todas las áreas",
-        results: "{n} compuestos",
-        result: "{n} compuesto",
-        empty: "Ningún compuesto coincide con la búsqueda.",
-        clear: "Limpiar",
-        columns: {
-          compound: "Compuesto",
-          areas: "Áreas",
-          presentations: "Presentaciones",
-          documentation: "Documentación",
-        },
-        documents: "{n} documentos públicos",
-        document: "1 documento público",
+        label: "Líneas",
+        qualifier: "Qué se estudia",
+        title: "Líneas de investigación",
+        lede: "Receptores, vías y procesos que estudia la literatura citada en los registros. Un compuesto aparece en una línea sólo si una afirmación con fuente de su registro lo sustenta.",
+        all: "Todas las líneas",
       },
       quality: {
         index: "04",
@@ -1160,7 +1231,7 @@ const es = {
         explorer: "Explorar documentación",
       },
       notes: {
-        index: "06",
+        index: "05",
         label: "Notas",
         qualifier: "Lectura",
         title: "Notas de NEOGEN",
@@ -1168,7 +1239,7 @@ const es = {
         all: "Todas las notas",
       },
       references: {
-        index: "05",
+        index: "06",
         label: "Referencias",
         qualifier: "Fuentes",
         title: "Referencias",
@@ -1178,6 +1249,435 @@ const es = {
         /* "Ver las 74 referencias" */
         all: "Ver las {n} referencias",
         showing: "Las {n} más recientes",
+      },
+    },
+  },
+
+  /**
+   * EL SISTEMA DE CONOCIMIENTO — compendio, registro, líneas, glosario,
+   * manejo y el recorrido de inicio.
+   *
+   * Nada aquí describe lo que hace un compuesto: eso vive en los registros, con
+   * su fuente. Estas cadenas son el marco — cómo se lee, cómo se navega y qué
+   * no se publica.
+   */
+  knowledge: {
+    crumbs: {
+      research: "Investigación",
+      compendium: "Compendio",
+      lines: "Líneas",
+    },
+    counts: {
+      compounds: "{n} compuestos",
+      compound: "1 compuesto",
+      terms: "{n} términos",
+      term: "1 término",
+      references: "{n} referencias",
+      reference: "1 referencia",
+      statements: "{n} afirmaciones",
+      statement: "1 afirmación",
+      lines: "{n} líneas",
+      line: "1 línea",
+    },
+
+    compendium: {
+      label: "Compendio",
+      qualifier: "Índice de compuestos",
+      title: "Compendio de compuestos",
+      lede: "Todos los compuestos del catálogo en un solo índice. Abre cualquiera para ver su ficha rápida; los que tienen registro científico llevan al registro completo, con sus afirmaciones y sus fuentes numeradas.",
+      legend: {
+        label: "Cómo leer el índice",
+        depth:
+          "Las cuatro marcas indican qué secciones tiene el registro: mecanismo, investigación publicada, notas técnicas y referencias.",
+        none: "Un guion indica que el compuesto no tiene registro científico: tiene ficha de producto, pero ninguna afirmación con fuente publicada.",
+      },
+      controls: {
+        search: "Buscar",
+        searchPlaceholder: "Nombre, alias o presentación",
+        area: "Área",
+        areaAll: "Todas las áreas",
+        line: "Línea de investigación",
+        lineAll: "Todas las líneas",
+        record: "Sólo con registro científico",
+        clear: "Limpiar filtros",
+        filters: "Filtros",
+        results: "{n} compuestos",
+        result: "1 compuesto",
+        empty: "Ningún compuesto coincide. Prueba con otro nombre o quita un filtro.",
+        letters: "Índice alfabético",
+      },
+      columns: {
+        compound: "Compuesto",
+        areas: "Área",
+        lines: "Líneas de investigación",
+        record: "Registro",
+      },
+      depth: {
+        label: "Secciones del registro",
+        mechanism: "Mecanismo",
+        research: "Investigación publicada",
+        notes: "Notas técnicas",
+        references: "Referencias",
+        none: "Sin registro científico",
+        refs: "{n} ref.",
+      },
+      preview: {
+        open: "Vista rápida",
+        dialog: "Ficha rápida de {name}",
+        close: "Cerrar",
+        previous: "Anterior",
+        next: "Siguiente",
+        position: "{i} de {n}",
+        identity: "Identidad",
+        type: "Tipo",
+        alias: "Designación alternativa",
+        composition: "Composición",
+        presentations: "Presentaciones",
+        areas: "Áreas",
+        lines: "Líneas de investigación",
+        mechanism: "Mecanismo, según la fuente",
+        research: "Investigación publicada, según la fuente",
+        sources: "{n} fuentes en el registro",
+        source: "1 fuente en el registro",
+        contents: "En el registro",
+        record: "Abrir registro científico",
+        product: "Ver en el catálogo",
+        noRecord:
+          "Este compuesto no tiene registro científico: no hay afirmaciones con fuente publicadas sobre él. Su ficha de producto tiene la identidad y las presentaciones.",
+        documentation: "Documentación",
+        documentationNone: "Sin documentación pública",
+      },
+    },
+
+    record: {
+      label: "Registro científico",
+      index: "En este registro",
+      jump: "Ir a la sección",
+      sections: {
+        identity: "Identidad",
+        mechanism: "Mecanismo",
+        research: "Investigación publicada",
+        areas: "Por área de investigación",
+        notes: "Notas técnicas y límites",
+        references: "Referencias",
+        documentation: "Documentación",
+        product: "En el catálogo",
+        related: "Seguir explorando",
+      },
+      ledes: {
+        mechanism: "Cómo describen las fuentes la acción del compuesto, en sus propios términos.",
+        research:
+          "Qué estudios se han publicado, en qué modelo y con qué resultado, incluidos los eventos adversos y los límites que reportan.",
+        areas: "Lo que la literatura ha examinado en cada área del catálogo.",
+        notes:
+          "Lo que conviene saber para leer las fuentes: qué estudiaron realmente y hasta dónde llegan.",
+        references:
+          "Numeradas en el orden en que se citan. Cada una se abre en su fuente original.",
+      },
+      identity: {
+        caption: "Identidad del compuesto",
+        name: "Nombre",
+        alias: "Designación alternativa",
+        type: "Tipo",
+        composition: "Composición",
+        presentations: "Presentaciones",
+        areas: "Áreas",
+        lines: "Líneas de investigación",
+        formula: "Fórmula molecular",
+        mass: "Masa molecular",
+        sequence: "Secuencia",
+        cas: "Número CAS",
+        source: "Fuente de la identidad",
+      },
+      citation: "Referencia {n}",
+      documentation: {
+        body: "La documentación analítica se vincula a una presentación o a un lote concretos, y se consulta en la ficha del producto, donde se muestra con su alcance exacto.",
+        link: "Ver la documentación del producto",
+        count: "{n} documentos públicos",
+        one: "1 documento público",
+      },
+      product: {
+        body: "Este registro describe el compuesto que NEOGEN vende en estas presentaciones.",
+        link: "Ver producto",
+      },
+      related: {
+        compounds: "Compuestos en las mismas líneas",
+        compoundsBody:
+          "Estudiados en al menos una de las líneas de este registro. No implica efectos parecidos ni una combinación.",
+        shared: "{n} líneas en común",
+        sharedOne: "1 línea en común",
+        terms: "Términos en este registro",
+        termsBody: "Palabras de este registro definidas en el glosario.",
+        lines: "Líneas de este registro",
+        back: "Volver al compendio",
+      },
+    },
+
+    lines: {
+      label: "Líneas de investigación",
+      qualifier: "Qué se estudia",
+      title: "Líneas de investigación",
+      lede: "Los receptores, vías y procesos que estudia la literatura citada en los registros, con los compuestos que examina cada uno.",
+      principle: {
+        label: "Qué es una línea",
+        body: "Una línea agrupa compuestos por lo que la investigación publicada ha estudiado en ellos, no por lo que convenga combinar. Cada compuesto figura en una línea porque una afirmación con fuente de su propio registro lo sustenta, y esa afirmación se cita en la página de la línea.",
+      },
+      open: "Ver la línea",
+      line: {
+        back: "Todas las líneas",
+        why: "Por qué figura aquí",
+        record: "Registro científico",
+        product: "Ver en el catálogo",
+        references: "Referencias de esta línea",
+        others: "Otras líneas del grupo",
+        compounds: "Compuestos estudiados en esta línea",
+        note: "Una línea no es una recomendación. Los compuestos aparecen en el orden del catálogo, y lo que dice cada uno está respaldado por su propia fuente.",
+      },
+    },
+
+    glossary: {
+      label: "Glosario",
+      qualifier: "Vocabulario",
+      title: "Glosario",
+      lede: "Las palabras con las que están escritos los registros, definidas una sola vez. Cada término indica qué registros lo usan.",
+      scope:
+        "Definiciones generales. Ningún término describe lo que hace un compuesto: eso está en su registro, con su fuente.",
+      search: "Buscar un término",
+      searchPlaceholder: "Término o abreviatura",
+      categories: {
+        all: "Todos",
+        structure: "Estructura",
+        mechanism: "Mecanismo",
+        evidence: "Estudios y evidencia",
+        quality: "Calidad y documentación",
+        materials: "Materiales",
+        framework: "Cómo lee NEOGEN",
+      },
+      view: {
+        label: "Orden",
+        category: "Por tema",
+        alphabet: "A–Z",
+      },
+      results: "{n} términos",
+      result: "1 término",
+      empty: "Ningún término coincide con la búsqueda.",
+      seeAlso: "Véase también",
+      usedIn: "En los registros",
+      more: "y {n} más",
+      readMore: "Leer la nota",
+      letters: "Ir a la letra",
+      destinations: {
+        peptides: "Qué es un péptido",
+        compendium: "Compendio",
+        lines: "Líneas de investigación",
+        handling: "Manejo en laboratorio",
+        start: "Empezar aquí",
+        references: "Referencias",
+        "quality-model": "Modelo de documentación",
+      },
+    },
+
+    handling: {
+      label: "Referencia de laboratorio",
+      qualifier: "Manejo",
+      title: "Manejo en laboratorio",
+      lede: "Cómo llega un material liofilizado, qué afecta a su estabilidad y qué registrar al recibirlo. Una referencia para el trabajo de laboratorio, y para ningún otro uso.",
+      index: "En esta referencia",
+      arrives: {
+        label: "Recepción",
+        title: "Qué llega",
+        body: "El material viaja liofilizado, en un vial sellado, protegido de la luz y del golpe. Un liofilizado es un sólido seco, y su estabilidad depende sobre todo de que siga seco.",
+        facts: [
+          { term: "Forma", value: "Sólido liofilizado" },
+          { term: "Envase", value: "Vial de vidrio sellado" },
+          { term: "Presentación", value: "Cantidad por vial y viales por empaque, según la ficha" },
+          {
+            term: "Documentación",
+            value: "Vinculada a la presentación o al lote, en la ficha del producto",
+          },
+        ],
+      },
+      receiving: {
+        label: "Registro",
+        title: "Qué registrar al recibirlo",
+        items: [
+          "La presentación recibida contra la del pedido: cantidad por vial y número de viales.",
+          "El estado del sello y del vial antes de guardarlo.",
+          "La fecha de recepción y las condiciones en que se guarda.",
+          "El lote, cuando la documentación lo indica, y el documento que le corresponde.",
+        ],
+      },
+      stability: {
+        label: "Estabilidad",
+        title: "Qué afecta a un liofilizado",
+        lede: "Los tres factores que se vigilan en cualquier laboratorio, y un cuarto menos evidente.",
+        factors: [
+          {
+            term: "Temperatura",
+            body: "El frío ralentiza la degradación química. Importa tanto la estabilidad de la temperatura como su valor: constante es preferible a baja pero fluctuante.",
+          },
+          {
+            term: "Humedad",
+            body: "La liofilización retira el agua. Un vial abierto en un ambiente húmedo recupera parte de ella, y con ella la vía de degradación que se había eliminado.",
+          },
+          {
+            term: "Luz",
+            body: "Algunas secuencias son sensibles a la luz ultravioleta. Guardar el material en oscuridad es la práctica habitual precisamente porque no cuesta nada.",
+          },
+          {
+            term: "Cambios de condición",
+            body: "Cada paso de frío a temperatura ambiente, y de vuelta, somete el material a condensación. Sacar un vial una vez no es lo mismo que sacarlo diez.",
+          },
+        ],
+      },
+      errors: {
+        label: "Errores comunes",
+        title: "Lo que suele salir mal",
+        items: [
+          {
+            title: "Abrir un vial todavía frío",
+            body: "Si se abre antes de alcanzar la temperatura del ambiente, la humedad del aire se condensa dentro.",
+          },
+          {
+            title: "Mover el material entre condiciones",
+            body: "Sacarlo del frío y devolverlo una y otra vez acumula cambios de temperatura y condensación.",
+          },
+          {
+            title: "Guardarlo a la luz",
+            body: "Un estante iluminado expone el material sin que nadie lo haya decidido.",
+          },
+          {
+            title: "Tomar un documento como general",
+            body: "Un certificado describe el lote analizado. No cubre otra presentación ni otra producción del mismo compuesto.",
+          },
+          {
+            title: "Suponer las condiciones",
+            body: "Las condiciones concretas de un compuesto son un dato documentado. Sin el documento, no hay una cifra que seguir.",
+          },
+        ],
+      },
+      documented: {
+        label: "Datos por compuesto",
+        title: "Condiciones documentadas",
+        body: "La temperatura de almacenamiento y la vida útil de un compuesto concreto son datos de su documentación, y aparecen en su ficha junto al documento que los respalda. Esta referencia no da cifras generales porque ninguna cifra general sería cierta para todo el catálogo.",
+      },
+      boundary: {
+        label: "Alcance",
+        title: "Lo que esta referencia no incluye",
+        body: "No hay procedimientos de preparación, cantidades, cálculos ni instrucciones de uso. No es una omisión: el catálogo se vende para trabajo de investigación, y un sitio que publica cómo emplear un material ha dicho qué uso espera de él.",
+      },
+      materials: {
+        label: "Catálogo",
+        title: "Materiales de laboratorio",
+        body: "Lo que el catálogo vende como material de laboratorio, con sus presentaciones.",
+      },
+      faq: {
+        label: "Preguntas",
+        title: "Preguntas sobre manejo",
+      },
+      related: {
+        label: "Relacionado",
+        title: "Seguir leyendo",
+        terms: "Términos",
+      },
+    },
+
+    start: {
+      label: "Empezar aquí",
+      qualifier: "Recorrido",
+      title: "Empezar aquí",
+      lede: "Cinco pasos para pasar de no saber qué es un péptido a leer un registro científico y evaluar su documentación. Unos minutos, sin jerga.",
+      progress: "Pasos del recorrido",
+      what: {
+        index: "01",
+        label: "Qué es esto",
+        title: "Un archivo de compuestos de investigación",
+        body: "NEOGEN vende compuestos para trabajo de laboratorio, y este archivo explica qué es cada uno según la literatura publicada. La mayoría son péptidos: cadenas cortas de aminoácidos cuya secuencia define qué molécula son.",
+        condition:
+          "Todo el catálogo se vende bajo una condición: uso exclusivo en investigación. Ninguna página de este archivo describe cómo emplear un compuesto ni lo que haría en una persona.",
+        peptides: "Qué es un péptido",
+        research: "Qué significa «uso en investigación»",
+      },
+      map: {
+        index: "02",
+        label: "Organización",
+        title: "Cómo está organizado",
+        body: "Cinco niveles, de lo general a lo concreto. Cada uno es una forma distinta de entrar, y cada uno lleva al siguiente.",
+        levels: {
+          areas: { title: "Áreas", body: "Secciones del catálogo por campo de estudio." },
+          lines: {
+            title: "Líneas de investigación",
+            body: "Receptores, vías y procesos que estudia la literatura.",
+          },
+          compounds: {
+            title: "Compuestos",
+            body: "Todo el catálogo, con su identidad y sus presentaciones.",
+          },
+          records: {
+            title: "Registros científicos",
+            body: "Lo que reportan las fuentes, afirmación por afirmación.",
+          },
+          references: { title: "Referencias", body: "Las fuentes publicadas, con DOI o PMID." },
+        },
+      },
+      anatomy: {
+        index: "03",
+        label: "Lectura",
+        title: "Cómo leer un registro",
+        body: "Un fragmento real del registro de {name}. Cada parte cumple una función.",
+        figure: "Fragmento del registro de {name}, anotado",
+        notes: {
+          section: {
+            title: "Sección",
+            body: "Mecanismo, investigación publicada, notas técnicas: el registro separa cómo se describe la acción del compuesto de lo que se ha medido.",
+          },
+          statement: {
+            title: "Afirmación con fuente",
+            body: "Dice lo que reporta la fuente, en sus términos: el modelo, la cifra y el límite. Nunca lo que un compuesto haría por quien lo lee.",
+          },
+          marker: {
+            title: "Marcador de cita",
+            body: "El número remite a la lista de referencias del registro. Cada referencia se abre en su fuente original.",
+          },
+          model: {
+            title: "El modelo importa",
+            body: "In vitro, en ratones o en un ensayo de fase 2: el mismo resultado pesa distinto según dónde se obtuvo. El glosario explica cada término.",
+          },
+        },
+        open: "Abrir el registro completo",
+      },
+      evidence: {
+        index: "04",
+        label: "Documentación",
+        title: "Cómo evaluar la documentación",
+        body: "Un documento analítico responde tres preguntas, y pertenece a lo más concreto que examina: una presentación o un lote, nunca el compuesto en abstracto.",
+        questions: [
+          "¿Qué muestra se analizó, y de qué lote procede?",
+          "¿Con qué método: HPLC para la pureza, espectrometría de masas para la identidad?",
+          "¿Quién lo firma, y se puede verificar el informe?",
+        ],
+        note: "Cómo leer un certificado de análisis",
+      },
+      next: {
+        index: "05",
+        label: "Siguiente",
+        title: "A dónde ir ahora",
+        compendium: {
+          title: "Buscar un compuesto",
+          body: "El compendio completo, con vista rápida.",
+        },
+        lines: {
+          title: "Explorar por lo que se estudia",
+          body: "Las líneas de investigación y sus compuestos.",
+        },
+        glossary: {
+          title: "Consultar una palabra",
+          body: "El glosario, con los registros que usan cada término.",
+        },
+        handling: {
+          title: "Manejo en laboratorio",
+          body: "Estabilidad y almacenamiento de liofilizados.",
+        },
       },
     },
   },
@@ -1935,6 +2435,62 @@ const es = {
         title: "Por qué se estudian",
         body: "Porque combinan dos propiedades poco frecuentes: son específicos, porque su secuencia determina con qué interactúan, y son sintetizables, porque su tamaño permite producirlos y purificarlos de forma reproducible. Esa combinación los convierte en herramientas de laboratorio con un grado de control que moléculas más grandes no permiten.",
       },
+      anatomy: {
+        index: "02",
+        label: "Estructura",
+        title: "De aminoácido a proteína",
+        lede: "Un esquema, no una molécula real: la misma unidad, unida en cadena, a tres escalas.",
+        diagram: {
+          label: "Esquema de una cadena peptídica",
+          aminoAcid: "Aminoácido",
+          bond: "Enlace peptídico",
+          nTerm: "Extremo N",
+          cTerm: "Extremo C",
+          sequence: "Secuencia: el orden de los aminoácidos, de N a C",
+        },
+        scale: {
+          label: "Tres escalas",
+          aminoAcid: "Una unidad",
+          peptide: "Decenas de unidades",
+          protein: "Cientos o miles, plegados",
+        },
+        table: {
+          caption: "Aminoácido, péptido y proteína, comparados",
+          property: "Propiedad",
+          columns: ["Aminoácido", "Péptido", "Proteína"],
+          rows: [
+            {
+              label: "Qué es",
+              values: [
+                "Una molécula: la unidad",
+                "Una cadena corta de aminoácidos",
+                "Una cadena larga de aminoácidos, plegada",
+              ],
+            },
+            {
+              label: "Tamaño",
+              values: ["Una unidad", "Decenas de unidades", "Cientos o miles de unidades"],
+            },
+            {
+              label: "Forma",
+              values: ["—", "A menudo flexible", "Una estructura tridimensional estable"],
+            },
+            {
+              label: "Cómo se obtiene en laboratorio",
+              values: [
+                "Síntesis química o fuentes naturales",
+                "Síntesis química, un aminoácido tras otro",
+                "Habitualmente, producción en células",
+              ],
+            },
+            {
+              label: "Qué lo identifica",
+              values: ["Su estructura química", "Su secuencia", "Su secuencia y su plegamiento"],
+            },
+          ],
+        },
+        terms: "Términos de esta sección",
+      },
       condition: {
         index: "03",
         label: "Condición",
@@ -1966,6 +2522,12 @@ const es = {
       title: "Notas",
       lede: "Cuatro lecturas breves sobre vocabulario, documentación y manejo.",
       action: "Todas las notas",
+    },
+    continue: {
+      title: "Seguir en NEOGEN Research",
+      start: "Empezar aquí",
+      glossary: "Glosario",
+      compendium: "Compendio de compuestos",
     },
     faq: {
       title: "Preguntas frecuentes",
@@ -2243,6 +2805,11 @@ const es = {
       help: "Ayuda",
     },
     links: {
+      compendium: "Compendio",
+      lines: "Líneas de investigación",
+      glossary: "Glosario",
+      start: "Empezar aquí",
+      handling: "Manejo en laboratorio",
       allCompounds: "Todos los compuestos",
       documentation: "Documentación",
       peptides: "Qué es un péptido",

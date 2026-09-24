@@ -23,6 +23,7 @@ import { routes } from "@/config/routes";
 import { siteConfig } from "@/config/site";
 import { getWorld } from "@/config/worlds";
 import { galleryImages, productMedia, resolveStageStill } from "@/content/media";
+import { hasRecord } from "@/content/compendium";
 import { publicOverview } from "@/content/overview";
 import { referencesForProduct } from "@/content/research";
 import { resolveEvidence } from "@/domain/quality";
@@ -493,7 +494,17 @@ export default async function ProductPage({
               title={pdp.overview.title}
               id="overview-title"
               lede={overview.summary ?? undefined}
-              action={<TextLink href={path(routes.research)}>{pdp.research.hub}</TextLink>}
+              action={
+                /* The profile here is the product page's cut of the record;
+                   the record is the whole of it, numbered and indexed. */
+                hasRecord(product.slug) ? (
+                  <TextLink href={path(routes.compound(product.slug))}>
+                    {pdp.research.record}
+                  </TextLink>
+                ) : (
+                  <TextLink href={path(routes.research)}>{pdp.research.hub}</TextLink>
+                )
+              }
             />
             <div className="grid gap-(--space-xl) lg:grid-cols-12">
               <div className="flex flex-col gap-(--space-lg) lg:col-span-7">

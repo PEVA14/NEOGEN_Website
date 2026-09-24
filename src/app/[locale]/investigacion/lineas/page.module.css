@@ -1,0 +1,205 @@
+/*
+ * RESEARCH LINES.
+ * Groups as numbered bands; each line a ruled row with its name and scope on
+ * the left and its compounds on the right. On a phone the two halves stack.
+ */
+
+.principle {
+  border-inline-start: 2px solid var(--ink-primary);
+  display: grid;
+  gap: var(--space-2xs);
+  padding-inline-start: var(--space-md);
+}
+
+.principleLabel {
+  color: var(--ink-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.principleBody {
+  color: var(--ink-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  margin: 0;
+}
+
+.jump {
+  margin-block: var(--space-md) 0;
+  margin-inline: calc(var(--gutter) * -1);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.jump::-webkit-scrollbar {
+  display: none;
+}
+
+.jump ul {
+  display: flex;
+  gap: var(--space-lg);
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--gutter);
+}
+
+.jump a {
+  align-items: center;
+  color: var(--ink-secondary);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  min-block-size: 2.75rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.jump a:hover {
+  color: var(--ink-primary);
+}
+
+.groups {
+  display: grid;
+  gap: var(--space-2xl);
+  margin-block-start: var(--space-lg);
+}
+
+.group {
+  display: grid;
+  gap: var(--space-sm);
+  scroll-margin-block-start: calc(var(--header-height) + var(--space-md));
+}
+
+.groupTitle {
+  align-items: baseline;
+  border-block-end: 1px solid var(--border-default);
+  color: var(--ink-primary);
+  display: flex;
+  flex-wrap: wrap;
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  gap: var(--space-2xs) var(--space-md);
+  justify-content: space-between;
+  letter-spacing: var(--tracking-display);
+  line-height: 1;
+  margin: 0;
+  padding-block-end: var(--space-sm);
+  text-transform: uppercase;
+}
+
+.groupCount {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-stretch: normal;
+  font-weight: 400;
+  letter-spacing: var(--tracking-label);
+}
+
+.lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.line {
+  border-block-end: 1px solid var(--border-subtle);
+  display: grid;
+  gap: var(--space-sm);
+  padding-block: var(--space-md);
+}
+
+@media (min-width: 64rem) {
+  .line {
+    gap: var(--space-xl);
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  }
+}
+
+.lineMain {
+  display: grid;
+  gap: var(--space-2xs);
+  align-content: start;
+}
+
+.lineName {
+  align-items: center;
+  align-self: start;
+  display: inline-flex;
+  min-block-size: 2.75rem;
+  color: var(--ink-primary);
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-snug);
+  text-decoration: underline;
+  text-decoration-color: var(--border-default);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+.lineName:hover {
+  text-decoration-color: var(--ink-primary);
+}
+
+.hint {
+  color: var(--ink-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  margin: 0;
+  max-inline-size: 34rem;
+}
+
+.compounds {
+  align-content: start;
+  display: grid;
+  gap: var(--space-2xs);
+}
+
+.compoundCount {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.compoundList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.compound {
+  align-items: center;
+  border: 1px solid var(--border-default);
+  color: var(--ink-primary);
+  display: inline-flex;
+  font-size: var(--text-sm);
+  min-block-size: 2.75rem;
+  padding-inline: var(--space-sm);
+  text-decoration: none;
+}
+
+.compound:hover {
+  border-color: var(--ink-primary);
+}
+
+.jump a:focus-visible,
+.lineName:focus-visible,
+.compound:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}

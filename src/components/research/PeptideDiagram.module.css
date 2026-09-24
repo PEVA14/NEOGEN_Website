@@ -1,0 +1,263 @@
+/*
+ * THE STRUCTURE DIAGRAM.
+ * Hollow circles for amino acids, hairline bonds between them, N and C at the
+ * ends in mono, and two numbered markers keyed to the legend beneath. A bracket
+ * under the chain is the sequence. Below it, the three scales as small glyphs
+ * with their labels as text. Circles are the one place the zero-radius system
+ * uses `--radius-pill`: a molecule drawn square would be a different diagram.
+ */
+
+.figure {
+  display: grid;
+  gap: var(--space-lg);
+  margin: 0;
+}
+
+.chainWrap {
+  display: grid;
+  gap: var(--space-2xs);
+  justify-items: stretch;
+  max-inline-size: 40rem;
+  padding-block-start: var(--space-lg);
+}
+
+/* The chain fills its column and never overflows it: units keep their size,
+   bonds stretch between them. */
+.chain {
+  align-items: center;
+  display: flex;
+  inline-size: 100%;
+  max-inline-size: 40rem;
+}
+
+.link {
+  align-items: center;
+  display: flex;
+  flex: 1 1 0;
+  min-inline-size: 0;
+}
+
+.link[data-index="0"] {
+  flex: none;
+}
+
+/* A phone shows five units; the chain still reads as a chain. */
+.chain .link[data-index="5"],
+.chain .link[data-index="6"] {
+  display: none;
+}
+
+@media (min-width: 40rem) {
+  .chain .link[data-index="5"],
+  .chain .link[data-index="6"] {
+    display: flex;
+  }
+}
+
+.unit {
+  block-size: 2.25rem;
+  border: 1.5px solid var(--ink-primary);
+  border-radius: var(--radius-pill);
+  flex: none;
+  inline-size: 2.25rem;
+  position: relative;
+}
+
+.unit[data-marked="true"] {
+  background: var(--ink-primary);
+}
+
+.bond {
+  background: var(--ink-primary);
+  block-size: 2px;
+  flex: 1 1 auto;
+  min-inline-size: 0.75rem;
+  position: relative;
+}
+
+.bond[data-marked="true"] {
+  block-size: 4px;
+}
+
+@media (min-width: 48rem) {
+  .unit {
+    block-size: 3rem;
+    inline-size: 3rem;
+  }
+}
+
+.marker,
+.key {
+  align-items: center;
+  border: 1px solid var(--ink-primary);
+  color: var(--ink-primary);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  justify-content: center;
+  line-height: 1;
+  block-size: 1.25rem;
+  inline-size: 1.25rem;
+  background: var(--surface-base);
+}
+
+.marker {
+  inset-block-end: calc(100% + 0.5rem);
+  inset-inline-start: 50%;
+  position: absolute;
+  transform: translateX(-50%);
+}
+
+.end {
+  color: var(--ink-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  padding-inline: var(--space-2xs);
+}
+
+/* The bracket under the chain: the sequence is the whole run, N to C. */
+.span {
+  inline-size: 100%;
+  padding-inline: 1.5rem;
+}
+
+.spanRule {
+  block-size: 0.5rem;
+  border: 1px solid var(--border-strong);
+  border-block-start: 0;
+  display: block;
+}
+
+.caption {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs) var(--space-lg);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.legend li {
+  align-items: center;
+  color: var(--ink-secondary);
+  display: inline-flex;
+  font-size: var(--text-sm);
+  gap: var(--space-2xs);
+}
+
+.sequence {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  margin: 0;
+  text-transform: uppercase;
+}
+
+/* ---- scales -------------------------------------------------------------- */
+
+.scales {
+  border-block-start: 1px solid var(--border-default);
+  display: grid;
+  gap: var(--space-sm);
+  padding-block-start: var(--space-md);
+}
+
+.scalesLabel {
+  color: var(--ink-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.scaleList {
+  display: grid;
+  gap: var(--space-md);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+@media (min-width: 48rem) {
+  .scaleList {
+    grid-template-columns: 1fr 2fr 2fr;
+    gap: var(--space-xl);
+  }
+}
+
+.scale {
+  align-items: start;
+  display: grid;
+  gap: var(--space-3xs) var(--space-md);
+  grid-template-columns: 7rem minmax(0, 1fr);
+}
+
+@media (min-width: 48rem) {
+  .scale {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.glyph {
+  align-items: center;
+  block-size: 4rem;
+  display: flex;
+  grid-row: span 2;
+}
+
+@media (min-width: 48rem) {
+  .glyph {
+    grid-row: auto;
+  }
+}
+
+.dot {
+  block-size: 1rem;
+  border: 1.5px solid var(--ink-primary);
+  border-radius: var(--radius-pill);
+  display: block;
+  flex: none;
+  inline-size: 1rem;
+}
+
+.dot[data-size="sm"] {
+  block-size: 0.5rem;
+  border-width: 1px;
+  inline-size: 0.5rem;
+}
+
+.dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  max-inline-size: 7rem;
+}
+
+.fold {
+  block-size: 4rem;
+  fill: none;
+  inline-size: auto;
+  stroke: var(--ink-primary);
+  stroke-dasharray: 1 3.2;
+  stroke-linecap: round;
+  stroke-width: 2.4;
+}
+
+.scaleText {
+  color: var(--ink-primary);
+  font-size: var(--text-base);
+  font-weight: 600;
+}
+
+.scaleMeta {
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+}

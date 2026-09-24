@@ -67,6 +67,22 @@ import {
   publicCertifications,
 } from "../src/content/certifications.ts";
 import { supports } from "../src/domain/fulfilment/index.ts";
+import {
+  GLOSSARY,
+  GLOSSARY_CATEGORIES,
+  isPublicTerm,
+  publicGlossary,
+  termsInText,
+} from "../src/content/glossary/index.ts";
+import {
+  compoundRecord,
+  hasRecord,
+  lineIds,
+  recordSlugs,
+  relatedByLines,
+  researchLine,
+} from "../src/content/compendium.ts";
+import { IDENTITIES, publicIdentity } from "../src/content/identity.ts";
 import { publishedProducts } from "../src/data/catalog/index.ts";
 import { AREAS, publicAreas } from "../src/data/discovery/index.ts";
 import { ATLAS_QUESTIONNAIRE } from "../src/content/atlas/questionnaire.ts";
@@ -1250,6 +1266,210 @@ for (const text of copySources) {
   }
 }
 assertions += 1;
+
+/* ---- the knowledge system: glossary, records, lines, identity ----------- */
+
+/*
+ * THE GLOSSARY defines words; it never says what a compound does. The gate is
+ * the same as everywhere else — approved, and no forbidden vocabulary — plus
+ * the structural promises the page relies on: unique anchors, both locales,
+ * "see also" links that land on a real term, notes that exist.
+ */
+{
+  const ids = GLOSSARY.map((t) => t.id);
+  eq(new Set(ids).size, ids.length, "glossary ids are unique (they are page anchors)");
+  for (const term of GLOSSARY) {
+    ok(/^[a-z0-9-]+$/.test(term.id), `glossary id \`${term.id}\` is a clean anchor`);
+    ok(GLOSSARY_CATEGORIES.includes(term.category), `\`${term.id}\` has a known category`);
+    for (const locale of ["es", "en"]) {
+      ok(term.term[locale]?.trim().length > 0, `\`${term.id}\` has a ${locale} term`);
+      ok(term.definition[locale]?.trim().length > 20, `\`${term.id}\` has a ${locale} definition`);
+      for (const needle of term.matches[locale]) {
+        ok(
+          needle ===
+            needle
+              .toLocaleLowerCase("es")
+              .normalize("NFD")
+              .replace(/\p{Diacritic}/gu, ""),
+          `\`${term.id}\` match "${needle}" is folded (lowercase, no accents)`,
+        );
+      }
+    }
+    const text = [term.term.es, term.term.en, term.definition.es, term.definition.en].join(" ");
+    const term_ = forbiddenTermIn(text);
+    if (term.status === "approved" && term_) {
+      fail("forbidden vocabulary in the glossary", `"${term_}" in \`${term.id}\``);
+    }
+    for (const other of term.seeAlso ?? []) {
+      ok(ids.includes(other), `\`${term.id}\` sees also an existing term (\`${other}\`)`);
+    }
+    if (term.note) {
+      ok(
+        publicArticle(term.note) !== undefined,
+        `\`${term.id}\` points at a published note (\`${term.note}\`)`,
+      );
+    }
+  }
+  /* Negative controls: the gate refuses what it must. */
+  const sample = GLOSSARY[0];
+  ok(!isPublicTerm({ ...sample, status: "owner-review" }), "an unapproved term is not public");
+  ok(
+    !isPublicTerm({
+      ...sample,
+      definition: { es: "Una dosis diaria.", en: "A daily dose." },
+    }),
+    "a term that uses dosing vocabulary is not public, whatever its status",
+  );
+  ok(publicGlossary().length > 0, "the glossary publishes");
+  /* Whole-word matching: "receptores" is a receptor, "preceptor" is not. */
+  ok(
+    termsInText("Los receptores de GLP-1", "es").some((t) => t.id === "receptor"),
+    "term matching finds a plural form",
+  );
+  ok(
+    !termsInText("Un preceptor del curso", "es").some((t) => t.id === "receptor"),
+    "term matching is whole-word, not substring",
+  );
+}
+
+/*
+ * RECORDS are the sourced profiles, numbered. A record exists exactly when
+ * the profile publishes in both locales, every citation number points inside
+ * the record's own reference list, and every reference in that list is one
+ * the text or the key references actually cite — no padding.
+ */
+{
+  const slugs = recordSlugs();
+  ok(slugs.length > 0, "at least one compound has a scientific record");
+  for (const product of publishedProducts) {
+    const both =
+      publicOverview(product.slug, "es") !== null && publicOverview(product.slug, "en") !== null;
+    eq(hasRecord(product.slug), both, `record for \`${product.slug}\` follows its sourced profile`);
+  }
+  for (const slug of slugs) {
+    for (const locale of ["es", "en"]) {
+      const record = compoundRecord(slug, locale);
+      if (!record) {
+        fail("a record slug has no record", `${locale}/${slug}`);
+        continue;
+      }
+      const statements = [
+        ...record.mechanism,
+        ...record.research,
+        ...record.byArea.map((a) => a.statement),
+      ];
+      for (const s of statements) {
+        ok(s.citations.length > 0, `record statement \`${s.id}\` carries a citation`);
+        for (const n of s.citations) {
+          ok(
+            n >= 1 && n <= record.references.length,
+            `citation [${n}] in \`${s.id}\` resolves inside the ${locale} record`,
+          );
+        }
+      }
+      ok(
+        record.references.every(isPublicReference),
+        `every reference in the ${locale}/${slug} record is public`,
+      );
+      eq(
+        new Set(record.references.map((r) => r.id)).size,
+        record.references.length,
+        `the ${locale}/${slug} record lists each reference once`,
+      );
+    }
+  }
+  /* A slug without a sourced profile has no record. */
+  const bare = publishedProducts.find((p) => !hasRecord(p.slug));
+  if (bare) eq(compoundRecord(bare.slug, "es"), null, "a compound with no profile has no record");
+}
+
+/*
+ * RESEARCH LINES are functions read from the other end. Every compound in a
+ * line is there because one of its own sourced statements backs the tag, and
+ * every one of them has a record — so the line page can link it without ever
+ * linking a 404. "Related" compounds share a line; they are never ranked by
+ * anything else.
+ */
+{
+  const ids = lineIds();
+  ok(ids.length > 0, "at least one research line publishes");
+  for (const id of ids) {
+    ok(
+      RESEARCH_FUNCTIONS.some((f) => f.id === id),
+      `line \`${id}\` is a function in the vocabulary`,
+    );
+    for (const locale of ["es", "en"]) {
+      const line = researchLine(id, locale);
+      ok(line !== null, `line \`${id}\` resolves in ${locale}`);
+      for (const c of line?.compounds ?? []) {
+        ok(c.statements.length > 0, `\`${c.product.slug}\` is in \`${id}\` on a sourced statement`);
+        ok(hasRecord(c.product.slug), `\`${c.product.slug}\` in \`${id}\` has a record to link`);
+      }
+    }
+  }
+  for (const slug of recordSlugs().slice(0, 12)) {
+    for (const row of relatedByLines(slug)) {
+      ok(
+        row.shared.length > 0,
+        `\`${row.product.slug}\` is related to \`${slug}\` by a shared line`,
+      );
+    }
+  }
+}
+
+/*
+ * IDENTITY — formula, mass, sequence — is empty, and may only ever render with
+ * a named source. Nothing in the registry today; fixtures prove the gate.
+ */
+{
+  eq(IDENTITIES.length, 0, "no molecular identity is published — none has a source yet");
+  for (const slug of recordSlugs()) {
+    eq(publicIdentity(slug), null, `\`${slug}\` prints no formula, mass or sequence`);
+  }
+  const base = {
+    slug: "fixture",
+    formula: "C1H1",
+    molecularMass: null,
+    sequence: null,
+    cas: null,
+    status: "approved",
+  };
+  ok(
+    publicIdentity("fixture", [
+      {
+        ...base,
+        source: {
+          kind: "database",
+          name: "PubChem",
+          url: "https://pubchem.ncbi.nlm.nih.gov/compound/1",
+        },
+      },
+    ]) !== null,
+    "an approved identity with a database source renders",
+  );
+  eq(
+    publicIdentity("fixture", [
+      { ...base, source: { kind: "reference", referenceId: "no-such-ref" } },
+    ]),
+    null,
+    "an identity citing a reference that is not in the registry does not render",
+  );
+  eq(
+    publicIdentity("fixture", [
+      {
+        ...base,
+        status: "owner-review",
+        source: {
+          kind: "database",
+          name: "PubChem",
+          url: "https://pubchem.ncbi.nlm.nih.gov/compound/1",
+        },
+      },
+    ]),
+    null,
+    "an unapproved identity does not render",
+  );
+}
 
 /* ---- report ------------------------------------------------------------ */
 

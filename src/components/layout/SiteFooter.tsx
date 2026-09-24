@@ -55,8 +55,11 @@ export function SiteFooter({ locale, dict }: SiteFooterProps) {
       heading: dict.footer.columns.research,
       links: [
         { label: dict.nav.research, href: routes.research },
-        { label: dict.footer.links.documentation, href: routes.research },
+        { label: dict.footer.links.compendium, href: routes.compendium },
+        { label: dict.footer.links.lines, href: routes.lines },
+        { label: dict.footer.links.glossary, href: routes.glossary },
         { label: dict.footer.links.notes, href: routes.articles },
+        { label: dict.footer.links.documentation, href: `${routes.research}#calidad` },
       ],
     },
     {
@@ -64,7 +67,9 @@ export function SiteFooter({ locale, dict }: SiteFooterProps) {
       // SYSTEM STATUS V1: BAG, not Cart. The header, the page title and this
       // link have to agree; only the ROUTE stays /carrito.
       links: [
+        { label: dict.footer.links.start, href: routes.start },
         { label: dict.footer.links.peptides, href: routes.peptides },
+        { label: dict.footer.links.handling, href: routes.handling },
         { label: dict.footer.links.faq, href: routes.faq },
         { label: dict.cart.title, href: routes.cart },
       ],

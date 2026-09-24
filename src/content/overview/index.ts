@@ -102,11 +102,30 @@ export function publicCopy(block: CopyBlock | null, locale: Locale): string | nu
  * Null is the common case and the correct one: the product page omits the
  * section entirely rather than rendering a heading over nothing.
  */
+/*
+ * MEMOISED FOR THE REAL REGISTRIES. The registries are constants, so a
+ * (slug, locale) always resolves to the same public overview — and it is asked
+ * for constantly: `publicFunctions` and `citedReferenceIds` both call it twice
+ * per product, and the reference index calls those for every reference × every
+ * product. Uncached, one reference index was ~12,500 resolutions and a second
+ * of server time on every request that printed a count. Injected deps (the
+ * check scripts' fixtures) bypass the cache, so a fixture can never read a
+ * real result or leave one behind.
+ */
+const overviewCache = new Map<string, PublicOverview | null>();
+
 export function publicOverview(
   slug: string,
   locale: Locale,
   deps: Deps = DEFAULT_DEPS,
 ): PublicOverview | null {
+  if (deps !== DEFAULT_DEPS) return resolveOverview(slug, locale, deps);
+  const key = `${slug}:${locale}`;
+  if (!overviewCache.has(key)) overviewCache.set(key, resolveOverview(slug, locale, deps));
+  return overviewCache.get(key) ?? null;
+}
+
+function resolveOverview(slug: string, locale: Locale, deps: Deps): PublicOverview | null {
   const overview = deps.overviews[slug];
   if (!overview) return null;
 

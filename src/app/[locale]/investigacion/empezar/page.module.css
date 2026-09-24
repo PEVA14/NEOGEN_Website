@@ -1,0 +1,286 @@
+/*
+ * START HERE — what is specific to the walkthrough. The skeleton is
+ * `KnowledgeDocument.module.css`.
+ */
+
+.condition {
+  background: var(--surface-raised);
+  border-inline-start: 2px solid var(--ink-primary);
+  color: var(--ink-primary);
+  line-height: var(--leading-relaxed);
+  margin: 0;
+  max-inline-size: 44rem;
+  padding: var(--space-md) var(--space-lg);
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-lg);
+}
+
+/* ---- 02: the map — five levels, general to specific --------------------- */
+
+.map {
+  border-block-start: 1px solid var(--border-default);
+  display: grid;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+@media (min-width: 64rem) {
+  .map {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+.level {
+  border-block-end: 1px solid var(--border-subtle);
+}
+
+@media (min-width: 64rem) {
+  .level {
+    border-block-end: 0;
+    border-inline-end: 1px solid var(--border-subtle);
+  }
+
+  .level:last-child {
+    border-inline-end: 0;
+  }
+}
+
+.levelLink {
+  color: var(--ink-primary);
+  display: grid;
+  gap: var(--space-3xs) var(--space-md);
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: var(--space-md) var(--space-sm) var(--space-md) 0;
+  text-decoration: none;
+}
+
+@media (min-width: 64rem) {
+  .levelLink {
+    block-size: 100%;
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--space-md);
+  }
+
+  .level:first-child .levelLink {
+    padding-inline-start: 0;
+  }
+}
+
+.levelIndex {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  grid-row: span 3;
+  letter-spacing: var(--tracking-label);
+  padding-block-start: 0.6em;
+}
+
+@media (min-width: 64rem) {
+  .levelIndex {
+    grid-row: auto;
+    padding-block-start: 0;
+  }
+}
+
+.levelCount {
+  font-family: var(--font-display);
+  font-size: var(--text-4xl);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  letter-spacing: var(--tracking-display);
+  line-height: 1;
+}
+
+.levelTitle {
+  font-weight: 600;
+}
+
+.levelLink:hover .levelTitle {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.levelBody {
+  color: var(--ink-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+.levelLink:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: calc(var(--focus-ring-offset-width) * -1);
+}
+
+/* ---- 03: the annotated specimen ------------------------------------------ */
+
+.specimen {
+  display: grid;
+  gap: var(--space-lg);
+  margin: 0;
+}
+
+@media (min-width: 80rem) {
+  .specimen {
+    align-items: start;
+    gap: var(--space-xl);
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  }
+}
+
+.excerpt {
+  background: var(--surface-raised);
+  display: grid;
+  gap: var(--space-md);
+  padding: var(--space-lg) var(--space-lg) var(--space-lg) var(--space-xl);
+}
+
+.excerptSection {
+  align-items: center;
+  color: var(--ink-primary);
+  display: flex;
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  letter-spacing: var(--tracking-display);
+  line-height: 1;
+  margin: 0;
+  position: relative;
+  text-transform: uppercase;
+}
+
+.excerptText {
+  border-inline-start: 1px solid var(--border-strong);
+  color: var(--ink-primary);
+  font-size: var(--text-lg);
+  line-height: var(--leading-editorial);
+  margin: 0;
+  padding-inline-start: var(--space-md);
+  position: relative;
+}
+
+.excerptMark {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  position: relative;
+  white-space: nowrap;
+}
+
+.excerptRef {
+  border-block-start: 1px solid var(--border-default);
+}
+
+/* Callouts sit in the excerpt's left margin (section, statement) or just
+   above the marker they point at — outside the text, never over it. */
+.callout,
+.key {
+  align-items: center;
+  background: var(--neogen-charcoal);
+  block-size: 1.25rem;
+  color: var(--neogen-paper);
+  display: inline-flex;
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-stretch: normal;
+  font-weight: 400;
+  inline-size: 1.25rem;
+  justify-content: center;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+.excerptSection .callout,
+.excerptText .callout {
+  inset-inline-start: calc(var(--space-xl) * -1 + var(--space-2xs));
+  position: absolute;
+}
+
+.excerptSection .callout {
+  inset-block-start: 50%;
+  transform: translateY(-50%);
+}
+
+.excerptText .callout {
+  inset-block-start: 0.35em;
+}
+
+/* Above the marker, never over it: the reader has to see what "3" names. */
+.excerptText .excerptMark .callout {
+  inset-block-end: calc(100% + 0.35rem);
+  inset-block-start: auto;
+  inset-inline-start: 50%;
+  position: absolute;
+  transform: translateX(-50%);
+}
+
+.annotations {
+  display: grid;
+  gap: var(--space-md);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.annotations li {
+  display: grid;
+  gap: var(--space-sm);
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+}
+
+.key[data-plain="true"] {
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--ink-muted);
+}
+
+.annotationTitle {
+  color: var(--ink-primary);
+  font-weight: 600;
+  margin: 0 0 var(--space-3xs);
+}
+
+.annotationBody {
+  color: var(--ink-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  margin: 0;
+}
+
+/* ---- 04: documentation ---------------------------------------------------- */
+
+.questions {
+  display: grid;
+  list-style: none;
+  margin: 0;
+  max-inline-size: 44rem;
+  padding: 0;
+}
+
+.questions li {
+  border-block-start: 1px solid var(--border-subtle);
+  color: var(--ink-primary);
+  display: grid;
+  font-size: var(--text-lg);
+  gap: var(--space-md);
+  grid-template-columns: 2rem minmax(0, 1fr);
+  line-height: var(--leading-snug);
+  padding-block: var(--space-sm);
+}
+
+.questionIndex {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  padding-block-start: 0.35em;
+}
+
+.chain {
+  margin-block: var(--space-sm);
+}

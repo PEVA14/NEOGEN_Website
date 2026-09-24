@@ -1,0 +1,120 @@
+/*
+ * THE HEAD OF A RESEARCH PAGE.
+ * Breadcrumb, mono eyebrow, a condensed title and a lede — then the counts.
+ * On wide screens an aside (search, legend) takes the right-hand third; on a
+ * phone it follows the lede, full width, because it is usually the first
+ * thing a reader wants to use.
+ */
+
+.head {
+  display: grid;
+  gap: var(--space-xl);
+  padding-block-end: var(--space-xl);
+  border-block-end: 1px solid var(--border-default);
+}
+
+@media (min-width: 64rem) {
+  .head[data-has-aside="true"] {
+    align-items: end;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: var(--space-3xl);
+  }
+}
+
+.main {
+  display: grid;
+  gap: var(--space-sm);
+  min-inline-size: 0;
+}
+
+.crumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-2xs);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.crumbs li {
+  align-items: center;
+  display: inline-flex;
+  gap: var(--space-2xs);
+}
+
+.crumbs li + li::before {
+  color: var(--ink-muted);
+  content: "/";
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+}
+
+.crumb {
+  align-items: center;
+  color: var(--ink-muted);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  margin-block: -0.625rem;
+  min-block-size: 2.75rem;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.crumb:hover {
+  color: var(--ink-primary);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.eyebrow {
+  color: var(--ink-primary);
+  letter-spacing: var(--tracking-label);
+  margin-block-start: var(--space-md);
+  text-transform: uppercase;
+}
+
+.title {
+  color: var(--ink-primary);
+  font-family: var(--font-display);
+  font-size: var(--text-5xl);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  letter-spacing: var(--tracking-display);
+  line-height: 0.95;
+  margin: 0;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.lede {
+  color: var(--ink-secondary);
+  font-size: var(--text-lg);
+  line-height: var(--leading-relaxed);
+  margin: var(--space-2xs) 0 0;
+  max-inline-size: 42rem;
+  text-wrap: pretty;
+}
+
+/* Separated by space and a hairline, not by "·" — a dot orphans at the start
+   of a wrapped line on a phone. */
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs) var(--space-lg);
+  list-style: none;
+  margin: var(--space-xs) 0 0;
+  padding: 0;
+}
+
+.meta li {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.aside {
+  min-inline-size: 0;
+}

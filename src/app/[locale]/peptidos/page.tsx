@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { ResearchUseNotice, ShippingNote } from "@/components/commerce";
 import { NoteIndex } from "@/components/editorial";
+import { PeptideDiagram, RouteList } from "@/components/research";
 import { SectionHeader } from "@/components/layout";
 import { Container, Section } from "@/components/primitives";
 import { EvidenceChain } from "@/components/quality";
@@ -11,6 +12,7 @@ import { AreaIcon, TextLink } from "@/components/ui";
 import { routes } from "@/config/routes";
 import { publicArticles } from "@/content/editorial";
 import { publicFaq } from "@/content/faq";
+import { publicTerm } from "@/content/glossary";
 import { productsInArea, publicAreas } from "@/data/discovery";
 import { isLocale, localeTags } from "@/i18n/config";
 import { getDictionary } from "@/i18n/getDictionary";
@@ -38,6 +40,16 @@ export async function generateMetadata({
     alternates: alternates(locale, routes.peptides),
   };
 }
+
+/** The words the structure section defines, linked into the glossary. */
+const ANATOMY_TERMS = [
+  "aminoacido",
+  "enlace-peptidico",
+  "secuencia",
+  "residuo",
+  "proteina",
+  "analogo",
+];
 
 /**
  * THE PEPTIDE GUIDE — the page that explains what this catalogue is.
@@ -76,6 +88,7 @@ export default async function PeptidesPage({ params }: { params: Promise<{ local
   /* Three questions, from the same registry the FAQ page renders — a teaser
      that cannot drift from the page it points at. */
   const questions = publicFaq(locale, dict.shipping.and).slice(0, 3);
+  const anatomyTerms = ANATOMY_TERMS.map((id) => publicTerm(id)).filter((t) => t !== undefined);
 
   return (
     <>
@@ -112,6 +125,83 @@ export default async function PeptidesPage({ params }: { params: Promise<{ local
               </Body>
             </article>
           </div>
+        </Container>
+      </Section>
+
+      {/*
+       * 02 — THE STRUCTURE, DRAWN. A schematic of the definition above it and
+       * a comparison table — the two things a first-time reader actually needs
+       * to hold "peptide" in their head. Both are definitions, never a
+       * statement about any compound; the terms link into the glossary.
+       */}
+      <Section mode="quiet" aria-labelledby="anatomy-title" className="bg-(--surface-raised)">
+        <Container width="full">
+          <SectionHeader
+            index={s.anatomy.index}
+            label={s.anatomy.label}
+            title={s.anatomy.title}
+            lede={s.anatomy.lede}
+            id="anatomy-title"
+          />
+          <div className={styles.anatomy}>
+            <PeptideDiagram
+              copy={{
+                ...s.anatomy.diagram,
+                scale: s.anatomy.scale,
+                names: s.anatomy.table.columns,
+              }}
+            />
+            {/* Scrolls sideways on a narrow phone, so it must be reachable
+                and named for a keyboard: a focusable, labelled region. */}
+            <div
+              className={styles.compare}
+              role="region"
+              aria-label={s.anatomy.table.caption}
+              tabIndex={0}
+            >
+              <table className={styles.table}>
+                <caption className={styles.caption}>{s.anatomy.table.caption}</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">
+                      <span className={styles.srOnly}>{s.anatomy.table.property}</span>
+                    </th>
+                    {s.anatomy.table.columns.map((column) => (
+                      <th key={column} scope="col">
+                        {column}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {s.anatomy.table.rows.map((row) => (
+                    <tr key={row.label}>
+                      <th scope="row">{row.label}</th>
+                      {row.values.map((value, i) => (
+                        <td key={i}>{value}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          {anatomyTerms.length > 0 ? (
+            <nav aria-label={s.anatomy.terms} className={styles.anatomyTerms}>
+              <Mono size="2xs" className={styles.anatomyTermsLabel}>
+                {s.anatomy.terms}
+              </Mono>
+              <ul>
+                {anatomyTerms.map((term) => (
+                  <li key={term.id}>
+                    <Link href={path(routes.glossaryTerm(term.id))} className={styles.termLink}>
+                      {term.term[locale]}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          ) : null}
         </Container>
       </Section>
 
@@ -258,6 +348,21 @@ export default async function PeptidesPage({ params }: { params: Promise<{ local
               <TextLink href={path(routes.faq)}>{copy.faq.action}</TextLink>
             </div>
           </div>
+
+          {/* The guide is the first page of the research system, not a dead
+              end beside it: three doors onward. */}
+          <nav aria-labelledby="guide-continue" className={styles.continue}>
+            <Mono size="2xs" className={styles.questionsLabel} id="guide-continue">
+              {copy.continue.title}
+            </Mono>
+            <RouteList
+              routes={[
+                { href: path(routes.start), title: copy.continue.start },
+                { href: path(routes.glossary), title: copy.continue.glossary },
+                { href: path(routes.compendium), title: copy.continue.compendium },
+              ]}
+            />
+          </nav>
         </Container>
       </Section>
     </>

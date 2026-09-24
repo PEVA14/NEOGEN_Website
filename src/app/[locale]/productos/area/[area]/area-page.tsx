@@ -423,7 +423,7 @@ export async function renderAreaPage({
               id="area-research-title"
               lede={dict.discovery.research.lede}
               action={
-                <TextLink href={`${path(routes.research)}#indice`}>
+                <TextLink href={`${path(routes.compendium)}?area=${area.id}`}>
                   {dict.discovery.research.hub}
                 </TextLink>
               }

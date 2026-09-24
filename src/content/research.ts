@@ -107,7 +107,16 @@ export interface ResearchIndexEntry {
 }
 
 /** The hub's reference index: every cited public reference and who cites it. */
+let referenceIndexCache: readonly ResearchIndexEntry[] | null = null;
+
 export function researchReferenceIndex(): readonly ResearchIndexEntry[] {
+  /* Pure over constant registries, and read by the hub, the compendium's
+     counts, the glossary, the sitemap and the reference page — computed once. */
+  referenceIndexCache ??= buildReferenceIndex();
+  return referenceIndexCache;
+}
+
+function buildReferenceIndex(): readonly ResearchIndexEntry[] {
   return REFERENCES.filter(isPublicReference)
     .map((reference) => ({ reference, products: productsCitingReference(reference.id) }))
     .filter((entry) => entry.products.length > 0)

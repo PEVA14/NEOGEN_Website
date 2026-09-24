@@ -1,6 +1,8 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-09-20**: **all three flagships ship a real vial, live on
+Last updated **2026-09-22**: **NEOGEN Research is now a knowledge system** —
+compendium, compound records, research lines, glossary, handling reference and
+Start Here (§8aa). Before that, 2026-09-20: **all three flagships ship a real vial, live on
 their own homepage sections** (§8u, §8v), **the brand mark is applied across
 the site and the rendered labels** (§8x) and
 **the checkout pays through Mercado Pago in test mode** (§8t, `docs/PAYMENTS.md`). Production payment is blocked on merchant
@@ -22,6 +24,13 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 
 ### Start here: handoff of 2026-09-20
 
+- **Latest (2026-09-22/23): the research/education pass (§8aa), committed on
+  the owner's request, not pushed.** Six new routes
+  under `/investigacion` (compendium with quick view, 62 compound records, 35
+  research lines, a 63-term glossary, laboratory handling, Start Here), a
+  rebuilt hub, a structure diagram on `/peptidos`, and cross-links from the
+  product page, notes, FAQ and footer. Every gate passed. What was refused
+  and why (reconstitution guide, stacks, molecular data) is in §8aa.
 - **Latest (2026-09-21, later): RETA V4 is live, served as `reta-v7.glb`.**
   A different container — a crimp-top vial, not the wide jar — brought through
   the owner's Blender from a third-party shape, with glass, metal and a UV'd
@@ -2141,6 +2150,131 @@ ready when the artwork is:
 - Whether V3 becomes the CANONICAL CONTAINER for non-flagship products.
   `reta-v2.glb` still holds that job, and `studio/label.ts`'s 1:1 geometry is
   measured against it; promoting V3 means re-capturing every neutral still.
+
+## 8aa. NEOGEN Research as a knowledge system (2026-09-22)
+
+Owner brief: take EXOMA's research ecosystem as an INFORMATION-ARCHITECTURE
+reference only (compendium, compound profiles, Start Here, "what are
+peptides", glossary, reconstitution guide, stacks, cross-linking, quick-view
+drawers) and build NEOGEN's own version on the existing data. Not committed;
+not pushed.
+
+**The one architectural decision.** Nothing here is a new source of truth.
+`content/compendium.ts` derives everything from the registries that already
+existed — the catalogue (identity, presentations), `content/overview` (62
+sourced profiles), `content/references` (74 sources) and `content/functions`
+(35 research functions). A compound RECORD is a sourced profile read whole and
+numbered like a paper; a research LINE is a function read from the other end.
+The only new content is the glossary (definitions) and page copy.
+
+**What shipped** (all under `/investigacion`, both locales):
+
+| Route                     | What it is                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/investigacion`          | Rebuilt hub: the title with a search into the compendium, then a three-way chooser ("Soy nuevo en esto" / "Busco un compuesto" / "Quiero ver la evidencia", `PathPicker`) and the archive's counts as a linked band; area tiles, lines with count bars, quality model, notes and sources side by side. The old compound finder moved into the compendium; `CompoundFinder` is deleted.                                                                                                                                                                                                                                             |
+| `/compuestos`             | The compendium: all 85 compounds as an alphabetical ruled index (sticky letters on desktop), search + area + research-line + "only with a record" filters in the URL, record-depth marks, and a QUICK VIEW (native `<dialog>`; side sheet on desktop, bottom sheet on a phone; prev/next and ←/→ through the current results; focus restored). Without JS each name is a plain link.                                                                                                                                                                                                                                               |
+| `/compuestos/<slug>`      | The scientific record, one document with a sticky local index (a strip under the header on a phone): identity, mechanism, published research, by area, technical notes/limits, numbered references with in-text citation links, documentation (summary + link to the product page, which stays the only surface rendering evidence states), the catalogue product, related compounds by shared line, glossary terms found in the record's own text. Built only for the 62 compounds with a sourced profile in BOTH locales; every other slug is a real 404 and the compendium links those compounds to their product page instead. |
+| `/lineas`, `/lineas/<id>` | Research lines — NEOGEN's answer to "stacks". Grouped by the five function groups; each line page QUOTES the sourced statement that puts each compound in it, with numbered sources. Catalogue order, no ranking, and a principle block saying a line is not a combination or a recommendation.                                                                                                                                                                                                                                                                                                                                    |
+| `/glosario`               | 63 definition-class terms in six categories; instant search (term, abbreviation, definition), by-topic or A–Z view, anchorable terms (`#vida-media`, `:target` marked), "see also", and "in the records" backlinks computed by matching each term against the records' own text. `DefinedTermSet` JSON-LD from the same entries.                                                                                                                                                                                                                                                                                                   |
+| `/manejo`                 | Laboratory handling: what arrives, what to record on receipt, the four stability factors, common errors, documented conditions (no general figures), an explicit scope boundary, catalogue materials, the handling FAQ entries, related reading. Built from the approved handling note and NEOGEN practice only.                                                                                                                                                                                                                                                                                                                   |
+| `/empezar`                | Start Here, five steps with a sticky index: what this is (+ the RUO condition), how it is organised (five levels with live counts, each a link), how to read a record (a REAL excerpt from RETA's record, annotated), how to weigh documentation (three questions + the evidence chain), where next.                                                                                                                                                                                                                                                                                                                               |
+| `/peptidos`               | Kept, plus a structure section: an HTML/CSS chain diagram (legible at any width, schematic, no real sequence) and an amino acid / peptide / protein comparison table, with glossary links; a "continue in NEOGEN Research" block at the foot.                                                                                                                                                                                                                                                                                                                                                                                      |
+
+**Cross-links added:** PDP profile header → "Registro científico completo";
+area pages' research link → the compendium filtered by that area; notes →
+glossary + compendium, related products → their record; FAQ → Start Here +
+glossary; footer research/help columns; homepage hub "research index" and the
+Atlas research-index destination now point at the compendium (the old
+`#indice` anchor no longer exists). Sitemap lists every new route from the
+same accessors the routes are generated from.
+
+**Refused or reinterpreted, and why:**
+
+- **Reconstitution guide and calculator — not built.** The reference page is
+  a human-use preparation procedure (syringes, diluent volumes, "inject slowly
+  into the vial", a dose calculator). The owner's standing rule is "no
+  reconstitution calculator or protocol system, in any phase" (§4), and
+  `FORBIDDEN_PUBLIC_TERMS` blocks the vocabulary. The handling page keeps the
+  reference's structure (materials, technical data, procedure-shaped
+  checklist, errors, FAQ, related) filled with receipt, storage and
+  documentation content, and states its own boundary on the page.
+- **Stacks — reinterpreted as research lines.** A stack is a combination for
+  an outcome; nothing here suggests combining anything.
+- **Molecular formula, mass, sequence, CAS — not shown.** No such data exists
+  in the repository, and writing it from memory would be fabricated identity.
+  `content/identity.ts` is the typed, EMPTY registry for it: an entry renders
+  only when approved and sourced (a registry reference, or a PubChem / ChEBI /
+  UniProt URL). The record's identity table has no row for a fact it lacks.
+- **Half-life, "dosing", "routes", clinical tabs, study cards with outcome
+  badges, evidence-level dots** — the Tirzepatide reference carries all of
+  these; the record keeps only what `content/overview` holds, in its own
+  words, with its citations.
+- **Tabs** — the record is one document with an index, not tabs: citation
+  markers must land on a list that is on the page, and in-page search works.
+
+**Also fixed on the way:**
+
+- `--header-height` was 4rem at every width, but the header is two rows below
+  40rem (138px). Every sticky/anchored element under it was hidden on phones
+  — including the FAQ's sticky topic headings (pre-existing). The token now
+  has a compact value (§ tokens.css).
+- `/peptidos` question links were 20px targets packed 8px apart (axe
+  `target-size` in English); now 44px rows.
+- **Render time (owner report, 2026-09-23: "taking a lot of time to render").**
+  `researchReferenceIndex()` (pre-existing) re-resolved every product's public
+  overview for every reference — ~12,500 resolutions, ~1 s per call — and
+  `lineIds()` (new) did the same per research line. The new pages called both
+  several times per request, so dev renders took 1–6 s (the homepage 1.1 s).
+  `publicOverview` is now memoised for the real registries (injected fixtures
+  bypass the cache), and the reference index, research lines and glossary
+  backlinks are computed once. Every page now renders in 40–270 ms in dev.
+- `useUrlFilters` now sits on a shared `lib/useUrlSearch` hook, which the
+  compendium uses too. Catalogue behaviour is unchanged.
+
+**Hub redesign (2026-09-23, owner request).** The owner asked for the three
+routes to move to the top and be "more appealing, dynamic and fun", and for
+the whole hub to read more easily. The routes are now `PathPicker`: a WAI-ARIA
+tablist of three tiles in the reader's own words, each opening a panel of
+doors that carry a real count ("63 términos", "74 fuentes", "5 pasos"). The
+compound path also offers the flagship records. Every panel is in the server
+HTML (unselected ones `hidden`), arrows/Home/End move between tiles, and the
+only motion is a small drawn glyph per tile (decorative tier) and a short
+panel rise (shortened under reduced motion). The search stays once, in the
+hero. The five counts became a linked readout band, areas became a tile grid
+with the area mark and a size gauge, each research line has a bar sized by
+its compound count, and notes and sources sit side by side (four newest
+sources). Section numbers run 02–06.
+
+**Verified:** all gates (EXIT=0; content 32,620 assertions incl. the new
+glossary/record/line/identity invariants; output 418 HTML with the new
+emitted-pages and no-dead-archive-links checks). Negative control: dosing
+vocabulary in an approved glossary definition plus a dangling "see also"
+failed `check:content` on exactly those two assertions. axe: 0 A/AA
+violations on every new page at 375 and 1440, both locales. No horizontal
+overflow at 375 or 320 on any new page, the hub included (its note list
+used to overflow 17px at 320; it now renders unordered). Production (`next start`):
+records for compounds without a profile, unknown records and unknown lines
+are real 404s.
+
+**Content the owner should read** (published on the same basis as the §8y
+notes — definition-class vocabulary and NEOGEN practice, no claim about any
+product): the 63 glossary definitions (`content/glossary/registry.ts`; demote
+any to `owner-review` to hide it everywhere at once), and the page copy for the
+hub routes, the handling reference and Start Here (`knowledge` in both
+dictionaries).
+
+**Content and data gaps (owner or sourcing):**
+
+1. Molecular identity for any compound — a source per entry (see above).
+2. Per-compound storage temperature and shelf life — need the document behind
+   them (COA, supplier specification) before the handling page or a record
+   can state one.
+3. 23 compounds have no record (no source names them — §8j lists why); they
+   appear in the compendium with a dash and link to their product page.
+4. Product types are all "Compuesto" except derived blends/solvents, because
+   `CONFIRMED_TYPE` is empty; the record's "Tipo" row inherits that honesty.
+5. Cold-chain determination (§6) — the handling page cannot say more until it
+   exists.
 
 ## 9. Recommendation for Phase 13 (not approved)
 

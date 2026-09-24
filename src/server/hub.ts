@@ -140,7 +140,7 @@ export async function hubData(locale: Locale, dict: Dictionary): Promise<HubData
       catalog: path(routes.products),
       areas: path(routes.products),
       research: path(routes.research),
-      researchIndex: `${path(routes.research)}#indice`,
+      researchIndex: path(routes.compendium),
       researchQuality: `${path(routes.research)}#calidad`,
       explorer: publicEvidenceIndex(published).length > 0 ? path(routes.qualityExplorer) : null,
       atlas: path(routes.atlas),

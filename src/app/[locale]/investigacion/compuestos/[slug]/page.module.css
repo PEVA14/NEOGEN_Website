@@ -1,0 +1,305 @@
+/*
+ * THE RECORD — what is specific to a compound record. The document skeleton
+ * (layout, sticky index column, numbered sections, links, term chips) is
+ * shared with the other long research pages: `KnowledgeDocument.module.css`.
+ */
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+/* ---- statements ----------------------------------------------------------- */
+
+.statements {
+  display: grid;
+}
+
+.statement {
+  border-inline-start: 1px solid var(--border-default);
+  color: var(--ink-primary);
+  font-size: var(--text-lg);
+  line-height: var(--leading-editorial);
+  margin: 0;
+  max-inline-size: 44rem;
+  padding: var(--space-sm) 0 var(--space-sm) var(--space-md);
+  text-wrap: pretty;
+}
+
+.statement + .statement {
+  border-block-start: 1px solid var(--border-subtle);
+}
+
+.byArea {
+  display: grid;
+  margin: 0;
+}
+
+.byArea div {
+  border-block-start: 1px solid var(--border-subtle);
+  display: grid;
+  gap: var(--space-2xs);
+  padding-block: var(--space-sm);
+}
+
+@media (min-width: 48rem) {
+  .byArea div {
+    gap: var(--space-lg);
+    grid-template-columns: minmax(0, 3fr) minmax(0, 9fr);
+  }
+}
+
+.byArea dt {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.byArea dd {
+  color: var(--ink-primary);
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  margin: 0;
+  max-inline-size: 44rem;
+}
+
+.notes {
+  background: var(--surface-raised);
+  display: grid;
+  gap: var(--space-sm);
+  max-inline-size: 48rem;
+  padding: var(--space-md) var(--space-lg);
+}
+
+.notes p {
+  color: var(--ink-secondary);
+  line-height: var(--leading-relaxed);
+  margin: 0;
+}
+
+/* ---- identity table ------------------------------------------------------ */
+
+.identity {
+  border-collapse: collapse;
+  inline-size: 100%;
+  max-inline-size: 52rem;
+}
+
+.identity th,
+.identity td {
+  border-block-start: 1px solid var(--border-subtle);
+  padding-block: var(--space-xs);
+  text-align: start;
+  vertical-align: baseline;
+}
+
+.identity tr:first-child th,
+.identity tr:first-child td {
+  border-block-start: 0;
+}
+
+.identity th {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: 400;
+  letter-spacing: var(--tracking-label);
+  padding-inline-end: var(--space-md);
+  text-transform: uppercase;
+  inline-size: 34%;
+}
+
+.identity td {
+  color: var(--ink-primary);
+  font-size: var(--text-base);
+  overflow-wrap: anywhere;
+}
+
+/* On a phone a two-column table squeezes the values; each row becomes a
+   label over its value instead. */
+@media (max-width: 39.99rem) {
+  .identity,
+  .identity tbody,
+  .identity tr,
+  .identity th,
+  .identity td {
+    display: block;
+    inline-size: auto;
+  }
+
+  .identity th {
+    border: 0;
+    padding-block: var(--space-xs) 0;
+  }
+
+  .identity td {
+    border: 0;
+    border-block-end: 1px solid var(--border-subtle);
+    padding-block: var(--space-3xs) var(--space-xs);
+  }
+}
+
+/* ---- documentation, product, related -------------------------------------- */
+
+.split {
+  display: grid;
+  gap: var(--space-md);
+}
+
+@media (min-width: 64rem) {
+  .split {
+    align-items: end;
+    gap: var(--space-xl);
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  }
+}
+
+.splitAside {
+  display: grid;
+  gap: var(--space-2xs);
+  justify-items: start;
+}
+
+.productCard {
+  align-items: end;
+  border: 1px solid var(--border-default);
+  display: grid;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+}
+
+@media (min-width: 48rem) {
+  .productCard {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}
+
+.productMain {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.productName {
+  color: var(--ink-primary);
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  letter-spacing: var(--tracking-tight);
+  line-height: 1;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.presentations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.presentations li {
+  border: 1px solid var(--border-default);
+  color: var(--ink-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  padding: var(--space-3xs) var(--space-2xs);
+}
+
+.productAction {
+  align-items: center;
+  background: var(--neogen-charcoal);
+  color: var(--neogen-paper);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  gap: var(--space-sm);
+  justify-content: space-between;
+  letter-spacing: var(--tracking-label);
+  min-block-size: 3rem;
+  padding-inline: var(--space-md);
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.productAction:hover {
+  background: var(--neogen-graphite);
+}
+
+.notice {
+  max-inline-size: 44rem;
+}
+
+.related {
+  display: grid;
+  gap: var(--space-xl);
+}
+
+@media (min-width: 64rem) {
+  .related {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.relatedGroup {
+  align-content: start;
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.relatedList {
+  border-block-start: 1px solid var(--border-default);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.relatedList li {
+  border-block-end: 1px solid var(--border-subtle);
+}
+
+.relatedLink {
+  align-items: baseline;
+  color: var(--ink-primary);
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: space-between;
+  min-block-size: 2.75rem;
+  padding-block: var(--space-xs);
+  text-decoration: none;
+}
+
+.relatedName {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 600;
+}
+
+.relatedLink:hover .relatedName {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.relatedMeta {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.productAction:focus-visible,
+.relatedLink:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}

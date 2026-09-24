@@ -1,0 +1,31 @@
+.marks {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+/*
+ * The visible mark is small; its target is not. A 44px-tall hit area that
+ * takes its height back with negative margins, so the line box of the prose
+ * around it does not grow.
+ */
+.mark {
+  color: var(--ink-primary);
+  display: inline-block;
+  margin-block: -0.9rem;
+  padding: 0.9rem 0.1rem;
+  text-decoration: underline;
+  text-decoration-color: var(--border-default);
+  text-underline-offset: 3px;
+}
+
+.mark:hover {
+  text-decoration-color: var(--ink-primary);
+}
+
+.mark:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: -2px;
+}
