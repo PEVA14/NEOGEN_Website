@@ -6,11 +6,12 @@ Lightweight `.glb` product assets, one per product, named by its **slug**:
 public/models/<product-slug>.glb
 ```
 
-Today: `reta-v7.glb`, `ghk-cu.glb` and `glow.glb` are what the site serves,
-with `reta-v2.glb` kept as the CANONICAL CONTAINER — the shape every
+Today: `reta-v7.glb`, `ghk-cu-v4.glb` and `glow-v4.glb` are what the site
+serves — all three the V4 crimp-top wearing one label design, re-lettered per
+product — with `reta-v2.glb` kept as the CANONICAL CONTAINER — the shape every
 non-flagship product is rendered on, and the one `studio/label.ts` is measured
-against. RETA's is now a different shape — the V4 crimp-top — so until GLOW
-and GHK-Cu are re-exported to match, the flagships do not share one vial.
+against. `ghk-cu.glb` and `glow.glb` are the earlier jar exports and are no
+longer served.
 
 ## Where they come from
 
@@ -41,8 +42,10 @@ Current recipes:
 | ------------- | ------------------------- | ---------------------------------------------------------------- |
 | `reta-v7.glb` | `RETA_VIAL_V4.glb`        | `--jpeg 92` only — a crimp-top with its own UVs; see (3)         |
 | `reta-v2.glb` | `NEOGEN_RETA_VIAL_V2.glb` | `--drop "0.75 Dram Autosampler Lid"` (1), `--scale-node` cap (2) |
-| `ghk-cu.glb`  | `NEOGEN_GHK-Cu_VIAL.glb`  | `--scale-node` cap (2)                                           |
-| `glow.glb`    | `NEOGEN_GLOW_VIAL.glb`    | `--scale-node` cap (2)                                           |
+| `ghk-cu-v4.glb` | `RETA_VIAL_V4.glb` | the V4 sheet re-lettered — "One design, many products" |
+| `glow-v4.glb` | `RETA_VIAL_V4.glb` | the V4 sheet re-lettered — "One design, many products" |
+| `ghk-cu.glb`  | `NEOGEN_GHK-Cu_VIAL.glb`  | `--scale-node` cap (2) — the jar; no longer served |
+| `glow.glb`    | `NEOGEN_GLOW_VIAL.glb`    | `--scale-node` cap (2) — the jar; no longer served |
 
 **V3 and V4 need neither of the first two flags.** It carries ONE closure, so there
 is no interpenetrating lid to drop, and its cap is already Ø112.0 mm against
@@ -166,6 +169,22 @@ script), so the replacements land on the same baselines, at the same cap
 height, in the same colour, and the hairline between them survives. It sets
 them in NEOGEN's own display face, which is close to — not identical with —
 the artwork's own.
+
+Leave out `--line` and the strength row is not touched at all. GLOW is sold
+only as 70 mg, which the V4 sheet already prints, so its sheet changes the name
+and nothing else (owner, 2026-09-25: "just change the name but keep everything
+else the same"); GHK-Cu is sold as 50 and 100 mg, so its strength is replaced:
+
+```bash
+node scripts/relabel-sheet.mjs --sheet "3d assets/reta-v4-label.png" \
+  --name GLOW --out "3d assets/glow-label.png"
+node scripts/relabel-sheet.mjs --sheet "3d assets/reta-v4-label.png" \
+  --name "GHK-Cu" --line "50 – 100 MG" --out "3d assets/ghk-cu-label.png"
+```
+
+each baked like Semaglutide's, into `glow-v4.glb` and `ghk-cu-v4.glb`.
+(`-v2` and `-v3` were spent on an earlier attempt that moved the jars' own
+artwork onto V4; neither left this machine, but a name is spent once fetched.)
 
 **Everything else on the sheet stays as drawn.** If the artwork carries a lot,
 an expiry, a purity figure or a route of administration, the re-lettered sheet

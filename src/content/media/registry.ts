@@ -31,8 +31,9 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
    * neck, crimped aluminium cap — where V2 and V3 were the wide straight-sided
    * jar. The web layer normalises height and position, so it drops in; but it
    * is not the canonical container `NEUTRAL_RIG` renders generic products on
-   * (`reta-v2.glb`), and the flagships no longer share one shape until GLOW
-   * and GHK-Cu are re-exported to match. Its label has UVs and a 2048² sheet;
+   * (`reta-v2.glb`). Since 2026-09-25 GLOW and GHK-Cu ship on it too, wearing
+   * this label re-lettered, so the three flagships share one shape and one
+   * label design again. Its label has UVs and a 2048² sheet;
    * the preparation step is `--jpeg 92` and nothing else.
    *
    * ITS PRINTED LABEL IS A MOCK-UP, AND IT IS NOT PUBLISHABLE COPY. It reads
@@ -138,19 +139,23 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
   },
 
   /*
-   * GHK-Cu — its own vial (owner export, 2026-09-19).
+   * GHK-Cu — the V4 crimp-top wearing the RETA label design, re-lettered
+   * (2026-09-25). Until then it was the owner's export on the wide jar
+   * (`ghk-cu.glb`, 2026-09-19) with its own artwork.
    *
-   * The same container as RETA, carrying the printed GHK-Cu label, so the
-   * product page now opens on the real object inside the copper world rather
-   * than on the world alone. No photograph and no studio still yet: the
-   * silhouette covers the load and the no-WebGL case, as it does for RETA.
+   * Owner, 2026-09-25: "put the label from the newest vial, just change the
+   * name but keep everything else the same". `relabel-sheet.mjs` replaced the
+   * name with GHK-Cu and — because the catalogue sells 50 and 100 mg, not the
+   * sheet's 70 — the strength with "50 – 100 MG". Everything else is the V4
+   * artwork as drawn, so it is declared in `DEMO_ARTWORK` below. Sheet:
+   * `3d assets/ghk-cu-label.png`.
    */
   "ghk-cu": {
-    model: "/models/ghk-cu.glb",
+    model: "/models/ghk-cu-v4.glb",
     /* Its own vial on the copper rig (GHK_RIG): a neutral key so the label
        stays true, and copper laid down the right edge of the glass. */
     studio: {
-      src: "/images/products/ghk-cu/studio-v2.jpg",
+      src: "/images/products/ghk-cu/studio-v4.jpg",
       alt: "Vial GHK-Cu de NEOGEN: render de estudio del modelo 3D, etiqueta al frente, sobre fondo cobre oscuro.",
       width: 1600,
       height: 2000,
@@ -158,21 +163,23 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
   },
 
   /*
-   * GLOW — its own vial (owner export, 2026-09-20).
-   *
-   * The same container and the same printed-label geometry as RETA and GHK-Cu,
-   * carrying the GLOW artwork, inside the amber world.
+   * GLOW — the V4 crimp-top wearing the RETA label design with only the name
+   * re-lettered (2026-09-25; before, the jar export `glow.glb`). GLOW is sold
+   * only as 70 mg, which is what the sheet already prints, so the strength is
+   * the artwork's own lettering (`relabel-sheet.mjs` without `--line`). Sheet:
+   * `3d assets/glow-label.png`. Declared in `DEMO_ARTWORK`. Inside the amber
+   * world.
    *
    * All three flagships now ship a model. Every other product still resolves to
    * the world or the silhouette, which stays the correct answer for a product
    * nobody has modelled or photographed — see the note on Semaglutide above.
    */
   glow: {
-    model: "/models/glow.glb",
+    model: "/models/glow-v4.glb",
     /* Its own vial on the amber rig (GLOW_RIG): the pool behind the glass lights
        it from behind, and the cap takes the world's gold. */
     studio: {
-      src: "/images/products/glow/studio-v2.jpg",
+      src: "/images/products/glow/studio-v4.jpg",
       alt: "Vial GLOW de NEOGEN: render de estudio del modelo 3D, etiqueta al frente, sobre fondo ámbar oscuro.",
       width: 1600,
       height: 2000,
@@ -213,6 +220,26 @@ export const DEMO_ARTWORK: readonly {
       "when the label design is finalised - `relabel-sheet.mjs`, then " +
       "`prepare-model.mjs --label`.",
   },
+  ...(["/models/glow-v4.glb", "/images/products/glow/studio-v4.jpg"] as const).map((src) => ({
+    [src.endsWith(".glb") ? "model" : "image"]: src,
+    says:
+      "GLOW · 70 MG (correct: GLOW is sold as 70 mg) over the RETA mock-up's remaining " +
+      "lines: INJECTABLE PEPTIDE • 99% PURITY · SUBCUTANEOUS USE · LOT NUMBER 064 · " +
+      "EXP 12/2028 · REFRIGERATE 2-8°C · US flag",
+    why:
+      "Only the name was re-lettered (owner, 2026-09-25); the rest is the RETA draft " +
+      "artwork and belongs to no GLOW record. Replace with the finalised label design.",
+  })),
+  ...(["/models/ghk-cu-v4.glb", "/images/products/ghk-cu/studio-v4.jpg"] as const).map((src) => ({
+    [src.endsWith(".glb") ? "model" : "image"]: src,
+    says:
+      "GHK-Cu · 50 – 100 MG (correct) over the RETA mock-up's remaining lines: " +
+      "INJECTABLE PEPTIDE • 99% PURITY · SUBCUTANEOUS USE · LOT NUMBER 064 · " +
+      "EXP 12/2028 · REFRIGERATE 2-8°C · US flag",
+    why:
+      "The name and strength were re-lettered (owner, 2026-09-25); the rest is the RETA " +
+      "draft artwork and belongs to no GHK-Cu record. Replace with the finalised label design.",
+  })),
   {
     model: "/models/reta-v7.glb",
     says:

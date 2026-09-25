@@ -36,7 +36,10 @@ const flag = (name, fallback = null) => {
 const sheet = flag("sheet");
 const out = flag("out");
 const name = flag("name");
-const line = flag("line", "");
+/* Omitted, the strength row is left exactly as drawn — for a product whose
+   presentation the artwork already prints (GLOW is sold only as 70 MG, which
+   is what the V4 sheet says). Passed empty, it is cleared. */
+const line = flag("line", null);
 const base = flag("base", "http://localhost:3000");
 
 if (!sheet || !out || !name) {
@@ -121,7 +124,7 @@ try {
       };
 
       setLine(name, L.name, 500, "#111111");
-      setLine(line, L.line, 700, L.line.colour);
+      if (line !== null) setLine(line, L.line, 700, L.line.colour);
 
       return canvas.toDataURL("image/png");
     },
@@ -131,7 +134,7 @@ try {
   const bytes = Buffer.from(result.slice("data:image/png;base64,".length), "base64");
   writeFileSync(out, bytes);
   console.log(
-    `  ${path.basename(sheet)} → ${out}  "${name}" / "${line}"  ${(bytes.byteLength / 1024).toFixed(1)} KB`,
+    `  ${path.basename(sheet)} → ${out}  "${name}" / ${line === null ? "strength as drawn" : `"${line}"`}  ${(bytes.byteLength / 1024).toFixed(1)} KB`,
   );
 } finally {
   await browser.close();
