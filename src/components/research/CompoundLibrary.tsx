@@ -308,12 +308,16 @@ export function CompoundLibrary({
   const opened = useRef(false);
   useEffect(() => {
     if (opened.current) return;
-    opened.current = true;
     const params = new URLSearchParams(window.location.search);
     const slug = params.get("ficha");
     if (!slug || !entries.some((e) => e.slug === slug)) return;
-    /* After the first paint: the dialog must exist before `showModal`. */
-    const frame = requestAnimationFrame(() => open(slug, viewFromParam(params.get("vista"))));
+    /* After the first paint: the dialog must exist before `showModal`. The
+       guard is set when the open happens, not when it is scheduled: Strict
+       Mode cancels the first frame and re-runs the effect. */
+    const frame = requestAnimationFrame(() => {
+      opened.current = true;
+      open(slug, viewFromParam(params.get("vista")));
+    });
     return () => cancelAnimationFrame(frame);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

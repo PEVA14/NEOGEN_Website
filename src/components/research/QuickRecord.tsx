@@ -638,8 +638,13 @@ export function QuickRecord({
             onClick={() => switchTo(v)}
             onKeyDown={(event) => onTabKey(event, i)}
           >
-            {copy.tabs[v]}
-            {counts[v] !== null ? <span className={styles.tabCount}>{counts[v]}</span> : null}
+            {/* Name first in the DOM, so a tab is announced "Evidence 4";
+                the index and count are drawn above it. */}
+            <span className={styles.tabLabel}>{copy.tabs[v]}</span>
+            <span className={styles.tabMeta}>
+              <span aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
+              {counts[v] !== null ? <span className={styles.tabCount}>{counts[v]}</span> : null}
+            </span>
           </button>
         ))}
       </div>
