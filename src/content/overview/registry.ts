@@ -7,7 +7,7 @@ import {
 } from "@/content/review";
 
 import type { ContentStatus } from "@/content/lifecycle";
-import type { ProductOverview, SourcedStatement } from "./types";
+import type { ProductOverview, SourcedStatement, StatementAspect } from "./types";
 
 /**
  * PRODUCT OVERVIEWS — keyed by slug.
@@ -33,6 +33,15 @@ const sci = (
   text: { es, en },
   references,
   provenance: { class: "scientific-source", status },
+});
+
+/**
+ * Mark a sourced statement by what it reports (see `StatementAspect`). Only
+ * ever wraps a sentence that already says it — the tag adds no words.
+ */
+const aspect = (kind: StatementAspect, statement: SourcedStatement): SourcedStatement => ({
+  ...statement,
+  aspect: kind,
 });
 
 const REF = {
@@ -117,12 +126,16 @@ const REF = {
  * covers the whole family and says the same thing about all of it.
  */
 const ghAxisLimit = (id: string) =>
-  sci(
-    id,
-    "Una revisión narrativa de 2026 agrupa estos péptidos como compuestos no regulados vendidos como «research compounds», sin aprobación regulatoria para indicaciones de físico o rendimiento, y con incertidumbre sobre la composición real de los productos. Los efectos adversos que enumera incluyen alteraciones endocrinas y metabólicas (elevaciones de prolactina y cortisol, cambios de apetito, disglucemia), retención de líquidos, síntomas musculoesqueléticos y reacciones en el sitio de aplicación.",
-    'A 2026 narrative review groups these peptides as unregulated compounds sold as "research compounds", without regulatory approval for physique- or performance-related indications, and with uncertainty about what the products actually contain. The adverse effects it lists include endocrine and metabolic disturbances (prolactin and cortisol elevations, appetite changes, dysglycaemia), fluid retention, musculoskeletal symptoms and application-site reactions.',
-    [REF.ghAxis],
-    BATCH_5,
+  /* Regulatory status, uncertain contents and the adverse effects it lists. */
+  aspect(
+    "safety",
+    sci(
+      id,
+      "Una revisión narrativa de 2026 agrupa estos péptidos como compuestos no regulados vendidos como «research compounds», sin aprobación regulatoria para indicaciones de físico o rendimiento, y con incertidumbre sobre la composición real de los productos. Los efectos adversos que enumera incluyen alteraciones endocrinas y metabólicas (elevaciones de prolactina y cortisol, cambios de apetito, disglucemia), retención de líquidos, síntomas musculoesqueléticos y reacciones en el sitio de aplicación.",
+      'A 2026 narrative review groups these peptides as unregulated compounds sold as "research compounds", without regulatory approval for physique- or performance-related indications, and with uncertainty about what the products actually contain. The adverse effects it lists include endocrine and metabolic disturbances (prolactin and cortisol elevations, appetite changes, dysglycaemia), fluid retention, musculoskeletal symptoms and application-site reactions.',
+      [REF.ghAxis],
+      BATCH_5,
+    ),
   );
 
 /** A technical note: what the citations on a page actually studied. */
@@ -138,12 +151,16 @@ const note = (id: string, es: string, en: string, status: ContentStatus) => ({
 
 /* A limit that applies to BPC-157, TB-500 and GHK-Cu alike. */
 const tewariLimit = (id: string) =>
-  sci(
-    id,
-    "Una revisión de alcance de 2026 sobre péptidos en medicina deportiva (incluidos BPC-157, TB-500 y GHK-Cu) encontró que el 67 % de las publicaciones usó modelos animales, que los estudios en humanos son pocos y en su mayoría sin controles robustos, y que los beneficios musculoesqueléticos que se les atribuyen no están respaldados por los ensayos en humanos actuales.",
-    "A 2026 scoping review of peptides in sports medicine (including BPC-157, TB-500 and GHK-Cu) found that 67% of publications used animal models, that human studies are few and mostly lack robust controls, and that the musculoskeletal benefits claimed for them remain unsubstantiated by current human trials.",
-    [REF.tewari],
-    BATCH_1,
+  /* Models used and how few, uncontrolled, the human studies are. */
+  aspect(
+    "limits",
+    sci(
+      id,
+      "Una revisión de alcance de 2026 sobre péptidos en medicina deportiva (incluidos BPC-157, TB-500 y GHK-Cu) encontró que el 67 % de las publicaciones usó modelos animales, que los estudios en humanos son pocos y en su mayoría sin controles robustos, y que los beneficios musculoesqueléticos que se les atribuyen no están respaldados por los ensayos en humanos actuales.",
+      "A 2026 scoping review of peptides in sports medicine (including BPC-157, TB-500 and GHK-Cu) found that 67% of publications used animal models, that human studies are few and mostly lack robust controls, and that the musculoskeletal benefits claimed for them remain unsubstantiated by current human trials.",
+      [REF.tewari],
+      BATCH_1,
+    ),
   );
 
 /**
@@ -224,12 +241,15 @@ export const OVERVIEWS: Readonly<Record<string, ProductOverview>> = {
         [REF.rosenstock],
         BATCH_1,
       ),
-      sci(
-        "reta-research-adverse-events",
-        "Eventos adversos reportados: principalmente gastrointestinales (náusea, diarrea, vómito, estreñimiento) y en su mayoría leves a moderados. El ensayo de obesidad también registró un aumento del ritmo cardiaco que alcanzó su máximo a las 24 semanas y después disminuyó.",
-        "Reported adverse events were mainly gastrointestinal (nausea, diarrhoea, vomiting, constipation) and mostly mild to moderate. The obesity trial also recorded increases in heart rate that peaked at 24 weeks and declined thereafter.",
-        [REF.jastreboff, REF.rosenstock],
-        BATCH_1,
+      aspect(
+        "safety",
+        sci(
+          "reta-research-adverse-events",
+          "Eventos adversos reportados: principalmente gastrointestinales (náusea, diarrea, vómito, estreñimiento) y en su mayoría leves a moderados. El ensayo de obesidad también registró un aumento del ritmo cardiaco que alcanzó su máximo a las 24 semanas y después disminuyó.",
+          "Reported adverse events were mainly gastrointestinal (nausea, diarrhoea, vomiting, constipation) and mostly mild to moderate. The obesity trial also recorded increases in heart rate that peaked at 24 weeks and declined thereafter.",
+          [REF.jastreboff, REF.rosenstock],
+          BATCH_1,
+        ),
       ),
     ],
     areasOfInvestigation: [],
@@ -277,12 +297,15 @@ export const OVERVIEWS: Readonly<Record<string, ProductOverview>> = {
         [REF.surpass2],
         BATCH_2,
       ),
-      sci(
-        "tirzepatide-research-adverse-events",
-        "Eventos adversos reportados: principalmente gastrointestinales y en su mayoría leves a moderados, concentrados en el periodo inicial de los ensayos. En SURPASS-2 se reportó náusea en 17–22 %, diarrea en 13–16 % y vómito en 6–10 %, con eventos adversos graves en 5–7 %.",
-        "Reported adverse events were mainly gastrointestinal and mostly mild to moderate, concentrated in the early part of the trials. SURPASS-2 reported nausea in 17–22%, diarrhoea in 13–16% and vomiting in 6–10%, with serious adverse events in 5–7%.",
-        [REF.surpass2, REF.surmount1],
-        BATCH_2,
+      aspect(
+        "safety",
+        sci(
+          "tirzepatide-research-adverse-events",
+          "Eventos adversos reportados: principalmente gastrointestinales y en su mayoría leves a moderados, concentrados en el periodo inicial de los ensayos. En SURPASS-2 se reportó náusea en 17–22 %, diarrea en 13–16 % y vómito en 6–10 %, con eventos adversos graves en 5–7 %.",
+          "Reported adverse events were mainly gastrointestinal and mostly mild to moderate, concentrated in the early part of the trials. SURPASS-2 reported nausea in 17–22%, diarrhoea in 13–16% and vomiting in 6–10%, with serious adverse events in 5–7%.",
+          [REF.surpass2, REF.surmount1],
+          BATCH_2,
+        ),
       ),
     ],
     areasOfInvestigation: [],
@@ -330,12 +353,15 @@ export const OVERVIEWS: Readonly<Record<string, ProductOverview>> = {
         [REF.surpass2],
         BATCH_2,
       ),
-      sci(
-        "semaglutide-research-adverse-events",
-        "Eventos adversos reportados en STEP 1: náusea y diarrea fueron los más comunes, típicamente transitorios y de intensidad leve a moderada; 4.5 % suspendió por eventos gastrointestinales, frente a 0.8 % con placebo.",
-        "Adverse events reported in STEP 1: nausea and diarrhoea were the most common, typically transient and mild to moderate; 4.5% discontinued because of gastrointestinal events, versus 0.8% with placebo.",
-        [REF.step1],
-        BATCH_2,
+      aspect(
+        "safety",
+        sci(
+          "semaglutide-research-adverse-events",
+          "Eventos adversos reportados en STEP 1: náusea y diarrea fueron los más comunes, típicamente transitorios y de intensidad leve a moderada; 4.5 % suspendió por eventos gastrointestinales, frente a 0.8 % con placebo.",
+          "Adverse events reported in STEP 1: nausea and diarrhoea were the most common, typically transient and mild to moderate; 4.5% discontinued because of gastrointestinal events, versus 0.8% with placebo.",
+          [REF.step1],
+          BATCH_2,
+        ),
       ),
     ],
     areasOfInvestigation: [],
@@ -369,12 +395,15 @@ export const OVERVIEWS: Readonly<Record<string, ProductOverview>> = {
         [REF.cagrilintide],
         BATCH_3,
       ),
-      sci(
-        "cagrilintide-research-adverse-events",
-        "Eventos adversos reportados: gastrointestinales (náusea, estreñimiento, diarrea) y reacciones en el sitio de aplicación. Los eventos gastrointestinales fueron más frecuentes que con placebo (41–63 % frente a 32 %), principalmente náusea (20–47 % frente a 18 %). El 10 % suspendió el tratamiento, de forma similar entre grupos.",
-        "Reported adverse events were gastrointestinal (nausea, constipation, diarrhoea) and application-site reactions. Gastrointestinal events were more common than with placebo (41–63% versus 32%), mainly nausea (20–47% versus 18%). Ten per cent discontinued treatment, similarly across groups.",
-        [REF.cagrilintide],
-        BATCH_3,
+      aspect(
+        "safety",
+        sci(
+          "cagrilintide-research-adverse-events",
+          "Eventos adversos reportados: gastrointestinales (náusea, estreñimiento, diarrea) y reacciones en el sitio de aplicación. Los eventos gastrointestinales fueron más frecuentes que con placebo (41–63 % frente a 32 %), principalmente náusea (20–47 % frente a 18 %). El 10 % suspendió el tratamiento, de forma similar entre grupos.",
+          "Reported adverse events were gastrointestinal (nausea, constipation, diarrhoea) and application-site reactions. Gastrointestinal events were more common than with placebo (41–63% versus 32%), mainly nausea (20–47% versus 18%). Ten per cent discontinued treatment, similarly across groups.",
+          [REF.cagrilintide],
+          BATCH_3,
+        ),
       ),
     ],
     areasOfInvestigation: [],
@@ -453,12 +482,15 @@ export const OVERVIEWS: Readonly<Record<string, ProductOverview>> = {
         [REF.mazdutideT2d],
         BATCH_3,
       ),
-      sci(
-        "mazdutide-research-adverse-events",
-        "Eventos adversos en GLORY-2: vómito (53.1 % frente a 1.3 % con placebo), náusea (46.9 % frente a 3.2 %) y diarrea (39.4 % frente a 6.5 %), en su mayoría leves a moderados; 2.9 % suspendió el tratamiento por eventos adversos, frente a 0 % con placebo.",
-        "Adverse events in GLORY-2: vomiting (53.1% versus 1.3% with placebo), nausea (46.9% versus 3.2%) and diarrhoea (39.4% versus 6.5%), mostly mild to moderate; 2.9% discontinued because of adverse events, versus 0% with placebo.",
-        [REF.glory2],
-        BATCH_3,
+      aspect(
+        "safety",
+        sci(
+          "mazdutide-research-adverse-events",
+          "Eventos adversos en GLORY-2: vómito (53.1 % frente a 1.3 % con placebo), náusea (46.9 % frente a 3.2 %) y diarrea (39.4 % frente a 6.5 %), en su mayoría leves a moderados; 2.9 % suspendió el tratamiento por eventos adversos, frente a 0 % con placebo.",
+          "Adverse events in GLORY-2: vomiting (53.1% versus 1.3% with placebo), nausea (46.9% versus 3.2%) and diarrhoea (39.4% versus 6.5%), mostly mild to moderate; 2.9% discontinued because of adverse events, versus 0% with placebo.",
+          [REF.glory2],
+          BATCH_3,
+        ),
       ),
     ],
     areasOfInvestigation: [],
@@ -1463,12 +1495,15 @@ export const OVERVIEWS: Readonly<Record<string, ProductOverview>> = {
       ),
     ],
     researchContext: [
-      sci(
-        "epithalon-research-review-limits",
-        "Esa revisión narrativa distingue explícitamente entre los péptidos con aprobación regulatoria, que cuentan con perfiles de seguridad de ensayos grandes, y los no aprobados, de los que dice que muestran resultados prometedores; el epitalón está en el segundo grupo.",
-        "That narrative review explicitly distinguishes peptides with regulatory approval, which have safety profiles from large-scale trials, from non-approved ones, of which it says they show promising results; epitalon is in the second group.",
-        [REF.mavrych],
-        BATCH_5,
+      aspect(
+        "limits",
+        sci(
+          "epithalon-research-review-limits",
+          "Esa revisión narrativa distingue explícitamente entre los péptidos con aprobación regulatoria, que cuentan con perfiles de seguridad de ensayos grandes, y los no aprobados, de los que dice que muestran resultados prometedores; el epitalón está en el segundo grupo.",
+          "That narrative review explicitly distinguishes peptides with regulatory approval, which have safety profiles from large-scale trials, from non-approved ones, of which it says they show promising results; epitalon is in the second group.",
+          [REF.mavrych],
+          BATCH_5,
+        ),
       ),
     ],
     areasOfInvestigation: [],
@@ -1864,12 +1899,15 @@ export const OVERVIEWS: Readonly<Record<string, ProductOverview>> = {
         [REF.etass],
         BATCH_4,
       ),
-      sci(
-        "thymosin-alpha-1-research-safety",
-        "En ese ensayo no se registró ningún evento adverso grave relacionado con el fármaco. El intervalo de confianza del riesgo relativo cruza 1, y los autores describen el efecto como posible en una población específica de sepsis grave, no como establecido.",
-        "In that trial no serious drug-related adverse event was recorded. The confidence interval for the relative risk crosses 1, and the authors describe the effect as possible in a specific severe-sepsis population rather than as established.",
-        [REF.etass],
-        BATCH_4,
+      aspect(
+        "safety",
+        sci(
+          "thymosin-alpha-1-research-safety",
+          "En ese ensayo no se registró ningún evento adverso grave relacionado con el fármaco. El intervalo de confianza del riesgo relativo cruza 1, y los autores describen el efecto como posible en una población específica de sepsis grave, no como establecido.",
+          "In that trial no serious drug-related adverse event was recorded. The confidence interval for the relative risk crosses 1, and the authors describe the effect as possible in a specific severe-sepsis population rather than as established.",
+          [REF.etass],
+          BATCH_4,
+        ),
       ),
     ],
     areasOfInvestigation: [],
@@ -2190,12 +2228,15 @@ export const OVERVIEWS: Readonly<Record<string, ProductOverview>> = {
         [REF.vasireddi],
         BATCH_1,
       ),
-      sci(
-        "bpc157-research-safety-status",
-        "Los estudios preclínicos de seguridad no mostraron efectos adversos en varios sistemas de órganos; la revisión no encontró datos de seguridad clínica. No cuenta con aprobación de la FDA de Estados Unidos y su uso está prohibido en el deporte profesional.",
-        "Preclinical safety studies showed no adverse effects across several organ systems; the review found no clinical safety data. It lacks approval from the US FDA and its use is banned in professional sports.",
-        [REF.vasireddi],
-        BATCH_1,
+      aspect(
+        "safety",
+        sci(
+          "bpc157-research-safety-status",
+          "Los estudios preclínicos de seguridad no mostraron efectos adversos en varios sistemas de órganos; la revisión no encontró datos de seguridad clínica. No cuenta con aprobación de la FDA de Estados Unidos y su uso está prohibido en el deporte profesional.",
+          "Preclinical safety studies showed no adverse effects across several organ systems; the review found no clinical safety data. It lacks approval from the US FDA and its use is banned in professional sports.",
+          [REF.vasireddi],
+          BATCH_1,
+        ),
       ),
       sci(
         "bpc157-research-achilles",

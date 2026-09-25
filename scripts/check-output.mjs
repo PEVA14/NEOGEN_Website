@@ -51,6 +51,9 @@ const htmlFiles = walk(path.join(OUT, "server", "app"), /\.html$/);
 const clientAssets = [
   ...walk(path.join(OUT, "static"), /\.(js|css|json|map)$/),
   ...walk(path.join(OUT, "server", "app"), /\.(html|rsc|json)$/),
+  /* Prerendered route handlers (the compendium's Quick Record JSON) are
+     emitted as `.body`; the browser fetches them like any asset. */
+  ...walk(path.join(OUT, "server", "app", "api"), /\.body$/),
 ];
 
 if (htmlFiles.length === 0) fail("no prerendered HTML found", `run \`next build\` first (${OUT})`);
@@ -401,6 +404,44 @@ for (const area of publicAreas()) {
       }
     }
   }
+  /* The Quick Record JSON: one per published compound and locale, a record
+     exactly where a record page exists, every citation resolving inside it,
+     documentation counts equal to what the quality resolver says. */
+  for (const locale of ["es", "en"]) {
+    for (const product of publishedProducts) {
+      const file = path.join(
+        OUT,
+        "server",
+        "app",
+        "api",
+        "compendio",
+        locale,
+        `${product.slug}.body`,
+      );
+      let data;
+      try {
+        data = JSON.parse(readFileSync(file, "utf8"));
+      } catch {
+        fail("a Quick Record was not prerendered", `${locale}/${product.slug}`);
+        continue;
+      }
+      const where = `${locale}/${product.slug}`;
+      if ((data.record !== null) !== records.has(product.slug))
+        fail("a Quick Record's science does not follow its record page", where);
+      if (data.record) {
+        const n = data.record.sources.length;
+        for (const s of data.record.statements) {
+          if (s.citations.length === 0)
+            fail("a Quick Record statement has no citation", `${s.id} in ${where}`);
+          if (s.citations.some((c) => c < 1 || c > n))
+            fail("a Quick Record citation does not resolve", `${s.id} in ${where}`);
+        }
+      }
+      if (data.docs.product !== resolveEvidence(product).product.length)
+        fail("a Quick Record's documentation count is not the resolver's", where);
+    }
+  }
+
   /* No dead links into the archive, from any page. */
   for (const file of htmlFiles) {
     const html = readFileSync(file, "utf8");

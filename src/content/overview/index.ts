@@ -7,7 +7,7 @@ import { OVERVIEWS } from "./registry";
 import type { Locale } from "@/i18n/config";
 import type { Reference } from "@/content/references";
 import type { DiscoveryAreaId } from "@/data/discovery/types";
-import type { CopyBlock, ProductOverview, SourcedStatement } from "./types";
+import type { CopyBlock, ProductOverview, SourcedStatement, StatementAspect } from "./types";
 
 export type { CopyBlock, ProductOverview, SourcedStatement } from "./types";
 export { OVERVIEWS } from "./registry";
@@ -16,6 +16,7 @@ export interface PublicStatement {
   id: string;
   text: string;
   references: readonly Reference[];
+  aspect: StatementAspect | null;
 }
 
 export interface PublicOverview {
@@ -78,7 +79,7 @@ export function publicStatement(
   }
   const refs = publicReferencesById(statement.references, references);
   if (refs.length === 0) return null;
-  return { id: statement.id, text, references: refs };
+  return { id: statement.id, text, references: refs, aspect: statement.aspect ?? null };
 }
 
 /*

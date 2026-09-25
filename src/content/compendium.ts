@@ -14,6 +14,7 @@ import {
   type PublicOverview,
   type PublicStatement,
 } from "@/content/overview";
+import type { StatementAspect } from "@/content/overview/types";
 import type { Reference } from "@/content/references";
 import { researchReferenceIndex } from "@/content/research";
 import { getProduct, publishedProducts, type Product } from "@/data/catalog";
@@ -73,6 +74,8 @@ export interface RecordStatement {
   text: string;
   /** 1-based positions in the record's own reference list. */
   citations: readonly number[];
+  /** "safety" / "limits" where the statement reports one; null for a finding. */
+  aspect: StatementAspect | null;
 }
 
 export interface CompoundRecord {
@@ -119,6 +122,7 @@ export function compoundRecord(slug: string, locale: Locale): CompoundRecord | n
     id: s.id,
     text: s.text,
     citations: cite(s.references),
+    aspect: s.aspect,
   });
 
   const mechanism = o.mechanismNotes.map(statement);

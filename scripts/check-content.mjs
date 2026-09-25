@@ -1399,6 +1399,43 @@ assertions += 1;
 }
 
 /*
+ * The Quick Record's "Safety & limits" view reads the `aspect` tag an author
+ * put on an existing sourced statement. The tag adds no words, so the risks
+ * are silent: a rewrite that drops it moves a safety finding back among the
+ * findings, and a misspelt value renders nowhere. Every tag in the registry
+ * must survive, with its value, into both locales' records.
+ */
+{
+  const tagged = [];
+  const walk = (node, slug) => {
+    if (Array.isArray(node)) return node.forEach((n) => walk(n, slug));
+    if (!node || typeof node !== "object") return;
+    if (typeof node.id === "string" && "aspect" in node)
+      tagged.push({ slug, id: node.id, aspect: node.aspect });
+    for (const value of Object.values(node)) walk(value, slug);
+  };
+  for (const [slug, overview] of Object.entries(OVERVIEWS)) walk(overview, slug);
+  ok(tagged.length > 0, "at least one sourced statement is tagged for Safety & limits");
+  ok(
+    tagged.some((t) => t.aspect === "safety") && tagged.some((t) => t.aspect === "limits"),
+    "both aspects are in use",
+  );
+  for (const t of tagged) {
+    ok(["safety", "limits"].includes(t.aspect), `\`${t.id}\` has a known aspect`, String(t.aspect));
+    for (const locale of ["es", "en"]) {
+      const record = compoundRecord(t.slug, locale);
+      const statement =
+        record &&
+        [...record.mechanism, ...record.research, ...record.byArea.map((a) => a.statement)].find(
+          (s) => s.id === t.id,
+        );
+      ok(statement !== undefined, `tagged \`${t.id}\` reaches the ${locale} record`);
+      if (statement) eq(statement.aspect, t.aspect, `\`${t.id}\` keeps its aspect in ${locale}`);
+    }
+  }
+}
+
+/*
  * RESEARCH LINES are functions read from the other end. Every compound in a
  * line is there because one of its own sourced statements backs the tag, and
  * every one of them has a record — so the line page can link it without ever

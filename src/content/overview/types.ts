@@ -16,7 +16,24 @@ export interface SourcedStatement {
   /** Reference ids from `content/references`. At least one, all resolvable. */
   references: readonly string[];
   provenance: ContentProvenance;
+  /**
+   * WHAT KIND OF STATEMENT THIS IS, where it is more than a finding.
+   *
+   *   safety   it reports adverse events, a safety result, or a regulatory /
+   *            approval status, as its source states them
+   *   limits   it states a limit of the evidence itself — models used, how
+   *            few or how uncontrolled the human studies are
+   *
+   * Set by hand, per statement, from what the sentence already says — never
+   * inferred, and never used to add a sentence. Absent means an ordinary
+   * mechanism or research finding. The Quick Record's "Safety & limits" view
+   * is built from this; a compound with no tagged statement says so rather
+   * than implying it has been shown to be safe.
+   */
+  aspect?: StatementAspect;
 }
+
+export type StatementAspect = "safety" | "limits";
 
 /**
  * A block of copy that is NOT a scientific claim — a product summary or a
