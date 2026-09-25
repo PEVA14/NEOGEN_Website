@@ -17,7 +17,8 @@ export type PlateSize = "card" | "plate" | "feature" | "stage";
  * across 85 cards it read as a database entry — a record OF a product rather
  * than the product. The Design Bible now says the products get loud, so the
  * fallback is an OBJECT: the NEOGEN vial, drawn from the proportions of the
- * real model (`public/models/reta-v2.glb`), standing on a lit studio sweep, with
+ * real model (the V4 crimp-top, `public/models/reta-v7.glb`), standing on the
+ * same warm studio sweep as the renders beside it in the catalogue, with
  * NEOGEN's own packaging identity — the wordmark, the product's name, its
  * strength — printed on the paper label, exactly as the model's label is.
  *
@@ -130,15 +131,25 @@ function labelLines(name: string): string[] {
   return best;
 }
 
-const LABEL_WIDTH = 104;
+const LABEL_WIDTH = 116;
 /** The condensed display face averages ~0.5em per uppercase character. */
 const CHAR = 0.5;
 
 /**
- * THE VIAL. viewBox 200 × 340, drawn from the GLB's proportions: a straight
- * cylinder with a short shoulder, a crimped aluminium collar and a flip cap.
- * Every colour is a CSS custom property set by the plate's area/world scope,
- * so one drawing serves the neutral store and all three worlds.
+ * THE VIAL. viewBox 200 × 340, drawn from the V4 crimp-top (`reta-v7.glb`,
+ * the container every NEOGEN product ships in), measured off the mesh and
+ * checked against its studio still. As fractions of the vial's height H:
+ *
+ *   flip-off cap     0 – 14 %   Ø 0.87 × body, rounded top edge
+ *   crimp band      14 – 20 %   Ø 0.67 × body
+ *   neck            20 – 23 %   Ø 0.64 × body
+ *   shoulder        23 – 30 %   short, into
+ *   body            30 – 100 %  Ø 0.47 H, straight wall, rounded heel
+ *   label           38 – 88 %   nearly the full width of the body
+ *
+ * The vial stands from y 16 to y 316. Every colour is a CSS custom property
+ * set by the plate's area/world scope, so one drawing serves the neutral store
+ * and all three worlds.
  */
 function VialObject({
   className,
@@ -155,8 +166,8 @@ function VialObject({
   const id = (part: string) => `${uid}-${part}`;
   const lines = name ? labelLines(name) : [];
   const longest = Math.max(1, ...lines.map((l) => l.length));
-  const fontSize = Math.max(10, Math.min(30, LABEL_WIDTH / (longest * CHAR)));
-  const nameTop = lines.length === 1 ? 214 : 200;
+  const fontSize = Math.max(10, Math.min(28, LABEL_WIDTH / (longest * CHAR)));
+  const nameTop = lines.length === 1 ? 210 : 198;
   const fits = (text: string) => text.length * CHAR * fontSize <= LABEL_WIDTH;
 
   return (
@@ -170,28 +181,35 @@ function VialObject({
           <stop offset="0.84" stopColor="var(--vial-glass)" stopOpacity="0.3" />
           <stop offset="1" stopColor="var(--vial-edge)" stopOpacity="0.6" />
         </linearGradient>
-        {/* Metal: a brushed cylinder, lit from the upper left. */}
+        {/* Metal: a polished cylinder, lit from the upper left. */}
         <linearGradient id={id("metal")} x1="0" x2="1" y1="0" y2="0">
           <stop offset="0" stopColor="var(--vial-cap-dark)" />
-          <stop offset="0.28" stopColor="var(--vial-cap-light)" />
-          <stop offset="0.55" stopColor="var(--vial-cap)" />
+          <stop offset="0.22" stopColor="var(--vial-cap-light)" />
+          <stop offset="0.5" stopColor="var(--vial-cap)" />
+          <stop offset="0.8" stopColor="var(--vial-cap-light)" stopOpacity="0.9" />
           <stop offset="1" stopColor="var(--vial-cap-dark)" />
         </linearGradient>
         <linearGradient id={id("collar")} x1="0" x2="1" y1="0" y2="0">
           <stop offset="0" stopColor="var(--vial-collar-dark)" />
           <stop offset="0.3" stopColor="var(--vial-collar-light)" />
+          <stop offset="0.7" stopColor="var(--vial-collar-light)" stopOpacity="0.85" />
           <stop offset="1" stopColor="var(--vial-collar-dark)" />
         </linearGradient>
         {/* The label wraps a cylinder: its edges turn away from the light. */}
         <linearGradient id={id("wrap")} x1="0" x2="1" y1="0" y2="0">
           <stop offset="0" stopColor="#000" stopOpacity="0.2" />
-          <stop offset="0.14" stopColor="#000" stopOpacity="0" />
-          <stop offset="0.78" stopColor="#000" stopOpacity="0" />
-          <stop offset="1" stopColor="#000" stopOpacity="0.26" />
+          <stop offset="0.12" stopColor="#000" stopOpacity="0" />
+          <stop offset="0.8" stopColor="#000" stopOpacity="0" />
+          <stop offset="1" stopColor="#000" stopOpacity="0.24" />
         </linearGradient>
         <linearGradient id={id("fill")} x1="0" x2="0" y1="0" y2="1">
           <stop offset="0" stopColor="var(--vial-fill)" stopOpacity="0.55" />
           <stop offset="1" stopColor="var(--vial-fill)" stopOpacity="0.85" />
+        </linearGradient>
+        {/* The floor gives back a trace of the glass, gone within a heel's height. */}
+        <linearGradient id={id("reflection")} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stopColor="var(--vial-edge)" stopOpacity="0.1" />
+          <stop offset="1" stopColor="var(--vial-edge)" stopOpacity="0" />
         </linearGradient>
         <radialGradient id={id("shadow")} cx="0.5" cy="0.5" r="0.5">
           <stop offset="0" stopColor="#000" stopOpacity="var(--vial-shadow, 0.28)" />
@@ -202,31 +220,32 @@ function VialObject({
         </clipPath>
       </defs>
 
-      {/* Contact shadow — the object stands on something. */}
-      <ellipse cx="100" cy="321" rx="86" ry="9" fill={`url(#${id("shadow")})`} />
+      {/* Contact shadow and reflection — the object stands on something. */}
+      <ellipse cx="100" cy="317" rx="80" ry="7" fill={`url(#${id("shadow")})`} />
+      <rect x="31" y="317" width="138" height="20" fill={`url(#${id("reflection")})`} />
 
       {/* Contents, clipped to the glass. */}
       <g clipPath={`url(#${id("body")})`}>
         {liquid ? (
           <>
-            <rect x="30" y="196" width="140" height="130" fill={`url(#${id("fill")})`} />
-            <ellipse cx="100" cy="196" rx="64" ry="4" fill="var(--vial-fill)" opacity="0.9" />
+            <rect x="29" y="200" width="142" height="116" fill={`url(#${id("fill")})`} />
+            <ellipse cx="100" cy="200" rx="70" ry="4" fill="var(--vial-fill)" opacity="0.9" />
           </>
         ) : (
           <>
-            {/* A lyophilised cake: a domed top catching the light. */}
+            {/* A lyophilised cake below the label: a domed top catching the light. */}
             <path
-              d="M36 288 C 58 274, 142 274, 164 288 L164 330 L36 330 Z"
+              d="M31 293 C 56 282, 144 282, 169 293 L169 316 L31 316 Z"
               fill="var(--vial-powder)"
             />
             <path
-              d="M40 287 C 62 276, 138 276, 160 287"
+              d="M35 292 C 60 284, 140 284, 165 292"
               fill="none"
               stroke="#fff"
               strokeOpacity="0.9"
               strokeWidth="1.4"
             />
-            <path d="M36 300 L164 300 L164 330 L36 330 Z" fill="#000" opacity="0.05" />
+            <path d="M31 302 L169 302 L169 316 L31 316 Z" fill="#000" opacity="0.05" />
           </>
         )}
       </g>
@@ -235,9 +254,11 @@ function VialObject({
       <path d={BODY} fill={`url(#${id("glass")})`} />
       <path d={BODY} fill="none" stroke="var(--vial-edge)" strokeOpacity="0.55" strokeWidth="1.2" />
 
-      {/* Label — NEOGEN packaging identity, printed with registry data. */}
+      {/* Label — NEOGEN packaging identity, printed with registry data, in
+          the layout of the real label: the identity high, the name at the
+          centre, the presentation under it, a band near the foot. */}
       <g>
-        <rect x="36" y="150" width="128" height="116" fill="var(--vial-label)" />
+        <rect x="30" y="130" width="140" height="149" rx="1.5" fill="var(--vial-label)" />
         {/*
           The identity, as the rendered label sets it: the mark, then the
           wordmark. The MARK ALONE, not the full lockup — this plate is drawn
@@ -247,19 +268,19 @@ function VialObject({
 
           Its ink is the artwork's own black against `--vial-label-ink`, which
           is charcoal in both of this plate's surfaces; an <image> cannot take
-          `currentColor`, and at 7 units the difference is not visible.
+          `currentColor`, and at 9 units the difference is not visible.
         */}
-        <image href="/branding/neogen-mark.png" x="76" y="162.6" width="7.2" height="9" />
+        <image href="/branding/neogen-mark.png" x="70" y="150" width="9" height="11.25" />
         <text
-          x="105"
-          y="170"
+          x="106"
+          y="159.5"
           textAnchor="middle"
           className={styles.labelMark}
           fill="var(--vial-label-ink)"
         >
           NEOGEN
         </text>
-        <rect x="58" y="178" width="84" height="0.8" fill="var(--vial-label-ink)" opacity="0.35" />
+        <rect x="56" y="171" width="88" height="0.8" fill="var(--vial-label-ink)" opacity="0.3" />
         {lines.map((text, i) => (
           <text
             key={text}
@@ -277,33 +298,40 @@ function VialObject({
         {line ? (
           <text
             x="100"
-            y="250"
+            y="237"
             textAnchor="middle"
             className={styles.labelLine}
-            fill="var(--vial-label-ink)"
-            {...(line.length > 22 ? { textLength: 108, lengthAdjust: "spacingAndGlyphs" } : {})}
+            fill="var(--vial-range, var(--vial-label-ink))"
+            {...(line.length > 22 ? { textLength: 118, lengthAdjust: "spacingAndGlyphs" } : {})}
           >
             {line.toUpperCase()}
           </text>
         ) : null}
-        <rect x="36" y="259" width="128" height="7" fill="var(--vial-stripe)" />
-        <rect x="36" y="150" width="128" height="116" fill={`url(#${id("wrap")})`} />
+        <rect x="30" y="262" width="140" height="9" fill="var(--vial-stripe)" />
+        <rect x="30" y="130" width="140" height="149" rx="1.5" fill={`url(#${id("wrap")})`} />
       </g>
 
       {/* Specular — one vertical highlight down the glass, over everything. */}
-      <rect x="47" y="104" width="5" height="206" fill="#fff" opacity="var(--vial-spec, 0.55)" />
-      <rect x="146" y="112" width="2" height="190" fill="#fff" opacity="0.18" />
+      <rect x="40" y="110" width="5" height="194" fill="#fff" opacity="var(--vial-spec, 0.55)" />
+      <rect x="157" y="116" width="2" height="184" fill="#fff" opacity="0.18" />
 
-      {/* Collar and cap. */}
-      <rect x="62" y="58" width="76" height="18" fill={`url(#${id("collar")})`} />
-      <rect x="62" y="66" width="76" height="1" fill="#000" opacity="0.18" />
-      <rect x="56" y="14" width="88" height="46" fill={`url(#${id("metal")})`} />
-      <rect x="56" y="14" width="88" height="3" fill="#fff" opacity="0.25" />
-      <rect x="56" y="57" width="88" height="3" fill="#000" opacity="0.18" />
+      {/* Crimp band: the aluminium seal rolled under the lip. */}
+      <rect x="52.5" y="55" width="95" height="20" fill={`url(#${id("collar")})`} />
+      <rect x="52.5" y="56" width="95" height="1.2" fill="#fff" opacity="0.35" />
+      <rect x="52.5" y="71.5" width="95" height="1.6" fill="#000" opacity="0.2" />
+
+      {/* Flip-off cap: a broad disc with a rounded top edge. */}
+      <path d={CAP} fill={`url(#${id("metal")})`} />
+      <path d="M43 16.5 L157 16.5" stroke="#fff" strokeOpacity="0.45" strokeWidth="1.6" />
+      <rect x="38" y="23" width="124" height="0.9" fill="#000" opacity="0.1" />
+      <rect x="38" y="53" width="124" height="4" fill="#000" opacity="0.2" />
     </svg>
   );
 }
 
-/** Neck, shoulder, straight wall, rounded heel. */
+/** Neck, a short shoulder, straight wall, rounded heel. */
 const BODY =
-  "M68 76 L132 76 L132 90 C 132 100 164 100 164 116 L164 308 Q164 318 154 318 L46 318 Q36 318 36 308 L36 116 C 36 100 68 100 68 90 Z";
+  "M54.5 70 L145.5 70 L145.5 84 C 145.5 96 171 94 171 107 L171 306 Q171 316 161 316 L39 316 Q29 316 29 306 L29 107 C 29 94 54.5 96 54.5 84 Z";
+
+/** The flip-off cap, its top edge rounded. */
+const CAP = "M38 57 L38 21 Q38 15 44 15 L156 15 Q162 15 162 21 L162 57 Z";

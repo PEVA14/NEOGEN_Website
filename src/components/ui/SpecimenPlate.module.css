@@ -40,13 +40,21 @@
   --vial-powder: #efebe3;
   --vial-fill: color-mix(in oklab, #d9e2e8 70%, var(--area-wash, #d9e2e8));
   --vial-stripe: color-mix(in oklab, var(--area-ink, var(--neogen-graphite)) 80%, transparent);
+  /* The presentation prints in the area's ink, as the real label prints its
+     strength in colour. */
+  --vial-range: color-mix(in oklab, var(--area-ink, var(--neogen-graphite)) 85%, #000);
   --vial-shadow: 0.3;
   --vial-spec: 0.6;
 
-  /* The sweep. */
-  --sweep-wall: color-mix(in oklab, var(--neogen-warm-stone) 88%, var(--area-wash, transparent));
-  --sweep-floor: color-mix(in oklab, var(--neogen-chalk) 82%, var(--area-wash, transparent));
-  --sweep-light: var(--neogen-paper);
+  /*
+   * The sweep — the studio renders' own: one warm stone from wall to floor,
+   * a little lighter overhead, no tint. Store cards show a render and a
+   * drawing side by side, so the drawing stands in the same room. The area
+   * shows on the label (the band and the presentation), not on the wall.
+   */
+  --sweep-wall: color-mix(in oklab, var(--neogen-chalk) 74%, var(--neogen-warm-stone));
+  --sweep-floor: color-mix(in oklab, var(--neogen-chalk) 80%, var(--neogen-warm-stone));
+  --sweep-light: color-mix(in oklab, var(--neogen-paper) 45%, transparent);
 }
 
 .plate[data-size="feature"] {
@@ -67,7 +75,7 @@
   inset: 0;
   z-index: 0;
   background:
-    radial-gradient(90% 70% at 24% 12%, var(--sweep-light), transparent 70%),
+    radial-gradient(70% 55% at 50% 6%, var(--sweep-light), transparent 72%),
     linear-gradient(180deg, var(--sweep-wall) 0%, var(--sweep-wall) 60%, var(--sweep-floor) 100%);
 }
 
@@ -80,20 +88,25 @@
   background: linear-gradient(
     180deg,
     color-mix(in oklab, var(--sweep-floor) 100%, transparent),
-    color-mix(in oklab, var(--sweep-floor) 86%, #000)
+    color-mix(in oklab, var(--sweep-floor) 99%, #000)
   );
   /* The horizon is soft: a sweep, not a table edge. */
   mask-image: linear-gradient(180deg, transparent, #000 40%);
 }
 
+/*
+ * Framed like the studio stills: the vial stands 69% of the plate's height,
+ * its foot at 84%. The drawing's own box carries floor below the glass, so
+ * the SVG is 78% tall and sits 10% off the bottom.
+ */
 .vial {
   position: relative;
   z-index: 1;
-  block-size: 84%;
+  block-size: 78%;
   inline-size: auto;
   /* Stand the vial on the floor rather than floating it in the middle. */
   align-self: end;
-  margin-block-end: 5%;
+  margin-block-end: 10%;
   transition: transform var(--motion-duration-slow) var(--ease-standard);
 }
 
@@ -110,7 +123,7 @@
 
 .labelMark {
   font-family: var(--font-mono);
-  font-size: 7px;
+  font-size: 8px;
   letter-spacing: 0.32em;
   font-weight: 500;
 }
@@ -142,6 +155,7 @@
 
 .plate[data-world] {
   background-color: var(--world-void);
+  --vial-range: var(--vial-label-ink);
   --vial-glass: var(--world-light);
   --vial-edge: var(--world-light);
   --vial-label: var(--neogen-paper);

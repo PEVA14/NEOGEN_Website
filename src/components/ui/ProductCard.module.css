@@ -711,22 +711,18 @@
 /* --- Store variant: the area grading ---------------------------------------
  *
  * Every store card is faintly graded toward its area's hue, so a shelf reads
- * by category before a single label is read. Two places, both faint:
+ * by category before a single label is read: the paper under the name grades
+ * from clean paper to a tint of the hue at the price line.
  *
- *   the stage   the studio sweep behind the object takes a wash of the hue,
- *               strongest at the top and falling toward the floor;
- *   the body    the paper under the name grades from clean paper to a tint of
- *               the hue at the price line.
+ * The STAGE is not graded. Store cards show studio renders and drawn vials
+ * side by side, and a render's sweep cannot take a wash — graded, the drawn
+ * card stood in a different room from the render next to it. Both now stand
+ * on the renders' warm stone; the drawn vial carries its area on its label.
  *
  * Kept to single digits of the hue so charcoal and muted text stay AA. A
  * signature product's world stage (`data-world` on the plate) is untouched:
  * its colour is the product's, not the category's.
  */
-.card[data-variant="store"][data-area] .media > :not([data-world]) {
-  --sweep-wall: color-mix(in oklab, var(--area-hue) 9%, var(--neogen-warm-stone));
-  --sweep-floor: color-mix(in oklab, var(--area-hue) 7%, var(--neogen-chalk));
-}
-
 .card[data-variant="store"][data-area]:not([data-format="flagship"]) {
   background-image: linear-gradient(
     180deg,
