@@ -1013,6 +1013,25 @@ horizontally scrolling child needs an explicit `minmax(0, 1fr)` track, or
 the column sizes to the child's unscrolled width and the page overflows —
 found three times in this pass.
 
+**The Quick Record** (the compendium drawer) is built server-side by
+`server/quickRecord.ts` and served as static JSON at
+`/api/compendio/<locale>/<slug>` (`force-static`, `dynamicParams = false`, one
+file per published compound); the drawer fetches it on open, caches it, and
+prefetches the two neighbours. It writes no sentence: statements are the
+record's own, with the record's citation numbers; sources are the reference
+records; prices come from the commerce layer; documentation counts from
+`resolveEvidence`. Views are Overview / Evidence / Safety & limits / Sources,
+deep-linked as `?ficha=<slug>&vista=resumen|evidencia|seguridad|fuentes`
+(`replaceState`, no history entries). A compound without a record gets one
+panel and no tabs. The NEOGEN product zone is drawn on raised ground,
+visibly apart from the science.
+
+**`aspect` on a sourced statement** (`"safety" | "limits"`) is how a finding
+reaches Safety & limits. It is set by hand, on an existing statement, and adds
+no words; untagged statements are findings. Nothing infers safety from the
+text. `check:content` fails if a tag is lost on the way to either locale's
+record.
+
 **`--header-height` is per breakpoint** (4rem wide, 8.625rem below 40rem,
 where the header is two rows). Anything sticky or anchored under the header
 must read it.

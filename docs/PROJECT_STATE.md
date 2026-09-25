@@ -1,6 +1,8 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-09-24**: **design and UX audit pass** (§8ac) — checkout,
+Last updated **2026-09-25**: **the compendium's Quick Record** (§8ad) —
+the drawer became a four-view research interface on the existing evidence.
+Before that, 2026-09-24: **design and UX audit pass** (§8ac) — checkout,
 post-purchase, console and responsive fixes. Before that, 2026-09-23: **the operational layer around orders exists**
 — fulfilment, shipments recorded by hand, inventory, lots, refunds,
 notifications, customer order status and the `/ops` console (§8ab,
@@ -2298,6 +2300,54 @@ dictionaries).
    `CONFIRMED_TYPE` is empty; the record's "Tipo" row inherits that honesty.
 5. Cold-chain determination (§6) — the handling page cannot say more until it
    exists.
+
+## 8ad. The compendium's Quick Record (2026-09-25)
+
+Owner brief: turn the compendium drawer into a research interface — understand
+a compound, explore its evidence, inspect safety, decide whether to open the
+full record — with EXOMA as an information-architecture reference only, no
+invented science, and science / NEOGEN product / lot documentation kept apart.
+
+**Before:** the drawer showed one lead sentence, statement and source counts,
+the areas, and two links. No sources, no safety information, no way to link
+to it.
+
+**Now:** a strip under the name ("5 sourced statements · 3 sources ·
+2022–2023"), then four views:
+
+- **Overview:** the lead sourced statement; "In this record" rows that open
+  the other views; where the compound is studied (areas and research lines);
+  glossary terms; molecular identity or a sentence saying none is approved
+  (the identity registry is empty); then the NEOGEN product zone —
+  presentations with prices, documentation counts by level, a link to
+  `#calidad`.
+- **Evidence:** mechanism, published research and by-area findings, each
+  linking to its section of the record.
+- **Safety & limits:** the research-use status, statements tagged `safety`,
+  statements tagged `limits`, and the record's technical notes marked as not
+  sourced. With nothing tagged it says so, and that absence of data does not
+  mean safety.
+- **Sources:** numbered as in the record, each listing the statements that
+  cite it (as buttons that jump back).
+
+Every `[NN]` opens its source inline, and from there "See in Sources". Deep
+links use `?ficha=&vista=`. Prev/next keeps the current view. Compounds with no
+record get a single panel. On a phone the sheet is 92dvh and the footer is two
+rows (record, then ← product →).
+
+**New data, none of it prose:** an `aspect` tag on 26 existing statements
+across 25 compounds (shared GH-axis and Tewari limits included), set by hand.
+The JSON route is `/api/compendio/<locale>/<slug>`. Conventions §17d.
+
+**Data the drawer exposes as thin:** 61 of 62 records have no summary (the
+Overview leads with a statement instead); no study-model or evidence-level
+fields exist, so the drawer cannot say "in vitro / animal / human" except
+where a sentence says it; identity is empty; 0 quality documents, so every
+documentation count is 0; 23 compounds have no record.
+
+**QA:** 375 (ES), 768 (EN), 1440 (ES) — open, tabs by keyboard, cite → source
+→ statement, step, Escape, deep links, no-record compound, long references;
+axe 0 violations, no overflow, no console errors.
 
 ## 8ac. Design and UX audit pass (2026-09-24)
 
