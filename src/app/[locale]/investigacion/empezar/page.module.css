@@ -211,13 +211,17 @@
   inset-block-start: 0.35em;
 }
 
-/* Above the marker, never over it: the reader has to see what "3" names. */
+/*
+ * In the line, right after the marker it names. Floated above the marker it
+ * landed on whatever words the previous line had at that point ("glucagon"),
+ * wherever the paragraph wrapped. In flow it takes its own space and cannot
+ * cover text; `.excerptMark` is nowrap, so "[01] 3" never splits across lines.
+ */
 .excerptText .excerptMark .callout {
-  inset-block-end: calc(100% + 0.35rem);
-  inset-block-start: auto;
-  inset-inline-start: 50%;
-  position: absolute;
-  transform: translateX(-50%);
+  margin-inline-start: var(--space-2xs);
+  position: static;
+  transform: none;
+  vertical-align: 0.1em;
 }
 
 .annotations {
