@@ -404,7 +404,10 @@
   inset-block: auto 0;
   inset-inline: 0;
   margin: 0;
-  max-block-size: 88dvh;
+  /* A fixed height, not a maximum: the record scrolls INSIDE the sheet, and
+     the tabs and the actions stay put. */
+  block-size: 92dvh;
+  max-block-size: 92dvh;
   max-inline-size: 100%;
   padding: 0;
   inline-size: 100%;
@@ -431,7 +434,9 @@
     inset-block: 0;
     inset-inline: auto 0;
     max-block-size: 100dvh;
-    inline-size: min(36rem, 92vw);
+    /* Wide enough to read a record, narrow enough that the index stays in
+       view beside it — a drawer, not a page in disguise. */
+    inline-size: min(44rem, 58vw);
   }
 
   @keyframes sheet-rise {
@@ -464,10 +469,8 @@
 }
 
 .sheetEyebrow,
-.sheetLabel,
 .sheetAlias,
-.position,
-.leadSources {
+.position {
   font-family: var(--font-mono);
   font-size: var(--text-2xs);
   letter-spacing: var(--tracking-label);
@@ -477,13 +480,8 @@
 
 .sheetEyebrow,
 .sheetAlias,
-.position,
-.leadSources {
+.position {
   color: var(--ink-muted);
-}
-
-.sheetLabel {
-  color: var(--ink-primary);
 }
 
 .sheetTitle {
@@ -518,144 +516,129 @@
   border-color: var(--border-strong);
 }
 
+/* Tabs on top, the panel scrolling beneath them (see QuickRecord). */
 .sheetBody {
   display: grid;
-  gap: var(--space-lg);
-  align-content: start;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: var(--space-lg) var(--gutter);
+  grid-template-rows: auto minmax(0, 1fr);
+  min-block-size: 0;
+  overflow: hidden;
 }
 
-.lead {
-  border-inline-start: 2px solid var(--ink-primary);
-  display: grid;
-  gap: var(--space-2xs);
-  margin: 0;
-  padding-inline-start: var(--space-md);
-}
-
-.leadText {
+/* The evidence strip under the name: how much sourced science exists. */
+.strip {
   color: var(--ink-secondary);
-  font-size: var(--text-base);
-  line-height: var(--leading-relaxed);
-  margin: 0;
-}
-
-.block {
-  display: grid;
-  gap: var(--space-xs);
-}
-
-.noRecord {
-  background: var(--surface-raised);
-  color: var(--ink-secondary);
-  font-size: var(--text-sm);
-  line-height: var(--leading-relaxed);
-  margin: 0;
-  padding: var(--space-sm) var(--space-md);
-}
-
-.contents {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin: 0;
-  border-block: 1px solid var(--border-default);
-}
-
-.contents div {
-  display: grid;
-  gap: var(--space-3xs);
-  padding: var(--space-xs) var(--space-2xs);
-}
-
-.contents div + div {
-  border-inline-start: 1px solid var(--border-subtle);
-}
-
-.contents dt {
-  color: var(--ink-muted);
-  font-size: var(--text-xs);
-  line-height: var(--leading-snug);
-}
-
-.contents dd {
-  font-family: var(--font-display);
-  font-size: var(--text-2xl);
-  font-stretch: var(--font-stretch-display);
-  margin: 0;
-}
-
-.contents div[data-empty="true"] dd {
-  color: var(--ink-muted);
-}
-
-.facts {
-  display: grid;
-  margin: 0;
-}
-
-.facts div {
-  border-block-start: 1px solid var(--border-subtle);
-  display: grid;
-  gap: var(--space-sm);
-  grid-template-columns: minmax(7rem, 2fr) minmax(0, 5fr);
-  padding-block: var(--space-2xs);
-}
-
-.facts dt {
-  color: var(--ink-muted);
-  font-size: var(--text-sm);
-}
-
-.facts dd {
-  color: var(--ink-primary);
-  font-size: var(--text-sm);
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-
-.lineLinks {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2xs);
-  list-style: none;
-  margin: 0;
-  padding: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  gap: var(--space-3xs) var(--space-md);
+  letter-spacing: var(--tracking-label);
+  margin: var(--space-2xs) 0 0;
+  text-transform: uppercase;
 }
 
-.lineLink {
-  align-items: center;
-  border: 1px solid var(--border-default);
-  color: var(--ink-primary);
-  display: inline-flex;
-  font-size: var(--text-sm);
-  min-block-size: 2.75rem;
-  padding-inline: var(--space-sm);
-  text-decoration: none;
+/* The price, as a second line of the product action. Inherits the button's
+   ink: muted grey failed contrast on the dark primary. */
+.from {
+  color: inherit;
+  display: block;
+  letter-spacing: 0.02em;
+  margin-block-start: 0.125rem;
+  opacity: 0.85;
+  text-transform: none;
 }
 
-.lineLink:hover {
-  border-color: var(--ink-primary);
-}
-
+/*
+ * The footer is one grid. Phone: the record across the row, then the
+ * product between the arrows; the "67 of 85" count is read to screen readers
+ * but not drawn — the arrows carry the stepping and the sheet keeps its height
+ * for reading. From 40rem: the two actions side by side, the stepper with its
+ * count underneath.
+ */
 .sheetFoot {
   background: var(--surface-base);
   border-block-start: 1px solid var(--border-default);
   display: grid;
-  gap: var(--space-sm);
+  gap: var(--space-2xs);
+  grid-template-areas:
+    "record record record"
+    "prev product next";
+  grid-template-columns: 3rem minmax(0, 1fr) 3rem;
   padding: var(--space-sm) var(--gutter) max(var(--space-sm), env(safe-area-inset-bottom));
 }
 
-.actions {
-  display: grid;
-  gap: var(--space-2xs);
+.sheetFoot[data-record="false"] {
+  grid-template-areas: "prev product next";
+}
+
+.sheetFoot[data-stepper="false"] {
+  grid-template-areas:
+    "record record record"
+    "product product product";
+}
+
+.sheetFoot[data-record="false"][data-stepper="false"] {
+  grid-template-areas: "product product product";
+}
+
+.footRecord {
+  grid-area: record;
+}
+
+.footProduct {
+  grid-area: product;
+}
+
+.footPrev {
+  grid-area: prev;
+}
+
+.footNext {
+  grid-area: next;
+}
+
+.sheetFoot .position {
+  block-size: 1px;
+  clip-path: inset(50%);
+  inline-size: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
 }
 
 @media (min-width: 40rem) {
-  .actions {
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(0, 1fr);
+  .sheetFoot {
+    column-gap: var(--space-2xs);
+    grid-template-areas:
+      "record record product product"
+      "prev position position next";
+    grid-template-columns: 2.75rem minmax(0, 1fr) minmax(0, 1fr) 2.75rem;
+    row-gap: var(--space-sm);
+  }
+
+  .sheetFoot[data-record="false"] {
+    grid-template-areas:
+      "product product product product"
+      "prev position position next";
+  }
+
+  .sheetFoot[data-stepper="false"] {
+    grid-template-areas: "record record product product";
+  }
+
+  .sheetFoot[data-record="false"][data-stepper="false"] {
+    grid-template-areas: "product product product product";
+  }
+
+  .sheetFoot .position {
+    align-self: center;
+    block-size: auto;
+    clip-path: none;
+    grid-area: position;
+    inline-size: auto;
+    justify-self: center;
+    overflow: visible;
+    position: static;
   }
 }
 
@@ -692,13 +675,6 @@
   border-color: var(--ink-primary);
 }
 
-.stepper {
-  align-items: center;
-  display: flex;
-  gap: var(--space-sm);
-  justify-content: space-between;
-}
-
 .stepButton {
   align-items: center;
   background: transparent;
@@ -706,9 +682,8 @@
   color: var(--ink-primary);
   cursor: pointer;
   display: inline-flex;
-  block-size: 2.75rem;
-  inline-size: 2.75rem;
   justify-content: center;
+  min-block-size: 2.75rem;
 }
 
 .stepButton:hover {
@@ -718,8 +693,7 @@
 .closeButton:focus-visible,
 .stepButton:focus-visible,
 .primary:focus-visible,
-.secondary:focus-visible,
-.lineLink:focus-visible {
+.secondary:focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: var(--focus-ring-offset-width);
 }

@@ -111,7 +111,17 @@ export default async function CompendiumPage({ params }: { params: Promise<{ loc
                 columns: copy.columns,
                 depth: copy.depth,
                 preview: copy.preview,
+                quick: {
+                  ...copy.quick,
+                  researchUse: {
+                    label: dict.researchUse.label,
+                    statement: dict.researchUse.statement,
+                    readMore: dict.researchUse.readMore,
+                    href: path(routes.article("uso-exclusivo-en-investigacion")),
+                  },
+                },
               }}
+              endpoint={`/api/compendio/${locale}/{slug}`}
             />
           </div>
         </Container>

@@ -1,0 +1,554 @@
+/*
+ * THE QUICK RECORD — the full record's language at drawer scale.
+ *
+ * Hairlines and mono labels carry the structure; there are no cards. Claims
+ * set in the reading face, their citations as bracketed mono markers that
+ * open the source in place. NEOGEN's product sits on the raised ground with
+ * its own label, so commerce never reads as evidence.
+ */
+
+.srOnly {
+  block-size: 1px;
+  clip-path: inset(50%);
+  inline-size: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+}
+
+/* ---- tabs ------------------------------------------------------------------ */
+
+.tabs {
+  background: var(--surface-base);
+  border-block-end: 1px solid var(--border-default);
+  display: flex;
+  gap: var(--space-md);
+  overflow-x: auto;
+  padding-inline: var(--gutter);
+  scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  align-items: center;
+  background: none;
+  border: 0;
+  border-block-end: 2px solid transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+  display: inline-flex;
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  gap: var(--space-2xs);
+  letter-spacing: var(--tracking-label);
+  margin-block-end: -1px;
+  min-block-size: 2.75rem;
+  padding: 0;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.tab[aria-selected="true"] {
+  border-block-end-color: var(--ink-primary);
+  color: var(--ink-primary);
+}
+
+.tab:hover {
+  color: var(--ink-primary);
+}
+
+.tabCount {
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- the scrolling panel --------------------------------------------------- */
+
+.panel {
+  display: grid;
+  gap: var(--space-xl);
+  align-content: start;
+  min-block-size: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-lg) var(--gutter) var(--space-xl);
+}
+
+.panel:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: calc(var(--focus-ring-width) * -1);
+}
+
+.state {
+  display: grid;
+  gap: var(--space-sm);
+  align-content: start;
+  padding: var(--space-lg) var(--gutter);
+}
+
+.skeleton {
+  background: var(--surface-sunken);
+  block-size: 0.9rem;
+  display: block;
+}
+
+.skeleton[data-short="true"] {
+  inline-size: 60%;
+}
+
+.retry {
+  background: none;
+  border: 1px solid var(--border-strong);
+  color: var(--ink-primary);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  justify-self: start;
+  letter-spacing: var(--tracking-label);
+  min-block-size: 2.75rem;
+  padding-inline: var(--space-md);
+  text-transform: uppercase;
+}
+
+/* ---- blocks ------------------------------------------------------------------ */
+
+.block {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.blockHead {
+  align-items: baseline;
+  border-block-start: 1px solid var(--ink-primary);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs) var(--space-md);
+  justify-content: space-between;
+  padding-block-start: var(--space-xs);
+}
+
+.blockTitle {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  letter-spacing: var(--tracking-label);
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.summary {
+  font-size: var(--text-lg);
+  line-height: var(--leading-relaxed);
+  margin: 0;
+}
+
+.muted {
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  margin: 0;
+}
+
+.absence {
+  border-inline-start: 2px solid var(--border-strong);
+  color: var(--ink-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  margin: 0;
+  padding-inline-start: var(--space-sm);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  overflow-wrap: anywhere;
+}
+
+/* ---- statements ---------------------------------------------------------------- */
+
+.statements {
+  display: grid;
+  gap: var(--space-md);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.statement {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.statementBody {
+  scroll-margin-block: var(--space-xl);
+}
+
+.statementBody:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}
+
+.statementLabel {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  margin: 0 0 var(--space-3xs);
+  text-transform: uppercase;
+}
+
+.statementText {
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  margin: 0;
+  max-inline-size: 62ch;
+}
+
+.cites {
+  white-space: nowrap;
+}
+
+/* A citation marker is a real button: 24px of hit area, bracketed mono. */
+.cite {
+  background: none;
+  border: 0;
+  border-block-end: 1px solid var(--border-strong);
+  color: var(--ink-secondary);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  margin-inline-end: var(--space-3xs);
+  min-block-size: 1.5rem;
+  padding: 0 0.125rem;
+}
+
+.cite:hover,
+.cite[data-on="true"] {
+  border-block-end-color: var(--ink-primary);
+  color: var(--ink-primary);
+}
+
+.cite[data-on="true"] {
+  background: var(--surface-sunken);
+}
+
+/* The source, opened under the sentence that cites it. */
+.inline {
+  border-inline-start: 2px solid var(--ink-primary);
+  padding-inline-start: var(--space-sm);
+}
+
+.inline[hidden] {
+  display: none;
+}
+
+/* ---- sources -------------------------------------------------------------------- */
+
+.source {
+  display: grid;
+  gap: var(--space-3xs);
+}
+
+.sourceMeta,
+.sourceIds {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+
+.sourceN {
+  color: var(--ink-primary);
+}
+
+.sourceTitle {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  line-height: var(--leading-snug);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.source[data-compact="true"] .sourceTitle {
+  font-weight: 400;
+}
+
+.sourceAuthors {
+  color: var(--ink-secondary);
+  font-size: var(--text-xs);
+  margin: 0;
+}
+
+.sourceIds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3xs) var(--space-md);
+  overflow-wrap: anywhere;
+}
+
+.sourceList {
+  display: grid;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sourceItem {
+  border-block-start: 1px solid var(--border-subtle);
+  padding-block: var(--space-md);
+  scroll-margin-block: var(--space-xl);
+}
+
+.sourceItem:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}
+
+.citedBy {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: var(--text-xs);
+  gap: var(--space-3xs) var(--space-sm);
+  margin: var(--space-2xs) 0 0;
+}
+
+.citedByLabel {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+/* ---- overview ------------------------------------------------------------------- */
+
+.contents {
+  display: grid;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.contentsRow {
+  align-items: baseline;
+  background: none;
+  border: 0;
+  border-block-end: 1px solid var(--border-subtle);
+  color: var(--ink-primary);
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-size: var(--text-sm);
+  inline-size: 100%;
+  justify-content: space-between;
+  min-block-size: 2.75rem;
+  padding: 0;
+  text-align: start;
+}
+
+.contentsRow:hover:not(:disabled) span:first-child {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.contentsRow:disabled {
+  color: var(--ink-muted);
+  cursor: default;
+}
+
+.contentsCount {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-stretch: var(--font-stretch-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.inlineLinks {
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  margin: 0;
+}
+
+.facts {
+  display: grid;
+  margin: 0;
+}
+
+.facts > div {
+  border-block-start: 1px solid var(--border-subtle);
+  display: grid;
+  gap: var(--space-2xs) var(--space-sm);
+  grid-template-columns: minmax(0, 1fr);
+  padding-block: var(--space-xs);
+}
+
+@media (min-width: 30rem) {
+  .facts > div {
+    grid-template-columns: minmax(7rem, 2fr) minmax(0, 5fr);
+  }
+}
+
+.facts dt {
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+}
+
+.facts dd {
+  font-size: var(--text-sm);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* ---- NEOGEN's product ----------------------------------------------------------- */
+
+.productZone {
+  background: var(--surface-raised);
+  display: grid;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+}
+
+.zoneHead {
+  display: grid;
+  gap: var(--space-3xs);
+}
+
+.zoneTitle {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  letter-spacing: var(--tracking-label);
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.zoneNote {
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+  margin: 0;
+}
+
+.presentations {
+  display: grid;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.presentations li {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: space-between;
+  padding-block: 0.125rem;
+}
+
+.price {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ---- safety & limits ------------------------------------------------------------ */
+
+.status {
+  border: 1px solid var(--border-strong);
+  display: grid;
+  gap: var(--space-3xs);
+  padding: var(--space-sm) var(--space-md);
+}
+
+.statusLabel {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.statusTitle {
+  font-weight: 600;
+  margin: 0;
+}
+
+.statusBody {
+  color: var(--ink-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  margin: 0;
+}
+
+.note {
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  margin: 0;
+}
+
+.moved {
+  align-self: start;
+  background: none;
+  border: 0;
+  border-block-start: 1px solid var(--border-subtle);
+  color: var(--ink-secondary);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  justify-self: start;
+  min-block-size: 2.75rem;
+  padding: var(--space-xs) 0 0;
+  text-align: start;
+}
+
+.moved:hover {
+  color: var(--ink-primary);
+}
+
+/* ---- links and text buttons ----------------------------------------------------- */
+
+.textLink,
+.textButton {
+  color: var(--ink-primary);
+  text-decoration: underline;
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 3px;
+}
+
+/* Inside a source card, links speak the card's register: mono, small. */
+.source .textButton,
+.source .textLink {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: 0.02em;
+}
+
+.textButton {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  min-block-size: 1.5rem;
+  padding: 0;
+  text-align: start;
+}
+
+.textLink:hover,
+.textButton:hover {
+  text-decoration-color: var(--ink-primary);
+}
+
+.tab:focus-visible,
+.cite:focus-visible,
+.retry:focus-visible,
+.contentsRow:focus-visible,
+.moved:focus-visible,
+.textLink:focus-visible,
+.textButton:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}

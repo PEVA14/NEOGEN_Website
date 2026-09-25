@@ -7,7 +7,10 @@ import { fold, matchesText } from "@/lib/search";
 import { useUrlSearch } from "@/lib/useUrlSearch";
 
 import { DepthMarks, type DepthMarksCopy, type RecordDepth } from "./DepthMarks";
+import { QUICK_VIEWS, QuickRecord, type QuickRecordCopy, type QuickView } from "./QuickRecord";
 import styles from "./CompoundLibrary.module.css";
+
+import type { QuickRecordData } from "./quickRecordData";
 
 export interface LibraryEntry {
   slug: string;
@@ -69,7 +72,24 @@ export interface LibraryCopy {
     noRecord: string;
     documentation: string;
     documentationNone: string;
+    claims: string;
+    claim: string;
+    noRecordShort: string;
+    productFrom: string;
   };
+  quick: QuickRecordCopy;
+}
+
+/* The drawer's view in the URL, in the site's language. */
+const VIEW_PARAM: Record<QuickView, string> = {
+  overview: "resumen",
+  evidence: "evidencia",
+  safety: "seguridad",
+  sources: "fuentes",
+};
+
+function viewFromParam(value: string | null): QuickView {
+  return QUICK_VIEWS.find((v) => VIEW_PARAM[v] === value) ?? "overview";
 }
 
 interface Filters {
@@ -134,11 +154,14 @@ export function CompoundLibrary({
   areas,
   lineGroups,
   copy,
+  endpoint,
 }: {
   entries: readonly LibraryEntry[];
   areas: readonly { id: string; label: string }[];
   lineGroups: readonly { label: string; lines: readonly { id: string; label: string }[] }[];
   copy: LibraryCopy;
+  /** Where one compound's Quick Record is fetched: "/api/compendio/es/{slug}". */
+  endpoint: string;
 }) {
   const [search, setSearch] = useUrlSearch();
   const filters = useMemo(() => parse(search), [search]);
@@ -185,11 +208,84 @@ export function CompoundLibrary({
   /* ---- quick view ------------------------------------------------------ */
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [openSlug, setOpenSlug] = useState<string | null>(null);
+  const [view, setView] = useState<QuickView>("overview");
   const openIndex = openSlug ? results.findIndex((e) => e.slug === openSlug) : -1;
   const current = openIndex >= 0 ? results[openIndex] : null;
 
-  const open = (slug: string) => {
+  /*
+   * THE RECORD BODY IS FETCHED, NOT SHIPPED. The index carries only what its
+   * rows need; a compound's statements and sources arrive when it is opened
+   * (a static JSON file per compound), are kept for the session, and the
+   * neighbours are fetched behind it so previous / next is instant.
+   */
+  const [records, setRecords] = useState<Readonly<Record<string, QuickRecordData>>>({});
+  const [failed, setFailed] = useState<string | null>(null);
+  const inflight = useRef(new Map<string, Promise<QuickRecordData | null>>());
+  const fetchRecord = useCallback(
+    (slug: string): Promise<QuickRecordData | null> => {
+      const pending = inflight.current.get(slug);
+      if (pending) return pending;
+      const request = fetch(endpoint.replace("{slug}", encodeURIComponent(slug)))
+        .then((r) => (r.ok ? (r.json() as Promise<QuickRecordData>) : null))
+        .catch(() => null)
+        .then((data) => {
+          if (data) setRecords((prev) => ({ ...prev, [slug]: data }));
+          else {
+            inflight.current.delete(slug);
+            setFailed(slug);
+          }
+          return data;
+        });
+      inflight.current.set(slug, request);
+      return request;
+    },
+    [endpoint],
+  );
+  useEffect(() => {
+    if (openSlug) void fetchRecord(openSlug);
+  }, [openSlug, fetchRecord]);
+  const record = current ? (records[current.slug] ?? null) : null;
+  const status: "loading" | "ready" | "error" = record
+    ? "ready"
+    : current && failed === current.slug
+      ? "error"
+      : "loading";
+  /* Prefetch the neighbours once the open record is in. */
+  useEffect(() => {
+    if (!record || openIndex < 0 || results.length < 2) return;
+    for (const d of [1, -1]) {
+      const neighbour = results[(openIndex + d + results.length) % results.length];
+      if (neighbour.recordHref) void fetchRecord(neighbour.slug);
+    }
+  }, [record, openIndex, results, fetchRecord]);
+
+  /*
+   * DEEP LINKS. The open compound and view live in the URL (`?ficha=reta&
+   * vista=fuentes`) through `replaceState`, so a Quick Record can be linked
+   * and a reload reopens it — without adding history entries for every step.
+   */
+  const writeUrl = (slug: string | null, v: QuickView) => {
+    const params = new URLSearchParams(window.location.search);
+    if (slug) {
+      params.set("ficha", slug);
+      if (v === "overview") params.delete("vista");
+      else params.set("vista", VIEW_PARAM[v]);
+    } else {
+      params.delete("ficha");
+      params.delete("vista");
+    }
+    const query = params.toString();
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`,
+    );
+  };
+
+  const open = (slug: string, v: QuickView = view) => {
     setOpenSlug(slug);
+    setView(v);
+    writeUrl(slug, v);
     const dialog = dialogRef.current;
     if (dialog && !dialog.open) dialog.showModal();
   };
@@ -199,9 +295,28 @@ export function CompoundLibrary({
       if (openIndex < 0 || results.length === 0) return;
       const next = results[(openIndex + delta + results.length) % results.length];
       setOpenSlug(next.slug);
+      writeUrl(next.slug, view);
     },
-    [openIndex, results],
+    [openIndex, results, view],
   );
+  const changeView = (v: QuickView) => {
+    setView(v);
+    if (openSlug) writeUrl(openSlug, v);
+  };
+
+  /* Open from the URL on arrival. */
+  const opened = useRef(false);
+  useEffect(() => {
+    if (opened.current) return;
+    opened.current = true;
+    const params = new URLSearchParams(window.location.search);
+    const slug = params.get("ficha");
+    if (!slug || !entries.some((e) => e.slug === slug)) return;
+    /* After the first paint: the dialog must exist before `showModal`. */
+    const frame = requestAnimationFrame(() => open(slug, viewFromParam(params.get("vista"))));
+    return () => cancelAnimationFrame(frame);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /* Return focus to the name that opened the sheet — or, after stepping, to
      the name now showing, so closing leaves the reader where they are. */
@@ -211,6 +326,7 @@ export function CompoundLibrary({
     const onClose = () => {
       const slug = dialog.dataset.slug;
       setOpenSlug(null);
+      writeUrl(null, "overview");
       if (slug) document.getElementById(`compound-${slug}`)?.focus();
     };
     dialog.addEventListener("close", onClose);
@@ -414,7 +530,7 @@ export function CompoundLibrary({
         </div>
       )}
 
-      {/* ---- quick view -------------------------------------------------- */}
+      {/* ---- quick record ------------------------------------------------ */}
       <dialog
         ref={dialogRef}
         className={styles.dialog}
@@ -425,6 +541,11 @@ export function CompoundLibrary({
           if (event.target === event.currentTarget) close();
         }}
         onKeyDown={(event) => {
+          /* Arrows step between compounds — unless something inside (the
+             tabs) already used them, or the reader is in a field. */
+          if (event.defaultPrevented) return;
+          const target = event.target as HTMLElement;
+          if (target.closest("[role=tablist], input, select, textarea")) return;
           if (event.key === "ArrowRight") step(1);
           if (event.key === "ArrowLeft") step(-1);
         }}
@@ -433,10 +554,40 @@ export function CompoundLibrary({
           <div className={styles.sheet}>
             <header className={styles.sheetHead}>
               <p className={styles.sheetEyebrow}>
-                {current.areas.map((a) => a.label).join(" · ") || current.type}
+                {[current.type, ...current.areas.map((a) => a.label)].join(" · ")}
               </p>
               <h2 className={styles.sheetTitle}>{current.name}</h2>
-              {current.alias ? <p className={styles.sheetAlias}>{current.alias}</p> : null}
+              {current.alias || current.composition ? (
+                <p className={styles.sheetAlias}>{current.alias ?? current.composition}</p>
+              ) : null}
+              {/* The evidence strip: how much sourced science exists, at a glance. */}
+              <p className={styles.strip}>
+                {current.depth ? (
+                  <>
+                    <span>
+                      {current.depth.mechanism + current.depth.research === 1
+                        ? copy.preview.claim
+                        : fill(copy.preview.claims, {
+                            n: current.depth.mechanism + current.depth.research,
+                          })}
+                    </span>
+                    <span>
+                      {current.depth.references === 1
+                        ? copy.preview.source
+                        : fill(copy.preview.sources, { n: current.depth.references })}
+                    </span>
+                    {record?.record?.span ? (
+                      <span>
+                        {record.record.span[0] === record.record.span[1]
+                          ? record.record.span[0]
+                          : `${record.record.span[0]}–${record.record.span[1]}`}
+                      </span>
+                    ) : null}
+                  </>
+                ) : (
+                  <span>{copy.preview.noRecordShort}</span>
+                )}
+              </p>
               <button
                 type="button"
                 className={styles.closeButton}
@@ -449,104 +600,57 @@ export function CompoundLibrary({
             </header>
 
             <div className={styles.sheetBody}>
-              {current.lead ? (
-                <figure className={styles.lead}>
-                  <figcaption className={styles.sheetLabel}>
-                    {current.lead.section === "mechanism"
-                      ? copy.preview.mechanism
-                      : copy.preview.research}
-                  </figcaption>
-                  <blockquote className={styles.leadText}>{current.lead.text}</blockquote>
-                  {current.depth ? (
-                    <p className={styles.leadSources}>
-                      {current.depth.references === 1
-                        ? copy.preview.source
-                        : fill(copy.preview.sources, { n: current.depth.references })}
-                    </p>
-                  ) : null}
-                </figure>
-              ) : null}
-
-              {current.depth ? (
-                <div className={styles.block}>
-                  <p className={styles.sheetLabel}>{copy.preview.contents}</p>
-                  <dl className={styles.contents}>
-                    {(["mechanism", "research", "notes", "references"] as const).map((key) => {
-                      const n = current.depth?.[key] ?? 0;
-                      return (
-                        <div key={key} data-empty={n === 0 ? "true" : undefined}>
-                          <dt>{copy.depth[key]}</dt>
-                          <dd>{n === 0 ? "—" : n}</dd>
-                        </div>
-                      );
-                    })}
-                  </dl>
-                </div>
-              ) : (
-                <p className={styles.noRecord}>{copy.preview.noRecord}</p>
-              )}
-
-              <div className={styles.block}>
-                <p className={styles.sheetLabel}>{copy.preview.identity}</p>
-                <dl className={styles.facts}>
-                  <div>
-                    <dt>{copy.preview.type}</dt>
-                    <dd>{current.type}</dd>
-                  </div>
-                  {current.composition ? (
-                    <div>
-                      <dt>{copy.preview.composition}</dt>
-                      <dd>{current.composition}</dd>
-                    </div>
-                  ) : null}
-                  <div>
-                    <dt>{copy.preview.presentations}</dt>
-                    <dd>{current.presentations.join(" · ")}</dd>
-                  </div>
-                  <div>
-                    <dt>{copy.preview.documentation}</dt>
-                    <dd>{current.documentation ?? copy.preview.documentationNone}</dd>
-                  </div>
-                </dl>
-              </div>
-
-              {current.lines.length > 0 ? (
-                <div className={styles.block}>
-                  <p className={styles.sheetLabel}>{copy.preview.lines}</p>
-                  <ul className={styles.lineLinks}>
-                    {current.lines.map((l) => (
-                      <li key={l.id}>
-                        <Link href={l.href} className={styles.lineLink}>
-                          {l.label}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
+              <QuickRecord
+                key={current.slug}
+                data={record}
+                status={status}
+                view={view}
+                onView={changeView}
+                studiedIn={{ areas: current.areas, lines: current.lines }}
+                onRetry={() => {
+                  setFailed(null);
+                  void fetchRecord(current.slug);
+                }}
+                copy={copy.quick}
+              />
             </div>
 
-            <footer className={styles.sheetFoot}>
-              <div className={styles.actions}>
-                {current.recordHref ? (
-                  <Link href={current.recordHref} className={styles.primary}>
-                    {copy.preview.record}
-                    <span aria-hidden="true">→</span>
-                  </Link>
-                ) : null}
+            {/* One grid, two arrangements (see the stylesheet): on a phone the
+                record takes the full row and the product sits between the
+                arrows, so the actions cost two rows of the sheet, not four. */}
+            <footer
+              className={styles.sheetFoot}
+              data-record={current.recordHref ? "true" : "false"}
+              data-stepper={results.length > 1 ? "true" : "false"}
+            >
+              {current.recordHref ? (
                 <Link
-                  href={current.productHref}
-                  className={current.recordHref ? styles.secondary : styles.primary}
+                  href={current.recordHref}
+                  className={`${styles.primary} ${styles.footRecord}`}
                 >
-                  {copy.preview.product}
+                  {copy.preview.record}
                   <span aria-hidden="true">→</span>
                 </Link>
-              </div>
+              ) : null}
+              <Link
+                href={current.productHref}
+                className={`${current.recordHref ? styles.secondary : styles.primary} ${styles.footProduct}`}
+              >
+                <span>
+                  {copy.preview.product}
+                  {record?.product.from ? (
+                    <span className={styles.from}>
+                      {fill(copy.preview.productFrom, { price: record.product.from })}
+                    </span>
+                  ) : null}
+                </span>
+                <span aria-hidden="true">→</span>
+              </Link>
               {results.length > 1 ? (
-                <div className={styles.stepper}>
+                <>
                   <button
                     type="button"
-                    className={styles.stepButton}
+                    className={`${styles.stepButton} ${styles.footPrev}`}
                     onClick={() => step(-1)}
                     aria-label={copy.preview.previous}
                   >
@@ -557,13 +661,13 @@ export function CompoundLibrary({
                   </span>
                   <button
                     type="button"
-                    className={styles.stepButton}
+                    className={`${styles.stepButton} ${styles.footNext}`}
                     onClick={() => step(1)}
                     aria-label={copy.preview.next}
                   >
                     <span aria-hidden="true">→</span>
                   </button>
-                </div>
+                </>
               ) : null}
             </footer>
           </div>
