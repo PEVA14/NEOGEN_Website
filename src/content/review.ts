@@ -84,3 +84,38 @@ export const BATCH_4_RECOVERY_PROFILES: ContentStatus = "approved";
  * products carry a sourced profile and all 35 research functions are offered.
  */
 export const BATCH_5_REMAINDER_PROFILES: ContentStatus = "approved";
+
+/**
+ * Batch 6 — the recordless audit (2026-09-26): every published product that
+ * had no sourced profile, investigated one by one against PubMed and Europe
+ * PMC. Every reference's metadata was read from PubMed's own record; every
+ * statement was written from the source's abstract (or full text where open)
+ * and checked against it sentence by sentence. Batch 5's "not covered" list
+ * was wrong for several of these: the literature exists, under the product
+ * name or under its sequence.
+ *
+ * DRAFTED — ten profiles: PE-22-28, DSIP, Follistatin 344, HMG, Gonadorelin,
+ * Pinealon, Vesugen, Cortagen, Cardiogen and Cartalax. Mostly cell and animal
+ * work; the human evidence (DSIP, HMG, gonadorelin, the Follistatin 344 case
+ * series and gene-transfer trial) is kept with its null, weak and
+ * contradictory results.
+ *
+ * NOT DRAFTED, and why:
+ *
+ *   SNAP-8 — no primary study of the molecule itself. Its only mechanistic
+ *     figures trace, through reviews, to the manufacturer's data; every
+ *     clinical study tests a formulation with several actives.
+ *   Adamax (both) — no literature: "Adamax" in PubMed and Europe PMC is a
+ *     machine-learning optimiser. Semax evidence is not Adamax evidence.
+ *   Crystagen — one Russian-language abstract, one qualitative sentence, and
+ *     no source that states its sequence.
+ *   Lipo-C (both), Lemon Bottle — no study of either formulation; ingredient
+ *     evidence is not evidence for the mixture.
+ *   Relaxation PM, SUPER Human Blend, Healthy Hair Skin Nails Blend — no
+ *     declared composition, so not even the identity can be established.
+ *   Sterile, bacteriostatic and amino-acid water — supplies, not compounds;
+ *     they stay product entries.
+ *
+ * OWNER REVIEW. Nothing here renders until this is set to "approved".
+ */
+export const BATCH_6_RECORDLESS_AUDIT: ContentStatus = "owner-review";

@@ -4,6 +4,7 @@ import {
   BATCH_3_METABOLIC_PROFILES as BATCH_3,
   BATCH_4_RECOVERY_PROFILES as BATCH_4,
   BATCH_5_REMAINDER_PROFILES as BATCH_5,
+  BATCH_6_RECORDLESS_AUDIT as BATCH_6,
 } from "@/content/review";
 
 import type { ContentStatus } from "@/content/lifecycle";
@@ -119,6 +120,38 @@ const REF = {
   bonchev: "ref-2026-bonchev-melanotan-ii",
   greenB12: "ref-2017-green-b12-deficiency",
   dermorphin: "ref-2026-zhuang-dermorphin-fentanyl",
+} as const;
+
+/* Batch 6 — the recordless audit. Kept apart from REF so the owner can read
+   the new sources as one list. */
+const R6 = {
+  djillani: "ref-2017-djillani-pe-22-28",
+  kovalzon: "ref-2006-kovalzon-dsip-review",
+  bes: "ref-1992-bes-dsip-insomnia",
+  giusti: "ref-1993-giusti-dsip-gh-prolactin",
+  chiodera: "ref-1994-chiodera-dsip-avp-acth",
+  spathSchwalbe: "ref-1995-spath-schwalbe-dsip-acth-cortisol",
+  pomfrett: "ref-2009-pomfrett-dsip-anaesthesia",
+  rodinoKlapac: "ref-2009-rodino-klapac-follistatin-review",
+  reichel: "ref-2019-reichel-black-market-fs344",
+  dag: "ref-2020-dag-follistatin-344-cscr",
+  kota: "ref-2009-kota-follistatin-primates",
+  mendell: "ref-2015-mendell-follistatin-becker",
+  ferguson: "ref-2013-ferguson-menotrophin-standards",
+  berkhout: "ref-2026-berkhout-rfsh-urinary-cochrane",
+  thomas: "ref-2012-thomas-small-peptides-doping",
+  torrini: "ref-2021-torrini-gonadorelin-spr",
+  bayram: "ref-2004-bayram-pulsatile-gnrh-pcos",
+  khavinsonReview: "ref-2021-khavinson-peptide-gene-regulation",
+  khavinsonPinealon: "ref-2011-khavinson-pinealon-cells",
+  arutjunyan: "ref-2012-arutjunyan-pinealon-offspring",
+  kraskovskaya: "ref-2024-kraskovskaya-induced-neurons",
+  khavinsonDifferentiation: "ref-2012-khavinson-peptides-differentiation",
+  linkova: "ref-2011-linkova-pineal-immune-cells",
+  turchaninova: "ref-2000-turchaninova-cortagen-sciatic-nerve",
+  anisimov: "ref-2004-anisimov-cortagen-heart-genes",
+  levdik: "ref-2009-levdik-cardiogen-sarcoma",
+  fridman: "ref-2020-fridman-ke-aed-fibroblasts",
 } as const;
 
 /**
@@ -2343,5 +2376,464 @@ export const OVERVIEWS: Readonly<Record<string, ProductOverview>> = {
       { id: "cell-migration-angiogenesis", statement: "glow-mechanism-components" },
       { id: "musculoskeletal-repair", statement: "glow-research-combination" },
     ],
+  },
+
+  /* ==== Batch 6: the recordless audit (owner review) ===================== */
+
+  /* ---- PE-22-28 ----------------------------------------------------------- */
+  "pe-22-28": {
+    slug: "pe-22-28",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "pe-22-28-mechanism-trek1",
+        "PE 22-28 es un péptido de 7 aminoácidos diseñado a partir de los productos de degradación en sangre de la espadina (PE 12-28), un péptido que bloquea el canal de potasio TREK-1. En células HEK que expresan TREK-1 humano, medido por patch-clamp, inhibió el canal con una CI50 de 0,12 nM, frente a 40-60 nM de la espadina.",
+        "PE 22-28 is a 7-amino-acid peptide designed from the blood degradation products of spadin (PE 12-28), a peptide that blocks the TREK-1 potassium channel. In HEK cells expressing human TREK-1, measured by patch clamp, it inhibited the channel with an IC50 of 0.12 nM, against 40–60 nM for spadin.",
+        [R6.djillani],
+        BATCH_6,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "pe-22-28-research-mice",
+        "En ratones mostró actividad de tipo antidepresivo en pruebas conductuales (natación forzada y alimentación suprimida por novedad), indujo neurogénesis tras 4 días de tratamiento y, en neuronas corticales de ratón, aumentó la expresión de PSD-95, un marcador de sinaptogénesis. Su acción duró hasta 23 horas, frente a 7 horas en el caso de la espadina.",
+        "In mice it showed antidepressant-like activity in behavioural tests (forced swimming and novelty-suppressed feeding), induced neurogenesis after 4 days of treatment and, in mouse cortical neurons, increased expression of PSD-95, a marker of synaptogenesis. Its action lasted up to 23 hours, against 7 hours for spadin.",
+        [R6.djillani],
+        BATCH_6,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [R6.djillani],
+    technicalNotes: [
+      note(
+        "pe-22-28-note-evidence",
+        "La evidencia citada es un único estudio, en células y ratones, del grupo que diseñó el péptido; no se cita ningún ensayo en humanos. Los trabajos posteriores sobre la «mini-espadina» no se citan porque ninguna fuente consultada establece que se trate de este mismo péptido.",
+        'The evidence cited is a single study, in cells and mice, from the group that designed the peptide; no human trial is cited. Later work on "mini-spadin" is not cited because no source consulted establishes that it is this same peptide.',
+        BATCH_6,
+      ),
+    ],
+    functions: [{ id: "neuroprotection", statement: "pe-22-28-research-mice" }],
+  },
+
+  /* ---- DSIP --------------------------------------------------------------- */
+  dsip: {
+    slug: "dsip",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "dsip-mechanism-identity",
+        "El péptido inductor del sueño delta (DSIP) se aisló en 1977 de sangre venosa cerebral de conejo y se consideró inicialmente un posible factor promotor del sueño. Su estructura no se parece a la de ninguna otra familia de péptidos conocida.",
+        "Delta sleep-inducing peptide (DSIP) was isolated in 1977 from rabbit cerebral venous blood and was initially regarded as a candidate sleep-promoting factor. Its structure differs from that of any other known peptide family.",
+        [R6.kovalzon],
+        BATCH_6,
+      ),
+    ],
+    researchContext: [
+      aspect(
+        "limits",
+        sci(
+          "dsip-research-review-limits",
+          "Una revisión de 2006 señala que su relación con el sueño nunca se ha caracterizado más a fondo, en parte porque no se han aislado su gen, su proteína ni un posible receptor, y describe la hipótesis del DSIP como factor del sueño como extremadamente mal documentada y todavía débil.",
+          "A 2006 review notes that its link with sleep has never been characterised further, in part because its gene, its protein and a possible receptor have not been isolated, and describes the hypothesis of DSIP as a sleep factor as extremely poorly documented and still weak.",
+          [R6.kovalzon],
+          BATCH_6,
+        ),
+      ),
+      sci(
+        "dsip-research-insomnia",
+        "En un estudio doble ciego con 16 pacientes con insomnio crónico, el grupo que recibió DSIP tuvo mayor eficiencia y menor latencia del sueño que el grupo placebo, pero los autores describen esos efectos como débiles y en parte atribuibles a un cambio casual en el grupo placebo. Una medida de cansancio subjetivo disminuyó en el grupo con DSIP; ninguna otra medida, incluida la calidad subjetiva del sueño, cambió, y los autores concluyen que no es probable un beneficio terapéutico importante a corto plazo.",
+        "In a double-blind study with 16 chronic insomnia patients, the group given DSIP had higher sleep efficiency and shorter sleep latency than the placebo group, but the authors describe those effects as weak and partly attributable to an incidental change in the placebo group. One measure of subjective tiredness fell within the DSIP group; no other measure, including subjective sleep quality, changed, and the authors conclude that a major short-term therapeutic benefit is not likely.",
+        [R6.bes],
+        BATCH_6,
+      ),
+      sci(
+        "dsip-research-endocrine",
+        "Los estudios endocrinos en voluntarios sanos no coinciden: no modificó la secreción de hormona de crecimiento ni de prolactina en 8 mujeres, ni la respuesta de ACTH y cortisol a la CRH o a una comida en hombres, cuyos autores concluyen que sus datos no respaldan un efecto inhibidor sobre la ACTH; en otro estudio con 8 hombres, en cambio, redujo la ACTH frente a suero salino sin modificar la vasopresina.",
+        "The endocrine studies in healthy volunteers do not agree: it did not change growth hormone or prolactin secretion in 8 women, nor the ACTH and cortisol response to CRH or to a meal in men, whose authors conclude their data do not support an inhibitory effect on ACTH; in another study with 8 men, however, it lowered ACTH compared with saline without changing vasopressin.",
+        [R6.giusti, R6.spathSchwalbe, R6.chiodera],
+        BATCH_6,
+      ),
+      sci(
+        "dsip-research-anaesthesia",
+        "En un ensayo aleatorizado con 24 mujeres bajo anestesia con isoflurano (12 con DSIP y 12 con suero salino), el DSIP aumentó el ritmo cardiaco y redujo su variabilidad; en contra de la hipótesis de los autores, redujo el ritmo delta del electroencefalograma y, con la menor de las tres cantidades probadas, aumentó el índice biespectral, es decir, aligeró la profundidad anestésica.",
+        "In a randomised trial with 24 women under isoflurane anaesthesia (12 given DSIP, 12 saline), DSIP increased heart rate and reduced its variability; contrary to the authors' hypothesis, it reduced the electroencephalogram's delta rhythm and, with the lowest of the three amounts tested, raised the bispectral index — that is, it lightened anaesthetic depth.",
+        [R6.pomfrett],
+        BATCH_6,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [R6.kovalzon, R6.bes],
+    technicalNotes: [
+      note(
+        "dsip-note-evidence",
+        "Los estudios en humanos citados son pequeños —de 8 a 24 participantes— y se publicaron entre 1992 y 2009.",
+        "The human studies cited are small — 8 to 24 participants — and were published between 1992 and 2009.",
+        BATCH_6,
+      ),
+    ],
+    functions: [{ id: "neuroendocrine-signalling", statement: "dsip-research-endocrine" }],
+  },
+
+  /* ---- Follistatin 344 ---------------------------------------------------- */
+  "follistatin-344": {
+    slug: "follistatin-344",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "follistatin-344-mechanism-identity",
+        "La folistatina es un antagonista de la miostatina que se aisló por primera vez en el ovario, donde suprime la hormona foliculoestimulante. FS344 es un ADNc de folistatina de empalme alternativo; cuando se expresa en el músculo, la proteína que codifica, de 315 aminoácidos, se secreta y circula en el suero.",
+        "Follistatin is a myostatin antagonist first isolated from the ovary, where it suppresses follicle-stimulating hormone. FS344 is an alternatively spliced follistatin cDNA; when it is expressed in muscle, the protein it encodes, 315 amino acids long, is secreted and circulates in the serum.",
+        [R6.rodinoKlapac],
+        BATCH_6,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "follistatin-344-research-gene-transfer",
+        "La investigación con FS344 en primates y en pacientes es de transferencia génica con un vector viral (AAV1-FS344) aplicado en el músculo, no de la proteína: en macacos aumentó el tamaño y la fuerza del cuádriceps, y en un ensayo de fase 1/2a con seis pacientes con distrofia muscular de Becker la distancia recorrida en 6 minutos mejoró en cuatro y no cambió en dos, sin efectos adversos registrados.",
+        "The FS344 research in primates and patients is gene transfer with a viral vector (AAV1-FS344) delivered into muscle, not the protein: in macaques it increased quadriceps size and strength, and in a phase 1/2a trial with six Becker muscular dystrophy patients the 6-minute walk distance improved in four and did not change in two, with no adverse effects recorded.",
+        [R6.kota, R6.mendell],
+        BATCH_6,
+      ),
+      aspect(
+        "safety",
+        sci(
+          "follistatin-344-research-black-market",
+          "Según un estudio de 2019, la folistatina está prohibida por la Agencia Mundial Antidopaje y no había formulaciones farmacéuticas aprobadas. En su análisis de 17 productos del mercado negro, la mayoría etiquetados «follistatin 344», solo 9 contenían folistatina —todos FS344 recombinante con etiqueta de histidinas y una alta proporción de oligómeros—, y en algunos de los demás se hallaron otros péptidos, como MGF y GHRP-2.",
+          'According to a 2019 study, follistatin is prohibited by the World Anti-Doping Agency and there were no approved pharmaceutical formulations. In its analysis of 17 black-market products, most labelled "follistatin 344", only 9 contained follistatin — all His-tagged recombinant FS344 with a high proportion of oligomers — and some of the others contained other peptides, such as MGF and GHRP-2.',
+          [R6.reichel],
+          BATCH_6,
+        ),
+      ),
+      aspect(
+        "safety",
+        sci(
+          "follistatin-344-research-case-series",
+          "Una serie retrospectiva de casos de una sola institución describe a 11 culturistas varones que desarrollaron coriorretinopatía serosa central tras usar productos de folistatina-344. En los ocho con un único uso el líquido subretiniano desapareció en unos 2,3 meses de media; tres con usos repetidos tuvieron recurrencias. Los autores proponen la folistatina-344 como factor de riesgo.",
+          "A retrospective single-institution case series describes 11 male bodybuilders who developed central serous chorioretinopathy after using follistatin-344 products. In the eight with a single use the subretinal fluid resolved in about 2.3 months on average; three with repeated use had recurrences. The authors propose follistatin-344 as a risk factor.",
+          [R6.dag],
+          BATCH_6,
+        ),
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [R6.rodinoKlapac, R6.reichel, R6.mendell],
+    technicalNotes: [
+      note(
+        "follistatin-344-note-modality",
+        "Los resultados de transferencia génica no son evidencia sobre un vial de proteína recombinante: en esos estudios el propio músculo produce la proteína a partir del vector. No se cita ningún estudio clínico de la proteína recombinante.",
+        "The gene-transfer results are not evidence about a vial of recombinant protein: in those studies the muscle itself produces the protein from the vector. No clinical study of the recombinant protein is cited.",
+        BATCH_6,
+      ),
+      note(
+        "follistatin-344-note-case-series",
+        "La serie de casos no tiene grupo de comparación y no puede establecer que el producto causara la afección.",
+        "The case series has no comparison group and cannot establish that the product caused the condition.",
+        BATCH_6,
+      ),
+    ],
+    functions: [{ id: "muscle-mass-regulation", statement: "follistatin-344-mechanism-identity" }],
+  },
+
+  /* ---- HMG (menotropin) --------------------------------------------------- */
+  hmg: {
+    slug: "hmg",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "hmg-mechanism-identity",
+        "La HMG (menotropina) no es un péptido único: es una preparación de gonadotropinas de origen urinario humano, una mezcla heterogénea de isoformas con actividad de hormona foliculoestimulante (FSH) y de hormona luteinizante (LH). Su potencia se asigna por bioensayo frente a estándares internacionales de la OMS y se expresa en unidades internacionales.",
+        "HMG (menotropin) is not a single peptide: it is a preparation of gonadotrophins of human urinary origin, a heterogeneous mix of isoforms with follicle-stimulating hormone (FSH) and luteinising hormone (LH) activity. Its potency is assigned by bioassay against WHO International Standards and expressed in international units.",
+        [R6.ferguson, R6.berkhout],
+        BATCH_6,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "hmg-research-cochrane",
+        "Una revisión Cochrane de 2026 (59 ensayos aleatorizados, 18.119 mujeres en fecundación in vitro o ICSI) comparó la FSH recombinante con gonadotropinas urinarias y otras preparaciones. Frente a la HMG o la HMG altamente purificada, el nacimiento vivo fue probablemente menor con la FSH recombinante (OR 0,83; IC 95 % 0,73-0,95; 15 estudios, 4.793 participantes; certeza moderada).",
+        "A 2026 Cochrane review (59 randomised trials, 18,119 women undergoing IVF or ICSI) compared recombinant FSH with urinary gonadotrophins and other preparations. Against HMG or highly purified HMG, live birth was probably lower with recombinant FSH (OR 0.83; 95% CI 0.73–0.95; 15 studies, 4,793 participants; moderate certainty).",
+        [R6.berkhout],
+        BATCH_6,
+      ),
+      aspect(
+        "safety",
+        sci(
+          "hmg-research-ohss",
+          "En la misma revisión, el síndrome de hiperestimulación ovárica fue probablemente más común con la FSH recombinante que con la HMG (OR 1,42; IC 95 % 1,12-1,80; 37 estudios, 9.813 participantes; certeza moderada).",
+          "In the same review, ovarian hyperstimulation syndrome was probably more common with recombinant FSH than with HMG (OR 1.42; 95% CI 1.12–1.80; 37 studies, 9,813 participants; moderate certainty).",
+          [R6.berkhout],
+          BATCH_6,
+        ),
+      ),
+      aspect(
+        "limits",
+        sci(
+          "hmg-research-limits",
+          "Los autores señalan como limitaciones principales el riesgo de sesgo de los estudios incluidos —selección poco clara, informe selectivo y alto riesgo de otros sesgos— y que muchos fueron financiados por la industria farmacéutica.",
+          "The authors name as the main limitations the risk of bias in the included studies — unclear selection, selective reporting and a high risk of other bias — and that many were sponsored by the pharmaceutical industry.",
+          [R6.berkhout],
+          BATCH_6,
+        ),
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [R6.ferguson, R6.berkhout],
+    technicalNotes: [
+      note(
+        "hmg-note-evidence",
+        "La evidencia citada es de preparaciones farmacéuticas estudiadas en reproducción asistida; no describe el contenido de ningún vial de investigación concreto.",
+        "The evidence cited is from pharmaceutical preparations studied in assisted reproduction; it does not describe the contents of any particular research vial.",
+        BATCH_6,
+      ),
+    ],
+    functions: [{ id: "reproductive-axis", statement: "hmg-mechanism-identity" }],
+  },
+
+  /* ---- Gonadorelin -------------------------------------------------------- */
+  "gonadorelin-acetate": {
+    slug: "gonadorelin-acetate",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "gonadorelin-mechanism-identity",
+        "La gonadorelina es una hormona sintética de 1182 Da que la literatura analítica identifica con la hormona liberadora de hormona luteinizante (LH-RH) y describe como agonista de la hormona liberadora de gonadotropinas (GnRH).",
+        "Gonadorelin is a synthetic hormone of 1182 Da that the analytical literature identifies with luteinising hormone-releasing hormone (LH-RH) and describes as a gonadotropin-releasing hormone (GnRH) agonist.",
+        [R6.thomas, R6.torrini],
+        BATCH_6,
+      ),
+    ],
+    researchContext: [
+      aspect(
+        "safety",
+        sci(
+          "gonadorelin-research-wada",
+          "Figura en la lista de la Agencia Mundial Antidopaje, y los laboratorios antidopaje han desarrollado métodos para detectarla en orina.",
+          "It is listed by the World Anti-Doping Agency, and anti-doping laboratories have developed methods to detect it in urine.",
+          [R6.torrini, R6.thomas],
+          BATCH_6,
+        ),
+      ),
+      aspect(
+        "limits",
+        sci(
+          "gonadorelin-research-pcos-cochrane",
+          "Una revisión Cochrane de la GnRH pulsátil para inducir la ovulación en mujeres subfértiles con síndrome de ovario poliquístico encontró cuatro ensayos aleatorizados con 57 mujeres en total, cada uno con una comparación distinta; los autores concluyen que eran demasiado pequeños y breves para demostrar o descartar su valor.",
+          "A Cochrane review of pulsatile GnRH for ovulation induction in subfertile women with polycystic ovary syndrome found four randomised trials with 57 women in total, each making a different comparison; the authors conclude they were too small and too short to prove or discard its value.",
+          [R6.bayram],
+          BATCH_6,
+        ),
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [R6.thomas, R6.bayram],
+    technicalNotes: [
+      note(
+        "gonadorelin-note-identity",
+        "La revisión Cochrane estudia la GnRH pulsátil; se cita aquí porque la literatura analítica identifica la gonadorelina con esa hormona. Sus ensayos son de preparaciones clínicas y no describen el contenido de ningún vial de investigación concreto.",
+        "The Cochrane review studies pulsatile GnRH; it is cited here because the analytical literature identifies gonadorelin with that hormone. Its trials are of clinical preparations and do not describe the contents of any particular research vial.",
+        BATCH_6,
+      ),
+    ],
+    functions: [{ id: "reproductive-axis", statement: "gonadorelin-mechanism-identity" }],
+  },
+
+  /* ---- Pinealon (EDR) ----------------------------------------------------- */
+  pinealon: {
+    slug: "pinealon",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "pinealon-mechanism-identity",
+        "Pinealon es el tripéptido sintético Glu-Asp-Arg (EDR). En cultivos de células granulares de cerebelo, neutrófilos y células de feocromocitoma PC12 sometidas a estrés oxidativo, limitó la acumulación de especies reactivas de oxígeno y redujo la muerte celular por necrosis.",
+        "Pinealon is the synthetic tripeptide Glu-Asp-Arg (EDR). In cultured cerebellar granule cells, neutrophils and PC12 pheochromocytoma cells under oxidative stress, it restricted the accumulation of reactive oxygen species and reduced necrotic cell death.",
+        [R6.khavinsonPinealon, R6.khavinsonReview],
+        BATCH_6,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "pinealon-research-rats",
+        "En ratas con hiperhomocisteinemia inducida durante la gestación con una dieta cargada de metionina, las crías de las madres que recibieron pinealon tuvieron mejor orientación espacial y aprendizaje, y sus neuronas de cerebelo acumularon menos especies reactivas de oxígeno y sufrieron menos muerte por necrosis.",
+        "In rats with hyperhomocysteinaemia induced during pregnancy by a methionine-loaded diet, the offspring of mothers given pinealon had better spatial orientation and learning, and their cerebellar neurons accumulated fewer reactive oxygen species and showed less necrotic death.",
+        [R6.arutjunyan],
+        BATCH_6,
+      ),
+      sci(
+        "pinealon-research-induced-neurons",
+        "En neuronas corticales obtenidas por transdiferenciación de fibroblastos de donantes de edad avanzada, EDR aumentó la ramificación dendrítica y redujo el daño oxidativo del ADN; no modificó la actividad de mitocondrias y lisosomas ni el nivel de la proteína p16.",
+        "In cortical neurons obtained by transdifferentiating fibroblasts from elderly donors, EDR increased dendritic branching and reduced oxidative DNA damage; it did not change mitochondrial or lysosomal activity or the level of the p16 protein.",
+        [R6.kraskovskaya],
+        BATCH_6,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [R6.khavinsonPinealon, R6.arutjunyan],
+    technicalNotes: [
+      note(
+        "pinealon-note-evidence",
+        "La evidencia citada es de células y ratas, y procede en su mayoría de un mismo grupo de investigación; no se cita ningún ensayo en humanos. Los estudios en personas localizados están publicados en ruso y no separan sus efectos de los de otro péptido, por lo que no se citan.",
+        "The evidence cited is from cells and rats and comes mostly from a single research group; no human trial is cited. The human studies located are published in Russian and do not separate its effects from those of another peptide, so they are not cited.",
+        BATCH_6,
+      ),
+    ],
+    functions: [{ id: "neuroprotection", statement: "pinealon-research-rats" }],
+  },
+
+  /* ---- Vesugen (KED) ------------------------------------------------------ */
+  vesugen: {
+    slug: "vesugen",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "vesugen-mechanism-identity",
+        "Vesugen es el tripéptido Lys-Glu-Asp (KED). En cultivos de fibroblastos prostáticos humanos, cuya expresión de los factores de diferenciación CXCL12 y WEGC1 disminuye con el envejecimiento del cultivo, vesugen estimuló esa expresión, con un efecto más marcado en los cultivos envejecidos.",
+        "Vesugen is the tripeptide Lys-Glu-Asp (KED). In cultured human prostatic fibroblasts, whose expression of the differentiation factors CXCL12 and WEGC1 falls as the culture ages, vesugen stimulated that expression, more markedly in aged cultures.",
+        [R6.khavinsonDifferentiation, R6.khavinsonReview],
+        BATCH_6,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "vesugen-research-pineal-immune",
+        "En cultivo organotípico de tejido linfoide de la glándula pineal, vesugen no modificó la capacidad de diferenciación de las células inmunitarias, pero aumentó su potencial de proliferación.",
+        "In organotypic culture of pineal lymphoid tissue, vesugen did not change the differentiation capacity of the immune cells but increased their proliferation potential.",
+        [R6.linkova],
+        BATCH_6,
+      ),
+      sci(
+        "vesugen-research-induced-neurons",
+        "En neuronas corticales obtenidas por transdiferenciación de fibroblastos de donantes de edad avanzada, KED aumentó la ramificación dendrítica; no modificó la actividad de mitocondrias y lisosomas ni el nivel de la proteína p16.",
+        "In cortical neurons obtained by transdifferentiating fibroblasts from elderly donors, KED increased dendritic branching; it did not change mitochondrial or lysosomal activity or the level of the p16 protein.",
+        [R6.kraskovskaya],
+        BATCH_6,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [R6.khavinsonDifferentiation, R6.kraskovskaya],
+    technicalNotes: [
+      note(
+        "vesugen-note-evidence",
+        "La evidencia citada es de células en cultivo y procede en su mayoría de un mismo grupo de investigación; no se cita ningún ensayo en humanos.",
+        "The evidence cited is from cultured cells and comes mostly from a single research group; no human trial is cited.",
+        BATCH_6,
+      ),
+    ],
+    functions: [
+      { id: "gene-expression", statement: "vesugen-mechanism-identity" },
+      { id: "neuroprotection", statement: "vesugen-research-induced-neurons" },
+    ],
+  },
+
+  /* ---- Cortagen (AEDP) ---------------------------------------------------- */
+  cortagen: {
+    slug: "cortagen",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "cortagen-mechanism-identity",
+        "Cortagen es el tetrapéptido sintético Ala-Glu-Asp-Pro, obtenido por síntesis dirigida a partir del análisis de aminoácidos de Cortexin, una preparación peptídica natural de corteza cerebral.",
+        "Cortagen is the synthetic tetrapeptide Ala-Glu-Asp-Pro, obtained by directed synthesis from the amino acid analysis of Cortexin, a natural brain-cortex peptide preparation.",
+        [R6.anisimov],
+        BATCH_6,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "cortagen-research-sciatic-nerve",
+        "En ratas con el nervio ciático seccionado y suturado, cortagen aumentó un 27 % la velocidad de crecimiento de las fibras nerviosas en regeneración y un 40 % su velocidad de conducción.",
+        "In rats with a transected and sutured sciatic nerve, cortagen increased the growth rate of the regenerating nerve fibres by 27% and their conduction velocity by 40%.",
+        [R6.turchaninova],
+        BATCH_6,
+      ),
+      sci(
+        "cortagen-research-heart-genes",
+        "En el corazón de ratonas CBA de 6 meses, un análisis con micromatrices de 15.247 transcritos encontró cambios significativos de expresión en 234 clones, correspondientes a 110 genes conocidos de distintas categorías funcionales.",
+        "In the hearts of 6-month-old female CBA mice, a microarray analysis of 15,247 transcripts found significant expression changes in 234 clones, matching 110 known genes across functional categories.",
+        [R6.anisimov],
+        BATCH_6,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [R6.anisimov, R6.turchaninova],
+    technicalNotes: [
+      note(
+        "cortagen-note-evidence",
+        "La evidencia citada es de ratas y ratones, del mismo grupo de investigación; no se cita ningún ensayo en humanos. El artículo de 2004 menciona efectos en personas sin que aquí se haya leído un estudio que los respalde, y esa afirmación no se reproduce.",
+        "The evidence cited is from rats and mice, from the same research group; no human trial is cited. The 2004 paper mentions effects in people without a supporting study having been read here, and that claim is not reproduced.",
+        BATCH_6,
+      ),
+    ],
+    functions: [],
+  },
+
+  /* ---- Cardiogen (AEDR) --------------------------------------------------- */
+  cardiogen: {
+    slug: "cardiogen",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "cardiogen-mechanism-identity",
+        "Cardiogen es el tetrapéptido Ala-Glu-Asp-Arg (AEDR), según la nomenclatura del grupo que desarrolló estos péptidos.",
+        "Cardiogen is the tetrapeptide Ala-Glu-Asp-Arg (AEDR), in the nomenclature of the group that developed these peptides.",
+        [R6.khavinsonReview],
+        BATCH_6,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "cardiogen-research-sarcoma",
+        "En ratas envejecidas con sarcoma M-1 trasplantado, cardiogen aumentó la apoptosis de las células tumorales y frenó el crecimiento del tumor por necrosis hemorrágica. Los autores concluyen que no actuó por un efecto citostático directo, sino a través de la red vascular del tumor.",
+        "In aged rats with transplanted M-1 sarcoma, cardiogen increased tumour-cell apoptosis and slowed tumour growth through haemorrhagic necrosis. The authors conclude that it did not act through a direct cytostatic effect but through the tumour's vascular network.",
+        [R6.levdik],
+        BATCH_6,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [R6.levdik],
+    technicalNotes: [
+      note(
+        "cardiogen-note-evidence",
+        "La evidencia citada es un único estudio en ratas con un tumor trasplantado; no se cita ningún estudio de la función cardiovascular ni ningún ensayo en humanos.",
+        "The evidence cited is a single study in rats with a transplanted tumour; no study of cardiovascular function and no human trial is cited.",
+        BATCH_6,
+      ),
+    ],
+    functions: [],
+  },
+
+  /* ---- Cartalax (AED) ----------------------------------------------------- */
+  cartalax: {
+    slug: "cartalax",
+    summary: null,
+    mechanismNotes: [
+      sci(
+        "cartalax-mechanism-identity",
+        "Cartalax es el tripéptido Ala-Glu-Asp (AED), según la nomenclatura del grupo que desarrolló estos péptidos.",
+        "Cartalax is the tripeptide Ala-Glu-Asp (AED), in the nomenclature of the group that developed these peptides.",
+        [R6.khavinsonReview],
+        BATCH_6,
+      ),
+    ],
+    researchContext: [
+      sci(
+        "cartalax-research-fibroblasts",
+        "En fibroblastos de piel humana durante su envejecimiento replicativo, el péptido AED aumentó la síntesis de sirtuina-1, sirtuina-6 y colágeno I.",
+        "In human skin fibroblasts during replicative ageing, the AED peptide increased the synthesis of sirtuin-1, sirtuin-6 and collagen I.",
+        [R6.fridman],
+        BATCH_6,
+      ),
+    ],
+    areasOfInvestigation: [],
+    keyReferences: [R6.fridman],
+    technicalNotes: [
+      note(
+        "cartalax-note-evidence",
+        "La evidencia citada es un único estudio en células en cultivo, del mismo grupo de investigación; no se cita ningún estudio en cartílago ni en humanos. El único trabajo en condrocitos localizado está publicado en ruso y no se leyó completo, por lo que no se cita.",
+        "The evidence cited is a single study in cultured cells, from the same research group; no study in cartilage and no human trial is cited. The one chondrocyte study located is published in Russian and was not read in full, so it is not cited.",
+        BATCH_6,
+      ),
+    ],
+    functions: [{ id: "extracellular-matrix", statement: "cartalax-research-fibroblasts" }],
   },
 };
