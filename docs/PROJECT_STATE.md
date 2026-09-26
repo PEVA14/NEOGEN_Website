@@ -1,6 +1,8 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-09-25**: **the compendium's Quick Record** (§8ad) —
+Last updated **2026-09-26**: **the recordless audit** (§8ae) — ten new
+sourced profiles drafted behind an owner-review batch, thirteen products
+without one by decision. Before that, 2026-09-25: **the compendium's Quick Record** (§8ad) —
 the drawer became a four-view research interface on the existing evidence.
 Before that, 2026-09-24: **design and UX audit pass** (§8ac) — checkout,
 post-purchase, console and responsive fixes. Before that, 2026-09-23: **the operational layer around orders exists**
@@ -927,26 +929,32 @@ source's own abstract via Europe PMC — and each gated by one switch in
 | 1     | RETA, GHK-Cu, BPC-157, TB-500, GLOW                              | approved         |
 | 2     | tirzepatide, semaglutide                                         | approved         |
 | 3     | the rest of the metabolic line (10 compounds)                    | approved         |
-| 4     | the recovery area (9 compounds)                                  | **owner-review** |
-| 5     | growth, hormonal, longevity, neuro, skin, unfiled (36 compounds) | **owner-review** |
+| 4     | the recovery area (9 compounds)                                  | approved         |
+| 5     | growth, hormonal, longevity, neuro, skin, unfiled (36 compounds) | approved         |
+| 6     | the recordless audit (10 compounds, §8ae)                        | **owner-review** |
 
-**62 of 85 products** have a profile written; **74 references** in the
-registry; **35 research functions**, each one grouped.
+**72 of 85 products** have a profile written — 62 approved and rendering, 10
+drafted in batch 6 and waiting for the owner; **101 references** in the
+registry (27 of them batch 6's); **35 research functions**, each one grouped.
 
-**What has no profile, and why** — the list is deliberate, not unfinished:
+**What has no profile, and why** — re-investigated product by product in
+§8ae (2026-09-26); the list is deliberate, not unfinished:
 
-- **No source that names the product and reports a finding for it**: HMG,
-  Follistatin 344, Gonadorelin, DSIP, SNAP-8, Adamax (both), PE 22-28 (its
-  literature is about spadin, a longer peptide, and the relationship needs its
-  own source).
-- **Single-group review literature only**, nothing establishing a finding for
-  the individual tripeptide: Vesugen, Cartalax, Cardiogen, Cortagen, Crystagen,
-  Pinealon. Epithalon is the one exception, and its profile says in as many
-  words that its only source is a narrative review.
-- **Blends with no published study**, and mostly no declared composition:
-  Relaxation PM, SUPER Human Blend, Healthy Hair Skin Nails Blend, Lipo-C
-  (both), Lemon Bottle.
+- **No primary study of the molecule itself**: SNAP-8 (its mechanistic figures
+  trace, through reviews, to the manufacturer's data; every clinical study
+  tests a multi-ingredient formulation).
+- **No literature, or no identity**: Adamax (both — "Adamax" in PubMed is a
+  machine-learning optimiser; Semax evidence is not Adamax evidence);
+  Crystagen (one Russian-language abstract and no source for its sequence).
+- **Blends with no study of the formulation**: Lipo-C (both), Lemon Bottle;
+  and with no declared composition at all, so not even an identity: Relaxation
+  PM, SUPER Human Blend, Healthy Hair Skin Nails Blend.
 - **Supplies, not compounds**: the three waters.
+
+The earlier list also held HMG, Follistatin 344, Gonadorelin, DSIP, PE 22-28
+and the five other bioregulator tripeptides. It was wrong for them: the
+literature exists, under the product name or its sequence, and batch 6 drafts
+their profiles.
 
 **House style for a profile.** Mechanism, then what the source found, then the
 model it came from, then the limits the source itself states. Four of the
@@ -2294,12 +2302,51 @@ dictionaries).
 2. Per-compound storage temperature and shelf life — need the document behind
    them (COA, supplier specification) before the handling page or a record
    can state one.
-3. 23 compounds have no record (no source names them — §8j lists why); they
-   appear in the compendium with a dash and link to their product page.
+3. 23 compounds have no record today. Ten have profiles drafted in batch 6
+   and get a record the moment the owner approves it; the other 13 have none
+   by decision (§8j, §8ae). Until then they appear in the compendium with a
+   dash and link to their product page.
 4. Product types are all "Compuesto" except derived blends/solvents, because
    `CONFIRMED_TYPE` is empty; the record's "Tipo" row inherits that honesty.
 5. Cold-chain determination (§6) — the handling page cannot say more until it
    exists.
+
+## 8ae. The recordless audit (2026-09-26)
+
+Owner brief: investigate every catalogue product without a scientific
+profile, and write one only where public, compound-specific literature
+supports it. "No defensible record" was an acceptable answer; coverage was
+not the goal.
+
+**Method.** PubMed (E-utilities) and Europe PMC, by product name, alias and —
+for the bioregulators — sequence. Identity first: a paper counted only once a
+source tied its substance to the catalogue entry. Every reference's metadata
+was copied from PubMed's own record; every statement was written from the
+abstract (or open full text) and then re-read against it, trying to reject
+it. Seven sentences were corrected in that pass.
+
+**Drafted (batch 6, `owner-review`, nothing renders yet):**
+
+| Product         | Identity resolved as                                    | Evidence level                                                         |
+| --------------- | ------------------------------------------------------- | ---------------------------------------------------------------------- |
+| PE-22-28        | 7-aa spadin fragment, named in its design paper         | one study: cells + mice                                                |
+| DSIP            | the 1977 peptide; no gene, protein or receptor isolated | small human RCTs, weak/null/contradictory                              |
+| Follistatin 344 | FS344 cDNA / 315-aa protein; gene transfer kept apart   | primates, 6-patient gene-transfer trial, product analysis, case series |
+| HMG             | urinary FSH + LH preparation, not a peptide             | Cochrane review of RCTs                                                |
+| Gonadorelin     | LH-RH / GnRH, per the analytical literature             | Cochrane review (4 small RCTs, inconclusive)                           |
+| Pinealon        | EDR                                                     | cells + rats                                                           |
+| Vesugen         | KED                                                     | cells (one null result)                                                |
+| Cortagen        | AEDP, derived from Cortexin                             | rats + mice                                                            |
+| Cardiogen       | AEDR                                                    | one rat tumour study                                                   |
+| Cartalax        | AED                                                     | one cell study                                                         |
+
+**Not drafted:** SNAP-8, Adamax (both), Crystagen, Lipo-C (both), Lemon
+Bottle, Relaxation PM, SUPER Human Blend, Healthy Hair Skin Nails Blend, the
+three waters — reasons in §8j and in `content/review.ts`.
+
+**To publish:** the owner reads batch 6 and sets `BATCH_6_RECORDLESS_AUDIT`
+to `approved`. A trial approval was run: `check:content` passes and the
+compendium goes from 62 to 72 records.
 
 ## 8ad. The compendium's Quick Record (2026-09-25)
 
