@@ -83,9 +83,15 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
      * v9 (2026-09-22): the spun-aluminium cap (`capFinish.ts`). It also carries
      * the glass-depth scaling that landed after v8, which reads the V4 body
      * darker and more refractive — owner-approved with the re-capture.
+     *
+     * v10 (2026-09-26): clear glass (owner: "make it look clear"). The body
+     * had read as black: the dark set showed through it, under a tint that
+     * V4's depth had made heavy. A backlight card only the glass sees
+     * (`RefractionBacklight`) and a near-clear tint fixed it for all three
+     * flagship rigs; GLOW and GHK-Cu were re-captured with it (v5).
      */
     studio: {
-      src: "/images/products/reta/studio-v9.jpg",
+      src: "/images/products/reta/studio-v10.jpg",
       alt: "Vial RETA de NEOGEN: render de estudio del modelo 3D, etiqueta al frente, sobre fondo azul oscuro.",
       width: 1600,
       height: 2000,
@@ -155,7 +161,7 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
     /* Its own vial on the copper rig (GHK_RIG): a neutral key so the label
        stays true, and copper laid down the right edge of the glass. */
     studio: {
-      src: "/images/products/ghk-cu/studio-v4.jpg",
+      src: "/images/products/ghk-cu/studio-v5.jpg",
       alt: "Vial GHK-Cu de NEOGEN: render de estudio del modelo 3D, etiqueta al frente, sobre fondo cobre oscuro.",
       width: 1600,
       height: 2000,
@@ -179,7 +185,7 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
     /* Its own vial on the amber rig (GLOW_RIG): the pool behind the glass lights
        it from behind, and the cap takes the world's gold. */
     studio: {
-      src: "/images/products/glow/studio-v4.jpg",
+      src: "/images/products/glow/studio-v5.jpg",
       alt: "Vial GLOW de NEOGEN: render de estudio del modelo 3D, etiqueta al frente, sobre fondo ámbar oscuro.",
       width: 1600,
       height: 2000,
@@ -220,7 +226,7 @@ export const DEMO_ARTWORK: readonly {
       "when the label design is finalised - `relabel-sheet.mjs`, then " +
       "`prepare-model.mjs --label`.",
   },
-  ...(["/models/glow-v4.glb", "/images/products/glow/studio-v4.jpg"] as const).map((src) => ({
+  ...(["/models/glow-v4.glb", "/images/products/glow/studio-v5.jpg"] as const).map((src) => ({
     [src.endsWith(".glb") ? "model" : "image"]: src,
     says:
       "GLOW · 70 MG (correct: GLOW is sold as 70 mg) over the RETA mock-up's remaining " +
@@ -230,7 +236,7 @@ export const DEMO_ARTWORK: readonly {
       "Only the name was re-lettered (owner, 2026-09-25); the rest is the RETA draft " +
       "artwork and belongs to no GLOW record. Replace with the finalised label design.",
   })),
-  ...(["/models/ghk-cu-v4.glb", "/images/products/ghk-cu/studio-v4.jpg"] as const).map((src) => ({
+  ...(["/models/ghk-cu-v4.glb", "/images/products/ghk-cu/studio-v5.jpg"] as const).map((src) => ({
     [src.endsWith(".glb") ? "model" : "image"]: src,
     says:
       "GHK-Cu · 50 – 100 MG (correct) over the RETA mock-up's remaining lines: " +

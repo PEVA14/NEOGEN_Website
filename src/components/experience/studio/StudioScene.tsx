@@ -377,6 +377,58 @@ function RefractionFlags({ rig }: { rig: StudioRig }) {
   );
 }
 
+/**
+ * DARK-FIELD BACKLIGHT, seen only through the glass — see `StudioRig.backlight`.
+ *
+ * An opaque card just behind the object: its centre lit, falling to the set's
+ * edge colour. Gated to the transmission pass exactly like the flags, so the
+ * lens never sees it and the set is unchanged; only what the glass shows is.
+ */
+function RefractionBacklight({ rig }: { rig: StudioRig }) {
+  const backlight = rig.backlight;
+  const material = useMemo(() => {
+    if (!backlight) return null;
+    const map = canvasTexture(512, (ctx, s) => {
+      ctx.fillStyle = rig.sweep.edge;
+      ctx.fillRect(0, 0, s, s);
+      const g = ctx.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+      g.addColorStop(0, backlight.color);
+      g.addColorStop(0.55, backlight.color);
+      g.addColorStop(1, rig.sweep.edge);
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, s, s);
+    });
+    return new MeshBasicMaterial({ map, toneMapped: false });
+  }, [backlight, rig.sweep.edge]);
+  useEffect(
+    () => () => {
+      material?.map?.dispose();
+      material?.dispose();
+    },
+    [material],
+  );
+  const gate = useCallback(
+    (
+      renderer: WebGLRenderer,
+      _scene: Scene,
+      _camera: Camera,
+      _geometry: BufferGeometry,
+      drawn: Material,
+    ) => {
+      const refractionPass = renderer.getRenderTarget() !== null;
+      drawn.colorWrite = refractionPass;
+      drawn.depthWrite = refractionPass;
+    },
+    [],
+  );
+  if (!backlight || !material) return null;
+  return (
+    <mesh position={[0, 0, -0.6]} material={material} onBeforeRender={gate}>
+      <planeGeometry args={[backlight.width, backlight.height]} />
+    </mesh>
+  );
+}
+
 function Subject({
   modelPath,
   rig,
@@ -551,6 +603,7 @@ export default function StudioScene({
       {/* Fixed to the set, not to the object: a photographer's flags stay where
           they were put when the product is turned. */}
       <RefractionFlags rig={rig} />
+      <RefractionBacklight rig={rig} />
       <Subject modelPath={modelPath} rig={rig} label={label} onSheet={onSheet} />
       <Capture sheet={sheet} />
     </Canvas>

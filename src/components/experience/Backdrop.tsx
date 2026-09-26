@@ -109,7 +109,12 @@ export function Backdrop({
      * tone, barely lifted), and the accent lives in the falloff AROUND it where
      * it colours the environment without passing through the object.
      */
-    const centre = new Color(palette.void).lerp(new Color(palette.light), 0.2);
+    /*
+     * Lifted clear of the void (0.2 → 0.32, 2026-09-25). Clear glass
+     * shows what is behind it; at 0.2 that was so near black that the body
+     * read as black glass, not as glass in a dark room.
+     */
+    const centre = new Color(palette.void).lerp(refractionLight(palette), 0.32);
     const mid = new Color(palette.void).lerp(new Color(palette.accent), 0.16);
 
     const rgba = (colour: Color, alpha: number) =>
@@ -175,6 +180,16 @@ export function Backdrop({
 }
 
 /**
+ * The light a vial is seen against, as the glass should show it: the world's
+ * light tone taken halfway to white. Neutral enough that the glass does not
+ * read as tinted — an accent-coloured centre is how this scene has turned out
+ * blue glass before — while still belonging to the world.
+ */
+function refractionLight(palette: WorldPalette): Color {
+  return new Color(palette.light).lerp(new Color("#ffffff"), 0.5);
+}
+
+/**
  * WHAT THE GLASS SEES THROUGH ITSELF, ON A SEE-THROUGH CANVAS.
  *
  * The `local` backdrop is transparent on purpose — the product page and the
@@ -186,11 +201,21 @@ export function Backdrop({
  * The jar mostly hid it behind a label that went all the way round; V4's clear
  * sides showed it plainly.
  *
- * This plane fixes it without touching the page: it is opaque and exactly
- * `--world-void` — the section's own CSS background — so the glass refracts
- * what is really behind it; and it draws ONLY while the transmission target is
- * bound. In the main pass it writes neither colour nor depth, so the canvas
- * stays as transparent as before and the page's grid and watermark still show.
+ * This plane fixes it without touching the page: it is opaque and it draws
+ * ONLY while the transmission target is bound. In the main pass it writes
+ * neither colour nor depth, so the canvas stays as transparent as before and
+ * the page's grid and watermark still show.
+ *
+ * WHAT IT SHOWS IS A POOL OF LIGHT, NOT THE FLAT VOID. It used to be exactly
+ * `--world-void`, and the glass read as black (owner, 2026-09-25: "the crystal
+ * always looks black"): every page that shows a vial lights the space behind
+ * it — the GLOW bloom and halo, the copper bands, the hero's card — so the
+ * glass refracting flat void disagreed with everything around it. Glass reads
+ * as CLEAR when what is seen through it continues what is seen around it.
+ * The pool is centred behind the vial (every see-through canvas centres its
+ * subject) and falls to the void at its edge, so the glass is brightest
+ * through its middle and darkens toward its walls, which is also what gives
+ * the body its depth.
  */
 export function RefractionGround({ palette }: { palette: WorldPalette }) {
   const viewport = useThree((state) => state.viewport);
@@ -199,11 +224,42 @@ export function RefractionGround({ palette }: { palette: WorldPalette }) {
   // refraction can look well past the silhouette.
   const scale = ((CAMERA_Z - z) / CAMERA_Z) * 1.6;
 
-  const material = useMemo(
-    () => new MeshBasicMaterial({ color: new Color(palette.void), toneMapped: false }),
-    [palette.void],
+  const material = useMemo(() => {
+    const size = 512;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    const base = new Color(palette.void);
+    if (!ctx) return new MeshBasicMaterial({ color: base, toneMapped: false });
+
+    /* About as bright as the page's own glow behind the vial, a little over:
+       brighter than its surroundings, the body read as frosted, not clear. */
+    const centre = base.clone().lerp(refractionLight(palette), 0.32);
+    const mid = base.clone().lerp(refractionLight(palette), 0.13);
+    const c = size / 2;
+    /* The plane is 1.6× the frame; a radius of a third of it reaches just
+       past the frame's edge, so the whole vial stands in the pool. */
+    const gradient = ctx.createRadialGradient(c, c, 0, c, c, size / 3);
+    gradient.addColorStop(0, `#${centre.getHexString()}`);
+    gradient.addColorStop(0.5, `#${mid.getHexString()}`);
+    gradient.addColorStop(1, `#${base.getHexString()}`);
+    ctx.fillStyle = `#${base.getHexString()}`;
+    ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, size, size);
+
+    const map = new CanvasTexture(canvas);
+    map.colorSpace = SRGBColorSpace;
+    return new MeshBasicMaterial({ map, toneMapped: false });
+  }, [palette]);
+  useEffect(
+    () => () => {
+      material.map?.dispose();
+      material.dispose();
+    },
+    [material],
   );
-  useEffect(() => () => material.dispose(), [material]);
 
   /*
    * Toggles the material three is about to draw with — the one it hands to

@@ -56,6 +56,20 @@ export interface StudioRig {
   /** Brightness of the reflection room around the set, relative to its edge colour. */
   room: number;
   /**
+   * DARK-FIELD BACKLIGHT — a lit card the glass sees only by REFRACTION.
+   *
+   * On a dark set clear glass shows the dark set through itself and reads as
+   * black glass (owner, 2026-09-26: "make it look clear"). A product
+   * photographer's answer is a light card directly behind the object, sized
+   * so the object hides it: seen through the body it is light, so the glass
+   * reads as clear, and it falls to the set's dark edge, so the walls — which
+   * bend the view sideways past it — keep their dark contour. `color` is the
+   * card's centre; it is drawn only into the transmission image (see
+   * `RefractionBacklight`), so the set around the object is unchanged.
+   * Omit on a light set, which is already bright behind the glass.
+   */
+  backlight?: { color: string; width: number; height: number };
+  /**
    * BRIGHT-FIELD FLAGS — dark cards the glass sees only by REFRACTION.
    *
    * On a light set clear glass is defined by its dark contour: the edges bend
@@ -179,12 +193,17 @@ export const RETA_RIG: StudioRig = {
     shadow: 0.85,
   },
   room: 0.6,
+  /* Near-neutral, a trace of the world: tinted any further, the card turns
+     the glass blue (or amber, or copper) instead of clear. */
+  backlight: { color: "#8f959e", width: 0.95, height: 1.5 },
   materials: {
     glass: {
       roughness: 0.05,
       thickness: 0.5,
       ior: 1.5,
-      attenuation: "#b9bcc2",
+      /* A whisper of tint, not smoke. At #b9bcc2 over V4's depth the body
+         passed about a third of the light behind it and read as black. */
+      attenuation: "#e6e9ee",
       reflect: 2.6,
     },
     metal: { color: "#cfd3d9", roughness: 0.34 },
@@ -229,9 +248,10 @@ export const GLOW_RIG: StudioRig = {
   },
   floor: { color: "#0a0604", reflection: 0.32, shadow: 0.8 },
   room: 0.7,
+  backlight: { ...RETA_RIG.backlight!, color: "#9a9284" },
   materials: {
     ...RETA_RIG.materials,
-    glass: { ...RETA_RIG.materials.glass, attenuation: "#d8c6a8", reflect: 2.4 },
+    glass: { ...RETA_RIG.materials.glass, attenuation: "#f0e7d8", reflect: 2.4 },
     /* Warm silver: the cap picks the world up without turning brass. */
     metal: { color: "#d8d2c6", roughness: 0.34 },
   },
@@ -270,9 +290,10 @@ export const GHK_RIG: StudioRig = {
   },
   floor: { color: "#0a0706", reflection: 0.36, shadow: 0.85 },
   room: 0.62,
+  backlight: { ...RETA_RIG.backlight!, color: "#978e89" },
   materials: {
     ...RETA_RIG.materials,
-    glass: { ...RETA_RIG.materials.glass, attenuation: "#c8bdb6", reflect: 2.5 },
+    glass: { ...RETA_RIG.materials.glass, attenuation: "#ede5e0", reflect: 2.5 },
     metal: { color: "#d4cdc6", roughness: 0.3 },
   },
 };
@@ -358,6 +379,8 @@ export const NEUTRAL_RIG: StudioRig = {
     shadow: 0.5,
   },
   room: 1.3,
+  /* A light set is already bright behind the glass. */
+  backlight: undefined,
   refractionFlags: { x: 0.47, z: -0.9, width: 0.2, height: 1.6, color: "#1c1c20" },
   negativeFill: [
     { position: [-2.6, 0.2, 0.3], width: 1.3, height: 3.4 },
