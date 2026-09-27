@@ -1444,7 +1444,7 @@ const en: Dictionary = {
       result: "1 term",
       empty: "No term matches the search.",
       seeAlso: "See also",
-      usedIn: "In the records",
+      usedIn: "Used in",
       more: "and {n} more",
       readMore: "Read the note",
       letters: "Jump to letter",

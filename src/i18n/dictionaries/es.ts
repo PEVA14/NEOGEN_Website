@@ -1550,7 +1550,7 @@ const es = {
       result: "1 término",
       empty: "Ningún término coincide con la búsqueda.",
       seeAlso: "Véase también",
-      usedIn: "En los registros",
+      usedIn: "Se usa en",
       more: "y {n} más",
       readMore: "Leer la nota",
       letters: "Ir a la letra",

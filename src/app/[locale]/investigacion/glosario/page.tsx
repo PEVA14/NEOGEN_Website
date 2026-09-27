@@ -5,7 +5,7 @@ import { GlossaryExplorer, KnowledgeHead, type GlossaryEntry } from "@/component
 import { routes } from "@/config/routes";
 import { siteConfig } from "@/config/site";
 import { compoundRecord, recordSlugs } from "@/content/compendium";
-import { publicArticle } from "@/content/editorial";
+import { publicArticle, publicArticles } from "@/content/editorial";
 import {
   GLOSSARY_CATEGORIES,
   publicGlossary,
@@ -62,20 +62,64 @@ function destinationRoute(key: GlossaryDestination): string | null {
   }
 }
 
-/** Term id → the records whose own text, in this locale, uses it. */
-const usageCache = new Map<Locale, ReadonlyMap<string, readonly string[]>>();
+/**
+ * Term id → the published prose, in this locale, that uses it.
+ *
+ * COMPOUND RECORDS AND THE NOTES, not records alone. Eight terms — COA, lot,
+ * purity, HPLC, mass spectrometry, lyophilised, vial, hygroscopic — are used
+ * by a published note and by no record, because documentation and handling
+ * are written about in the notes. Indexing records only left each of them
+ * defined with no route to anywhere it is used, which is the opposite of what
+ * a glossary is for.
+ */
+interface TermUsage {
+  records: readonly string[];
+  notes: readonly string[];
+}
 
-function usage(locale: Locale): ReadonlyMap<string, readonly string[]> {
-  /* 63 terms × 62 records of regex matching, over constant registries:
+const usageCache = new Map<Locale, ReadonlyMap<string, TermUsage>>();
+
+/** A note as prose: every publishable block's text, in reading order. */
+function articleText(slug: string, locale: Locale): string {
+  const article = publicArticle(slug);
+  if (!article) return "";
+  return article.body
+    .map((block) => {
+      switch (block.kind) {
+        case "paragraph":
+        case "heading":
+        case "note":
+          return block.text[locale];
+        case "list":
+          return block.items[locale].join(" ");
+        case "terms":
+          return block.terms
+            .map((entry) => `${entry.term[locale]} ${entry.definition[locale]}`)
+            .join(" ");
+      }
+    })
+    .join(" ");
+}
+
+function usage(locale: Locale): ReadonlyMap<string, TermUsage> {
+  /* 63 terms matched over 62 records and the notes, all constant registries:
      computed once per locale, not on every request. */
   const cached = usageCache.get(locale);
   if (cached) return cached;
-  const byTerm = new Map<string, string[]>();
+  const byTerm = new Map<string, { records: string[]; notes: string[] }>();
+  const add = (id: string, kind: "records" | "notes", value: string) => {
+    const entry = byTerm.get(id) ?? { records: [], notes: [] };
+    entry[kind].push(value);
+    byTerm.set(id, entry);
+  };
   for (const slug of recordSlugs()) {
     const record = compoundRecord(slug, locale);
     if (!record) continue;
-    for (const term of termsInText(record.text, locale)) {
-      byTerm.set(term.id, [...(byTerm.get(term.id) ?? []), slug]);
+    for (const term of termsInText(record.text, locale)) add(term.id, "records", slug);
+  }
+  for (const article of publicArticles()) {
+    for (const term of termsInText(articleText(article.slug, locale), locale)) {
+      add(term.id, "notes", article.slug);
     }
   }
   usageCache.set(locale, byTerm);
@@ -120,9 +164,22 @@ export default async function GlossaryPage({ params }: { params: Promise<{ local
         .map((id) => publicTerm(id))
         .filter((t) => t !== undefined)
         .map((t) => ({ id: t.id, label: t.term[locale] })),
-      usedIn: (used.get(term.id) ?? [])
-        .map((slug) => ({ name: names.get(slug) ?? slug, href: path(routes.compound(slug)) }))
-        .sort((a, b) => a.name.localeCompare(b.name, "es")),
+      /* Records first, then the notes: a compound is the more specific answer
+         to "where is this word used", and a note the wider one. */
+      usedIn: [
+        ...(used.get(term.id)?.records ?? [])
+          .map((slug) => ({ name: names.get(slug) ?? slug, href: path(routes.compound(slug)) }))
+          .sort((a, b) => a.name.localeCompare(b.name, "es")),
+        ...(used.get(term.id)?.notes ?? [])
+          /* The note a term already offers as "read more" is not also listed
+             as a place the word is used: one destination, one route. */
+          .filter((slug) => slug !== term.note)
+          .map((slug) => ({
+            name: publicArticle(slug)?.title[locale] ?? slug,
+            href: path(routes.article(slug)),
+          }))
+          .sort((a, b) => a.name.localeCompare(b.name, "es")),
+      ],
       note: note ? { href: path(routes.article(note.slug)), label: note.title[locale] } : null,
       destination:
         term.destination && destination
