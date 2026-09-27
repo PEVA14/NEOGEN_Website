@@ -1708,9 +1708,10 @@ export const REFERENCES: readonly Reference[] = [
     status: BATCH_6,
   },
   {
-    /* The published 2020 correction to the 2019 study. Its contents could not
-       be consulted (publisher access refused); cited beside the original so a
-       reader can find it. */
+    /* The published 2020 correction to the 2019 study, read 2026-09-26: it
+       moves rows that production had placed in the wrong columns of Table 1
+       (recombinant reference products) and Table 2 (antibodies), and revises
+       none of the study's findings. Not a separate experiment. */
     id: "ref-2020-reichel-black-market-fs344-erratum",
     title: "Detection of black market follistatin 344",
     authors: ["Reichel C", "Gmeiner G", "Thevis M"],
@@ -1792,17 +1793,19 @@ export const REFERENCES: readonly Reference[] = [
     status: BATCH_6,
   },
   {
-    /* Read from the list as published on WADA's site, 2026-09-26: section
-       S2.2.1, "Testosterone-stimulating peptides in males", lists
-       "gonadotrophin-releasing hormone (GnRH, gonadorelin)". */
+    /* The dated 2026 edition, not the rolling list page: read 2026-09-26
+       from WADA's own PDF, which states it comes into effect on 1 January
+       2026. Section S2.2.1, "Testosterone-stimulating peptides in males",
+       lists "gonadotrophin-releasing hormone (GnRH, gonadorelin)", under the
+       substances prohibited at all times. */
     id: "ref-2026-wada-prohibited-list",
-    title: "The Prohibited List",
+    title: "World Anti-Doping Code International Standard: Prohibited List 2026",
     authors: ["World Anti-Doping Agency"],
     publication: "World Anti-Doping Agency",
     year: 2026,
     doi: null,
     pmid: null,
-    url: "https://www.wada-ama.org/en/prohibited-list",
+    url: "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
     sourceType: "regulatory-document",
     status: BATCH_6,
   },

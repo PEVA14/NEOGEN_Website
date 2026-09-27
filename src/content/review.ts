@@ -92,13 +92,24 @@ export const BATCH_5_REMAINDER_PROFILES: ContentStatus = "approved";
  * from PubMed's records and cross-checked with Crossref where PubMed omits a
  * DOI.
  *
- * REVISED after an independent audit the same day, which found statements the
- * first pass had not checked closely enough against full texts: a potency
- * figure the paper itself reports two ways, a duration measured on a modified
- * analogue, a non-significant result stated as a finding, participant and
- * transcript counts, and a gene-therapy trial summarised inaccurately (since
- * removed). Every statement was then re-read against the full text where one
- * is open, and against the abstract otherwise, and bounded to it.
+ * REVISED TWICE after independent audits (2026-09-26). The first pass had not
+ * checked statements closely enough against full texts: a potency figure the
+ * paper itself reports two ways, a duration measured on a modified analogue, a
+ * non-significant result stated as a finding, participant and transcript
+ * counts, and a gene-therapy trial summarised inaccurately (since removed).
+ * The second pass corrected what the first had got wrong or left out: where
+ * the conflicting IC50 values sit in that paper, the subgroup sizes behind the
+ * DSIP endocrine experiments, that Pinealon was given BEFORE the methionine
+ * loading (prevention, not treatment), the three donors behind the
+ * induced-neuron work, cDNA against protein for FS344, and the contents of
+ * the Reichel correction, which is now read.
+ *
+ * WHAT IS NOT CLAIMED: that every statement rests on a full text. Where the
+ * full text is open it was read; the rest are bounded to abstracts, and those
+ * carry what the abstract states and no more. Two questions stay open for a
+ * human reviewer: whether Fridman's methods support "synthesis" rather than
+ * protein abundance, and what peptide form Levdik's rat experiment actually
+ * used. Both are named in the profiles.
  *
  * WHAT A PROFILE HERE ESTABLISHES: the literature's name or sequence for a
  * compound, and what studies of that literature substance report. It does
@@ -125,7 +136,11 @@ export const BATCH_5_REMAINDER_PROFILES: ContentStatus = "approved";
  *   Sterile, bacteriostatic and amino-acid water — supplies, not compounds.
  *
  * OWNER REVIEW. Nothing here renders until this is set to "approved". The
- * content checks passing means the profiles meet the content contract; it
- * does not mean the science has been reviewed.
+ * content checks are structural: they verify that every statement carries a
+ * resolvable source, that no forbidden vocabulary reaches a public string and
+ * that identifiers are well formed. They do not verify that a statement
+ * represents its source correctly, and they say nothing about the identity of
+ * NEOGEN's material. Neither does any amount of literature: that needs
+ * product documentation.
  */
 export const BATCH_6_RECORDLESS_AUDIT: ContentStatus = "owner-review";

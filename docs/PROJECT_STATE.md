@@ -2326,15 +2326,25 @@ substance to the product's name in the literature. Reference metadata was
 copied from PubMed's records and cross-checked with Crossref where PubMed has
 no DOI.
 
-**An independent audit (Codex, same day) found the first draft unreliable in
-places**, and it was reconciled against the sources: a potency figure the
-paper reports two ways, a duration measured on a modified analogue, a
-non-significant DNA-damage result stated as a finding, participant and
-transcript counts, FSH suppression placed in the ovary instead of the
-pituitary, and a gene-therapy trial summarised inaccurately (removed). Every
-statement was then re-read against the open full text where there is one and
-bounded to the abstract otherwise. Reconciliation notes are in the commit
-that made the corrections.
+**Two independent audits (Codex, 2026-09-26) found the drafts unreliable in
+places**, and they were reconciled against the sources. The first round: a
+potency figure the paper reports two ways, a duration measured on a modified
+analogue, a non-significant DNA-damage result stated as a finding, participant
+and transcript counts, FSH suppression placed in the ovary instead of the
+pituitary, and a gene-therapy trial summarised inaccurately (removed). The
+second: where those conflicting IC50 values actually sit, the subgroup sizes
+behind the DSIP endocrine experiments, that Pinealon was given BEFORE the
+methionine loading (a prevention design), the three donors behind the
+induced-neuron work, cDNA against protein for FS344, and the Reichel
+correction, now read. Reconciliation notes are in the commits that made the
+corrections.
+
+**Not every statement rests on a full text**, and the batch does not claim
+otherwise. Where the full text is open it was read; the rest are bounded to
+what their abstracts state. Two questions are left open in the profiles
+themselves for a human reviewer: whether Fridman's methods support "synthesis"
+rather than protein abundance, and what peptide form Levdik's rat experiment
+used.
 
 **What these profiles establish, and what they do not.** They establish the
 literature's name or sequence for a compound and what studies of that
@@ -2343,6 +2353,10 @@ form, tag, processing or equivalence of any NEOGEN material — no document
 does yet (`content/identity.ts` is empty).
 
 **Drafted (batch 6, `owner-review`, nothing renders yet):**
+
+None of the mappings below establishes the sequence, salt, form, processing,
+tags, purity, activity or formulation of anything in NEOGEN's inventory. That
+needs product documentation and cannot be settled with literature.
 
 | Product         | Literature identity / nomenclature                                                | Evidence cited                                                                |
 | --------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
@@ -2363,9 +2377,9 @@ three waters — reasons in §8j and in `content/review.ts`.
 
 **To publish:** the owner reviews the science and sets
 `BATCH_6_RECORDLESS_AUDIT` to `approved`. The content checks pass with the
-batch in either state; that shows the profiles meet the content contract
-(sources attached, vocabulary clean, identifiers valid), not that the
-science is right — which is what the owner's review is for.
+batch in either state. They are structural — sources resolve, vocabulary is
+clean, identifiers are well formed — and they do not check that a statement
+represents its source, which is what the owner's review is for.
 
 ## 8ad. The compendium's Quick Record (2026-09-25)
 
