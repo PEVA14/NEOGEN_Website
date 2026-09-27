@@ -318,6 +318,10 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
             label={`${hub.areas.label} // ${hub.areas.qualifier}`}
             title={hub.areas.title}
             id="areas-title"
+            /* The one route from the hub to the whole catalogue. The tiles
+               below lead to an area's products; a reader who does not want to
+               choose an area had no way through from here. */
+            action={<TextLink href={path(routes.products)}>{hub.areas.all}</TextLink>}
           />
           <ResearchAreaIndex entries={areaEntries} copy={hub.areas} />
         </Container>

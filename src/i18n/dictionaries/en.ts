@@ -1121,7 +1121,10 @@ const en: Dictionary = {
         title: "Research areas",
         compounds: "Compounds",
         references: "References",
-        enter: "Enter",
+        /* The tiles lead to the catalogue's area views, so the mark says so
+           rather than "Entrar" / "Enter", which named no destination. */
+        enter: "See in the catalogue",
+        all: "See the whole catalogue",
       },
       lines: {
         index: "03",

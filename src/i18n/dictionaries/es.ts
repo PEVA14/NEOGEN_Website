@@ -1217,7 +1217,10 @@ const es = {
         title: "Áreas de investigación",
         compounds: "Compuestos",
         references: "Referencias",
-        enter: "Entrar",
+        /* The tiles lead to the catalogue's area views, so the mark says so
+           rather than "Entrar" / "Enter", which named no destination. */
+        enter: "Ver en el catálogo",
+        all: "Ver el catálogo completo",
       },
       lines: {
         index: "03",
