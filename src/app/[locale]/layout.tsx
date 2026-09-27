@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { IBM_Plex_Mono, Instrument_Sans } from "next/font/google";
 import { notFound } from "next/navigation";
 
-import { SiteFooter, SiteHeader } from "@/components/layout";
+import { FragmentLanding, SiteFooter, SiteHeader } from "@/components/layout";
 import { SkipLink } from "@/components/primitives";
 import { siteConfig } from "@/config/site";
 import { isLocale, locales, localeTags, type Locale } from "@/i18n/config";
@@ -114,6 +114,9 @@ export default async function LocaleLayout({
        */}
       <body suppressHydrationWarning className="flex min-h-dvh flex-col">
         <SkipLink label={dict.a11y.skipToContent} />
+        {/* Re-makes a fragment jump the browser resolved against a document
+            that had not finished laying out — see the component. */}
+        <FragmentLanding />
         <SiteHeader locale={typedLocale} dict={dict} />
         {/* `tabIndex={-1}` makes the skip-link target programmatically focusable. */}
         <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
