@@ -863,6 +863,11 @@ const es = {
       title: "Investigación relacionada",
       lede: "Las referencias que cita esta página y las áreas donde continuar leyendo.",
       routes: "Continuar por área",
+      /* Las tres salidas del perfil hacia NEOGEN Research: el área (catálogo),
+         la línea de investigación (por qué se estudia) y el vocabulario. */
+      lines: "Líneas de investigación",
+      terms: "Términos del glosario",
+      continueReading: "Continuar leyendo",
       hub: "Índice de NEOGEN Research",
       record: "Registro científico completo",
     },

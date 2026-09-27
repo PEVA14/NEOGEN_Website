@@ -817,6 +817,11 @@ const en: Dictionary = {
       title: "Related research",
       lede: "The references this page cites, and the areas to continue reading in.",
       routes: "Continue by area",
+      /* The profile's three ways out into NEOGEN Research: the area (the
+         catalogue), the research line (why it is studied) and the vocabulary. */
+      lines: "Research lines",
+      terms: "Glossary terms",
+      continueReading: "Continue reading",
       hub: "NEOGEN Research index",
       record: "Full scientific record",
     },

@@ -18,6 +18,7 @@ import { ladderStep } from "@/components/product";
 import { AreaMasthead, TextLink, type AreaFact, type ProductCardProps } from "@/components/ui";
 import { routes } from "@/config/routes";
 import { publicAreaOverview } from "@/content/areas";
+import { hasRecord } from "@/content/compendium";
 import { areaResearch } from "@/content/research";
 import { formatStrength, presentationRange, publishedProducts, type Product } from "@/data/catalog";
 import { formatPrice, getPrices } from "@/data/commerce";
@@ -159,9 +160,21 @@ export async function renderAreaPage({
   const research = areaResearch(area.id, sources?.research);
   const researchReferences = research.map((entryRow) => entryRow.reference);
   const citingSlugs = new Set(research.flatMap((entryRow) => entryRow.products));
+  /*
+   * These are the compounds whose own profiles cite the area's sources, so
+   * this list is a research surface: it leads to the SCIENTIFIC RECORD where
+   * one exists, and to the product page only for a compound that has none —
+   * the same rule the compendium's index follows. It used to send every one of
+   * them to the product page, which made the area's research section a route
+   * into commerce and nowhere else.
+   */
   const citingCompounds = items
     .filter((p) => citingSlugs.has(p.slug))
-    .map((p) => ({ slug: p.slug, name: p.name, href: path(routes.product(p.slug)) }));
+    .map((p) => ({
+      slug: p.slug,
+      name: p.name,
+      href: path(hasRecord(p.slug) ? routes.compound(p.slug) : routes.product(p.slug)),
+    }));
 
   const evidenceRecords = publicEvidenceIndex(items, sources?.quality);
   const coverage = evidenceCoverage(evidenceRecords);

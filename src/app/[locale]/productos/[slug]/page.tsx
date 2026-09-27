@@ -24,7 +24,8 @@ import { routes } from "@/config/routes";
 import { siteConfig } from "@/config/site";
 import { getWorld } from "@/config/worlds";
 import { galleryImages, productMedia, resolveStageStill } from "@/content/media";
-import { hasRecord } from "@/content/compendium";
+import { compoundRecord, hasRecord, lineIds } from "@/content/compendium";
+import { termsInText } from "@/content/glossary";
 import { publicOverview } from "@/content/overview";
 import { referencesForProduct } from "@/content/research";
 import { resolveEvidence } from "@/domain/quality";
@@ -256,21 +257,109 @@ export default async function ProductPage({
   const ground = (id: string) =>
     renderedSections.indexOf(id) % 2 === 0 ? "bg-(--surface-raised)" : undefined;
 
+  /*
+   * THE WAYS OUT INTO NEOGEN RESEARCH.
+   *
+   * A product page used to offer one: its areas, which are views of the
+   * CATALOGUE. The record page already offered three — area, research line and
+   * glossary term — so the science linked to commerce but not the other way
+   * round. These are the same three, derived from the same record, so a reader
+   * who arrives at a product can reach why it is studied and what its words
+   * mean without going back through the hub.
+   *
+   * Nothing is invented: the lines are the record's own function tags (only
+   * the ones with a page), and the terms are the glossary's matches against
+   * the record's own published sentences. A product with no record gets its
+   * areas alone, as before.
+   */
+  const record = compoundRecord(product.slug, locale);
+  const linkableLines = new Set(lineIds());
+  const recordLines = (record?.functions ?? []).filter((fn) => linkableLines.has(fn.id));
+  /*
+   * Terms are matched against THIS PAGE's sentences, not the whole record's.
+   * The product page shows a cut of the record — summary, research context,
+   * mechanism and technical notes — and matching the record's full text listed
+   * words a reader could not see here, which is both confusing and a longer
+   * list than the rail can carry.
+   */
+  const recordTerms = overview
+    ? termsInText(
+        [
+          overview.summary ?? "",
+          ...overview.researchContext.map((statement) => statement.text),
+          ...overview.mechanismNotes.map((statement) => statement.text),
+          ...overview.technicalNotes,
+        ].join(" "),
+        locale,
+      )
+    : [];
+
+  const routeGroups: readonly {
+    label: string;
+    /** Areas and lines are destinations and carry the arrow; a term is a
+        definition lookup, so it is set quiet and without one. */
+    quiet?: boolean;
+    items: readonly { key: string; href: string; text: string }[];
+  }[] = [
+    {
+      label: pdp.research.routes,
+      items: areas.map((area) => ({
+        key: area.id,
+        href: path(routes.area(area.slug)),
+        text: dict.discovery.areas[area.id].title,
+      })),
+    },
+    {
+      label: pdp.research.lines,
+      items: recordLines.map((fn) => ({
+        key: fn.id,
+        href: path(routes.line(fn.id)),
+        text: fn.label[locale],
+      })),
+    },
+    {
+      label: pdp.research.terms,
+      quiet: true,
+      items: recordTerms.map((term) => ({
+        key: term.id,
+        href: path(routes.glossaryTerm(term.id)),
+        text: term.term[locale],
+      })),
+    },
+  ].filter((group) => group.items.length > 0);
+
   const areaRoutes =
-    areas.length > 0 ? (
-      <nav aria-label={pdp.research.routes} className="mt-(--space-lg)">
-        <Mono size="2xs" className="mb-(--space-2xs) block text-(--ink-muted) uppercase">
-          {pdp.research.routes}
-        </Mono>
-        <ul className="flex flex-wrap gap-x-(--space-lg)">
-          {areas.map((area) => (
-            <li key={area.id}>
-              <TextLink href={path(routes.area(area.slug))}>
-                {dict.discovery.areas[area.id].title}
-              </TextLink>
-            </li>
-          ))}
-        </ul>
+    routeGroups.length > 0 ? (
+      <nav
+        aria-label={pdp.research.continueReading}
+        className="mt-(--space-lg) flex flex-col gap-(--space-md)"
+      >
+        {routeGroups.map((group) => (
+          <div key={group.label}>
+            <Mono size="2xs" className="mb-(--space-2xs) block text-(--ink-muted) uppercase">
+              {group.label}
+            </Mono>
+            <ul
+              className={
+                group.quiet
+                  ? "flex flex-wrap gap-x-(--space-md)"
+                  : "flex flex-wrap gap-x-(--space-lg)"
+              }
+            >
+              {group.items.map((item) => (
+                <li key={item.key}>
+                  <TextLink
+                    href={item.href}
+                    arrow={!group.quiet}
+                    tone={group.quiet ? "muted" : "default"}
+                  >
+                    {item.text}
+                  </TextLink>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </nav>
     ) : null;
 
