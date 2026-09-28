@@ -282,6 +282,7 @@ export const GLOSSARY: readonly GlossaryTerm[] = [
       en: "The formation of new blood vessels from existing ones.",
     },
     matches: { es: ["angiogenesis"], en: ["angiogenesis"] },
+    destination: "lines",
   },
   {
     id: "mitocondria",
@@ -296,6 +297,8 @@ export const GLOSSARY: readonly GlossaryTerm[] = [
       es: ["mitocondria", "mitocondrias", "mitocondrial", "mitocondriales"],
       en: ["mitochondria", "mitochondrion", "mitochondrial"],
     },
+    seeAlso: ["apoptosis"],
+    destination: "lines",
   },
   {
     id: "apoptosis",
@@ -307,7 +310,7 @@ export const GLOSSARY: readonly GlossaryTerm[] = [
       en: "Programmed cell death: a regulated process by which a cell dismantles itself.",
     },
     matches: { es: ["apoptosis"], en: ["apoptosis"] },
-    seeAlso: ["senescencia"],
+    seeAlso: ["senescencia", "mitocondria"],
   },
   {
     id: "senescencia",
@@ -325,6 +328,61 @@ export const GLOSSARY: readonly GlossaryTerm[] = [
     seeAlso: ["apoptosis"],
   },
 
+  {
+    id: "glandula-pineal",
+    category: "mechanism",
+    status: "owner-review",
+    term: { es: "Glándula pineal", en: "Pineal gland" },
+    definition: {
+      es: "Glándula pequeña situada en el centro del cerebro. Produce melatonina, y lo hace durante la noche.",
+      en: "A small gland at the centre of the brain. It produces melatonin, and does so during the night.",
+    },
+    matches: { es: ["glandula pineal", "pineal"], en: ["pineal gland", "pineal"] },
+    seeAlso: ["autocrino-paracrino"],
+    destination: "lines",
+  },
+  {
+    id: "autocrino-paracrino",
+    category: "mechanism",
+    status: "owner-review",
+    term: { es: "Autocrino y paracrino", en: "Autocrine and paracrine" },
+    definition: {
+      es: "Dos formas en que una señal actúa cerca de donde se produce: sobre la misma célula que la libera (autocrina) o sobre las células vecinas (paracrina), en lugar de viajar por la sangre.",
+      en: "Two ways a signal acts close to where it is made: on the same cell that releases it (autocrine) or on neighbouring cells (paracrine), rather than travelling through the blood.",
+    },
+    matches: {
+      es: ["autocrina", "autocrino", "paracrina", "paracrino"],
+      en: ["autocrine", "paracrine"],
+    },
+    seeAlso: ["senalizacion", "receptor"],
+  },
+  {
+    id: "dano-oxidativo",
+    category: "mechanism",
+    status: "owner-review",
+    term: { es: "Daño oxidativo", en: "Oxidative damage" },
+    definition: {
+      es: "Daño a los componentes de una célula —lípidos, proteínas, ADN— causado por especies reactivas de oxígeno, las moléculas muy reactivas que deja el metabolismo.",
+      en: "Damage to a cell's components — lipids, proteins, DNA — caused by reactive oxygen species, the highly reactive molecules metabolism leaves behind.",
+    },
+    matches: {
+      es: ["dano oxidativo", "oxidativo", "oxidativa", "estres oxidativo"],
+      en: ["oxidative damage", "oxidative", "oxidative stress"],
+    },
+    seeAlso: ["redox", "mitocondria"],
+  },
+  {
+    id: "redox",
+    category: "mechanism",
+    status: "owner-review",
+    term: { es: "Redox", en: "Redox" },
+    definition: {
+      es: "Abreviatura de reducción-oxidación: el par de reacciones en que unos electrones pasan de una molécula a otra. El equilibrio entre ambas dentro de una célula es su estado redox.",
+      en: "Short for reduction-oxidation: the pair of reactions in which electrons pass from one molecule to another. The balance between the two inside a cell is its redox state.",
+    },
+    matches: { es: ["redox"], en: ["redox"] },
+    seeAlso: ["dano-oxidativo"],
+  },
   /* ---- Studies and evidence --------------------------------------------- */
   {
     id: "in-vitro",
