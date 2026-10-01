@@ -20,6 +20,8 @@ import { CitationRail } from "@/components/research";
 import { Body, Mono } from "@/components/typography";
 import { ProductCard, TextLink } from "@/components/ui";
 import { PageTransition } from "@/components/vial-transition/PageTransition";
+import { benchFor } from "@/components/spec-ribbon/benches";
+import { RibbonBench } from "@/components/spec-ribbon/RibbonBench";
 import { FlagshipShop } from "@/components/storefront";
 import { routes } from "@/config/routes";
 import { siteConfig } from "@/config/site";
@@ -512,38 +514,90 @@ export default async function ProductPage({
         className={ground("specifications")}
       >
         <Container width="full">
-          <SectionHeader
-            scale="record"
-            index={sectionIndex("specifications")}
-            label={`${pdp.specifications.label} // ${pdp.specifications.qualifier}`}
-            title={pdp.specifications.title}
-            id="spec-title"
-          />
-          <div className="mb-(--space-xl)">
-            <PresentationLadder
-              label={pdp.specifications.ladder}
-              packLabel={pdp.specifications.pack}
-              steps={product.variants.map((v) => ladderStep(v.strength, v.vials))}
-            />
-          </div>
-          <SpecTable
-            rows={[
-              { key: pdp.specifications.compound, value: product.name },
-              {
-                key: pdp.specifications.classification,
-                value: dict.products.catalog.categoryLabels[product.category],
-              },
-              {
-                key: pdp.specifications.presentation,
-                value: product.variants
-                  .map((v) => `${formatStrength(v.strength)}${v.vials ? ` × ${v.vials}` : ""}`)
-                  .join(" · "),
-              },
-              ...(product.composition
-                ? [{ key: pdp.specifications.composition, value: product.composition }]
-                : []),
-            ]}
-          />
+          {(() => {
+            const header = (
+              <SectionHeader
+                scale="record"
+                index={sectionIndex("specifications")}
+                label={`${pdp.specifications.label} // ${pdp.specifications.qualifier}`}
+                title={pdp.specifications.title}
+                id="spec-title"
+              />
+            );
+            const section = (
+              <>
+                <div className="mb-(--space-xl)">
+                  <PresentationLadder
+                    label={pdp.specifications.ladder}
+                    packLabel={pdp.specifications.pack}
+                    steps={product.variants.map((v) => ladderStep(v.strength, v.vials))}
+                  />
+                </div>
+                <SpecTable
+                  rows={[
+                    { key: pdp.specifications.compound, value: product.name },
+                    {
+                      key: pdp.specifications.classification,
+                      value: dict.products.catalog.categoryLabels[product.category],
+                    },
+                    {
+                      key: pdp.specifications.presentation,
+                      value: product.variants
+                        .map(
+                          (v) => `${formatStrength(v.strength)}${v.vials ? ` × ${v.vials}` : ""}`,
+                        )
+                        .join(" · "),
+                    },
+                    ...(product.composition
+                      ? [{ key: pdp.specifications.composition, value: product.composition }]
+                      : []),
+                  ]}
+                />
+              </>
+            );
+            const bench = benchFor(product.slug);
+            /* The specifications ribbon (components/spec-ribbon): a band
+               unwound off the vial becomes the panel that holds this section.
+               Without it — no bench for this product, a narrow screen,
+               reduced motion, no WebGL — the section as it is. */
+            return bench ? (
+              <RibbonBench
+                bench={bench}
+                heading={header}
+                name={product.name}
+                range={presentationRange(product)}
+                stepsLabel={pdp.specifications.ladder}
+                steps={product.variants.map((v, index) => {
+                  const step = ladderStep(v.strength, v.vials);
+                  return {
+                    index: `P-${String(index + 1).padStart(2, "0")}`,
+                    value: step.value,
+                    unit: step.unit,
+                    pack: step.vials
+                      ? pdp.specifications.pack.replace("{n}", String(step.vials))
+                      : null,
+                  };
+                })}
+                rows={[
+                  {
+                    key: pdp.specifications.classification,
+                    value: dict.products.catalog.categoryLabels[product.category],
+                  },
+                  ...(product.composition
+                    ? [{ key: pdp.specifications.composition, value: product.composition }]
+                    : []),
+                ]}
+                notice={dict.researchUse.label}
+              >
+                {section}
+              </RibbonBench>
+            ) : (
+              <>
+                {header}
+                {section}
+              </>
+            );
+          })()}
         </Container>
       </Section>
 

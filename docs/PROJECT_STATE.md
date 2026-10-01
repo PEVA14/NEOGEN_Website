@@ -1,8 +1,10 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-09-30**: **the flagship stand-in is the live vial's own
-first frame** (§8ah), and the product page sees the vial straight on. Before
-that, the same day: **the vial transition is permanent** (§8ag) —
+Last updated **2026-10-01**: **the specifications ribbon is permanent**
+(§8ai) — on RETA's product page a band unwinds off a vial into the panel
+that holds section 02. Before that, 2026-09-30: **the flagship stand-in is
+the live vial's own first frame** (§8ah), and the product page sees the
+vial straight on. Before that, the same day: **the vial transition is permanent** (§8ag) —
 from the catalogue, the tapped vial flies into its product page. Before that,
 2026-09-29/30: **the live 3D wears the stills' glass, one shared homepage
 canvas, phone performance** (§8af). Before that, 2026-09-26: **the recordless audit** (§8ae) — ten sourced
@@ -2472,6 +2474,41 @@ that off for its scroll-to-top unless `<html data-scroll-behavior="smooth">`
 is set. In Safari a new page therefore painted at the old page's scroll
 position and glided up. `app/[locale]/layout.tsx` now sets the attribute;
 in-page anchors stay smooth. Verified in iOS 26.3 Safari (simulator).
+
+## 8ai. The specifications ribbon, made permanent (2026-10-01)
+
+Flagship idea #2, "the label unrolls into the data sheet", prototyped as a
+spike behind `NEXT_PUBLIC_SPIKE_LABEL_SHEET` in three versions. The first two
+carried the 3D vial's own label off the vial onto a sheet (the descent; the
+bench with a turning vial); the owner set them aside ("forget about the label
+being literally the vials label… a cool animation that leads to a stylish
+place to present the entire info"), and sketched the third: a band wound
+round a vial at the page's edge that unwinds into the panel. Iterated with
+the owner — a taller band, half the vial on the page, a still instead of a
+3D vial, a thicker roll, the page's paper behind it, unwinding visibly FROM
+the vial; then no hold, once, by the clock, never wound back, 1.7 s — and
+made permanent ("make the ribbon permanent too").
+
+- **`components/spec-ribbon/`**: `RibbonBench` (the bench and the DOM
+  panel), `RibbonOverlay` (the band's canvas and paper shader), `ribbon.ts`
+  (geometry, print layout, script), `benches.ts` (per product: the vial
+  still, its model, the label's colours). README has the mechanism.
+- **RETA only** — the only product with a bench still. Others keep section
+  02 as it is; adding one is a still and an entry (README).
+- **Fallbacks**: under 64rem, reduced motion, no WebGL 2 — section 02 as it
+  was. A failure after mount shows the panel at once (error boundary). The
+  panel prints.
+- **Cost** (laptop, production build): no frames while scrolling, before or
+  after; ~0.1 ms a frame during the run; 0.9 MB of GPU texture; canvas made
+  within a screen of the bench; no multisampling at 2×.
+- **Guard**: `check:media` fails when the bench still is missing, outside its
+  product folder or rendered from another model than the page loads.
+- **Removed with the spike**: the flag, the two earlier versions, the label
+  hooks in `VialModel` and `RetaCanvas` (`unroll`, `rig`, `SceneLighting`),
+  and the `?vialcapture` mode that rendered the still (DEFERRED_POLISH).
+- **Owner to judge**: the CLS when the bench replaces the plain section
+  after hydration (it is below the fold on a laptop); whether GLOW and
+  GHK-Cu get benches.
 
 ## 8ah. The stand-in matches the live vial (2026-09-30)
 

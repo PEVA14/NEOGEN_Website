@@ -1,0 +1,209 @@
+/*
+ * The bench: full width, nearly a screen tall.
+ *
+ * Everything is sized from the bench's height. The vial is 96 % of it, its
+ * axis on the page's left edge, so half of it is on the page. The band is
+ * half the bench's height, centred on the vial's straight body, and runs from
+ * the vial's axis to the bench's right margin. The vial's proportions and the
+ * label's colours are the product's (`benches.ts`), set on the bench.
+ */
+
+/* The bench breaks out of the page's container; its section clips the overhang. */
+:global(section):has(.layout) {
+  overflow-x: clip;
+}
+
+.layout {
+  display: grid;
+  gap: var(--space-lg);
+  margin-block-end: var(--space-xl);
+}
+
+.stage {
+  --bench-h: clamp(34rem, calc(100vh - var(--header-height) - 2rem), 58rem);
+}
+
+.bench {
+  --vial-h: calc(var(--bench-h) * 0.96);
+  --vial-top: calc(var(--bench-h) * 0.02);
+  /* The body's half-width — how much of the vial is on the page. */
+  --vial-r: calc(var(--vial-h) * var(--vial-radius));
+  --band-h: calc(var(--bench-h) * 0.5);
+  /* Centred on the body. */
+  --band-top: calc(var(--vial-top) + var(--vial-h) * var(--vial-body) - var(--band-h) / 2);
+
+  position: relative;
+  inline-size: 100vw;
+  margin-inline-start: calc(50% - 50vw);
+  block-size: var(--bench-h);
+  overflow: clip;
+}
+
+.vial {
+  position: absolute;
+  inset-block-start: var(--vial-top);
+  inset-inline-start: 0;
+  block-size: var(--vial-h);
+  inline-size: auto;
+  translate: -50% 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* The band, flat: the label's paper and ink, not a theme's. */
+.panel {
+  position: absolute;
+  /* Above the band's canvas, so it resolves over it. */
+  z-index: 1;
+  /* From the vial's edge — the band comes out from behind it — to the margin. */
+  inset-inline: var(--vial-r) 4%;
+  inset-block-start: var(--band-top);
+  block-size: var(--band-h);
+  container-type: size;
+  background: #ffffff;
+  color: #000000;
+  opacity: 0;
+}
+
+.panel > * {
+  position: absolute;
+  margin: 0;
+}
+
+.hairline {
+  inset-inline: 0;
+  inset-block-start: 7%;
+  block-size: 1px;
+  background: #b4b4b4;
+}
+
+/* The lockup, at the panel's leading edge. */
+.lockup {
+  inset-inline-start: 4%;
+  inset-block-start: 13%;
+  inline-size: calc(var(--vial-r) * 0.8);
+  aspect-ratio: 744 / 239;
+  background: currentColor;
+  mask: url("/branding/neogen-logo.png") center / contain no-repeat;
+}
+
+.stripe {
+  inset-inline: 0;
+  inset-block-start: 85%;
+  block-size: 6.5%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(90deg, var(--stripe-a), var(--stripe-b) 50%, var(--stripe-c));
+  color: #ffffff;
+  font-family: var(--font-mono);
+  font-size: clamp(0.625rem, 3cqb, 0.875rem);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* The specifications, between the hairline and the stripe. */
+.content {
+  inset-inline: 4% 4%;
+  inset-block: 12% 18%;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 3.6fr) minmax(0, 0.9fr);
+  gap: 3.5cqi;
+  align-items: center;
+}
+
+.key {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: clamp(0.625rem, 2.6cqb, 0.8125rem);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #5a5a5a;
+}
+
+.name {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: clamp(1.125rem, 6.5cqb, 2rem);
+  line-height: 1.15;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.range {
+  margin: 0.7em 0 0;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: clamp(0.875rem, 4.4cqb, 1.375rem);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ribbon-ink);
+}
+
+.ladder ol {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  margin: 1.1em 0 0;
+  padding: 0;
+  list-style: none;
+  border-inline-start: 1px solid #d9d9d9;
+}
+
+.ladder li {
+  display: grid;
+  gap: 0.5em;
+  min-inline-size: 0;
+  padding-inline: 0.7em;
+  border-inline-end: 1px solid #d9d9d9;
+}
+
+.stepIndex,
+.stepPack {
+  font-family: var(--font-mono);
+  font-size: clamp(0.5625rem, 2.3cqb, 0.75rem);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #5a5a5a;
+}
+
+.ladder > .stepPack {
+  margin: 1em 0 0;
+}
+
+.stepValue {
+  display: flex;
+  align-items: baseline;
+  gap: 0.18em;
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-size: clamp(1.75rem, 13cqb, 4rem);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.stepUnit {
+  font-family: var(--font-mono);
+  font-size: clamp(0.625rem, 2.6cqb, 0.875rem);
+}
+
+.facts {
+  display: grid;
+  gap: 1em;
+  margin: 0;
+}
+
+.facts dd {
+  margin: 0.35em 0 0;
+  font-family: var(--font-sans);
+  font-size: clamp(0.875rem, 3.6cqb, 1.125rem);
+  line-height: 1.3;
+}
+
+/* On paper the panel is simply there, played or not. */
+@media print {
+  .panel {
+    opacity: 1 !important;
+  }
+}

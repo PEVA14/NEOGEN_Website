@@ -16,6 +16,7 @@ import path from "node:path";
 import { products } from "../src/data/catalog/index.ts";
 import { DEMO_ARTWORK, MEDIA } from "../src/content/media/registry.ts";
 import { LIVE_FRAME_MARGIN } from "../src/components/product/liveFrame.ts";
+import { allBenches } from "../src/components/spec-ribbon/benches.ts";
 
 const PUBLIC = "public";
 const IMAGE_TYPES = new Set([".jpg", ".jpeg", ".png", ".webp", ".avif"]);
@@ -248,6 +249,35 @@ for (const [slug, specimen] of Object.entries(SPECIMENS)) {
     fail(
       "vial-transition frame disagrees with the still",
       `${slug} → ${specimen.frame.width}×${specimen.frame.height}, still ${studio.width}×${studio.height}`,
+    );
+  }
+}
+
+/* --------------------------------------------- the specifications ribbon --- */
+
+/*
+ * THE BENCH'S VIAL IS THE PRODUCT'S OWN, BARE. The ribbon (`spec-ribbon`)
+ * stands a render of the vial without its label at the bench's edge and
+ * winds its band round it; a model re-exported without a re-render would put
+ * the old vial on the bench, silently.
+ */
+for (const [slug, bench] of allBenches()) {
+  if (!products.some((p) => p.slug === slug)) {
+    fail("ribbon bench for an unknown product", `"${slug}" is not a slug in the catalog`);
+    continue;
+  }
+  // Decorative (alt=""): the panel beside it says everything.
+  if (!existsSync(path.join(PUBLIC, bench.vial.src))) {
+    fail("ribbon bench still is missing", `${slug} → ${bench.vial.src}`);
+  }
+  if (!bench.vial.src.startsWith(`/images/products/${slug}/`)) {
+    fail("ribbon bench still outside its product folder", `${slug} → ${bench.vial.src}`);
+  }
+  if (bench.vial.model !== MEDIA[slug]?.model) {
+    fail(
+      "ribbon bench still rendered from another model",
+      `${slug} → ${bench.vial.model}, but the page loads ${MEDIA[slug]?.model ?? "no model"}; ` +
+        "re-render it (components/spec-ribbon/README.md)",
     );
   }
 }

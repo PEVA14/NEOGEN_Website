@@ -460,6 +460,25 @@ is held to the rules below:
   re-taken whenever its model or live box changes (`check:media` enforces
   both) — or its lighting, materials or pose (nothing can check those).
 
+**A second exception, by owner decision (2026-10-01): the specifications
+ribbon.** On RETA's product page, section 02 opens on a bench: a still of the
+bare vial at the page's edge, and a label-styled band wound round it that
+unwinds once into the panel holding the specifications —
+`components/spec-ribbon/` (its README has the mechanism and the cost). It is
+held to these rules:
+
+- it is not pinned and does not follow the scroll: it plays once, by the
+  clock (1.7 s), the first time the band is well into view, and never winds
+  back; nothing waits on it but the panel's own fade;
+- the specifications are real DOM in the reading order throughout — the
+  canvas draws only paper and print, never content;
+- a narrow screen, reduced motion, no WebGL 2 or a product without a bench
+  get section 02 as it is; a failure after mount shows the panel at once;
+- its canvas draws only while the band moves (none while the page scrolls),
+  and is made only when the bench is near;
+- the bench's vial is a still rendered from the product's model, and
+  `check:media` fails when the model changes without a re-render.
+
 What a V1 product viewer does:
 
 - holds a stable composition, anchored to a measured DOM box;
