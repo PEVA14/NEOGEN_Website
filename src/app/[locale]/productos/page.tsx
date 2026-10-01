@@ -9,6 +9,7 @@ import {
 } from "@/components/catalog/Storefront";
 import { HideWhileSearching } from "@/components/catalog/StoreSearch";
 import { ResearchUseNotice, ShippingNote } from "@/components/commerce";
+import { PageTransition } from "@/components/vial-transition/PageTransition";
 import { routes } from "@/config/routes";
 import { worldIds } from "@/config/worlds";
 import { commerceStill } from "@/content/media";
@@ -22,7 +23,6 @@ import { fillTemplate, socialMetadata } from "@/lib/meta";
 import { catalogCopy, catalogEntries } from "@/server/catalog";
 
 import type { Metadata } from "next";
-import { SpikePage } from "@/spike/vial-transition/SpikePage";
 
 export async function generateMetadata({
   params,
@@ -113,7 +113,7 @@ export default async function ProductsPage({ params }: { params: Promise<{ local
   });
 
   return (
-    <SpikePage>
+    <PageTransition>
       <StoreMasthead
         copy={{
           eyebrow: store.eyebrow,
@@ -157,6 +157,6 @@ export default async function ProductsPage({ params }: { params: Promise<{ local
           cardHeadingLevel={3}
         />
       </StoreCollection>
-    </SpikePage>
+    </PageTransition>
   );
 }

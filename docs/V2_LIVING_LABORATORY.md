@@ -14,7 +14,8 @@ that was learned building it. What follows is enough to rebuild it deliberately.
 
 ## 1. What moves to V2
 
-- ProductCard → PDP shared-element transitions
+- ProductCard → PDP shared-element transitions — **shipped 2026-09-30** as the
+  vial transition (`components/vial-transition`, CONVENTIONS §11)
 - Advanced route-transition choreography
 - Complex pinned WebGL storytelling
 - Cinematic multi-state product movement

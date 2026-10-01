@@ -1,10 +1,16 @@
 /**
- * SPIKE — vial transition. Photographs a product's studio still as TWO layers.
+ * THE VIAL TRANSITION'S PICTURES. Photographs a product's studio still as TWO
+ * layers (`components/vial-transition`).
  *
  *   npm run dev
- *   node scripts/spike/capture-specimen.mjs reta glow ghk-cu
- *   node scripts/spike/capture-specimen.mjs semaglutide \
+ *   npm run capture:specimen -- reta glow ghk-cu
+ *   npm run capture:specimen -- semaglutide \
  *     --query "model=/models/semaglutide-v1.glb&label=printed&yaw=0"
+ *
+ * RE-RUN IT WHENEVER A STUDIO STILL IS RE-RENDERED. The layers are named after
+ * the still they split (`studio-v10.jpg` → `studio-v10-ground.jpg`,
+ * `studio-v10-specimen.png`), and `check:media` fails while a product's
+ * declared still and its layers disagree.
  *
  * The catalogue card shows ONE flat still, with the vial and its set baked
  * together. To move the vial between pages while its set stays behind, the two
@@ -20,17 +26,22 @@
  * so they register to the pixel. The script checks that: ground + specimen,
  * recomposed, must reproduce the plain still.
  *
- * Writes public/spike/vial-transition/<slug>/ and the manifest
- * src/spike/vial-transition/specimens.json (the box, as fractions of the
- * frame, is what lets a page place the cut-out without measuring anything).
+ * It also checks the pair against the REGISTERED still on disk, which is what
+ * the catalogue card shows: a large error means the studio scene no longer
+ * renders what was captured, and the still needs re-rendering first.
  *
- * Delete with the rest of the spike: this folder, public/spike/, src/spike/.
+ * Writes the two layers beside the still in public/images/products/<slug>/,
+ * and the manifest src/components/vial-transition/specimens.json (the box, as
+ * fractions of the frame, is what lets a page place the cut-out without
+ * measuring anything).
  */
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import path from "node:path";
 
 import { chromium } from "playwright-core";
 import sharp from "sharp";
+
+import { MEDIA } from "../src/content/media/registry.ts";
 
 const args = process.argv.slice(2);
 const flag = (name, fallback) => {
@@ -42,15 +53,19 @@ const base = flag("base", "http://localhost:3000");
 const query = flag("query", "");
 const width = 800; // CSS px; the frame is 4:5 at 2x → 1600 × 2000, as the stills are
 
-const OUT = "public/spike/vial-transition";
-const MANIFEST = "src/spike/vial-transition/specimens.json";
+const MANIFEST = "src/components/vial-transition/specimens.json";
 /** Alpha at or below this is outside the object. */
 const EDGE = 8;
 /** Kept around the silhouette so the antialiased edge is never cropped. */
 const PAD = 6;
+/*
+ * Mean difference (0–255) between the served layers, recombined, and the
+ * registered still. JPEG noise alone measures 0.4–0.6.
+ */
+const STILL_DRIFT = 2;
 
 if (!slugs.length) {
-  console.error("usage: node scripts/spike/capture-specimen.mjs <slug>... [--query …]");
+  console.error("usage: npm run capture:specimen -- <slug>... [--query …]");
   process.exit(1);
 }
 
@@ -67,6 +82,18 @@ let failures = 0;
 
 try {
   for (const slug of slugs) {
+    // The layers are named after the still they split.
+    const still = MEDIA[slug]?.studio?.src;
+    if (!still) {
+      console.error(`  ! ${slug}: no studio still is declared in content/media/registry.ts`);
+      failures += 1;
+      continue;
+    }
+    const stem = path.posix.basename(still, path.posix.extname(still));
+    const folder = path.posix.dirname(still);
+    const groundSrc = `${folder}/${stem}-ground.jpg`;
+    const specimenSrc = `${folder}/${stem}-specimen.png`;
+
     const page = await browser.newPage({ viewport: { width: 900, height: 1300 } });
     const errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
@@ -112,13 +139,12 @@ try {
       height: Math.min(H, y1 + PAD + 1) - Math.max(0, y0 - PAD),
     };
 
-    const dir = path.join(OUT, slug);
-    mkdirSync(dir, { recursive: true });
+    mkdirSync(path.join("public", folder), { recursive: true });
 
     await sharp(decode(ground))
       .removeAlpha()
       .jpeg({ quality: 88, mozjpeg: true })
-      .toFile(path.join(dir, "ground.jpg"));
+      .toFile(path.join("public", groundSrc));
 
     // Interleaved by hand: sharp applies `removeAlpha` at OUTPUT, after any
     // `joinChannel`, so chaining them silently drops the alpha just joined.
@@ -134,7 +160,7 @@ try {
       .extract(box)
       .png({ compressionLevel: 9 })
       .toBuffer();
-    writeFileSync(path.join(dir, "specimen.png"), specimen);
+    writeFileSync(path.join("public", specimenSrc), specimen);
 
     // REGISTRATION CHECK: the two layers, recombined, against the plain still.
     const recomposed = await sharp(decode(ground))
@@ -152,9 +178,27 @@ try {
     }
     const mean = sum / reference.length;
 
+    // And the files as written, against the still the catalogue card shows.
+    const registered = await sharp(path.join("public", still)).removeAlpha().raw().toBuffer();
+    const served = await sharp(path.join("public", groundSrc))
+      .removeAlpha()
+      .composite([{ input: specimen, left: box.left, top: box.top }])
+      .raw()
+      .toBuffer();
+    let drift = 0;
+    for (let i = 0; i < registered.length; i += 1) drift += Math.abs(registered[i] - served[i]);
+    drift /= registered.length;
+    if (drift > STILL_DRIFT) {
+      console.error(
+        `  ! ${slug}: the layers differ from ${still} by ${drift.toFixed(2)} on average — ` +
+          "the studio scene no longer renders that still; re-render it first",
+      );
+      failures += 1;
+    }
+
     manifest[slug] = {
-      ground: `/spike/vial-transition/${slug}/ground.jpg`,
-      specimen: `/spike/vial-transition/${slug}/specimen.png`,
+      ground: groundSrc,
+      specimen: specimenSrc,
       frame: { width: W, height: H },
       /* The cut-out's box, in frame pixels and as fractions of the frame. */
       box: {
@@ -171,7 +215,8 @@ try {
     console.log(
       `  ${slug}: specimen ${box.width}×${box.height} at (${box.left}, ${box.top}); ` +
         `object ${(manifest[slug].object.h * 100).toFixed(1)}% of frame height; ` +
-        `recomposition error mean ${mean.toFixed(2)}, worst ${worst}`,
+        `recomposition error mean ${mean.toFixed(2)}, worst ${worst}; ` +
+        `against ${still}: mean ${drift.toFixed(2)}`,
     );
   }
 } finally {

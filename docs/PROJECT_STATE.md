@@ -1,6 +1,9 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-09-26**: **the recordless audit** (§8ae) — ten sourced
+Last updated **2026-09-30**: **the vial transition is permanent** (§8ag) —
+from the catalogue, the tapped vial flies into its product page. Before that,
+2026-09-29/30: **the live 3D wears the stills' glass, one shared homepage
+canvas, phone performance** (§8af). Before that, 2026-09-26: **the recordless audit** (§8ae) — ten sourced
 profiles drafted behind an owner-review batch and corrected after an
 independent audit; thirteen products without one by decision. Before that, 2026-09-25: **the compendium's Quick Record** (§8ad) —
 the drawer became a four-view research interface on the existing evidence.
@@ -2454,8 +2457,8 @@ section's drawn plate for 1–1.5 s; now the spot is empty and the vial fades in
 a device without WebGL. The studio stills were not used instead: they are
 photographs with their own set, and would have jumped to the 3D's pose.
 Measured: no stand-in at any point of the load, vial fully in by ~1.5 s,
-layout shift 0 across load and a full scroll (laptop and phone). The product
-page outside the spike still draws its stand-in while loading.
+layout shift 0 across load and a full scroll (laptop and phone). The
+flagship product pages now stand in with the studio vial itself (§8ag).
 
 **RETA section on phones holds still** (owner: the zoom-in "makes it laggy"):
 the compact sequence track is now the presented pose only — no arrival from
@@ -2467,6 +2470,41 @@ that off for its scroll-to-top unless `<html data-scroll-behavior="smooth">`
 is set. In Safari a new page therefore painted at the old page's scroll
 position and glided up. `app/[locale]/layout.tsx` now sets the attribute;
 in-page anchors stay smooth. Verified in iOS 26.3 Safari (simulator).
+
+## 8ag. The vial transition, made permanent (2026-09-30)
+
+Owner: "make it a permanent feature" — the catalogue card → product page
+flight, built as a spike behind `NEXT_PUBLIC_SPIKE_VIAL_TRANSITION` and
+committed in `9a6d1d5`. It is now in every build. Mechanism, pictures and
+traps: `src/components/vial-transition/README.md`; the decision and its rules:
+CONVENTIONS §11 (the one exception to the static product page).
+
+- **Moved** `src/spike/vial-transition/` → `src/components/vial-transition/`;
+  the build flag and the `?vtdebug` phone log are gone; `SpikePage` is
+  `PageTransition`; the canary `ViewTransition` types are `src/types/`.
+- **Pictures** moved beside the stills they were cut from:
+  `public/images/products/<slug>/studio-vN-ground.jpg` and
+  `studio-vN-specimen.png`. Re-checked against the registered stills on disk
+  (mean difference 0.41–0.56 / 255, JPEG noise).
+- **Staleness guard.** `check:media` fails when a product's declared studio
+  still and its layers disagree — a re-render must be followed by
+  `npm run capture:specimen -- <slug>` (new script; it now also compares the
+  layers with the registered still and fails above a mean of 2).
+- **Area pages** (`/productos/area/…`) use the same grid, so their cards were
+  already origins; the page is now wrapped in `PageTransition` and gives way as
+  the catalogue does. Other compound rows on that page do not travel.
+- **What changes for a visitor without a card click:** the flagship product
+  pages stand in with the studio vial while the canvas boots (no drawn
+  stand-in), and Semaglutide's page shows its split still. Both were the
+  spike build's behaviour the owner reviewed.
+- **Verified** on a production build (:3110, headless Chrome): the typed
+  flight from the grid (RETA desktop, Semaglutide desktop), the strip and
+  grid on a phone (RETA, GLOW), and an area page's grid; three.js stays out of
+  the catalogue's and product pages' initial scripts.
+- **Not in development.** The morph needs the destination prefetched, and
+  `next dev` does not prefetch: on `npm run dev` the navigation is plain.
+- **Deferred** (DEFERRED_POLISH, top): the flagship stand-in from the
+  presenter's own rig; drawn plates travelling as objects.
 
 ## 8ae. The recordless audit (2026-09-26)
 

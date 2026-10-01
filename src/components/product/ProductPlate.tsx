@@ -3,9 +3,8 @@ import { ViewTransition } from "react";
 
 import { SpecimenPlate } from "@/components/ui";
 import { PLATE_SIZES, commerceStill, productMedia, stillMedia } from "@/content/media";
-import { VIAL_TRANSITION } from "@/spike/vial-transition/flag";
-import { SpecimenLayers } from "@/spike/vial-transition/SpecimenLayers";
-import { names, specimenFor } from "@/spike/vial-transition/specimens";
+import { SpecimenLayers } from "@/components/vial-transition/SpecimenLayers";
+import { names, specimenFor } from "@/components/vial-transition/specimens";
 
 import styles from "./ProductPlate.module.css";
 
@@ -61,15 +60,12 @@ export function ProductPlate({
 }) {
   const still = stillMedia(slug);
   /*
-   * SPIKE (vial transition): the SAME still the catalogue card showed, split
+   * The vial transition: the SAME still the catalogue card showed, split
    * into set + object, so the object the customer clicked is the object that
-   * arrives. Without the spike this page shows the drawn plate for a product
-   * that the catalogue shows as a render — two different objects.
+   * arrives. (Without it, this page drew the plate for a product the
+   * catalogue shows as a render — two different objects.)
    */
-  const specimen =
-    VIAL_TRANSITION && !productMedia(slug).primary && commerceStill(slug)
-      ? specimenFor(slug)
-      : null;
+  const specimen = !productMedia(slug).primary && commerceStill(slug) ? specimenFor(slug) : null;
   const studioAlt = commerceStill(slug)?.alt ?? name;
 
   return (
@@ -138,9 +134,8 @@ export function ProductPlate({
   );
 }
 
-/** SPIKE (vial transition): the drawn plate, named to pair with its card. */
+/** The vial transition: the drawn plate, named to pair with its card. */
 function TravelsAsPlate({ slug, children }: { slug: string; children: ReactNode }) {
-  if (!VIAL_TRANSITION) return children;
   return (
     <ViewTransition name={names.plate(slug)} share="vt-plate" default="none">
       {children}

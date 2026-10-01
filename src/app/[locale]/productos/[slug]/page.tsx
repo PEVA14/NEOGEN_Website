@@ -19,6 +19,7 @@ import { QualityRecord } from "@/components/quality";
 import { CitationRail } from "@/components/research";
 import { Body, Mono } from "@/components/typography";
 import { ProductCard, TextLink } from "@/components/ui";
+import { PageTransition } from "@/components/vial-transition/PageTransition";
 import { FlagshipShop } from "@/components/storefront";
 import { routes } from "@/config/routes";
 import { siteConfig } from "@/config/site";
@@ -47,7 +48,6 @@ import { bagEnabled } from "@/payments";
 import { cardDetails, cardDetailsCopy } from "@/server/catalog";
 import { shopProducts } from "@/server/storefront";
 import { fillTemplate, presentationSummary, socialMetadata } from "@/lib/meta";
-import { SpikePage } from "@/spike/vial-transition/SpikePage";
 
 import type { Metadata } from "next";
 
@@ -435,7 +435,7 @@ export default async function ProductPage({
   );
 
   return (
-    <SpikePage>
+    <PageTransition>
       {/* 01 — THE PRODUCT. Flagship environment, or the quiet plate. */}
       {world ? (
         <Section
@@ -458,7 +458,8 @@ export default async function ProductPage({
             }
             wordmark={product.name}
             posterAlt={product.name}
-            /* SPIKE (vial transition): the split studio still stands in here. */
+            /* The split studio still stands in here, and receives the card's
+               specimen (the vial transition). */
             slug={product.slug}
             loadingLabel={dict.home.reta.loadingLabel}
             staticLabel={dict.home.reta.staticLabel}
@@ -858,6 +859,6 @@ export default async function ProductPage({
           </Container>
         </Section>
       ) : null}
-    </SpikePage>
+    </PageTransition>
   );
 }

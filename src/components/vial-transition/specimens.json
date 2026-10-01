@@ -1,7 +1,7 @@
 {
   "reta": {
-    "ground": "/spike/vial-transition/reta/ground.jpg",
-    "specimen": "/spike/vial-transition/reta/specimen.png",
+    "ground": "/images/products/reta/studio-v10-ground.jpg",
+    "specimen": "/images/products/reta/studio-v10-specimen.png",
     "frame": {
       "width": 1600,
       "height": 2000
@@ -25,8 +25,8 @@
     "query": null
   },
   "glow": {
-    "ground": "/spike/vial-transition/glow/ground.jpg",
-    "specimen": "/spike/vial-transition/glow/specimen.png",
+    "ground": "/images/products/glow/studio-v5-ground.jpg",
+    "specimen": "/images/products/glow/studio-v5-specimen.png",
     "frame": {
       "width": 1600,
       "height": 2000
@@ -50,8 +50,8 @@
     "query": null
   },
   "ghk-cu": {
-    "ground": "/spike/vial-transition/ghk-cu/ground.jpg",
-    "specimen": "/spike/vial-transition/ghk-cu/specimen.png",
+    "ground": "/images/products/ghk-cu/studio-v5-ground.jpg",
+    "specimen": "/images/products/ghk-cu/studio-v5-specimen.png",
     "frame": {
       "width": 1600,
       "height": 2000
@@ -75,8 +75,8 @@
     "query": null
   },
   "semaglutide": {
-    "ground": "/spike/vial-transition/semaglutide/ground.jpg",
-    "specimen": "/spike/vial-transition/semaglutide/specimen.png",
+    "ground": "/images/products/semaglutide/studio-v10-ground.jpg",
+    "specimen": "/images/products/semaglutide/studio-v10-specimen.png",
     "frame": {
       "width": 1600,
       "height": 2000

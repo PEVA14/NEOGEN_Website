@@ -1,9 +1,9 @@
 /*
- * SPIKE — the flight, in native view-transition CSS.
+ * The vial transition: the flight, in native view-transition CSS.
  *
  * No JavaScript animates anything here. React names the participants
  * (`<ViewTransition share|enter|exit="vt-…">`), the browser snapshots them, and
- * these rules time the pseudo-elements. Everything is scoped to the spike's
+ * these rules time the pseudo-elements. Everything is scoped to this folder's
  * classes and to the header, which only moves while one of these runs.
  *
  * THE IDEA IT HAS TO CARRY: the same physical specimen, now examined more
@@ -39,7 +39,7 @@
 /* --- The pages ---------------------------------------------------------------
  *
  * Not `root`: React switches the whole-page cross-fade off and collapses the
- * root group, so these target each page's own boundary (`SpikePage`), which
+ * root group, so these target each page's own boundary (`PageTransition`), which
  * animates only for a card-initiated navigation.
  */
 

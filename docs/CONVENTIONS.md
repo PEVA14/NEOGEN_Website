@@ -436,6 +436,26 @@ storytelling, worlds physically transforming the UI — is deferred to V2 and
 written up in `docs/V2_LIVING_LABORATORY.md`, including the measurements and
 the traps. Do not rebuild it inside V1.
 
+**One exception, by owner decision (2026-09-30): the vial transition.** From
+the catalogue (grid and masthead strip) to a product page, the tapped card's
+vial flies into the page's media frame and a flagship's world opens around
+it — `components/vial-transition/` (its README has the mechanism, the
+pictures and the traps). It is the only route transition on the site, and it
+is held to the rules below:
+
+- it is native view transitions on the compositor, no JS animation, and it
+  plays only for a navigation the card typed (`vt-specimen`); every other
+  navigation, and the back button, is untouched;
+- a view-transition name may appear once per page, so a card names its vial
+  only once tapped (`armed.ts`) and only catalogue cards are origins;
+- **rule 2 below still holds**: the product page's canvas is not mounted
+  during the flight (`useStageHandoff`); the still stands in and dissolves
+  once the canvas has drawn;
+- reduced motion, or a browser without view transitions, gets the new page
+  at once — never a slower version of the same travel;
+- its pictures are cut from the studio still the card shows and must be
+  re-cut whenever that still is re-rendered (`check:media` enforces it).
+
 What a V1 product viewer does:
 
 - holds a stable composition, anchored to a measured DOM box;

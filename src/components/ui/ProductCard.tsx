@@ -8,13 +8,12 @@ import { Mono } from "@/components/typography";
 import { SpecimenPlate } from "@/components/ui/SpecimenPlate";
 import { WorldDot } from "@/components/ui/WorldDot";
 import { CARD_SIZES, commerceStill, productMedia, stillMedia } from "@/content/media";
-import { arm, useArmed } from "@/spike/vial-transition/armed";
-import { VIAL_TRANSITION } from "@/spike/vial-transition/flag";
-import { markIncoming } from "@/spike/vial-transition/incoming";
-import { warmDestination } from "@/spike/vial-transition/warm";
-import { SpecimenLayers } from "@/spike/vial-transition/SpecimenLayers";
-import { SPECIMEN_NAVIGATION } from "@/spike/vial-transition/SpikePage";
-import { names, specimenFor } from "@/spike/vial-transition/specimens";
+import { arm, useArmed } from "@/components/vial-transition/armed";
+import { markIncoming } from "@/components/vial-transition/incoming";
+import { SPECIMEN_NAVIGATION } from "@/components/vial-transition/PageTransition";
+import { SpecimenLayers } from "@/components/vial-transition/SpecimenLayers";
+import { names, specimenFor } from "@/components/vial-transition/specimens";
+import { warmDestination } from "@/components/vial-transition/warm";
 
 import styles from "./ProductCard.module.css";
 
@@ -107,7 +106,7 @@ export interface ProductCardProps {
    */
   variant?: "default" | "store";
   /**
-   * SPIKE (vial transition): this card is the ORIGIN of a shared-element
+   * The vial transition: this card is the ORIGIN of a shared-element
    * transition to its product page. Only a composition where each product
    * appears once may set it — a view-transition name must be unique on the
    * page, or the browser skips the transition entirely.
@@ -163,7 +162,6 @@ export function ProductCard({
   transition = false,
 }: ProductCardProps) {
   const warmed = useRef(false);
-  const travels = VIAL_TRANSITION && transition;
   const revealId = useId();
   const [open, setOpen] = useState(false);
   /* The feature card's plate changes shape at 64rem; the reveal is sized to the
@@ -179,17 +177,17 @@ export function ProductCard({
   const image =
     variant === "store" ? commerceStill(slug) : still.kind === "image" ? still.image : null;
   const Heading = `h${headingLevel}` as "h2" | "h3";
-  /* A studio still that has been split into set + object (spike). Never a
+  /* A studio still that has been split into set + object. Never a
      photograph: only renders are split. */
-  const specimen = travels && image && !productMedia(slug).primary ? specimenFor(slug) : null;
+  const specimen = transition && image && !productMedia(slug).primary ? specimenFor(slug) : null;
   const card = useRef<HTMLElement>(null);
-  /* SPIKE: this card names its specimen only once tapped — the strip above the
+  /* This card names its specimen only once tapped — the strip above the
      grid shows the same products, and a name may appear once. See `armed.ts`. */
   const armKey = `grid:${slug}`;
   const armed = useArmed(armKey);
 
   /*
-   * SPIKE (vial transition): warm the destination's pictures once the card has
+   * The vial transition: warm the destination's pictures once the card has
    * been ON SCREEN for a moment. Hover alone is not enough: a touch screen has
    * none, and a quick click gives the fetch no time — measured, the flight then
    * waited 0.5–0.8s for React to see the product page's images load.
@@ -226,9 +224,9 @@ export function ProductCard({
    * model — there is no point fetching a viewer for a page that has none.
    */
   const warm = () => {
-    // SPIKE (vial transition): the product page's pictures, so the flight
+    // The vial transition: the product page's pictures, so the flight
     // does not wait for them. Independent of the 3D warm-up below.
-    if (travels) warmDestination(slug, format === "flagship" && world !== null);
+    if (transition) warmDestination(slug, format === "flagship" && world !== null);
     if (warmed.current) return;
     const connection = (navigator as Navigator & { connection?: { saveData?: boolean } })
       .connection;
@@ -267,10 +265,10 @@ export function ProductCard({
         href={href}
         className={styles.link}
         onFocus={warm}
-        /* SPIKE: a finger has no hover; this is the last moment before the click. */
-        onPointerDown={travels ? warm : undefined}
+        /* A finger has no hover; this is the last moment before the click. */
+        onPointerDown={transition ? warm : undefined}
         onClick={
-          travels
+          transition
             ? (event) => {
                 arm(armKey);
                 const media = event.currentTarget.querySelector(`.${styles.media}`);
@@ -282,8 +280,8 @@ export function ProductCard({
               }
             : undefined
         }
-        /* SPIKE: tags the navigation so the pages give way to the specimen. */
-        transitionTypes={travels ? [SPECIMEN_NAVIGATION] : undefined}
+        /* Tags the navigation so the pages give way to the specimen. */
+        transitionTypes={transition ? [SPECIMEN_NAVIGATION] : undefined}
       >
         <span className={styles.media}>
           {specimen && image ? (
@@ -308,7 +306,7 @@ export function ProductCard({
             />
           ) : (
             <TravelsAs
-              name={travels ? (armed ? names.plate(slug) : "auto") : null}
+              name={transition ? (armed ? names.plate(slug) : "auto") : null}
               share="vt-plate"
             >
               <SpecimenPlate
@@ -407,7 +405,7 @@ export function ProductCard({
 }
 
 /**
- * SPIKE (vial transition): a named shared-element participant, or nothing at
+ * The vial transition: a named shared-element participant, or nothing at
  * all. Without a name the children render exactly as before — no boundary.
  * `auto` keeps the boundary (so arming never remounts the plate) but pairs with
  * nothing.

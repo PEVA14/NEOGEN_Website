@@ -12,9 +12,9 @@ const warmed = new Set<string>();
  *
  * React holds a view transition until the images in the NEW state have loaded
  * — up to 500ms (react-dom's SUSPENSEY_FONT_AND_IMAGE_TIMEOUT) — so that it
- * never animates into a blank box. Measured on the spike, that wait was the
- * whole gap between the click and the first frame of movement: 0.5–0.8s of a
- * card that seemed not to have heard the click.
+ * never animates into a blank box. Measured, that wait was the whole gap
+ * between the click and the first frame of movement: 0.5–0.8s of a card that
+ * seemed not to have heard the click.
  *
  * So the pictures the product page will ask for are fetched while the pointer
  * settles on the card (or it takes focus, or a finger lands): the same URL,

@@ -11,10 +11,9 @@ import { Mono } from "@/components/typography";
 import type { ProductImage } from "@/content/media";
 import type { WorldEnvironment, WorldId } from "@/config/worlds";
 import { useFinePointer } from "@/hooks/useFinePointer";
-import { VIAL_TRANSITION } from "@/spike/vial-transition/flag";
-import { StageSpecimen } from "@/spike/vial-transition/SpecimenLayers";
-import { names, specimenFor } from "@/spike/vial-transition/specimens";
-import { useStageHandoff, useWorldOrigin } from "@/spike/vial-transition/useStageHandoff";
+import { StageSpecimen } from "@/components/vial-transition/SpecimenLayers";
+import { names, specimenFor } from "@/components/vial-transition/specimens";
+import { useStageHandoff, useWorldOrigin } from "@/components/vial-transition/useStageHandoff";
 
 import styles from "./ProductStage.module.css";
 
@@ -62,8 +61,9 @@ interface ProductStageProps {
   /** The commerce panel, server-rendered. */
   children: ReactNode;
   /**
-   * SPIKE (vial transition): the product, so its split studio still can stand
-   * in for the object and receive the card's specimen. Absent → unchanged.
+   * The product, so its split studio still can stand in for the object and
+   * receive the card's specimen (the vial transition). Absent → the drawn
+   * stand-in.
    */
   slug?: string;
 }
@@ -82,16 +82,17 @@ interface ProductStageProps {
  *
  * WHY IT IS NOT A CINEMATIC SEQUENCE
  * ----------------------------------
- * It was, briefly. A shared-element transition carried the product card's media
- * rectangle into this environment, and the ideas behind it are good enough to
- * keep — see docs/V2_LIVING_LABORATORY.md, which also records the measurements
- * and the traps. What it is not is affordable in V1: mounting the WebGL layer
- * costs one ~240ms burst of main-thread work, and any animation sharing a frame
- * budget with it visibly breaks.
- *
- * So the sophistication is spent where it holds up at any frame rate:
+ * Mounting the WebGL layer costs one ~240ms burst of main-thread work, and any
+ * animation sharing a frame budget with it visibly breaks (CONVENTIONS §11). So
+ * the sophistication is spent where it holds up at any frame rate:
  * composition, type scale, the instrument marks on the media frame, the column
  * rule, and the seam into Quiet Mode below.
+ *
+ * The one arrival is the VIAL TRANSITION (`components/vial-transition`): from a
+ * catalogue card, the card's vial flies into the media frame and this world
+ * opens around it. It keeps the rule above by holding the canvas back until
+ * the flight has landed — the still stands in, and dissolves once the canvas
+ * has drawn.
  */
 export function ProductStage({
   world,
@@ -125,12 +126,12 @@ export function ProductStage({
    * worse than no hint.
    */
   /*
-   * SPIKE (vial transition). While a specimen is in flight from a card, the
+   * THE VIAL TRANSITION. While a specimen is in flight from a card, the
    * canvas is not mounted at all: its boot is ~240ms of main thread and would
    * land inside the animation. It mounts once the flight has landed, behind
    * the specimen, which stands in until the canvas has drawn.
    */
-  const specimen = VIAL_TRANSITION && slug ? specimenFor(slug) : null;
+  const specimen = slug ? specimenFor(slug) : null;
   const handoff = useStageHandoff(slug ?? "");
   const held = specimen !== null && handoff.holding;
   useWorldOrigin(slug ?? "", specimen !== null && handoff.holding, stage, panel);
@@ -264,7 +265,7 @@ export function ProductStage({
     <div ref={stage} className={styles.stage} data-world={world}>
       {/* The environment. Full-bleed, with the world's atmospheric wash. */}
       {specimen ? (
-        /* SPIKE: paired with the card's stage, so the world can open out of the
+        /* Paired with the card's stage, so the world can open out of the
            card the specimen left and drift to where it lands (see the CSS). */
         <ViewTransition name={names.world(slug ?? "")} share="vt-world" default="none">
           <div className={styles.field} aria-hidden="true" />

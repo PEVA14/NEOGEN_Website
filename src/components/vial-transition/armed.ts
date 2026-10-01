@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from "react";
 
 /**
- * SPIKE — WHICH CARD THE SPECIMEN LEAVES FROM.
+ * WHICH CARD THE SPECIMEN LEAVES FROM.
  *
  * A view-transition name must be unique on the page when a transition starts,
  * or the browser skips the whole transition. The catalogue shows RETA, GLOW and

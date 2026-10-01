@@ -21,6 +21,7 @@
     "db:migrate": "node scripts/db-migrate.mjs",
     "ops:account": "node scripts/ops-account.mjs",
     "brand": "node scripts/prepare-brand.mjs",
+    "capture:specimen": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/capture-specimen.mjs",
     "check:quality": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-quality.mjs",
     "check:content": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-content.mjs",
     "check:atlas": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-atlas.mjs"

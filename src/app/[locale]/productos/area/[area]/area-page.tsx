@@ -16,6 +16,7 @@ import { SectionHeader } from "@/components/layout";
 import { Container, Section } from "@/components/primitives";
 import { ladderStep } from "@/components/product";
 import { AreaMasthead, TextLink, type AreaFact, type ProductCardProps } from "@/components/ui";
+import { PageTransition } from "@/components/vial-transition/PageTransition";
 import { routes } from "@/config/routes";
 import { publicAreaOverview } from "@/content/areas";
 import { hasRecord } from "@/content/compendium";
@@ -280,7 +281,9 @@ export async function renderAreaPage({
     sections.indexOf(id) % 2 === 1 ? "bg-(--surface-raised)" : undefined;
 
   return (
-    <>
+    /* Its catalogue grid is a vial-transition origin, so the page gives way
+       as the main catalogue does. */
+    <PageTransition>
       {preview ? (
         <PreviewBanner
           label={dict.discovery.preview.label}
@@ -550,6 +553,6 @@ export async function renderAreaPage({
           <ContinueExploring destinations={destinations} />
         </Container>
       </Section>
-    </>
+    </PageTransition>
   );
 }

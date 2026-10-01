@@ -6,9 +6,8 @@ import type React from "react";
 import { Container } from "@/components/primitives";
 import { AreaCap, AreaIcon, SpecimenPlate } from "@/components/ui";
 
-import { VIAL_TRANSITION } from "@/spike/vial-transition/flag";
-import { SpecimenLink } from "@/spike/vial-transition/SpecimenLink";
-import { specimenFor } from "@/spike/vial-transition/specimens";
+import { SpecimenLink } from "@/components/vial-transition/SpecimenLink";
+import { specimenFor } from "@/components/vial-transition/specimens";
 
 import { StoreSearch } from "./StoreSearch";
 import styles from "./Storefront.module.css";
@@ -133,9 +132,9 @@ export function StoreMasthead({
                       </span>
                     </span>
                   );
-                  /* SPIKE (vial transition): the strip's specimen travels too —
+                  /* The vial transition: the strip's specimen travels too —
                      on a phone it is the first RETA anyone sees. */
-                  if (VIAL_TRANSITION && item.image && specimenFor(item.slug)) {
+                  if (item.image && specimenFor(item.slug)) {
                     return (
                       <li key={item.slug} className={styles.signatureItem}>
                         <SpecimenLink

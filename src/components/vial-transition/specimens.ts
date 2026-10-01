@@ -3,7 +3,7 @@ import MANIFEST from "./specimens.json";
 /**
  * A studio still, split into the two layers it was always made of.
  *
- * Written by `scripts/spike/capture-specimen.mjs` from three passes of the SAME
+ * Written by `scripts/capture-specimen.mjs` from three passes of the SAME
  * frame, and checked there: ground + specimen, recombined, reproduce the
  * registered studio still to within JPEG noise. So a card that draws the two
  * layers looks exactly like the card that drew the one picture.

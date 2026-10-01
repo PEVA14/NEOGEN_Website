@@ -261,7 +261,7 @@ export interface RetaCanvasProps {
    */
   fill?: boolean;
   /**
-   * SPIKE (vial transition): called once, just after the first frame that
+   * The vial transition: called once, just after the first frame that
    * contains the model has been presented — the moment a still standing in for
    * the object can dissolve into it.
    */
@@ -618,7 +618,7 @@ function PhoneFrameBudget() {
 }
 
 /**
- * SPIKE (vial transition). The Canvas suspends its parent until the model has
+ * The vial transition. The Canvas suspends its parent until the model has
  * loaded, so the first `useFrame` here is the first frame WITH the object; the
  * callback waits one more animation frame so that frame has been presented.
  */

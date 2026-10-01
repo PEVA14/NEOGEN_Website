@@ -186,6 +186,47 @@ for (const [slug, entry] of Object.entries(MEDIA)) {
   }
 }
 
+/* ------------------------------------------------- the travelling vial --- */
+
+/*
+ * THE VIAL TRANSITION'S LAYERS MUST BE CUT FROM THE STILL THE CARD SHOWS.
+ *
+ * The catalogue card draws a product's studio still as two pictures — the set
+ * and the object cut out of it (`components/vial-transition`) — so the object
+ * can leave the card on its own. They are named after the still they split
+ * (`studio-v10-ground.jpg`, `studio-v10-specimen.png`). A still re-rendered
+ * into a new version without re-cutting would leave the card showing the old
+ * render recombined, silently; this is where that fails instead.
+ */
+const SPECIMENS = JSON.parse(readFileSync("src/components/vial-transition/specimens.json", "utf8"));
+for (const [slug, specimen] of Object.entries(SPECIMENS)) {
+  const studio = MEDIA[slug]?.studio;
+  if (!studio) {
+    fail("vial-transition layers for a product with no studio still", slug);
+    continue;
+  }
+  const ext = path.posix.extname(studio.src);
+  const stem = studio.src.slice(0, -ext.length);
+  const expected = { ground: `${stem}-ground.jpg`, specimen: `${stem}-specimen.png` };
+  for (const layer of ["ground", "specimen"]) {
+    if (specimen[layer] !== expected[layer]) {
+      fail(
+        "vial-transition layers cut from another still",
+        `${slug} → ${specimen[layer]}, but the declared still is ${studio.src}; ` +
+          `re-run npm run capture:specimen -- ${slug}`,
+      );
+    } else if (!existsSync(path.join(PUBLIC, specimen[layer]))) {
+      fail("vial-transition layer is missing", `${slug} → ${specimen[layer]}`);
+    }
+  }
+  if (specimen.frame.width !== studio.width || specimen.frame.height !== studio.height) {
+    fail(
+      "vial-transition frame disagrees with the still",
+      `${slug} → ${specimen.frame.width}×${specimen.frame.height}, still ${studio.width}×${studio.height}`,
+    );
+  }
+}
+
 /* ------------------------------------------------------------ draft art --- */
 
 /*

@@ -6,12 +6,12 @@ import { useEffect, useRef, type ReactNode } from "react";
 import { arm, useArmed } from "./armed";
 import { markIncoming } from "./incoming";
 import { SpecimenLayers } from "./SpecimenLayers";
-import { SPECIMEN_NAVIGATION } from "./SpikePage";
+import { SPECIMEN_NAVIGATION } from "./PageTransition";
 import { specimenFor } from "./specimens";
 import { warmDestination } from "./warm";
 
 /**
- * SPIKE — a flagship in the catalogue masthead's strip, as a transition source.
+ * A flagship in the catalogue masthead's strip, as a transition source.
  *
  * On a phone the strip is the first RETA, GLOW or GHK-Cu a visitor sees, well
  * before the grid; if only grid cards travelled, the natural tap never did

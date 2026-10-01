@@ -169,7 +169,7 @@ function useStudioModel(modelPath: string, rig: StudioRig, label: StudioLabel | 
 
   return useMemo(() => {
     const root = gltf.scene.clone(true);
-    // SPIKE (vial transition): the upright object, for the ground/mask passes.
+    // The upright object, for the ground/mask passes (the vial transition).
     root.userData.specimen = true;
     const box = new Box3().setFromObject(root);
     const size = box.getSize(new Vector3());
@@ -316,7 +316,7 @@ function Subject({
   }, [onSheet, sheet]);
   // The reflection is the same object, mirrored through the floor plane (y = -0.5).
   const mirror = useMemo(() => {
-    // SPIKE (vial transition): `root` is tagged as the specimen where it is
+    // The vial transition: `root` is tagged as the specimen where it is
     // built; `clone` copies userData, so the reflection is untagged here — it
     // belongs to the set.
     const reflection = root.clone(true);
@@ -403,7 +403,7 @@ declare global {
        */
       label: () => string | null;
       /**
-       * SPIKE (vial transition) — two extra passes of the SAME frame, from the
+       * The vial transition — two extra passes of the SAME frame, from the
        * same camera, so they register with `capture()` to the pixel:
        *
        *   ground  — the set without the upright object. Its reflection and
@@ -412,8 +412,8 @@ declare global {
        *   mask    — the upright object alone, flat white on black: its
        *             silhouette, glass included, with an antialiased edge.
        *
-       * `scripts/spike/capture-specimen.mjs` combines them into a ground plate
-       * and a cut-out specimen. See `src/spike/vial-transition/`.
+       * `scripts/capture-specimen.mjs` combines them into a ground plate and a
+       * cut-out specimen. See `components/vial-transition/`.
        */
       captureGround: () => string;
       captureMask: () => string;
