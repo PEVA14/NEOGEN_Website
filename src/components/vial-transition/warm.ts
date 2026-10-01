@@ -2,7 +2,7 @@ import { getImageProps } from "next/image";
 
 import { PLATE_SIZES } from "@/content/media";
 
-import { scaleSizes, STAGE_SPECIMEN_SIZES } from "./SpecimenLayers";
+import { scaleSizes, stageSizes } from "./SpecimenLayers";
 import { specimenFor } from "./specimens";
 
 const warmed = new Set<string>();
@@ -28,7 +28,9 @@ export function warmDestination(slug: string, flagship: boolean): void {
   warmed.add(slug);
 
   const wanted = flagship
-    ? [{ src: specimen.specimen, sizes: STAGE_SPECIMEN_SIZES }]
+    ? specimen.stage
+      ? [{ src: specimen.stage.src, sizes: stageSizes(specimen.stage) }]
+      : []
     : [
         { src: specimen.ground, sizes: PLATE_SIZES },
         { src: specimen.specimen, sizes: scaleSizes(PLATE_SIZES, specimen.box.w) },

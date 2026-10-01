@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Suspense, useCallback, useEffect, useRef, ViewTransition, type ReactNode } from "react";
+import { Suspense, useEffect, useRef, ViewTransition, type ReactNode } from "react";
 
 import { CanvasErrorBoundary } from "@/components/experience/CanvasErrorBoundary";
 import { useVialStage } from "@/components/experience/useVialStage";
@@ -15,6 +15,7 @@ import { StageSpecimen } from "@/components/vial-transition/SpecimenLayers";
 import { names, specimenFor } from "@/components/vial-transition/specimens";
 import { useStageHandoff, useWorldOrigin } from "@/components/vial-transition/useStageHandoff";
 
+import { LIVE_FRAME_MARGIN } from "./liveFrame";
 import styles from "./ProductStage.module.css";
 
 const RetaCanvas = dynamic(() => import("@/components/experience/RetaCanvas"), { ssr: false });
@@ -25,6 +26,17 @@ const RetaCanvas = dynamic(() => import("@/components/experience/RetaCanvas"), {
  * there is a scroll sequence here.
  */
 const restingProgress = { current: 0 };
+
+/** The vial's place in its canvas — see `anchor` below. */
+const LIVE_ANCHOR: StageAnchor = {
+  x: 0.5,
+  y: 0.5,
+  height: 1 / (1 + 2 * LIVE_FRAME_MARGIN),
+  weight: 1,
+};
+
+/** The live box's offsets from the media frame, as an `inset`. */
+const LIVE_FRAME_INSET = `${-LIVE_FRAME_MARGIN * 100}%`;
 
 interface ProductStageProps {
   world: WorldId;
@@ -110,10 +122,12 @@ export function ProductStage({
   slug,
 }: ProductStageProps) {
   const stage = useRef<HTMLDivElement>(null);
-  const canvasLayer = useRef<HTMLDivElement>(null);
   const panel = useRef<HTMLDivElement>(null);
 
-  const { tier, reducedMotion, palette, canRender3D } = useVialStage(stage, { modelPath });
+  const { tier, reducedMotion, palette, canRender3D } = useVialStage(stage, {
+    modelPath,
+    keep: true,
+  });
   const finePointer = useFinePointer();
 
   /*
@@ -131,57 +145,26 @@ export function ProductStage({
    * land inside the animation. It mounts once the flight has landed, behind
    * the specimen, which stands in until the canvas has drawn.
    */
-  const specimen = slug ? specimenFor(slug) : null;
+  const standIn = slug ? (specimenFor(slug)?.stage ?? null) : null;
   const handoff = useStageHandoff(slug ?? "");
-  const held = specimen !== null && handoff.holding;
-  useWorldOrigin(slug ?? "", specimen !== null && handoff.holding, stage, panel);
+  const held = standIn !== null && handoff.holding;
+  useWorldOrigin(slug ?? "", standIn !== null && handoff.holding, stage, panel);
 
   const viewer = canRender3D && modelPath && palette && !held ? { modelPath, palette } : null;
 
-  /**
-   * Where the object sits, measured rather than assumed — and expressed
-   * relative to the CANVAS, not the window, so it survives the page scrolling
-   * past. The media frame is capped in both axes, so a fixed viewport fraction
-   * drifts out of it on wide screens.
+  /*
+   * Where the object sits: the centre of its canvas, at the media frame's
+   * share of the canvas height. The canvas is the frame grown by
+   * `LIVE_FRAME_MARGIN` on every side, so this holds on every screen and
+   * through every resize without measuring anything — and the camera always
+   * looks straight at the vial. (The canvas used to cover the whole stage, so
+   * the vial sat off its axis: seen a little from the side on a laptop and from
+   * below on a phone, where the stage runs on under the purchase panel.)
    */
-  const anchor = useRef<StageAnchor | null>(null);
+  const anchor = useRef<StageAnchor>(LIVE_ANCHOR);
   // `turn` is the homepage turntable's accumulated cursor drive; the presenter
   // ignores it and keeps its restrained yaw response.
   const pointer = useRef<PointerState>({ x: 0, y: 0, active: false, turn: 0 });
-
-  /** The media frame, as fractions of the canvas box. */
-  const measure = useCallback((): StageAnchor | null => {
-    const canvas = canvasLayer.current;
-    const frame = panel.current;
-    if (!canvas || !frame) return null;
-
-    const box = canvas.getBoundingClientRect();
-    const target = frame.getBoundingClientRect();
-    if (box.width === 0 || box.height === 0 || target.height === 0) return null;
-
-    return {
-      x: (target.x + target.width / 2 - box.x) / box.width,
-      y: (target.y + target.height / 2 - box.y) / box.height,
-      height: target.height / box.height,
-      weight: 1,
-    };
-  }, []);
-
-  // Keeps the object in its frame across resizes and orientation changes.
-  useEffect(() => {
-    const node = stage.current;
-    if (!node) return;
-
-    const sync = () => {
-      const measured = measure();
-      if (measured) anchor.current = measured;
-    };
-
-    sync();
-    const observer = new ResizeObserver(sync);
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [measure]);
 
   /*
    * Pointer response. A cached rect rather than a measurement per move: the
@@ -243,7 +226,7 @@ export function ProductStage({
   /* The name printed on the fallback object's label. */
   const objectName = wordmark;
 
-  const fallback = specimen ? (
+  const fallback = standIn ? (
     // The specimen in the media frame is the stand-in; only the world's
     // material study is drawn behind it.
     <div className={styles.mediaWell}>{material}</div>
@@ -264,7 +247,7 @@ export function ProductStage({
   return (
     <div ref={stage} className={styles.stage} data-world={world}>
       {/* The environment. Full-bleed, with the world's atmospheric wash. */}
-      {specimen ? (
+      {standIn ? (
         /* Paired with the card's stage, so the world can open out of the
            card the specimen left and drift to where it lands (see the CSS). */
         <ViewTransition name={names.world(slug ?? "")} share="vt-world" default="none">
@@ -283,16 +266,14 @@ export function ProductStage({
 
       {/*
        * Laid out on the SAME grid as the composition, so the static fallback
-       * lands inside the media frame. The live canvas breaks out of it — the
-       * object is positioned in world space and needs the whole frame to
-       * respond to the cursor across.
+       * and the live box both land on the media frame.
        */}
-      <div ref={canvasLayer} className={styles.canvasLayer} role="img" aria-label={posterAlt}>
+      <div className={styles.canvasLayer} role="img" aria-label={posterAlt}>
         {viewer ? (
           <CanvasErrorBoundary fallback={fallback}>
             <Suspense
               fallback={
-                specimen ? (
+                standIn ? (
                   <div className={styles.mediaWell}>{material}</div>
                 ) : (
                   <div className={styles.mediaWell}>
@@ -309,20 +290,25 @@ export function ProductStage({
                 )
               }
             >
-              <RetaCanvas
-                fill
-                modelPath={viewer.modelPath}
-                world={world}
-                environment={environment}
-                palette={viewer.palette}
-                progress={restingProgress}
-                reducedMotion={reducedMotion}
-                tier={tier}
-                variant="presenter"
-                anchor={anchor}
-                pointer={finePointer ? pointer : undefined}
-                onFirstFrame={specimen ? handoff.onFirstFrame : undefined}
-              />
+              {/* The live box: the media frame, grown on every side. */}
+              <div className={styles.mediaWell}>
+                <div className={styles.liveFrame} style={{ inset: LIVE_FRAME_INSET }}>
+                  <RetaCanvas
+                    fill
+                    modelPath={viewer.modelPath}
+                    world={world}
+                    environment={environment}
+                    palette={viewer.palette}
+                    progress={restingProgress}
+                    reducedMotion={reducedMotion}
+                    tier={tier}
+                    variant="presenter"
+                    anchor={anchor}
+                    pointer={finePointer ? pointer : undefined}
+                    onFirstFrame={standIn ? handoff.onFirstFrame : undefined}
+                  />
+                </div>
+              </div>
             </Suspense>
           </CanvasErrorBoundary>
         ) : (
@@ -340,10 +326,10 @@ export function ProductStage({
          * instrument plate, not a picture frame, and no extra DOM.
          */}
         <div ref={panel} className={styles.media}>
-          {specimen && slug ? (
+          {standIn && slug ? (
             <StageSpecimen
               slug={slug}
-              specimen={specimen}
+              stage={standIn}
               live={handoff.live}
               onShare={handoff.onShare}
             />

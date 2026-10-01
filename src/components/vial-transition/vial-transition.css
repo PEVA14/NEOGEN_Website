@@ -166,6 +166,13 @@
 
 ::view-transition-new(.vt-specimen) {
   animation: none;
+  /*
+   * Filling the group, not fitted to its width: the product page's stand-in
+   * is the live vial's own photograph, whose upright box is a few percent
+   * squarer than the card's. Stretched to the card's box as it leaves, it
+   * covers the card's vial exactly, and is undistorted by the time it lands.
+   */
+  block-size: 100%;
 }
 
 /* --- Products with no still: the drawn plate travels whole ----------------- */

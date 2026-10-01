@@ -1,13 +1,9 @@
 # Deferred polish — Homepage
 
-> **Vial transition made permanent (2026-09-30).** Two refinements deferred,
-> both visible only to a careful eye:
+> **Vial transition made permanent (2026-09-30).** One refinement deferred
+> (the flagship stand-in now IS the live vial's first frame — PROJECT_STATE
+> §8ah):
 >
-> - **The flagship stand-in is cut from the studio still, not the presenter.**
->   The studio rig and the product page's presenter are different lenses, so
->   the still that lands is ~8% wider for its length than the live vial it
->   dissolves into (`STAGE_NUDGE` in `SpecimenLayers.tsx` aligns position and
->   size, not shape). Fix: capture the stand-in from the presenter's own rig.
 > - **Products with no studio still travel as a whole drawn plate**, not as an
 >   object leaving its set. Fix: split `SpecimenPlate` the way the stills are
 >   split. Today that is 81 of 85 products, all Quiet Mode.

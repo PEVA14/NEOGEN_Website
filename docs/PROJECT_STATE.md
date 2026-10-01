@@ -1,6 +1,8 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-09-30**: **the vial transition is permanent** (§8ag) —
+Last updated **2026-09-30**: **the flagship stand-in is the live vial's own
+first frame** (§8ah), and the product page sees the vial straight on. Before
+that, the same day: **the vial transition is permanent** (§8ag) —
 from the catalogue, the tapped vial flies into its product page. Before that,
 2026-09-29/30: **the live 3D wears the stills' glass, one shared homepage
 canvas, phone performance** (§8af). Before that, 2026-09-26: **the recordless audit** (§8ae) — ten sourced
@@ -2471,6 +2473,72 @@ is set. In Safari a new page therefore painted at the old page's scroll
 position and glided up. `app/[locale]/layout.tsx` now sets the attribute;
 in-page anchors stay smooth. Verified in iOS 26.3 Safari (simulator).
 
+## 8ah. The stand-in matches the live vial (2026-09-30)
+
+Owner: "fix the stand-in so it matches the 3D vial". Measured first (product
+page, stand-in alone vs canvas alone): on a laptop the live vial sat ~5%
+right and low of the stand-in, narrower and more foreshortened; on a phone it
+was ~30% larger and seen from below. Cause: the presenter's canvas covered the
+whole stage, so the vial was off the camera's axis — a quarter of the way
+across on a laptop, near the top of a 1,600 px column on a phone (the stage
+runs on under the purchase panel). The stand-in was the catalogue's front-on
+studio photograph and could match neither.
+
+Owner chose to **straighten the 3D** rather than photograph one stand-in per
+screen size:
+
+- **The live box.** The product page's canvas is now the media frame grown by
+  `LIVE_FRAME_MARGIN` (0.2) on every side (`product/liveFrame.ts`), with the
+  vial at its centre — a constant anchor, no measuring. Every screen sees it
+  straight on through the same lens; the refraction pool is centred behind
+  it; a phone draws a canvas the frame's size instead of the whole column.
+- **The local backdrop card is not drawn on the product page.** It was centred
+  on the old canvas, not the vial (mid-stage on a laptop, behind the purchase
+  panel on a phone), and in the smaller box its edges would show. The world's
+  field lights the space; the glass's refraction pool is unchanged.
+- **The stand-in is the live vial's photograph**:
+  `npm run capture:specimen -- reta glow ghk-cu --stage` photographs the
+  canvas alone, as the first frame draws it, crops it to the vial and records
+  its box, centre, upright box and on-screen lean (14.92°) in `specimens.json`
+  (`stand-in-reta-v7.png`, `stand-in-glow-v4.png`, `stand-in-ghk-cu-v4.png`).
+  `STAGE_NUDGE` and the restated presenter geometry are gone.
+- **Measured after:** stand-in vs live at 1440×900, 1280×720, 402×874 and
+  375×667 — edges within 1–2 CSS px, mean difference 1.3–2.0 / 255 (was
+  10–13); on the production build, phone GLOW 1.55.
+- **The flight** still leaves the card upright and takes the lean as it lands
+  (the element is the upright box turned to the lean, holding the photograph
+  turned back); verified frozen at 0 / 150 / 400 / 760 ms, laptop and phone.
+- **Guard.** `check:media` fails when a flagship's stand-in was taken from
+  another model or another `LIVE_FRAME_MARGIN`, or a flagship has none.
+  Changing the presenter's lighting, materials or pose also needs a re-take;
+  nothing can check that.
+- **Homepage: GLOW and GHK-Cu no longer arrive stretched** (owner: "the
+  pre-3d-render pictures for Glow and GHK-Cu look really stretched"). The
+  shared canvas, carried from RETA's wide box into GLOW's narrow one, drew the
+  new scene's first frames at the OLD size and faded them in stretched by the
+  browser — GLOW's vial at half its width on a phone, a quarter on a laptop,
+  for up to seven frames; GHK-Cu ~9%. `SharedCanvas` now reports a scene drawn
+  (which starts the fade) only once the renderer has the box's size and has
+  presented a frame at it (`RevealWhenSized`). Measured per frame through a
+  homepage scroll, phone and laptop: 0 stretched frames (was 4–7 per
+  handover); the fade now starts 150–220 ms after the move instead of at once.
+  Confirmed in iOS Safari (simulator).
+- **No stall scrolling back up to the vial** (owner, 2026-10-01: "when
+  scrolling back up it staggers"). The product page gave up its canvas once
+  the stage was 40% of a screen away, and rebuilt it on the way back — a new
+  context, the label's upload and the programs' link: one ~60 ms frame and
+  two dropped, just before the vial came back into view. The presenter now
+  keeps its canvas once granted, until another stage needs it
+  (`useVialStage`'s `keep`; only the product page asks), and its loop is
+  `FrameBudget` (was the phone's `PhoneFrameBudget`) at every frame: nothing
+  drawn while off screen (was 60 a second within the margin), and its clock
+  resumes where it stopped. Measured, laptop, after scrolling to the foot and
+  back: 0 draws while away, no long tasks, first frame back ≤ 1.5 ms. The
+  homepage is unchanged.
+- **Owner to judge on a real phone:** the live vial no longer seen from
+  below, and the take-off from the card (the card's studio vial gives way to
+  the live vial's photograph as it leaves).
+
 ## 8ag. The vial transition, made permanent (2026-09-30)
 
 Owner: "make it a permanent feature" — the catalogue card → product page
@@ -2503,8 +2571,8 @@ CONVENTIONS §11 (the one exception to the static product page).
   the catalogue's and product pages' initial scripts.
 - **Not in development.** The morph needs the destination prefetched, and
   `next dev` does not prefetch: on `npm run dev` the navigation is plain.
-- **Deferred** (DEFERRED_POLISH, top): the flagship stand-in from the
-  presenter's own rig; drawn plates travelling as objects.
+- **Deferred** (DEFERRED_POLISH, top): drawn plates travelling as objects.
+  (The flagship stand-in was fixed the same day, §8ah.)
 
 ## 8ae. The recordless audit (2026-09-26)
 

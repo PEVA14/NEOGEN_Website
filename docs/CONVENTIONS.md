@@ -357,7 +357,9 @@ box, with that section's drawn plate as its first paint and fallback.
   its finished object from `preparedVial`, kept per model, rig and tier for
   the page. A handover between stages then pays for GPU uploads only, not for
   a blocking shader link or a rebuilt model. Phones: pixel ratio ≤ 1.5, 30 fps
-  and nothing off screen (`PhoneFrameBudget`), label at 1024.
+  and nothing off screen (`FrameBudget`), label at 1024. The product page's
+  presenter keeps its canvas once granted (`useVialStage`'s `keep`) and its
+  loop is `FrameBudget` too, every frame on screen and none off it.
 - **The homepage has ONE canvas, and it travels.** `StageHost` renders a
   single `<Canvas>` into a container it owns and moves that container into
   the active stage's slot; React never sees the move, so the context, the
@@ -449,12 +451,14 @@ is held to the rules below:
 - a view-transition name may appear once per page, so a card names its vial
   only once tapped (`armed.ts`) and only catalogue cards are origins;
 - **rule 2 below still holds**: the product page's canvas is not mounted
-  during the flight (`useStageHandoff`); the still stands in and dissolves
-  once the canvas has drawn;
+  during the flight (`useStageHandoff`); a photograph of its first frame
+  stands in and dissolves once the canvas has drawn;
 - reduced motion, or a browser without view transitions, gets the new page
   at once — never a slower version of the same travel;
 - its pictures are cut from the studio still the card shows and must be
-  re-cut whenever that still is re-rendered (`check:media` enforces it).
+  re-cut whenever that still is re-rendered, and a flagship's stand-in
+  re-taken whenever its model or live box changes (`check:media` enforces
+  both) — or its lighting, materials or pose (nothing can check those).
 
 What a V1 product viewer does:
 
@@ -470,9 +474,15 @@ What a V1 product viewer does:
     of canvas height. It no longer travels or crops across four camera states,
     because an object that travels cannot also be one you turn — scroll and
     cursor end up fighting for the same axis.
-  - **`presenter` (the PDP)** keeps its measured anchor in the media well and
-    adds pitch and parallax on top, at vitrine amplitude and still falling back
-    to zero on exit: depth cues on other axes, never rotation;
+  - **`presenter` (the PDP)** draws in its own LIVE BOX — the media frame
+    grown by `LIVE_FRAME_MARGIN` on every side (`product/liveFrame.ts`) — with
+    the vial at its centre, and adds pitch and parallax on top, at vitrine
+    amplitude and still falling back to zero on exit: depth cues on other
+    axes, never rotation. Its canvas used to cover the whole stage, which put
+    the vial off the camera's axis: seen from the side on a laptop and from
+    below on a phone, where the stage runs on under the purchase panel. Sized
+    from the frame, every screen sees the vial straight on through the same
+    lens, so one photograph of it can stand in for it (2026-09-30);
   - **`moment` (the GLOW and GHK-Cu homepage sections)** is centred in the
     section's own object box and arrives with a slight rise as the section is
     scrolled through, then holds and turns — neither full-bleed like the
@@ -484,13 +494,15 @@ What a V1 product viewer does:
 
 Two rules that outlive the V1/V2 split:
 
-1. **Anchor the object to a measured box, never to a viewport fraction.** Media
+1. **Anchor the object to its box, never to a viewport fraction.** Media
    frames are capped in both axes, so a fixed fraction drifts out of them on
-   wide screens. `VialModel` converts a measured box — expressed as fractions of
-   the **canvas**, so it survives scrolling — into world position and scale.
-   The measurement and the frame must share their geometry through custom
-   properties on a common ancestor, because the canvas layer and the visible
-   composition are separate stacking layers that have to agree.
+   wide screens. `VialModel` converts a box — expressed as fractions of the
+   **canvas**, so it survives scrolling — into world position and scale. Best
+   of all, give the canvas the box itself (the product page's live box, the
+   homepage moments), so the object is at the canvas's centre: on the
+   camera's axis, seen the same way on every screen. The canvas layer and the
+   visible composition are separate stacking layers, so they share their
+   geometry through custom properties on a common ancestor.
 2. **Never let an animation share a frame budget with a canvas mount.** Booting
    the WebGL layer is ~240ms of main-thread work — model parse, three init,
    PMREM prefilter — and no amount of compositing hides a stopped main thread.

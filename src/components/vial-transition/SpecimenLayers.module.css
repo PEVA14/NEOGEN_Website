@@ -50,14 +50,18 @@
   object-fit: contain;
 }
 
-/* On a flagship page: centred in the media frame, at the presenter's pose. */
+/* On a flagship page: the vial's upright box, turned to its lean (inline). */
 .stageSpecimen {
   position: absolute;
   display: block;
-  inset-block-start: 50%;
-  inset-inline-start: 50%;
   pointer-events: none;
   transition: opacity 520ms var(--ease-standard);
+}
+
+/* The photograph, turned back by the same lean about the vial's centre. */
+.stagePhoto {
+  position: absolute;
+  display: block;
 }
 
 /* The canvas has drawn: the still dissolves into the live object. */

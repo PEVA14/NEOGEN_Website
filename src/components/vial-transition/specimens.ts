@@ -27,6 +27,33 @@ export interface Specimen {
   };
   /** The silhouette alone, unpadded, as fractions of the frame. */
   object: { x: number; y: number; w: number; h: number };
+  /** Flagships: the product page's stand-in. */
+  stage?: StageStandIn;
+}
+
+/**
+ * THE FLAGSHIP'S STAND-IN — the live vial on its product page, photographed
+ * from its own canvas as the first frame draws it (`capture-specimen --stage`),
+ * so the stand-in and the frame it dissolves into are the same picture.
+ *
+ * Every box is in fractions of the MEDIA FRAME (x of its width, y of its
+ * height), which is 4:5 on every screen.
+ */
+export interface StageStandIn {
+  src: string;
+  /** The model it was photographed from; `check:media` holds them together. */
+  model: string;
+  /** `LIVE_FRAME_MARGIN` when it was taken. */
+  margin: number;
+  /** The vial's lean on screen, clockwise, in degrees. */
+  lean: number;
+  pixels: { width: number; height: number };
+  /** The photograph's box: the leaning vial, padded. */
+  crop: { x: number; y: number; w: number; h: number };
+  /** The vial's centre. */
+  centre: { x: number; y: number };
+  /** Its box when stood upright about that centre, padded. */
+  upright: { w: number; h: number };
 }
 
 const SPECIMENS = MANIFEST as unknown as Record<string, Specimen>;

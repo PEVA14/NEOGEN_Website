@@ -15,6 +15,7 @@ import path from "node:path";
 
 import { products } from "../src/data/catalog/index.ts";
 import { DEMO_ARTWORK, MEDIA } from "../src/content/media/registry.ts";
+import { LIVE_FRAME_MARGIN } from "../src/components/product/liveFrame.ts";
 
 const PUBLIC = "public";
 const IMAGE_TYPES = new Set([".jpg", ".jpeg", ".png", ".webp", ".avif"]);
@@ -218,6 +219,30 @@ for (const [slug, specimen] of Object.entries(SPECIMENS)) {
     } else if (!existsSync(path.join(PUBLIC, specimen[layer]))) {
       fail("vial-transition layer is missing", `${slug} → ${specimen[layer]}`);
     }
+  }
+  /* A flagship's stand-in is the live vial's photograph: it must be of the
+     model the product page loads, in the live box the page draws. */
+  const stage = specimen.stage;
+  if (stage) {
+    if (stage.model !== MEDIA[slug].model) {
+      fail(
+        "stand-in photographed from another model",
+        `${slug} → ${stage.model}, but the page loads ${MEDIA[slug].model}; ` +
+          `re-run npm run capture:specimen -- ${slug} --stage`,
+      );
+    }
+    if (stage.margin !== LIVE_FRAME_MARGIN) {
+      fail(
+        "stand-in photographed in another live box",
+        `${slug} → margin ${stage.margin}, LIVE_FRAME_MARGIN is ${LIVE_FRAME_MARGIN}; ` +
+          `re-run npm run capture:specimen -- ${slug} --stage`,
+      );
+    }
+    if (!existsSync(path.join(PUBLIC, stage.src))) {
+      fail("stand-in is missing", `${slug} → ${stage.src}`);
+    }
+  } else if (MEDIA[slug].model && products.find((p) => p.slug === slug)?.world) {
+    fail("flagship without a stand-in", `${slug}; run npm run capture:specimen -- ${slug} --stage`);
   }
   if (specimen.frame.width !== studio.width || specimen.frame.height !== studio.height) {
     fail(

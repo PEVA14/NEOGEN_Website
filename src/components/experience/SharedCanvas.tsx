@@ -1,6 +1,6 @@
 "use client";
 
-import { Canvas, createPortal as createScenePortal, useThree } from "@react-three/fiber";
+import { Canvas, createPortal as createScenePortal, useFrame, useThree } from "@react-three/fiber";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Scene, type Material, type Mesh, type Texture } from "three";
@@ -37,6 +37,8 @@ export default function SharedCanvas({
   active: HostRequest | null;
 }) {
   const [compiledKey, setCompiledKey] = useState<string | null>(null);
+  /* The scene whose first frame has been presented — see `RevealWhenSized`. */
+  const [firstFrameKey, setFirstFrameKey] = useState<string | null>(null);
   const scene = active?.scene ?? null;
   /* A new scene for a new stage, or when that stage's tier or motion
      preference changes: each is a different pose track and program set. */
@@ -109,9 +111,12 @@ export default function SharedCanvas({
               {...scene}
               compiled={compiled}
               onCompiled={() => setCompiledKey(key)}
-              onFirstFrame={() => markDrawn(active.id)}
+              onFirstFrame={() => setFirstFrameKey(key)}
             />
           </Suspense>
+        ) : null}
+        {active && key && firstFrameKey === key ? (
+          <RevealWhenSized key={key} container={container} onReady={() => markDrawn(active.id)} />
         ) : null}
         {warmingNow ? (
           <WarmUp
@@ -127,6 +132,46 @@ export default function SharedCanvas({
     </CanvasErrorBoundary>,
     container,
   );
+}
+
+/**
+ * DRAWN ONLY ONCE DRAWN AT THE NEW BOX'S SIZE (owner, 2026-09-30: the GLOW
+ * and GHK-Cu vials "look really stretched" before they settle).
+ *
+ * The canvas is carried into a box of another shape — RETA's wide section to
+ * GLOW's narrow one — and the renderer learns the new size a few frames after
+ * the move. The new scene's first frame was therefore drawn at the OLD size
+ * and stretched by the browser into the new box: GLOW's vial squeezed to half
+ * its width on a phone, a quarter on a laptop, for up to seven frames, while
+ * it faded in. So the host is told the scene is drawn (which starts the fade)
+ * only once the renderer's size is the box's, and one frame has been
+ * presented at it.
+ */
+function RevealWhenSized({ container, onReady }: { container: HTMLElement; onReady: () => void }) {
+  const invalidate = useThree((state) => state.invalidate);
+  const ready = useRef(onReady);
+  const done = useRef(false);
+  useEffect(() => {
+    ready.current = onReady;
+  });
+  // A frame to look at, under `frameloop="demand"` (reduced motion).
+  useEffect(() => invalidate(), [invalidate]);
+
+  useFrame((state) => {
+    if (done.current) return;
+    const { width, height } = state.size;
+    if (
+      Math.abs(width - container.clientWidth) > 1 ||
+      Math.abs(height - container.clientHeight) > 1
+    ) {
+      state.invalidate();
+      return;
+    }
+    done.current = true;
+    // This frame is drawn at the right size; reveal once it is presented.
+    requestAnimationFrame(() => ready.current());
+  });
+  return null;
 }
 
 /** An element's CSS size, kept current. */

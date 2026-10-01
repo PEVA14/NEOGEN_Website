@@ -252,12 +252,9 @@ export interface RetaCanvasProps {
   /** Cursor over the stage. Product page only; absent on touch. */
   pointer?: RefObject<PointerState>;
   /**
-   * Break out of the layer's own layout and cover it.
-   *
-   * The product page lays its canvas layer out on the SAME grid as the visible
-   * composition, so the static fallback lands inside the media well. The live
-   * canvas must not be constrained by that grid — the object is positioned in
-   * world space and needs the whole frame to move through.
+   * Cover the positioned box the canvas is mounted in, rather than taking the
+   * layout's own size. The product page mounts it in the media frame's live
+   * box (`ProductStage`, `LIVE_FRAME_MARGIN`).
    */
   fill?: boolean;
   /**
@@ -290,7 +287,7 @@ export default function RetaCanvas({ fill = false, ...scene }: RetaCanvasProps) 
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
       dpr={stageDpr(scene.variant, scene.tier)}
       camera={STAGE_CAMERA}
-      frameloop={stageFrameloop(compiled, scene.reducedMotion, scene.tier)}
+      frameloop={stageFrameloop(compiled, scene.reducedMotion, scene.tier, scene.variant)}
     >
       <StageScene {...scene} compiled={compiled} onCompiled={() => setCompiled(true)} />
     </Canvas>
@@ -340,17 +337,27 @@ function phoneDpr({ width, height }: { width: number; height: number }): number 
 /*
  * Nothing until the shaders are compiled (`Prewarm`). Then: reduced motion
  * renders a single frame and stops entirely — no rAF loop, no battery drain,
- * for a user who asked for no movement; phones are stepped by
- * `PhoneFrameBudget` instead of R3F's own loop.
+ * for a user who asked for no movement; phones, and the product page's
+ * presenter everywhere, are stepped by `FrameBudget` instead of R3F's own loop.
  */
 export function stageFrameloop(
   compiled: boolean,
   reducedMotion: boolean,
   tier: StageTier,
+  variant?: StageVariant,
 ): "never" | "demand" | "always" {
   if (!compiled) return "never";
   if (reducedMotion) return "demand";
-  return tier === "compact" ? "never" : "always";
+  return budgeted(tier, variant) ? "never" : "always";
+}
+
+/** Whether `FrameBudget` steps this stage, and at what rate (null: every frame). */
+function budgeted(tier: StageTier, variant?: StageVariant): { fps: number | null } | null {
+  if (tier === "compact") return { fps: PHONE_FPS };
+  /* The presenter keeps its canvas while the page is read below it
+     (`useVialStage`'s `keep`), so it must draw nothing while it is away. */
+  if (variant === "presenter") return { fps: null };
+  return null;
 }
 
 /**
@@ -372,15 +379,14 @@ export function StageScene({
   compiled: boolean;
   onCompiled: () => void;
 }) {
+  const budget = budgeted(contents.tier, contents.variant);
   return (
     <>
       <Grade rig={WORLD_RIGS[contents.world]} tier={contents.tier} />
       <SceneContents {...contents} />
       {onFirstFrame ? <FirstFrame onFrame={onFirstFrame} /> : null}
       <Prewarm onReady={onCompiled} />
-      {compiled && contents.tier === "compact" && !contents.reducedMotion ? (
-        <PhoneFrameBudget />
-      ) : null}
+      {compiled && budget && !contents.reducedMotion ? <FrameBudget fps={budget.fps} /> : null}
     </>
   );
 }
@@ -423,13 +429,18 @@ export function SceneContents({
       <SceneEnvironment rig={rig} />
 
       {/* Behind the vial, and therefore inside the transmission buffer: this is
-          what the glass actually refracts. */}
-      <Backdrop
-        palette={palette}
-        tier={tier} // Only the homepage sequence owns its whole frame. The hero and the
-        // PDP specimen both sit over DOM the canvas must not paint out.
-        scope={fullFrame ? "full" : "local"}
-      />
+          what the glass actually refracts. Not on the product page: its canvas
+          is the media frame's own box (`ProductStage`), smaller than the local
+          card, which would show its cut edges; the world's field already lights
+          the space around the vial there. */}
+      {variant === "presenter" ? null : (
+        <Backdrop
+          palette={palette}
+          tier={tier} // Only the homepage sequence owns its whole frame. The hero
+          // sits over DOM the canvas must not paint out.
+          scope={fullFrame ? "full" : "local"}
+        />
+      )}
 
       {/* The see-through scopes leave the glass nothing opaque to refract, so
           it saw three.js's half-white fill. This draws only in the refraction
@@ -571,7 +582,8 @@ const PHONE_FPS = 30;
  *
  * Replaces R3F's own loop (`frameloop="never"`) with one that
  *   - draws at most PHONE_FPS times a second, whatever the display's rate
- *     (every other frame at 60 Hz, every fourth at 120 Hz), and
+ *     (every other frame at 60 Hz, every fourth at 120 Hz) — on a phone; the
+ *     desktop presenter draws every frame (`fps` null) — and
  *   - draws nothing while the canvas is off screen. A stage keeps its canvas
  *     mounted through a generous margin either side of the viewport (see
  *     `useVialStage`), and until now it rendered the whole time.
@@ -580,7 +592,7 @@ const PHONE_FPS = 30;
  * scrolled back into view resumes where it was instead of jumping by the
  * time it spent away. `advance` takes that clock in seconds.
  */
-function PhoneFrameBudget() {
+function FrameBudget({ fps }: { fps: number | null }) {
   const advance = useThree((state) => state.advance);
   const canvas = useThree((state) => state.gl.domElement);
 
@@ -591,7 +603,7 @@ function PhoneFrameBudget() {
     });
     observer.observe(canvas);
 
-    const interval = 1000 / PHONE_FPS;
+    const interval = fps === null ? 0 : 1000 / fps;
     let raf = 0;
     let last = -Infinity;
     let clock = 0;
@@ -612,7 +624,7 @@ function PhoneFrameBudget() {
       cancelAnimationFrame(raf);
       observer.disconnect();
     };
-  }, [advance, canvas]);
+  }, [advance, canvas, fps]);
 
   return null;
 }

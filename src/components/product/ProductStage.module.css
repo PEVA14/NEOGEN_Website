@@ -88,9 +88,9 @@
 /* --- Layers --------------------------------------------------------------- */
 
 /*
- * Both layers share the grid. The canvas layer exists to place the STATIC
- * fallback in the media frame; the live canvas is given `fill` and covers the
- * whole layer instead, because the object is positioned in world space.
+ * Both layers share the grid, so the canvas layer's media well is the media
+ * frame: the static fallback fills it, and the live canvas fills the live box
+ * around it (`.liveFrame`).
  */
 .composition,
 .canvasLayer {
@@ -113,6 +113,17 @@
   z-index: var(--z-canvas);
   /* The stage owns pointer handling; the canvas must not intercept it. */
   pointer-events: none;
+  /* The live box reaches past the stage on a phone; nothing is drawn there. */
+  overflow: clip;
+}
+
+/*
+ * THE LIVE BOX — the media frame grown by `LIVE_FRAME_MARGIN` (set inline as
+ * its `inset`), with the vial at its centre. Sized from the frame, it gives
+ * every screen the same view of the vial: straight on, through the same lens.
+ */
+.liveFrame {
+  position: absolute;
 }
 
 .composition {

@@ -67,6 +67,12 @@ function holdsContext(id: string): boolean {
   return true;
 }
 
+/** True when some other stage is on screen or within its margin. */
+function contested(id: string): boolean {
+  for (const [other, ratio] of ratios) if (other !== id && ratio > 0) return true;
+  return false;
+}
+
 /**
  * Shared runtime for every stage that hosts the vial.
  *
@@ -82,7 +88,22 @@ function holdsContext(id: string): boolean {
  */
 export function useVialStage(
   target: RefObject<HTMLElement | null>,
-  { modelPath }: { modelPath: string | null },
+  {
+    modelPath,
+    keep = false,
+  }: {
+    modelPath: string | null;
+    /**
+     * Keep the canvas once granted, until another stage needs it, instead of
+     * giving it up whenever this stage leaves its margin. For a page with one
+     * stage: rebuilding the canvas on the way back — a new context, the
+     * label's upload, the programs — cost a ~60 ms frame just as the stage
+     * came back into view (owner, 2026-10-01: "when scrolling back up it
+     * staggers"). The loop draws nothing while it is off screen
+     * (`FrameBudget`), so keeping it costs memory, not frames.
+     */
+    keep?: boolean;
+  },
 ): VialStage {
   const tier = useStageTier();
   const reducedMotion = useReducedMotion();
@@ -120,7 +141,7 @@ export function useVialStage(
     const el = target.current;
     if (!el) return;
 
-    const sync = () => setGranted(holdsContext(id));
+    const sync = () => setGranted((held) => holdsContext(id) || (keep && held && !contested(id)));
     listeners.add(sync);
 
     const observer = new IntersectionObserver(
@@ -151,7 +172,7 @@ export function useVialStage(
       listeners.delete(sync);
       releaseRatio(id);
     };
-  }, [target, id]);
+  }, [target, id, keep]);
 
   return {
     tier,

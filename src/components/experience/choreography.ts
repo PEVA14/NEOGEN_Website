@@ -173,6 +173,12 @@ const HERO_COMPACT: PoseTrack = {
  * the vial turns because objects on a turntable turn, not because the page is
  * telling a story.
  */
+/**
+ * The presenter's lean, in radians: the cap rests to the right. Also what the
+ * product page's stand-in is turned by in flight (`vial-transition`).
+ */
+export const PRESENTER_LEAN = 0.26;
+
 const PRESENTER: PoseTrack = {
   offsetX: [0],
   offsetY: [0],
@@ -181,7 +187,7 @@ const PRESENTER: PoseTrack = {
   // The base attitude. Rotation about Y is accumulated on top of this.
   rotationY: [0],
   // The diagonal is preserved — the vial is never stood up straight.
-  rotationZ: [-0.26],
+  rotationZ: [-PRESENTER_LEAN],
   rotationX: [-0.045],
   // Steady. The rim no longer "recedes as Quiet Mode arrives", because the
   // opening composition stays inside the RETA world now.

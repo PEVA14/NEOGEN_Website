@@ -22,7 +22,31 @@
       "w": 0.398125,
       "h": 0.671
     },
-    "query": null
+    "query": null,
+    "stage": {
+      "src": "/images/products/reta/stand-in-reta-v7.png",
+      "model": "/models/reta-v7.glb",
+      "margin": 0.2,
+      "lean": 14.9201,
+      "pixels": {
+        "width": 609,
+        "height": 937
+      },
+      "crop": {
+        "x": 0.20826,
+        "y": 0.15918,
+        "w": 0.55872,
+        "h": 0.68825
+      },
+      "centre": {
+        "x": 0.50106,
+        "y": 0.49724
+      },
+      "upright": {
+        "w": 0.40831,
+        "h": 0.66431
+      }
+    }
   },
   "glow": {
     "ground": "/images/products/glow/studio-v5-ground.jpg",
@@ -47,7 +71,31 @@
       "w": 0.398125,
       "h": 0.671
     },
-    "query": null
+    "query": null,
+    "stage": {
+      "src": "/images/products/glow/stand-in-glow-v4.png",
+      "model": "/models/glow-v4.glb",
+      "margin": 0.2,
+      "lean": 14.9201,
+      "pixels": {
+        "width": 609,
+        "height": 937
+      },
+      "crop": {
+        "x": 0.20826,
+        "y": 0.15956,
+        "w": 0.55872,
+        "h": 0.68897
+      },
+      "centre": {
+        "x": 0.50106,
+        "y": 0.49797
+      },
+      "upright": {
+        "w": 0.40831,
+        "h": 0.665
+      }
+    }
   },
   "ghk-cu": {
     "ground": "/images/products/ghk-cu/studio-v5-ground.jpg",
@@ -72,7 +120,31 @@
       "w": 0.398125,
       "h": 0.671
     },
-    "query": null
+    "query": null,
+    "stage": {
+      "src": "/images/products/ghk-cu/stand-in-ghk-cu-v4.png",
+      "model": "/models/ghk-cu-v4.glb",
+      "margin": 0.2,
+      "lean": 14.9201,
+      "pixels": {
+        "width": 609,
+        "height": 937
+      },
+      "crop": {
+        "x": 0.20826,
+        "y": 0.15956,
+        "w": 0.55872,
+        "h": 0.68897
+      },
+      "centre": {
+        "x": 0.50106,
+        "y": 0.49797
+      },
+      "upright": {
+        "w": 0.40831,
+        "h": 0.665
+      }
+    }
   },
   "semaglutide": {
     "ground": "/images/products/semaglutide/studio-v10-ground.jpg",

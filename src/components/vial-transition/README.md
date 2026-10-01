@@ -22,14 +22,14 @@ still travel as their drawn plate.
 
 ## What it does
 
-| Layer                 | Card → page                                                                                                  | Mechanism                                                                                |
-| --------------------- | ------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
-| The object            | travels whole and crisp, upright off the card; on a flagship it tilts to the 3D presenter's lean in flight   | React `<ViewTransition name share>` pair, native view-transition CSS                     |
-| The set it stood on   | stays behind and dissolves with the catalogue                                                                | the studio still split into a ground + a cut-out specimen                                |
-| The world (flagships) | opens out of the card's stage as a feathered circle and drifts to where the object lands                     | an empty proxy paired with the stage field; `mask-image` driven by registered properties |
-| The rest of each page | the catalogue gives way, the product page settles in — its name included; the name does not fly              | `PageTransition` boundaries, only for navigations typed `vt-specimen`                    |
-| Magnification         | the product page frames the same still 1.16× closer than the card                                            | CSS `scale` on the plate's still                                                         |
-| The 3D (flagships)    | NOT mounted during the flight; mounts on landing behind the still, which dissolves when the canvas has drawn | `useStageHandoff` + `RetaCanvas onFirstFrame`                                            |
+| Layer                 | Card → page                                                                                                                            | Mechanism                                                                                   |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| The object            | travels whole and crisp, upright off the card; on a flagship it tilts to the 3D presenter's lean in flight                             | React `<ViewTransition name share>` pair, native view-transition CSS                        |
+| The set it stood on   | stays behind and dissolves with the catalogue                                                                                          | the studio still split into a ground + a cut-out specimen                                   |
+| The world (flagships) | opens out of the card's stage as a feathered circle and drifts to where the object lands                                               | an empty proxy paired with the stage field; `mask-image` driven by registered properties    |
+| The rest of each page | the catalogue gives way, the product page settles in — its name included; the name does not fly                                        | `PageTransition` boundaries, only for navigations typed `vt-specimen`                       |
+| Magnification         | the product page frames the same still 1.16× closer than the card                                                                      | CSS `scale` on the plate's still                                                            |
+| The 3D (flagships)    | NOT mounted during the flight; mounts on landing behind a photograph of its own first frame, which dissolves when the canvas has drawn | `useStageHandoff` + `RetaCanvas onFirstFrame`; the stand-in from `capture-specimen --stage` |
 
 No Motion library, and no JavaScript animation: view transitions do the flight
 on the compositor. The browser's back button returns to the catalogue without
@@ -117,10 +117,30 @@ and the registered still on disk (JPEG noise measures 0.4–0.6 / 255).
     now, the catalogue strip. It runs once at load, untyped, and animates
     nothing (every boundary here is `default="none"`).
 
+## The flagship stand-in
+
+What lands on a flagship page is not the card's studio photograph but the
+product page's own live vial, photographed from its canvas as the first frame
+draws it (`npm run capture:specimen -- reta glow ghk-cu --stage`, dev server
+up): `public/images/products/<slug>/stand-in-<model>.png`, with its box,
+centre, upright box and on-screen lean in `specimens.json`. Measured against
+the live canvas at 1440×900, 1280×720, 402×874 and 375×667: within 1–2 CSS px
+at the edges, mean difference 1.3–2.0 / 255 — the dissolve shows nothing but
+the vial beginning to turn.
+
+It can be one photograph because the canvas is the media frame grown by
+`LIVE_FRAME_MARGIN` with the vial at its centre (CONVENTIONS §11): every
+screen sees it straight on, through the same lens. Re-take it after changing
+the model or the margin (`check:media` fails) and after changing the
+presenter's lighting, materials or pose (nothing can check those).
+
+In flight the element is the vial's UPRIGHT box turned to the lean, holding
+the photograph turned back by the same angle; the view transition animates
+the element's transform from the card's, so the vial leaves the card upright
+and takes the lean as it lands. The flying picture fills the card's box
+(`block-size: 100%`), which is a few percent narrower than the stand-in's.
+
 ## Not done yet
 
-In `docs/DEFERRED_POLISH.md`: render the flagship stand-in from the
-presenter's own rig (the studio lens differs, so the still and the live vial
-are ~8% different in width and the wake-up changes shape slightly), and split
-`SpecimenPlate` so drawn products travel as objects rather than as a whole
-plate.
+In `docs/DEFERRED_POLISH.md`: split `SpecimenPlate` so drawn products travel
+as objects rather than as a whole plate.

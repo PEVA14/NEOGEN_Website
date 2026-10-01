@@ -1,31 +1,10 @@
 import Image from "next/image";
 import { ViewTransition } from "react";
 
-import { names, type Specimen } from "./specimens";
+import { names, type Specimen, type StageStandIn } from "./specimens";
 
 import styles from "./SpecimenLayers.module.css";
 import "./vial-transition.css";
-
-/*
- * The 3D presenter's own geometry (`VialModel`, `choreography.ts#PRESENTER`),
- * restated so the still can land exactly where the live object will appear.
- * If the presenter changes, these move with it — see README, "Before
- * productionizing".
- */
-/** `FIT_IN_PANEL`: the object's length as a fraction of the media frame height. */
-const PRESENTER_FIT = 0.62;
-/** `rotationZ: -0.26` rad — the diagonal, cap resting to the right. */
-const PRESENTER_LEAN_DEG = (0.26 * 180) / Math.PI;
-/*
- * MEASURED, not derived: where the live RETA object actually lands relative to
- * the geometry above (label centroid, 1440×900, reduced motion so it is still).
- * The 3D object sits ~2.7% right and ~2.6% low of the frame centre and reads a
- * little larger — perspective, and the object's front surface being nearer the
- * camera than its axis. It is ALSO ~8% wider for its length, which no nudge can
- * fix: the still comes from the studio rig and the live object from the
- * presenter's, and they are different lenses. See README.
- */
-const STAGE_NUDGE = { x: 0.027, y: 0.026, scale: 1.04 };
 
 const pct = (n: number) => `${(n * 100).toFixed(3)}%`;
 
@@ -154,32 +133,35 @@ export function SpecimenLayers({
 }
 
 /**
- * THE SAME OBJECT, PLACED WHERE THE LIVE 3D ONE WILL STAND.
+ * THE LIVE VIAL'S FIRST FRAME, STANDING IN FOR IT.
  *
  * On a flagship page the set is not a studio sweep but the world itself, so
- * only the object is drawn — centred in the media frame, at the presenter's
- * size, on the presenter's lean. The flight therefore ends with the object
- * already at the pose the 3D model takes, and the lean is part of the flight:
- * the specimen is picked up upright off the card and tilted for examination.
+ * only the object is drawn — and not the catalogue's photograph of it but the
+ * product page's own: its canvas, photographed as the first frame draws it
+ * (`StageStandIn`). Placed by its box in the media frame, it is that frame to
+ * the pixel, so when the canvas has drawn (`live`) and the stand-in dissolves,
+ * nothing changes but that the vial begins to turn.
  *
- * It stays as the stand-in while the canvas boots, then dissolves once the
- * canvas has drawn (`live`).
+ * THE FLIGHT. The element is the vial's UPRIGHT box, turned to the lean; the
+ * photograph inside it is turned back by the same angle, so at rest the two
+ * cancel exactly. A view transition snapshots an element without its own
+ * transform and animates that transform from the card's — so the vial leaves
+ * the card upright and takes the lean as it lands.
  */
 export function StageSpecimen({
   slug,
-  specimen,
+  stage,
   live,
   onShare,
 }: {
   slug: string;
-  specimen: Specimen;
+  stage: StageStandIn;
   live: boolean;
   onShare?: (instance: unknown) => void;
 }) {
-  const { box, object } = specimen;
-  // The object's centre inside the cut-out's (padded) box.
-  const cx = (object.x + object.w / 2 - box.x) / box.w;
-  const cy = (object.y + object.h / 2 - box.y) / box.h;
+  const { crop, centre, upright, lean } = stage;
+  const left = centre.x - upright.w / 2;
+  const top = centre.y - upright.h / 2;
   return (
     <ViewTransition
       name={names.specimen(slug)}
@@ -195,29 +177,38 @@ export function StageSpecimen({
         aria-hidden="true"
         data-live={live ? "" : undefined}
         style={{
-          left: `calc(50% + ${pct(STAGE_NUDGE.x)})`,
-          top: `calc(50% + ${pct(STAGE_NUDGE.y)})`,
-          height: pct((box.h * PRESENTER_FIT * STAGE_NUDGE.scale) / object.h),
-          aspectRatio: `${box.width} / ${box.height}`,
-          transformOrigin: `${pct(cx)} ${pct(cy)}`,
-          transform: `translate(${pct(-cx)}, ${pct(-cy)}) rotate(${PRESENTER_LEAN_DEG.toFixed(3)}deg)`,
+          left: pct(left),
+          top: pct(top),
+          width: pct(upright.w),
+          height: pct(upright.h),
+          rotate: `${lean}deg`,
         }}
       >
-        <Image
-          src={specimen.specimen}
-          alt=""
-          fill
-          sizes={STAGE_SPECIMEN_SIZES}
-          className={styles.cutout}
-          priority
-        />
+        <span
+          className={styles.stagePhoto}
+          style={{
+            left: pct((crop.x - left) / upright.w),
+            top: pct((crop.y - top) / upright.h),
+            width: pct(crop.w / upright.w),
+            height: pct(crop.h / upright.h),
+            transformOrigin: `${pct((centre.x - crop.x) / crop.w)} ${pct((centre.y - crop.y) / crop.h)}`,
+            rotate: `${-lean}deg`,
+          }}
+        >
+          <Image src={stage.src} alt="" fill sizes={stageSizes(stage)} priority />
+        </span>
       </span>
     </ViewTransition>
   );
 }
 
-/** `sizes` for the cut-out on a flagship stage. */
-export const STAGE_SPECIMEN_SIZES = "(min-width: 64rem) 16rem, 45vw";
+/**
+ * `sizes` for a stand-in: its share of the media frame, which is 34rem wide at
+ * most beside the commerce column and 26rem at most above it (ProductStage).
+ */
+export function stageSizes(stage: StageStandIn): string {
+  return scaleSizes("(min-width: 64rem) 34rem, 26rem", stage.crop.w);
+}
 
 /** Scale every length in a `sizes` string by the cut-out's share of the frame. */
 export function scaleSizes(sizes: string, share: number): string {
