@@ -100,6 +100,18 @@ export default async function LocaleLayout({
     <html
       lang={localeTags[typedLocale]}
       className={`${instrumentSans.variable} ${ibmPlexMono.variable}`}
+      /*
+       * A PAGE CHANGE LANDS AT THE TOP AT ONCE. `motion.css` smooth-scrolls the
+       * document while anything in it has focus, and Next 16 no longer turns
+       * that off for its own scroll-to-top on navigation unless this attribute
+       * is present (upgrading guide, "scroll-behavior"). Without it Safari
+       * glided every new page up from the old one's scroll position — on a
+       * phone, a product page opened from far down the catalogue showed its
+       * middle first — and a view transition captured that mid-scroll page,
+       * so the vial flew off the top of the screen (2026-09-29). In-page
+       * anchor links are unaffected and stay smooth.
+       */
+      data-scroll-behavior="smooth"
     >
       {/*
        * `suppressHydrationWarning` is scoped to THIS element's own attributes,

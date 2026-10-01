@@ -68,12 +68,11 @@
   grid-area: vial;
   position: relative;
   z-index: var(--z-canvas);
-  /* Bleeds to the screen edges, and its top and bottom dissolve into the
-     scene, so the environment never reads as a rectangle on a phone. */
+  /* Bleeds to the screen edges. On a phone the canvas is see-through (the
+     section's own light shows around the vial), so it has no edge to hide. */
   inline-size: calc(100% + 2 * var(--gutter));
   margin-inline: calc(-1 * var(--gutter));
   min-block-size: 26rem;
-  mask-image: linear-gradient(180deg, transparent 0%, #000 16%, #000 84%, transparent 100%);
 }
 
 .canvasLayer canvas {
@@ -247,8 +246,12 @@
       "foot foot";
     column-gap: var(--space-2xl);
   }
+  /* A tablet paints the scene's whole frame (`SceneContents`), so its band
+     dissolves into the page. A phone's canvas is see-through and needs no
+     mask — masking a live canvas cost it frames (owner, 2026-09-30). */
   .canvasLayer {
     min-block-size: 32rem;
+    mask-image: linear-gradient(180deg, transparent 0%, #000 16%, #000 84%, transparent 100%);
   }
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState, type RefObject } from "react";
+import { useEffect, useId, useState, useSyncExternalStore, type RefObject } from "react";
 
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useStageTier, type StageTier } from "@/hooks/useStageTier";
@@ -14,7 +14,15 @@ interface VialStage {
   palette: WorldPalette | null;
   /** True only when the 3D layer should be mounted right now. */
   canRender3D: boolean;
+  /**
+   * True only once it is KNOWN that this device cannot draw the 3D layer — on
+   * the client, after the WebGL probe. The server and the first paint cannot
+   * know, and must not show a stand-in to everyone in the meantime.
+   */
+  noWebGL: boolean;
 }
+
+const noop = () => () => {};
 
 /*
  * THE ONE-CONTEXT REGISTRY.
@@ -79,6 +87,12 @@ export function useVialStage(
   const tier = useStageTier();
   const reducedMotion = useReducedMotion();
   const webgl = useWebGLSupport();
+  // False on the server and during hydration, true on the client after it.
+  const hydrated = useSyncExternalStore(
+    noop,
+    () => true,
+    () => false,
+  );
 
   const id = useId();
   const [palette, setPalette] = useState<WorldPalette | null>(null);
@@ -146,5 +160,6 @@ export function useVialStage(
     // `webgl` is false on the server and on the first client paint, so the
     // static fallback is always what paints first.
     canRender3D: modelPath !== null && webgl && palette !== null && granted && idle,
+    noWebGL: hydrated && !webgl,
   };
 }

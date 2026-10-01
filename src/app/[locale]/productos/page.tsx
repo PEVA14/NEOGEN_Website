@@ -22,6 +22,7 @@ import { fillTemplate, socialMetadata } from "@/lib/meta";
 import { catalogCopy, catalogEntries } from "@/server/catalog";
 
 import type { Metadata } from "next";
+import { SpikePage } from "@/spike/vial-transition/SpikePage";
 
 export async function generateMetadata({
   params,
@@ -112,7 +113,7 @@ export default async function ProductsPage({ params }: { params: Promise<{ local
   });
 
   return (
-    <>
+    <SpikePage>
       <StoreMasthead
         copy={{
           eyebrow: store.eyebrow,
@@ -156,6 +157,6 @@ export default async function ProductsPage({ params }: { params: Promise<{ local
           cardHeadingLevel={3}
         />
       </StoreCollection>
-    </>
+    </SpikePage>
   );
 }

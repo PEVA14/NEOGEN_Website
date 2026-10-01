@@ -2313,6 +2313,161 @@ dictionaries).
 5. Cold-chain determination (§6) — the handling page cannot say more until it
    exists.
 
+## 8af. The live glass wears the stills' optics (2026-09-29)
+
+Owner: the 3D vial's glass "ends up looking really milky and not reflect the
+light well … how can we make it look like the renders". The stills are
+three.js renders too, so the gap was configuration, measured on the live RETA
+product page by changing its materials in place (A/B through
+`__THREE_DEVTOOLS__`, no code), then fixed:
+
+1. **Glass depth.** `VialModel` kept `thickness: 0.42` in local units, written
+   for the 0.288-unit jar; V4 is 3.0 units, so the live glass had ~1/12 of the
+   stills' optical depth, bent nothing and read as a flat grey sheet. The
+   single biggest cause.
+2. **Phones.** The compact tier swapped transmission for plain 40% alpha —
+   literally frosted plastic. Real transmission now, at the half-resolution
+   transmission pass phones already had. **Owner to test on a real phone**
+   (frame rate, heat); the desktop GPU numbers do not answer it.
+3. **Reflections.** The live room (`worldEnvironment.ts`, deleted) had nothing
+   as bright as the stills' tall strips, which draw the white edge lines, and
+   the glass reflected a third as strongly.
+4. **Grade.** ACES at 0.62–0.72 greyed every white; Neutral at the rig's
+   exposure, as the studio.
+
+All four come from one shared module, `components/experience/studio/optics.ts`
+(`studioEnvironment`, `finishMaterial`), and `WORLD_RIGS` in `rig.ts` —
+CONVENTIONS §10. `StudioScene` was refactored onto it with no change to its
+output: re-rendered RETA and GLOW stills match the committed ones to 0.58–0.60
+/ 255 (JPEG noise).
+
+Affects every live 3D scene: the homepage hero, the RETA sequence, the GLOW
+and GHK-Cu moments, and the three flagship product pages. GLOW and GHK-Cu now
+read amber and copper through the glass, as their stills do.
+
+5. **The backlight card** (owner-approved the same day). Without it the hero and
+   RETA sequence showed their saturated blue straight through the body. The
+   stills' refraction-only light card (`backlightMaterial`, `refractionOnly`,
+   `BACKLIGHT_DEPTH` in `optics.ts`) now also stands behind the live object:
+   it follows the object's position, size and depth, never its rotation.
+
+**Phone (owner test, 2026-09-29):** looks right, but loaded slowly and
+stuttered slightly. Owner chose two of three remedies, both in `RetaCanvas`
+and both phone-only (`tier === "compact"`):
+
+- **Pixel ratio capped at 1.5** everywhere (the product page's presenter was
+  2): ~44% fewer pixels through the glass on a 3× screen.
+- **`PhoneFrameBudget`**: R3F's loop is replaced (`frameloop="never"`) by one
+  that draws at most 30 frames a second and nothing while the canvas is off
+  screen (a stage keeps its canvas mounted through a 40% margin, and it used
+  to render there). Its clock runs only while it draws, so the turn does not
+  jump on return. Measured (mobile Chrome, 3× screen): 30 draws/s on screen,
+  0 off screen; desktop unchanged (55–60, and still 60 off screen).
+
+Not taken: showing the still until the visitor touches the 3D (the load
+itself is unchanged).
+
+**The homepage handovers** (owner: still "pretty laggy" on a phone). Profiled:
+one canvas at a time, rebuilt at every section, blocked the main thread for
+180–250 ms at phone speed each time — shaders waiting to link (~70 ms at
+desktop speed), the first glass pass (~50), the lighting map (~30), the
+2048² label upload (33; 57 at phone speed), the vial's materials (~17).
+Owner chose the cheaper fix (a shared canvas, or renders instead of 3D on
+phones, remain open):
+
+- **`Prewarm`** (`RetaCanvas`): the loop stays off until `compileAsync` has
+  built every program in the background — twice, once with a render target
+  bound, for the glass pass's variants. Stages get their canvas ~40% of a
+  screen early, so the wait is off screen.
+- **`preparedVial`** (`VialModel`): the finished vial is kept per model, rig
+  and tier for the page and handed between canvases (R3F never disposes a
+  `<primitive>`).
+- **Phone labels at 1024** (`shrinkMap`), a quarter of the upload; fine print
+  a touch softer only when enlarged.
+
+Measured, 4× CPU throttle, 402 px phone: main-thread blocking across the
+scroll 742 → ~260 ms; the visible freeze at each handover 183–250 → 67 ms.
+
+**Then option 1 — one canvas for the homepage** (owner, 2026-09-30).
+`StageHost` (mounted once in the homepage) renders a single `<Canvas>`
+(`SharedCanvas`, lazy — three stays out of the initial payload) into a
+container it owns, and moves that container into the slot of whichever stage
+holds the grant. The hero, RETA and moment stages ask for it
+(`stageHostStore`: `useHostedScene`) instead of mounting their own; each keeps
+its poster until the canvas has drawn its scene, and the canvas stays hidden
+in a new box until then. `RetaCanvas` was split into the canvas and
+`StageScene` (grade, reflection map, lights, backdrop, vial, prewarm, phone
+budget) so both share it; the product page keeps its own `RetaCanvas`.
+Reflection maps are cached per renderer and rig, backlight cards per rig.
+
+Measured (4× throttle, 402 px): long tasks while scrolling the homepage
+0 ms (was 742, then ~260); no WebGL context is made after load. Each section
+shows its poster until drawn: RETA 44 ms after the handover (the hero's
+programs), GLOW and GHK-Cu ~200–270 ms on first visit (their own programs,
+label and lighting map) — no freeze, but the poster→3D swap can be seen if
+the box is already at the screen's edge. Verified in iOS 26.3 Safari and on
+leaving and returning to the homepage; reduced motion still draws one frame.
+
+**And the stages are prepared ahead** (owner, 2026-09-30). Stages announce
+their scene as soon as they know their palette (`useHostedScene(…, show)`),
+not only when granted. Once the canvas has drawn its first scene it prepares
+every other announced scene at idle, one at a time, in a scene of its own
+under the same renderer (`WarmUp` in `SharedCanvas`): model fetched and
+parsed, vial prepared, reflection map prefiltered, programs compiled (screen
+and glass pass), textures uploaded — then let go. Handover to drawn: GLOW
+266 → ~60 ms, GHK-Cu ~200 → ~47 ms, RETA ~30–44 ms, each drawn while its box
+was still off screen in every run; scrolling the homepage now has no long
+task and no frame gap over 50 ms (4× throttle). The preparation adds no long
+task at load. A stage reached mid-preparation is simply shown and its
+preparation dropped, so a vial is never in two scenes at once.
+
+**Fixes after the owner's test (2026-09-30)**: "the hero loads until you
+scroll down to reta" (laptop), RETA "staggers a lot" and GLOW/GHK-Cu "some
+angles look very pixely" (phone), and "it seems it hurt loading".
+
+- **The hero had no vial** — on laptop and phone. The hero and the RETA
+  scene share one prepared vial object (same model and rig), and preparing
+  RETA ahead moved it into the hidden scene. `WarmUp` now builds a COPY
+  (`VialModel detached`), which shares geometry, materials and textures.
+  Probably most of the "hurt loading": the hero looked like it never loaded.
+- **Preparation is lazy**: a stage is announced only within a screen and a
+  half of the viewport (`useNear` in `stageHostStore`), so nothing extra is
+  fetched or built while the page loads.
+- **Phone resolution by pixel budget** (`stageDpr`, 550k device pixels per
+  canvas, never under 1.5×, never over the screen): GLOW 1.5 → 2.74×, GHK-Cu
+  1.5 → 2.99×, RETA 1.81×, hero unchanged at 1.5×. The small moment canvases
+  had been stretched 2× (their glass pass 4×) on a 3× screen.
+- **RETA on phones is see-through** (local backdrop + refraction ground, as
+  the hero) and its canvas layer is no longer CSS-masked there; masking a
+  live WebGL canvas makes the browser re-composite it every frame. Tablets
+  keep the full-frame backdrop and the mask.
+
+Measured: hero vial 1.0–1.5 s after navigation (it waits for idle by design;
+LCP 84–484 ms); scrolling the homepage at 4× throttle: no long task;
+handover to drawn 48–65 ms, off screen every time.
+
+**No placeholders while the vial loads** (owner, 2026-09-30: "I don't like the
+placeholders that take the spot before the render finishes loading"). The
+homepage stages showed a drawn vial (RETA has no poster asset) or the
+section's drawn plate for 1–1.5 s; now the spot is empty and the vial fades in
+(450 ms; at once for reduced motion) when drawn. The drawing remains only for
+a device without WebGL. The studio stills were not used instead: they are
+photographs with their own set, and would have jumped to the 3D's pose.
+Measured: no stand-in at any point of the load, vial fully in by ~1.5 s,
+layout shift 0 across load and a full scroll (laptop and phone). The product
+page outside the spike still draws its stand-in while loading.
+
+**RETA section on phones holds still** (owner: the zoom-in "makes it laggy"):
+the compact sequence track is now the presented pose only — no arrival from
+far and small — while the vial still turns and the rim still breathes.
+
+**Safari navigation bug, found through the spike and fixed site-wide.**
+`motion.css` smooth-scrolls `html:focus-within`, and Next 16 no longer turns
+that off for its scroll-to-top unless `<html data-scroll-behavior="smooth">`
+is set. In Safari a new page therefore painted at the old page's scroll
+position and glided up. `app/[locale]/layout.tsx` now sets the attribute;
+in-page anchors stay smooth. Verified in iOS 26.3 Safari (simulator).
+
 ## 8ae. The recordless audit (2026-09-26)
 
 Owner brief: investigate every catalogue product without a scientific

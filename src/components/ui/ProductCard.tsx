@@ -2,12 +2,19 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, ViewTransition, type ReactNode } from "react";
 
 import { Mono } from "@/components/typography";
 import { SpecimenPlate } from "@/components/ui/SpecimenPlate";
 import { WorldDot } from "@/components/ui/WorldDot";
 import { CARD_SIZES, commerceStill, productMedia, stillMedia } from "@/content/media";
+import { arm, useArmed } from "@/spike/vial-transition/armed";
+import { VIAL_TRANSITION } from "@/spike/vial-transition/flag";
+import { markIncoming } from "@/spike/vial-transition/incoming";
+import { warmDestination } from "@/spike/vial-transition/warm";
+import { SpecimenLayers } from "@/spike/vial-transition/SpecimenLayers";
+import { SPECIMEN_NAVIGATION } from "@/spike/vial-transition/SpikePage";
+import { names, specimenFor } from "@/spike/vial-transition/specimens";
 
 import styles from "./ProductCard.module.css";
 
@@ -99,6 +106,13 @@ export interface ProductCardProps {
    * the owner has reviewed the storefront.
    */
   variant?: "default" | "store";
+  /**
+   * SPIKE (vial transition): this card is the ORIGIN of a shared-element
+   * transition to its product page. Only a composition where each product
+   * appears once may set it — a view-transition name must be unique on the
+   * page, or the browser skips the transition entirely.
+   */
+  transition?: boolean;
 }
 
 /**
@@ -146,8 +160,10 @@ export function ProductCard({
   details,
   detailsCopy,
   variant = "default",
+  transition = false,
 }: ProductCardProps) {
   const warmed = useRef(false);
+  const travels = VIAL_TRANSITION && transition;
   const revealId = useId();
   const [open, setOpen] = useState(false);
   /* The feature card's plate changes shape at 64rem; the reveal is sized to the
@@ -163,6 +179,42 @@ export function ProductCard({
   const image =
     variant === "store" ? commerceStill(slug) : still.kind === "image" ? still.image : null;
   const Heading = `h${headingLevel}` as "h2" | "h3";
+  /* A studio still that has been split into set + object (spike). Never a
+     photograph: only renders are split. */
+  const specimen = travels && image && !productMedia(slug).primary ? specimenFor(slug) : null;
+  const card = useRef<HTMLElement>(null);
+  /* SPIKE: this card names its specimen only once tapped — the strip above the
+     grid shows the same products, and a name may appear once. See `armed.ts`. */
+  const armKey = `grid:${slug}`;
+  const armed = useArmed(armKey);
+
+  /*
+   * SPIKE (vial transition): warm the destination's pictures once the card has
+   * been ON SCREEN for a moment. Hover alone is not enough: a touch screen has
+   * none, and a quick click gives the fetch no time — measured, the flight then
+   * waited 0.5–0.8s for React to see the product page's images load.
+   */
+  useEffect(() => {
+    const node = card.current;
+    if (!specimen || !node) return;
+    let timer = 0;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        window.clearTimeout(timer);
+        if (!entry?.isIntersecting) return;
+        timer = window.setTimeout(() => {
+          warmDestination(slug, format === "flagship" && world !== null);
+          observer.disconnect();
+        }, 400);
+      },
+      { threshold: 0.5 },
+    );
+    observer.observe(node);
+    return () => {
+      window.clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, [specimen, slug, format, world]);
 
   /*
    * WARM THE DESTINATION ON INTENT. A pointer settling on a card, or the CTA
@@ -174,6 +226,9 @@ export function ProductCard({
    * model — there is no point fetching a viewer for a page that has none.
    */
   const warm = () => {
+    // SPIKE (vial transition): the product page's pictures, so the flight
+    // does not wait for them. Independent of the 3D warm-up below.
+    if (travels) warmDestination(slug, format === "flagship" && world !== null);
     if (warmed.current) return;
     const connection = (navigator as Navigator & { connection?: { saveData?: boolean } })
       .connection;
@@ -189,6 +244,7 @@ export function ProductCard({
 
   return (
     <article
+      ref={card}
       className={styles.card}
       data-format={format}
       /* The dark card carries the world so `areas.css` can resolve its ground,
@@ -207,9 +263,40 @@ export function ProductCard({
        * One link rather than several: a card with a linked image, a linked
        * name and a linked button is three tab stops to reach one destination.
        */}
-      <Link href={href} className={styles.link} onFocus={warm}>
+      <Link
+        href={href}
+        className={styles.link}
+        onFocus={warm}
+        /* SPIKE: a finger has no hover; this is the last moment before the click. */
+        onPointerDown={travels ? warm : undefined}
+        onClick={
+          travels
+            ? (event) => {
+                arm(armKey);
+                const media = event.currentTarget.querySelector(`.${styles.media}`);
+                const r = media?.getBoundingClientRect();
+                markIncoming(
+                  slug,
+                  r ? { x: r.left, y: r.top, width: r.width, height: r.height } : null,
+                );
+              }
+            : undefined
+        }
+        /* SPIKE: tags the navigation so the pages give way to the specimen. */
+        transitionTypes={travels ? [SPECIMEN_NAVIGATION] : undefined}
+      >
         <span className={styles.media}>
-          {image ? (
+          {specimen && image ? (
+            <SpecimenLayers
+              slug={slug}
+              specimen={specimen}
+              alt={image.alt}
+              variant="card"
+              sizes={CARD_SIZES}
+              world={format === "flagship" && world !== null}
+              named={armed}
+            />
+          ) : image ? (
             <Image
               src={image.src}
               alt={image.alt}
@@ -220,16 +307,21 @@ export function ProductCard({
               loading="lazy"
             />
           ) : (
-            <SpecimenPlate
-              areaId={areaId}
-              world={world}
-              name={name}
-              presentations={presentations}
-              /* A store shelf is not a numbered register. */
-              index={variant === "store" ? undefined : index}
-              annotation={presentationRange ?? undefined}
-              size={format === "feature" ? "feature" : "card"}
-            />
+            <TravelsAs
+              name={travels ? (armed ? names.plate(slug) : "auto") : null}
+              share="vt-plate"
+            >
+              <SpecimenPlate
+                areaId={areaId}
+                world={world}
+                name={name}
+                presentations={presentations}
+                /* A store shelf is not a numbered register. */
+                index={variant === "store" ? undefined : index}
+                annotation={presentationRange ?? undefined}
+                size={format === "feature" ? "feature" : "card"}
+              />
+            </TravelsAs>
           )}
         </span>
 
@@ -311,6 +403,29 @@ export function ProductCard({
         </>
       ) : null}
     </article>
+  );
+}
+
+/**
+ * SPIKE (vial transition): a named shared-element participant, or nothing at
+ * all. Without a name the children render exactly as before — no boundary.
+ * `auto` keeps the boundary (so arming never remounts the plate) but pairs with
+ * nothing.
+ */
+function TravelsAs({
+  name,
+  share,
+  children,
+}: {
+  name: string | null;
+  share: string;
+  children: ReactNode;
+}) {
+  if (!name) return children;
+  return (
+    <ViewTransition name={name} share={share} default="none">
+      {children}
+    </ViewTransition>
   );
 }
 

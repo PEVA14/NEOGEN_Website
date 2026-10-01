@@ -1,12 +1,13 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Suspense, useRef, type ReactNode } from "react";
+import { Suspense, useId, useMemo, useRef, type ReactNode } from "react";
 
 import { getWorld, type WorldId } from "@/config/worlds";
 import { useSectionProgress } from "@/hooks/useSectionProgress";
 
 import { CanvasErrorBoundary } from "./CanvasErrorBoundary";
+import { HOST_SLOT_STYLE, useHostedScene, useStageHost, type HostedScene } from "./stageHostStore";
 import { useVialStage } from "./useVialStage";
 
 /**
@@ -52,9 +53,33 @@ export function MomentStage({
   children: ReactNode;
 }) {
   const box = useRef<HTMLDivElement>(null);
-  const { tier, reducedMotion, palette, canRender3D } = useVialStage(box, { modelPath });
+  const { tier, reducedMotion, palette, canRender3D, noWebGL } = useVialStage(box, {
+    modelPath,
+  });
   const progress = useSectionProgress(box, { mode: "through" });
   const environment = getWorld(world).environment;
+
+  /* The homepage's shared canvas (`StageHost`), when the page has one. */
+  const hosted = useStageHost();
+  const slot = useRef<HTMLDivElement>(null);
+  const hostId = useId();
+  const scene = useMemo<HostedScene | null>(
+    () =>
+      modelPath && palette
+        ? {
+            modelPath,
+            world,
+            environment,
+            palette,
+            progress,
+            reducedMotion,
+            tier,
+            variant: "moment",
+          }
+        : null,
+    [modelPath, palette, world, environment, progress, reducedMotion, tier],
+  );
+  useHostedScene(hostId, slot, hosted ? scene : null, canRender3D);
 
   return (
     <div
@@ -67,11 +92,19 @@ export function MomentStage({
       role="img"
       aria-label={label}
     >
-      {canRender3D && modelPath && palette ? (
+      {/* No stand-in while the vial loads (owner, 2026-09-30): the box stays
+          empty and the vial fades in. The section's drawn plate remains for a
+          device that cannot run 3D, and for a world with no model at all. */}
+      {noWebGL || !modelPath ? (
+        children
+      ) : hosted ? (
+        <div ref={slot} style={HOST_SLOT_STYLE} />
+      ) : canRender3D && palette ? (
         <CanvasErrorBoundary fallback={children}>
-          <Suspense fallback={children}>
+          <Suspense fallback={null}>
             <RetaCanvas
               modelPath={modelPath}
+              world={world}
               environment={environment}
               palette={palette}
               progress={progress}
@@ -89,9 +122,7 @@ export function MomentStage({
             />
           </Suspense>
         </CanvasErrorBoundary>
-      ) : (
-        children
-      )}
+      ) : null}
     </div>
   );
 }

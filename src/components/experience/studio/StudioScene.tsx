@@ -3,24 +3,20 @@
 import { Canvas, useLoader, useThree } from "@react-three/fiber";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  BackSide,
   Box3,
-  BoxGeometry,
   CanvasTexture,
   Color,
   Mesh,
   MeshBasicMaterial,
-  MeshPhysicalMaterial,
   MeshStandardMaterial,
   NeutralToneMapping,
-  PlaneGeometry,
-  PMREMGenerator,
   Scene,
   SRGBColorSpace,
   Vector3,
   type BufferGeometry,
   type Camera,
   type Material,
+  type Object3D,
   type RectAreaLight,
   type Texture,
   type WebGLRenderer,
@@ -28,11 +24,15 @@ import {
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLightUniformsLib.js";
 
-import { finishCap } from "../capFinish";
-import { isLabelMaterial, keepOutOfRefraction } from "../labelMaterial";
-
 import { drawLabel, drawSheetLabel, labelSheet, layoutFromUvs, type StudioLabel } from "./label";
 
+import {
+  BACKLIGHT_DEPTH,
+  backlightMaterial,
+  finishMaterial,
+  refractionOnly,
+  studioEnvironment,
+} from "./optics";
 import type { StudioRig } from "./rig";
 
 RectAreaLightUniformsLib.init();
@@ -113,56 +113,6 @@ function radialAlpha(stops: [number, number][]): Texture {
   return texture;
 }
 
-/* ---- the reflection map: what glass and metal see ------------------------ */
-
-function studioEnvironment(renderer: WebGLRenderer, rig: StudioRig): Texture {
-  const scene = new Scene();
-  const room = new Mesh(new BoxGeometry(14, 14, 14), new MeshBasicMaterial({ side: BackSide }));
-  (room.material as MeshBasicMaterial).color.set(rig.sweep.edge).multiplyScalar(rig.room);
-  scene.add(room);
-
-  // The cold wall behind the object, so the back of the glass reflects blue.
-  const wall = new Mesh(new PlaneGeometry(10, 6), new MeshBasicMaterial());
-  (wall.material as MeshBasicMaterial).color.set(rig.sweep.glow).multiplyScalar(0.22);
-  wall.position.set(0, 0.4, -5);
-  scene.add(wall);
-
-  for (const box of Object.values(rig.softboxes)) {
-    // Reflected panels are narrower than the diffuse lights they stand for: a
-    // defined streak on the glass, where the light itself stays soft.
-    const panel = new Mesh(
-      new PlaneGeometry(box.width * 0.55, box.height),
-      new MeshBasicMaterial(),
-    );
-    (panel.material as MeshBasicMaterial).color.set(box.color).multiplyScalar(box.reflection);
-    // Pushed out along its own direction so it reads as a panel at a distance.
-    const at = new Vector3(...box.position).multiplyScalar(1.8);
-    panel.position.copy(at);
-    panel.lookAt(0, 0, 0);
-    scene.add(panel);
-  }
-
-  // Negative fill: black cards for the metal and the glass rims to reflect.
-  for (const card of rig.negativeFill ?? []) {
-    const panel = new Mesh(new PlaneGeometry(card.width, card.height), new MeshBasicMaterial());
-    (panel.material as MeshBasicMaterial).color.set("#000000");
-    panel.position.copy(new Vector3(...card.position).multiplyScalar(1.8));
-    panel.lookAt(0, 0, 0);
-    scene.add(panel);
-  }
-
-  const pmrem = new PMREMGenerator(renderer);
-  const target = pmrem.fromScene(scene, 0.015);
-  pmrem.dispose();
-  scene.traverse((object) => {
-    if (object instanceof Mesh) {
-      object.geometry.dispose();
-      (object.material as MeshBasicMaterial).dispose();
-    }
-  });
-  return target.texture;
-}
-
 function Environment({ rig }: { rig: StudioRig }) {
   const gl = useThree((state) => state.gl);
   const texture = useMemo(() => studioEnvironment(gl, rig), [gl, rig]);
@@ -213,18 +163,14 @@ function Softboxes({ rig }: { rig: StudioRig }) {
 
 /* ---- the object ----------------------------------------------------------- */
 
-/**
- * The raw height, in its own units, of the container the glass was tuned on
- * (`reta-v2.glb`, 287.9 mm authored in metres). See the glass branch below.
- */
-const TUNED_HEIGHT = 0.2879;
-
 function useStudioModel(modelPath: string, rig: StudioRig, label: StudioLabel | null) {
   const gltf = useLoader(GLTFLoader, modelPath);
   const gl = useThree((state) => state.gl);
 
   return useMemo(() => {
     const root = gltf.scene.clone(true);
+    // SPIKE (vial transition): the upright object, for the ground/mask passes.
+    root.userData.specimen = true;
     const box = new Box3().setFromObject(root);
     const size = box.getSize(new Vector3());
     const centre = box.getCenter(new Vector3());
@@ -242,53 +188,10 @@ function useStudioModel(modelPath: string, rig: StudioRig, label: StudioLabel | 
       const m = child.material.clone();
       child.material = m;
       materials.push(m);
-      const name = m.name.toLowerCase();
 
-      if (m instanceof MeshPhysicalMaterial && m.transmission > 0) {
-        // Clear glass: near-smooth, real volume, a whisper of cool tint so its
-        // thick base reads as glass rather than as nothing.
-        m.roughness = rig.materials.glass.roughness;
-        /*
-         * DEPTH IN THE MODEL'S OWN UNITS, scaled to its size. `thickness` is a
-         * local-space length, and the root is normalised to a height of 1, so
-         * the same number means ten times less glass on a model built ten
-         * times larger. V4 is authored at 3.0 units tall where the jar the rig
-         * was tuned on is 0.288, and it came out as a flat shell that bent
-         * nothing. Scaling by the model's own height gives every container the
-         * optical depth the approved jar has.
-         */
-        m.thickness = rig.materials.glass.thickness * (size.y / TUNED_HEIGHT);
-        m.ior = rig.materials.glass.ior;
-        m.attenuationColor = new Color(rig.materials.glass.attenuation);
-        m.attenuationDistance = 1.1;
-        m.specularIntensity = 1;
-        // Front-facing glass reflects ~4%: the softboxes must read through that.
-        m.envMapIntensity = rig.materials.glass.reflect;
-      } else if (m.metalness > 0.5) {
-        /*
-         * The cap: brushed aluminium, not grey plastic.
-         *
-         * Matched on METALNESS, not on the material's name. The name is what
-         * an exporter or an asset tool renames without meaning to — one did,
-         * and this branch fell through to the black-plastic one below, so the
-         * catalogue card came back with a black cap on a silver vial.
-         */
-        m.metalness = 1;
-        m.color = new Color(rig.materials.metal.color);
-        // Spun-aluminium relief and grain, and the rig's roughness as its
-        // average — see `capFinish.ts`.
-        finishCap(child, m, rig.materials.metal.roughness);
-        m.envMapIntensity = rig.materials.metal.reflect ?? 1.4;
-      } else if (name.includes("black plastic")) {
-        // The flip-off top: a deep gloss black that holds a crisp highlight.
-        m.roughness = 0.1;
-        m.envMapIntensity = 1.3;
-      } else if (isLabelMaterial(m)) {
-        // Paper: matte, and the printed type kept sharp at an angle.
-        m.roughness = rig.materials.label.roughness;
-        m.envMapIntensity = 0.35;
-        // Out of the glass's refraction image — see `labelMaterial.ts`.
-        keepOutOfRefraction(m);
+      // Glass, cap, top and paper, tuned to the rig — shared with the live
+      // viewer (`./optics`). Only the label's artwork is the studio's own.
+      if (finishMaterial(child, m, rig, size.y) === "label") {
         // A product without printed artwork of its own wears its registry data
         // in the real label's layout (see `./label`).
         if (label) {
@@ -377,29 +280,9 @@ function RefractionFlags({ rig }: { rig: StudioRig }) {
   );
 }
 
-/**
- * DARK-FIELD BACKLIGHT, seen only through the glass — see `StudioRig.backlight`.
- *
- * An opaque card just behind the object: its centre lit, falling to the set's
- * edge colour. Gated to the transmission pass exactly like the flags, so the
- * lens never sees it and the set is unchanged; only what the glass shows is.
- */
+/** The backlight card (`./optics`), where the studio stands it: fixed to the set. */
 function RefractionBacklight({ rig }: { rig: StudioRig }) {
-  const backlight = rig.backlight;
-  const material = useMemo(() => {
-    if (!backlight) return null;
-    const map = canvasTexture(512, (ctx, s) => {
-      ctx.fillStyle = rig.sweep.edge;
-      ctx.fillRect(0, 0, s, s);
-      const g = ctx.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
-      g.addColorStop(0, backlight.color);
-      g.addColorStop(0.55, backlight.color);
-      g.addColorStop(1, rig.sweep.edge);
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, s, s);
-    });
-    return new MeshBasicMaterial({ map, toneMapped: false });
-  }, [backlight, rig.sweep.edge]);
+  const material = useMemo(() => backlightMaterial(rig), [rig]);
   useEffect(
     () => () => {
       material?.map?.dispose();
@@ -407,24 +290,10 @@ function RefractionBacklight({ rig }: { rig: StudioRig }) {
     },
     [material],
   );
-  const gate = useCallback(
-    (
-      renderer: WebGLRenderer,
-      _scene: Scene,
-      _camera: Camera,
-      _geometry: BufferGeometry,
-      drawn: Material,
-    ) => {
-      const refractionPass = renderer.getRenderTarget() !== null;
-      drawn.colorWrite = refractionPass;
-      drawn.depthWrite = refractionPass;
-    },
-    [],
-  );
-  if (!backlight || !material) return null;
+  if (!rig.backlight || !material) return null;
   return (
-    <mesh position={[0, 0, -0.6]} material={material} onBeforeRender={gate}>
-      <planeGeometry args={[backlight.width, backlight.height]} />
+    <mesh position={[0, 0, -BACKLIGHT_DEPTH]} material={material} onBeforeRender={refractionOnly}>
+      <planeGeometry args={[rig.backlight.width, rig.backlight.height]} />
     </mesh>
   );
 }
@@ -446,7 +315,14 @@ function Subject({
     onSheet?.(sheet);
   }, [onSheet, sheet]);
   // The reflection is the same object, mirrored through the floor plane (y = -0.5).
-  const mirror = useMemo(() => root.clone(true), [root]);
+  const mirror = useMemo(() => {
+    // SPIKE (vial transition): `root` is tagged as the specimen where it is
+    // built; `clone` copies userData, so the reflection is untagged here — it
+    // belongs to the set.
+    const reflection = root.clone(true);
+    reflection.userData.specimen = false;
+    return reflection;
+  }, [root]);
   useEffect(() => () => materials.forEach((m) => m.dispose()), [materials]);
 
   const floorAlpha = useMemo(
@@ -526,8 +402,32 @@ declare global {
        * support gets replaced in the served file rather than at render time.
        */
       label: () => string | null;
+      /**
+       * SPIKE (vial transition) — two extra passes of the SAME frame, from the
+       * same camera, so they register with `capture()` to the pixel:
+       *
+       *   ground  — the set without the upright object. Its reflection and
+       *             contact shadow stay: they belong to the floor, and they are
+       *             what is left behind when the specimen is lifted away.
+       *   mask    — the upright object alone, flat white on black: its
+       *             silhouette, glass included, with an antialiased edge.
+       *
+       * `scripts/spike/capture-specimen.mjs` combines them into a ground plate
+       * and a cut-out specimen. See `src/spike/vial-transition/`.
+       */
+      captureGround: () => string;
+      captureMask: () => string;
     };
   }
+}
+
+/** The upright object the passes isolate — tagged in `Subject`. */
+function findSpecimen(scene: Object3D): Object3D | null {
+  let found: Object3D | null = null;
+  scene.traverse((object) => {
+    if (!found && object.userData.specimen === true) found = object;
+  });
+  return found;
 }
 
 /** Renders a settled frame and exposes it for capture. */
@@ -549,6 +449,45 @@ function Capture({ sheet }: { sheet: HTMLCanvasElement | null }) {
             return gl.domElement.toDataURL("image/png");
           },
           label: () => sheet?.toDataURL("image/png") ?? null,
+          captureGround: () => {
+            const specimen = findSpecimen(scene);
+            if (specimen) specimen.visible = false;
+            gl.render(scene, camera);
+            const data = gl.domElement.toDataURL("image/png");
+            if (specimen) specimen.visible = true;
+            return data;
+          },
+          captureMask: () => {
+            const specimen = findSpecimen(scene);
+            // Everything that is not the object, or on the path down to it,
+            // is hidden; the object is drawn flat white with no tone mapping so
+            // its interior is exactly 1 and only the edge is fractional.
+            const hidden: Object3D[] = [];
+            const keep = new Set<Object3D>();
+            specimen?.traverseAncestors((a) => keep.add(a));
+            specimen?.traverse((d) => keep.add(d));
+            scene.traverse((object) => {
+              if (object !== scene && !keep.has(object) && object.visible) {
+                object.visible = false;
+                hidden.push(object);
+              }
+            });
+            const background = scene.background;
+            const environment = scene.environment;
+            const override = scene.overrideMaterial;
+            const white = new MeshBasicMaterial({ color: 0xffffff, toneMapped: false });
+            scene.background = new Color(0x000000);
+            scene.environment = null;
+            scene.overrideMaterial = white;
+            gl.render(scene, camera);
+            const data = gl.domElement.toDataURL("image/png");
+            scene.overrideMaterial = override;
+            scene.environment = environment;
+            scene.background = background;
+            white.dispose();
+            for (const object of hidden) object.visible = true;
+            return data;
+          },
         };
     };
     raf = requestAnimationFrame(tick);

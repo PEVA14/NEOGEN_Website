@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Suspense, useCallback, useEffect, useRef, type ReactNode } from "react";
+import { Suspense, useCallback, useEffect, useRef, ViewTransition, type ReactNode } from "react";
 
 import { CanvasErrorBoundary } from "@/components/experience/CanvasErrorBoundary";
 import { useVialStage } from "@/components/experience/useVialStage";
@@ -11,6 +11,10 @@ import { Mono } from "@/components/typography";
 import type { ProductImage } from "@/content/media";
 import type { WorldEnvironment, WorldId } from "@/config/worlds";
 import { useFinePointer } from "@/hooks/useFinePointer";
+import { VIAL_TRANSITION } from "@/spike/vial-transition/flag";
+import { StageSpecimen } from "@/spike/vial-transition/SpecimenLayers";
+import { names, specimenFor } from "@/spike/vial-transition/specimens";
+import { useStageHandoff, useWorldOrigin } from "@/spike/vial-transition/useStageHandoff";
 
 import styles from "./ProductStage.module.css";
 
@@ -57,6 +61,11 @@ interface ProductStageProps {
   wordmark?: string;
   /** The commerce panel, server-rendered. */
   children: ReactNode;
+  /**
+   * SPIKE (vial transition): the product, so its split studio still can stand
+   * in for the object and receive the card's specimen. Absent → unchanged.
+   */
+  slug?: string;
 }
 
 /**
@@ -97,6 +106,7 @@ export function ProductStage({
   frameMarks,
   wordmark,
   children,
+  slug,
 }: ProductStageProps) {
   const stage = useRef<HTMLDivElement>(null);
   const canvasLayer = useRef<HTMLDivElement>(null);
@@ -114,7 +124,18 @@ export function ProductStage({
    * silhouette that does not. A hint for an interaction that is not there is
    * worse than no hint.
    */
-  const viewer = canRender3D && modelPath && palette ? { modelPath, palette } : null;
+  /*
+   * SPIKE (vial transition). While a specimen is in flight from a card, the
+   * canvas is not mounted at all: its boot is ~240ms of main thread and would
+   * land inside the animation. It mounts once the flight has landed, behind
+   * the specimen, which stands in until the canvas has drawn.
+   */
+  const specimen = VIAL_TRANSITION && slug ? specimenFor(slug) : null;
+  const handoff = useStageHandoff(slug ?? "");
+  const held = specimen !== null && handoff.holding;
+  useWorldOrigin(slug ?? "", specimen !== null && handoff.holding, stage, panel);
+
+  const viewer = canRender3D && modelPath && palette && !held ? { modelPath, palette } : null;
 
   /**
    * Where the object sits, measured rather than assumed — and expressed
@@ -221,7 +242,11 @@ export function ProductStage({
   /* The name printed on the fallback object's label. */
   const objectName = wordmark;
 
-  const fallback = (
+  const fallback = specimen ? (
+    // The specimen in the media frame is the stand-in; only the world's
+    // material study is drawn behind it.
+    <div className={styles.mediaWell}>{material}</div>
+  ) : (
     <div className={styles.mediaWell}>
       {material}
       <VialFallback
@@ -238,7 +263,15 @@ export function ProductStage({
   return (
     <div ref={stage} className={styles.stage} data-world={world}>
       {/* The environment. Full-bleed, with the world's atmospheric wash. */}
-      <div className={styles.field} aria-hidden="true" />
+      {specimen ? (
+        /* SPIKE: paired with the card's stage, so the world can open out of the
+           card the specimen left and drift to where it lands (see the CSS). */
+        <ViewTransition name={names.world(slug ?? "")} share="vt-world" default="none">
+          <div className={styles.field} aria-hidden="true" />
+        </ViewTransition>
+      ) : (
+        <div className={styles.field} aria-hidden="true" />
+      )}
 
       {/* The name across the field, cropped by both edges. */}
       {wordmark ? (
@@ -258,22 +291,27 @@ export function ProductStage({
           <CanvasErrorBoundary fallback={fallback}>
             <Suspense
               fallback={
-                <div className={styles.mediaWell}>
-                  {material}
-                  <VialFallback
-                    poster={poster}
-                    diagramLabel={posterAlt}
-                    label={loadingLabel}
-                    loading
-                    world={world}
-                    name={objectName}
-                  />
-                </div>
+                specimen ? (
+                  <div className={styles.mediaWell}>{material}</div>
+                ) : (
+                  <div className={styles.mediaWell}>
+                    {material}
+                    <VialFallback
+                      poster={poster}
+                      diagramLabel={posterAlt}
+                      label={loadingLabel}
+                      loading
+                      world={world}
+                      name={objectName}
+                    />
+                  </div>
+                )
               }
             >
               <RetaCanvas
                 fill
                 modelPath={viewer.modelPath}
+                world={world}
                 environment={environment}
                 palette={viewer.palette}
                 progress={restingProgress}
@@ -282,6 +320,7 @@ export function ProductStage({
                 variant="presenter"
                 anchor={anchor}
                 pointer={finePointer ? pointer : undefined}
+                onFirstFrame={specimen ? handoff.onFirstFrame : undefined}
               />
             </Suspense>
           </CanvasErrorBoundary>
@@ -289,7 +328,6 @@ export function ProductStage({
           fallback
         )}
       </div>
-
       <div className={styles.composition}>
         {/*
          * The media plate. Its box is EXACTLY the frame's box — the caption is
@@ -301,6 +339,14 @@ export function ProductStage({
          * instrument plate, not a picture frame, and no extra DOM.
          */}
         <div ref={panel} className={styles.media}>
+          {specimen && slug ? (
+            <StageSpecimen
+              slug={slug}
+              specimen={specimen}
+              live={handoff.live}
+              onShare={handoff.onShare}
+            />
+          ) : null}
           {frameMarks}
           <div className={styles.caption}>
             {/* Two gates: a live viewer to respond, and (in CSS) a cursor to

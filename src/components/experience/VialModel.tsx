@@ -2,20 +2,16 @@
 
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, type RefObject } from "react";
-import {
-  Box3,
-  Group,
-  MathUtils,
-  Mesh,
-  MeshPhysicalMaterial,
-  MeshStandardMaterial,
-  Vector3,
-  type BufferGeometry,
-} from "three";
+import { Box3, Group, MathUtils, Mesh, MeshStandardMaterial, Source, Vector3 } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
-import { finishCap } from "./capFinish";
-import { isLabelMaterial, keepOutOfRefraction } from "./labelMaterial";
+import {
+  BACKLIGHT_DEPTH,
+  backlightMaterial,
+  finishMaterial,
+  refractionOnly,
+} from "./studio/optics";
+import type { StudioRig } from "./studio/rig";
 import type { StageTier } from "@/hooks/useStageTier";
 
 import {
@@ -38,15 +34,6 @@ const NORMALISED_HEIGHT = 1;
 
 /** How much of the media well's height the resolved object occupies. */
 const FIT_IN_PANEL = 0.62;
-
-/**
- * Cap metal, corrected at load time. See the material pass below for why.
- *
- * 0.32 is satin: bright along the crown, falling off around the cylinder —
- * brushed aluminium rather than chrome. Lower reads as a mirror, which in
- * NEOGEN's near-black worlds has nothing to reflect and goes murky.
- */
-const CAP_ROUGHNESS = 0.32;
 
 /*
  * PRESENTER MOTION — a museum display, not a 3D toy.
@@ -106,15 +93,149 @@ export interface StageAnchor {
   weight: number;
 }
 
+type LoadedGltf = { scene: Group };
+
+/** A vial with the rig's finish applied, ready to be placed in any scene. */
+interface PreparedVial {
+  root: Group;
+}
+
+/* One backlight card per rig for the page, like the prepared vial: a shared
+   canvas shows the same world many times, and the card is plain data. */
+const backlights = new Map<StudioRig, ReturnType<typeof backlightMaterial>>();
+
+function backlightFor(rig: StudioRig) {
+  if (!backlights.has(rig)) backlights.set(rig, backlightMaterial(rig));
+  return backlights.get(rig) ?? null;
+}
+
+/** The longest side a phone's label texture keeps. */
+const PHONE_LABEL_SIZE = 1024;
+
+/*
+ * PREPARED ONCE, SHARED BETWEEN CANVASES (owner, 2026-09-29: the homepage
+ * "is still pretty laggy" on a phone).
+ *
+ * The homepage runs one canvas at a time and hands it from section to
+ * section; every handover used to rebuild the vial from the GLB — clone every
+ * material, re-finish the cap's geometry — on the main thread, while the
+ * visitor was scrolling. The prepared object is plain three.js data, so it
+ * outlives the canvas that first showed it: GPU resources belong to each
+ * renderer and are made again by it, but the CPU work is done once per model,
+ * rig and tier. R3F never disposes a `<primitive>`, and only one canvas holds
+ * the object at a time (adding it to a scene takes it out of the last).
+ *
+ * Keyed by the parsed GLTF, which `useLoader` caches for the page.
+ */
+const prepared = new WeakMap<object, Map<StudioRig, Partial<Record<StageTier, PreparedVial>>>>();
+
+function preparedVial(gltf: LoadedGltf, rig: StudioRig, tier: StageTier): PreparedVial {
+  let byRig = prepared.get(gltf);
+  if (!byRig) prepared.set(gltf, (byRig = new Map()));
+  let byTier = byRig.get(rig);
+  if (!byTier) byRig.set(rig, (byTier = {}));
+  const cached = byTier[tier];
+  if (cached) return cached;
+
+  const root = gltf.scene.clone(true);
+  const box = new Box3().setFromObject(root);
+  const size = box.getSize(new Vector3());
+  const centre = box.getCenter(new Vector3());
+  const scale = NORMALISED_HEIGHT / (size.y || 1);
+
+  root.scale.setScalar(scale);
+  root.position.set(-centre.x * scale, -centre.y * scale, -centre.z * scale);
+
+  root.traverse((child) => {
+    if (!(child instanceof Mesh) || !(child.material instanceof MeshStandardMaterial)) return;
+
+    // Lit, not a shadow-caster: there is no ground plane in this composition,
+    // so shadow maps would cost frames for nothing.
+    child.castShadow = false;
+    child.receiveShadow = false;
+
+    /*
+     * CLONE BEFORE TUNING.
+     *
+     * `Object3D.clone()` copies the material REFERENCE, not the material, and
+     * `useLoader` caches the parsed GLTF for the lifetime of the page. Tuning
+     * the source directly would permanently mutate the loaded asset, and
+     * every tier and rig prepared from it would inherit whatever this one did
+     * to it. Cloning keeps the source GLB pristine.
+     */
+    const material = child.material.clone();
+    child.material = material;
+
+    /*
+     * THE STILLS' OWN FINISH (owner, 2026-09-29: the glass "ends up looking
+     * really milky"). This pass used to tune the materials by hand, and the
+     * glass drifted from the stills: a fixed `thickness` written for a model
+     * ten times smaller left V4 with a twelfth of the stills' optical depth,
+     * so it bent nothing and read as a flat grey sheet. The rig's values,
+     * applied by the same function the studio uses, keep them identical.
+     *
+     * Phones keep REAL transmission too. They used to swap it for plain 40%
+     * alpha — which is exactly frosted plastic. The cost is one extra scene
+     * pass per frame, at half resolution (`transmissionResolutionScale` in
+     * `RetaCanvas`).
+     */
+    const finish = finishMaterial(child, material, rig, size.y);
+
+    /*
+     * A PHONE'S LABEL AT 1024. The printed sheet ships at 2048², and uploading
+     * it to each new canvas blocked the main thread for 33 ms at desktop speed
+     * and ~57 ms at phone speed. On a phone the whole front of the label spans
+     * a few hundred pixels at most — the canvas is capped at 1.5× — so 1024
+     * holds the type while costing a quarter of the upload.
+     */
+    if (finish === "label" && tier === "compact") shrinkMap(material, PHONE_LABEL_SIZE);
+  });
+
+  return (byTier[tier] = { root });
+}
+
+/**
+ * Replaces a material's colour map with a copy no longer than `size` on its
+ * longest side. A new texture with its own source: the GLTF's texture is
+ * shared with every other preparation of the model, so it is never touched.
+ */
+function shrinkMap(material: MeshStandardMaterial, size: number): void {
+  const map = material.map;
+  const image = map?.image as { width: number; height: number } | undefined;
+  if (!map || !image?.width || !image.height) return;
+  const longest = Math.max(image.width, image.height);
+  if (longest <= size) return;
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round((image.width * size) / longest);
+  canvas.height = Math.round((image.height * size) / longest);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  ctx.drawImage(image as CanvasImageSource, 0, 0, canvas.width, canvas.height);
+  const small = map.clone();
+  small.source = new Source(canvas);
+  small.needsUpdate = true;
+  material.map = small;
+}
+
 interface VialModelProps {
   modelPath: string;
+  /**
+   * Show a COPY of the prepared vial rather than the vial itself. The prepared
+   * object can stand in one scene at a time, and a scene built only to prepare
+   * a stage ahead (`SharedCanvas`'s `WarmUp`) must never take it from the
+   * scene on screen — which is what left the homepage hero empty
+   * (2026-09-30). The copy shares the geometry, materials and textures, so
+   * compiling and uploading it prepares the real one.
+   */
+  detached?: boolean;
   /** 0→1 pinned scroll progress. A ref: never re-renders. */
   progress: RefObject<number>;
   /** Holds a single resolved pose and stops animating. */
   reducedMotion: boolean;
   tier: StageTier;
-  /** How strongly materials respond to the image-based environment. */
-  envIntensity: number;
+  /** The world's studio rig: the glass, cap and paper answer to it exactly as
+      they do in the stills (see `studio/optics`). */
+  rig: StudioRig;
   /** Which choreography to play. */
   variant: StageVariant;
   /**
@@ -133,13 +254,15 @@ export function VialModel({
   progress,
   reducedMotion,
   tier,
-  envIntensity,
+  rig,
   variant,
   anchor,
   pointer,
+  detached = false,
 }: VialModelProps) {
   const gltf = useLoader(GLTFLoader, modelPath);
   const group = useRef<Group>(null);
+  const card = useRef<Mesh>(null);
 
   // World-space size of the frame at z=0. Offsets are expressed as fractions of
   // this, so the vial holds its place in the composition at any aspect ratio.
@@ -161,139 +284,12 @@ export function VialModel({
   const shiftX = useRef(0);
   const shiftY = useRef(0);
 
-  const model = useMemo(() => {
-    const root = gltf.scene.clone(true);
-
-    // Cloned materials are ours to dispose; the cached originals are not.
-    const clones: MeshStandardMaterial[] = [];
-    // So is a cap's geometry, which is re-made with UVs (`finishCap`).
-    const geometries: BufferGeometry[] = [];
-
-    const box = new Box3().setFromObject(root);
-    const size = box.getSize(new Vector3());
-    const centre = box.getCenter(new Vector3());
-    const scale = NORMALISED_HEIGHT / (size.y || 1);
-
-    root.scale.setScalar(scale);
-    root.position.set(-centre.x * scale, -centre.y * scale, -centre.z * scale);
-
-    root.traverse((child) => {
-      if (!(child instanceof Mesh)) return;
-
-      // Lit, not a shadow-caster: there is no ground plane in this composition,
-      // so shadow maps would cost frames for nothing.
-      child.castShadow = false;
-      child.receiveShadow = false;
-
-      const source = child.material;
-      /*
-       * THE LABEL, before the physical-only branch below: an export without
-       * material extensions loads its label as MeshStandardMaterial, and it
-       * still has to be kept out of the glass's refraction image or a mirrored
-       * copy of it floats in the bare glass at the vial's edges.
-       */
-      if (source instanceof MeshStandardMaterial && isLabelMaterial(source)) {
-        const label = source.clone();
-        child.material = label;
-        clones.push(label);
-        label.envMapIntensity = envIntensity;
-        keepOutOfRefraction(label);
-        return;
-      }
-      if (!(source instanceof MeshPhysicalMaterial)) return;
-
-      /*
-       * CLONE BEFORE TUNING.
-       *
-       * `Object3D.clone()` copies the material REFERENCE, not the material, and
-       * `useLoader` caches the parsed GLTF for the lifetime of the page. Tuning
-       * `source` directly would permanently mutate the loaded asset — and the
-       * compact branch below would strip transmission from the cached material,
-       * so resizing a phone-width window back to desktop would never restore
-       * the glass. Cloning keeps the source GLB pristine and makes every value
-       * here reversible.
-       */
-      const material = source.clone();
-      child.material = material;
-      clones.push(material);
-
-      // Set per-material rather than on `scene.environmentIntensity`: R3F owns
-      // the scene object and it must not be mutated from a component.
-      material.envMapIntensity = envIntensity;
-
-      if (material.metalness > 0.5) {
-        /*
-         * SATIN ALUMINIUM — the cap, neither painted grey nor chrome.
-         *
-         * No export has shipped a cap roughness anyone chose. The first vials
-         * were authored `roughness: 1`, which scatters every ray and renders
-         * as flat grey paint; V4 arrives at 0.095, a Maya default that made a
-         * mirror (owner, 2026-09-22: "too shiny"). Both are the same class of
-         * artefact as the glass arriving at roughness 0 below, so the value is
-         * set here, always, together with the spun-aluminium relief and grain
-         * the cap needs to read as metal rather than as a render of metal —
-         * see `capFinish.ts`.
-         */
-        finishCap(child, material, CAP_ROUGHNESS);
-        geometries.push(child.geometry);
-        /*
-         * The export also carries KHR_materials_specular at 0.4, halving the
-         * reflection that describes the cap's edge and crown. Metal has no
-         * colour of its own — the reflection IS the material — so it gets its
-         * full specular response back.
-         */
-        material.specularIntensity = 1;
-      }
-
-      if (material.transmission > 0) {
-        /*
-         * CLEAR LABORATORY GLASS — not chrome, not cobalt, not invisible.
-         *
-         * The GLB ships roughness 0, which is a PERFECT MIRROR. Combined with a
-         * high environment intensity it turned the large softboxes into broad
-         * white plates across the body, so the vial read as chrome. A little
-         * micro-roughness is both physically honest for real glassware and the
-         * single most effective fix: it scatters those plates into soft falloff
-         * while leaving edges and refraction crisp.
-         */
-        material.roughness = 0.055;
-
-        // Glass volume. `thickness` is required because the asset carries no
-        // volume extension — without it transmission bends nothing. Slightly
-        // thinner than before so more of the backdrop reads THROUGH the vial.
-        material.thickness = 0.42;
-
-        // Anti-reflective coating, in effect. Real lab glass is often coated;
-        // dropping specular below 1 removes the broad white sheen sitting on
-        // top of the body while leaving the edge highlights that define shape.
-        material.specularIntensity = 0.72;
-
-        // Roughly half the previous value. Reflections should describe the
-        // glass, not replace it.
-        material.envMapIntensity = envIntensity * 0.9;
-
-        if (tier === "compact") {
-          // Transmission forces an extra full-scene render pass per frame. On
-          // phones we trade refraction for plain alpha — with the backdrop
-          // behind it the vial still reads as glass, at far lower cost.
-          material.transmission = 0;
-          material.transparent = true;
-          material.opacity = 0.4;
-        }
-      }
-    });
-
-    return { root, clones, geometries };
-  }, [gltf, tier, envIntensity]);
-
-  // Release the cloned materials and cap geometry when the tier changes or the scene unmounts.
-  useEffect(
-    () => () => {
-      model.clones.forEach((material) => material.dispose());
-      model.geometries.forEach((geometry) => geometry.dispose());
-    },
-    [model],
-  );
+  /*
+   * Prepared once per page and shared (see `preparedVial` below), so it is
+   * never disposed here: the next canvas that shows this vial picks it up.
+   */
+  const model = preparedVial(gltf, rig, tier);
+  const shown = useMemo(() => (detached ? model.root.clone() : model.root), [detached, model]);
 
   /*
    * Reduced motion runs `frameloop="demand"` — exactly one frame, then nothing.
@@ -490,9 +486,40 @@ export function VialModel({
     node.scale.setScalar(scale);
   });
 
+  /*
+   * THE BACKLIGHT CARD (owner, 2026-09-29), the stills' own — see
+   * `studio/optics`. Seen only through the glass, it is what keeps the body
+   * clear and silvery instead of showing the world's saturated pool straight
+   * through it as blue (or amber, or copper) glass.
+   *
+   * It FOLLOWS the object — position, size, depth — but never its rotation.
+   * The studio's card is fixed to the set because a card that turned with the
+   * object would swing edge-on across the glass; here the object travels, so
+   * the card travels with it and keeps facing the lens. It is sized to cover
+   * the object at its presenter lean, so it needs no lean of its own.
+   *
+   * Registered after the pose above, so it reads this frame's pose.
+   */
+  const backlight = useMemo(() => backlightFor(rig), [rig]);
+  useFrame(() => {
+    const node = group.current;
+    const plate = card.current;
+    if (!node || !plate) return;
+    const size = node.scale.x;
+    plate.position.set(node.position.x, node.position.y, node.position.z - BACKLIGHT_DEPTH * size);
+    plate.scale.setScalar(size);
+  });
+
   return (
-    <group ref={group}>
-      <primitive object={model.root} />
-    </group>
+    <>
+      <group ref={group}>
+        <primitive object={shown} />
+      </group>
+      {backlight && rig.backlight ? (
+        <mesh ref={card} material={backlight} onBeforeRender={refractionOnly}>
+          <planeGeometry args={[rig.backlight.width, rig.backlight.height]} />
+        </mesh>
+      ) : null}
+    </>
   );
 }

@@ -582,6 +582,9 @@ export function CatalogBrowser({
                       details={product.details}
                       detailsCopy={copy.card}
                       variant={variant}
+                      /* SPIKE (vial transition): the grid lists each product
+                         once, so its cards can be transition origins. */
+                      transition
                     />
                   </div>
                 ))}

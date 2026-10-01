@@ -1,0 +1,72 @@
+/*
+ * SPIKE — the two-layer still. See SpecimenLayers.tsx.
+ */
+
+/* The box the card or the plate gives us. It is a SIZE container so the layer
+   inside can reproduce `object-fit: cover` for any box shape. */
+.frame {
+  position: relative;
+  display: block;
+  inline-size: 100%;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  container-type: size;
+}
+
+.frame[data-variant="plate"] {
+  position: absolute;
+  inset: 0;
+  aspect-ratio: auto;
+}
+
+/* The 4:5 studio frame, covering the box exactly as the photograph did:
+   as wide as the box, or as tall — whichever is larger — and centred. */
+.fit {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  inline-size: max(100cqi, 80cqb);
+  aspect-ratio: 4 / 5;
+  translate: -50% -50%;
+}
+
+.ground {
+  object-fit: cover;
+}
+
+.specimen {
+  position: absolute;
+  display: block;
+}
+
+/* The flagship card's stage, as an empty box: the world's transition pair. */
+.worldProxy {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.cutout {
+  object-fit: contain;
+}
+
+/* On a flagship page: centred in the media frame, at the presenter's pose. */
+.stageSpecimen {
+  position: absolute;
+  display: block;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  pointer-events: none;
+  transition: opacity 520ms var(--ease-standard);
+}
+
+/* The canvas has drawn: the still dissolves into the live object. */
+.stageSpecimen[data-live] {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stageSpecimen {
+    transition: none;
+  }
+}

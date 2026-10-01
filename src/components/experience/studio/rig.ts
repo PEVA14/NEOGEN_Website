@@ -12,6 +12,8 @@
  * the light colours, the sweep and the grade (owner request, 2026-09-20).
  */
 
+import type { WorldId } from "@/config/worlds";
+
 export interface Softbox {
   /** World position; the subject is centred on the origin, 1 unit tall. */
   position: [number, number, number];
@@ -403,4 +405,15 @@ export const NEUTRAL_RIG: StudioRig = {
     metal: { color: "#b4b7bc", roughness: 0.34, reflect: 0.9 },
     label: { roughness: 0.62 },
   },
+};
+
+/**
+ * Each world's rig, for the LIVE viewer: the product pages, the homepage hero
+ * and the world sections light the object with the same rig as its stills
+ * (see `./optics`).
+ */
+export const WORLD_RIGS: Record<WorldId, StudioRig> = {
+  reta: RETA_RIG,
+  glow: GLOW_RIG,
+  "ghk-cu": GHK_RIG,
 };

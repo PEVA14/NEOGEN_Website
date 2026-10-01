@@ -89,7 +89,6 @@ export function RetaExperience({ copy }: { copy: RetaExperienceCopy }) {
         environment={world.environment}
         poster={media.poster}
         posterAlt={copy.vialAlt}
-        loadingLabel={copy.loadingLabel}
         staticLabel={copy.staticLabel}
       >
         <header className={styles.head}>

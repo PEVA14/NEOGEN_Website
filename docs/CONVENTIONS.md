@@ -333,11 +333,44 @@ box, with that section's drawn plate as its first paint and fallback.
   `--world-accent` / `--world-light` / `--world-void` off the live element, so
   `worlds.css` stays the single source of truth (§3). Never hard-code a world
   colour in TypeScript.
-- **Quality tiers are a 3D concern, not layout.** Below 48rem the glass drops
-  `transmission` and the renderer halves `transmissionResolutionScale`. This is
-  the §5 exception, not a breach of it.
+- **Quality tiers are a 3D concern, not layout.** Below 48rem the renderer
+  halves `transmissionResolutionScale`. The glass keeps real transmission on
+  phones: the old swap to plain 40% alpha was exactly frosted plastic (owner,
+  2026-09-29). This is the §5 exception, not a breach of it.
+- **The live viewer wears the stills' optics.** `studio/optics.ts` is shared by
+  `StudioScene` and `RetaCanvas`/`VialModel`: the rig's reflection map
+  (`studioEnvironment`), the materials' response (`finishMaterial`: glass
+  depth scaled to the model's own height, IOR, tint, reflection; the cap; the
+  paper) and the grade (Neutral tone mapping at `rig.exposure`). The live stage
+  picks its rig from `WORLD_RIGS[world]`. Tuning them separately let the live
+  glass keep a thickness written for a model ten times smaller, so it bent
+  nothing and read as milky beside its photograph. Tune a rig, and both move.
+  The refraction-only backlight card is shared too: fixed to the set in the
+  studio, following the object (never its rotation) on the live stage. What
+  stays per path: the studio's sweep, floor and flags, and the live stage's
+  lights, backdrop and choreography.
 - **Never mutate objects returned from R3F hooks.** Attach declaratively
   (`<primitive attach="environment">`) or set the property on the material.
+- **A canvas compiles before it draws, and the vial outlives the canvas.**
+  `RetaCanvas` keeps its loop off until `Prewarm` has compiled every program
+  with `compileAsync` (screen and glass-pass variants), and `VialModel` takes
+  its finished object from `preparedVial`, kept per model, rig and tier for
+  the page. A handover between stages then pays for GPU uploads only, not for
+  a blocking shader link or a rebuilt model. Phones: pixel ratio ≤ 1.5, 30 fps
+  and nothing off screen (`PhoneFrameBudget`), label at 1024.
+- **The homepage has ONE canvas, and it travels.** `StageHost` renders a
+  single `<Canvas>` into a container it owns and moves that container into
+  the active stage's slot; React never sees the move, so the context, the
+  compiled programs, the uploaded textures and the reflection maps survive
+  every handover. Stages ask through `stageHostStore` (`useHostedScene`).
+  NO STAND-IN WHILE THE VIAL LOADS (owner, 2026-09-30): the spot stays empty
+  and the canvas fades in once it has drawn; the drawing (`VialFallback`, a
+  moment's plate) shows only when the device cannot run WebGL
+  (`useVialStage().noWebGL`, known only after hydration). They announce
+  their scene early; after its first draw the canvas prepares every other
+  announced scene at idle, out of sight (`WarmUp`). A page without a
+  host (none today) falls back to each stage's own `RetaCanvas`. The scene
+  itself is `StageScene`, shared with the product page's `RetaCanvas`.
 - **One WebGL context per page, and the stages arbitrate for it.**
   `useVialStage` holds a module-level registry: every stage publishes how much
   of itself is on screen and the most visible one is granted the canvas.
@@ -369,9 +402,9 @@ box, with that section's drawn plate as its first paint and fallback.
   shape — measured in the model's upright frame, because V4's vertices are
   stored Z-up — plus a spun-aluminium roughness and normal map: rings on the
   skirt, concentric rings on the crown, a faint grain. Both renderers apply
-  it; each sets the average roughness for its own light (live 0.32, the
-  neutral studio 0.34 with a lower
-  reflection, or a satin cap on a white set goes white).
+  it through `finishMaterial`, at the rig's roughness (the neutral studio
+  pairs 0.34 with a lower reflection, or a satin cap on a white set goes
+  white).
 - **World data drives light; a product name never does.** A world whose
   `atmosphere` is `luminous` emits from behind the object, which the glass
   transmits. Any future luminous world inherits it and the other two are
@@ -867,7 +900,8 @@ to a file.
 - **Glass depth is scaled to the model.** `thickness` is local-space and the
   root is normalised to height 1, so the studio multiplies the rig's value by
   the model's height over the jar's (`TUNED_HEIGHT`). Without it V4, authored
-  ~10× larger, refracted nothing.
+  ~10× larger, refracted nothing. The live viewer applies the same function
+  (`studio/optics.ts`, §10); it once kept a fixed value and read as milky.
 - **Bright-field needs refraction-only flags.** On the neutral set clear glass
   is defined by dark contours it REFRACTS from cards beside it. The rig's
   reflection panels cannot do that, so `refractionFlags` are real planes drawn

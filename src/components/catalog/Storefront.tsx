@@ -6,6 +6,10 @@ import type React from "react";
 import { Container } from "@/components/primitives";
 import { AreaCap, AreaIcon, SpecimenPlate } from "@/components/ui";
 
+import { VIAL_TRANSITION } from "@/spike/vial-transition/flag";
+import { SpecimenLink } from "@/spike/vial-transition/SpecimenLink";
+import { specimenFor } from "@/spike/vial-transition/specimens";
+
 import { StoreSearch } from "./StoreSearch";
 import styles from "./Storefront.module.css";
 
@@ -26,6 +30,9 @@ import type { DiscoveryAreaId } from "@/data/discovery";
  * object drawn from registry data, and every price is the catalogue's own.
  * There is no photography yet, so none is shown.
  */
+
+/** The strip's still: a fifth of a wide screen, most of a phone's width. */
+const SIGNATURE_SIZES = "(min-width: 64rem) 20rem, 60vw";
 
 export interface StoreSignature {
   slug: string;
@@ -110,45 +117,69 @@ export function StoreMasthead({
                 {copy.signatureLabel}
               </p>
               <ul className={styles.signatureList}>
-                {signatures.map((item) => (
-                  <li key={item.slug} className={styles.signatureItem}>
-                    <Link href={item.href} className={styles.signature} data-world={item.world}>
-                      <span className={styles.signatureMedia}>
-                        {item.image ? (
-                          <Image
-                            src={item.image.src}
-                            alt={item.image.alt}
-                            width={item.image.width}
-                            height={item.image.height}
-                            sizes="(min-width: 64rem) 20rem, 60vw"
-                            className={styles.signatureImage}
-                            priority
-                          />
-                        ) : (
-                          <SpecimenPlate
-                            areaId={null}
-                            world={item.world}
-                            name={item.name}
-                            annotation={item.range}
-                          />
-                        )}
+                {signatures.map((item) => {
+                  const body = (
+                    <span className={styles.signatureBody}>
+                      <span className={styles.signatureWorld}>{item.worldLabel}</span>
+                      <span className={styles.signatureName}>{item.name}</span>
+                      <span className={styles.signatureCommerce}>
+                        <span className={styles.signatureRange}>{item.range}</span>
+                        {item.price ? (
+                          <span className={styles.signaturePrice}>
+                            <span className={styles.from}>{copy.from} </span>
+                            {item.price}
+                          </span>
+                        ) : null}
                       </span>
-                      <span className={styles.signatureBody}>
-                        <span className={styles.signatureWorld}>{item.worldLabel}</span>
-                        <span className={styles.signatureName}>{item.name}</span>
-                        <span className={styles.signatureCommerce}>
-                          <span className={styles.signatureRange}>{item.range}</span>
-                          {item.price ? (
-                            <span className={styles.signaturePrice}>
-                              <span className={styles.from}>{copy.from} </span>
-                              {item.price}
-                            </span>
-                          ) : null}
+                    </span>
+                  );
+                  /* SPIKE (vial transition): the strip's specimen travels too —
+                     on a phone it is the first RETA anyone sees. */
+                  if (VIAL_TRANSITION && item.image && specimenFor(item.slug)) {
+                    return (
+                      <li key={item.slug} className={styles.signatureItem}>
+                        <SpecimenLink
+                          slug={item.slug}
+                          href={item.href}
+                          className={styles.signature}
+                          mediaClassName={styles.signatureMedia}
+                          world={item.world}
+                          alt={item.image.alt}
+                          sizes={SIGNATURE_SIZES}
+                        >
+                          {body}
+                        </SpecimenLink>
+                      </li>
+                    );
+                  }
+                  return (
+                    <li key={item.slug} className={styles.signatureItem}>
+                      <Link href={item.href} className={styles.signature} data-world={item.world}>
+                        <span className={styles.signatureMedia}>
+                          {item.image ? (
+                            <Image
+                              src={item.image.src}
+                              alt={item.image.alt}
+                              width={item.image.width}
+                              height={item.image.height}
+                              sizes={SIGNATURE_SIZES}
+                              className={styles.signatureImage}
+                              priority
+                            />
+                          ) : (
+                            <SpecimenPlate
+                              areaId={null}
+                              world={item.world}
+                              name={item.name}
+                              annotation={item.range}
+                            />
+                          )}
                         </span>
-                      </span>
-                    </Link>
-                  </li>
-                ))}
+                        {body}
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             </nav>
           ) : null}

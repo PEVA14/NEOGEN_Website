@@ -110,15 +110,23 @@ const FULL: PoseTrack = {
   rimIntensity: [3, 9, 13, 12, 7],
 };
 
-/* Phones: the canvas is only the vial's own band, so the scales are larger. */
+/*
+ * Phones: the canvas is only the vial's own band, so the scale is larger.
+ *
+ * AND NO ARRIVAL (owner, 2026-09-29: the zoom-in "makes it laggy"). On a
+ * phone the object no longer travels in from far and small as the section
+ * scrolls in; it is already presented — the desktop track's 0.5 stop — and
+ * only turns, with the rim still breathing across the scroll. A zoom tied to
+ * a thumb's scroll exposed every late frame, and on a phone there were many.
+ */
 const COMPACT: PoseTrack = {
-  offsetX: [0, 0, 0, 0, 0],
-  offsetY: [-0.3, -0.1, 0, 0, 0.04],
-  offsetZ: [-1.2, -0.4, 0, 0, -0.2],
-  scale: [0.9, 1.25, 1.45, 1.45, 1.35],
-  rotationY: [-2.2, -0.9, 0, 0, 0.4],
-  rotationZ: [-0.6, -0.4, -0.2, -0.2, -0.26],
-  rotationX: [0.24, 0.08, -0.04, -0.04, -0.08],
+  offsetX: [0],
+  offsetY: [0],
+  offsetZ: [0],
+  scale: [1.45],
+  rotationY: [0],
+  rotationZ: [-0.2],
+  rotationX: [-0.04],
   rimIntensity: [3, 9, 13, 12, 7],
 };
 

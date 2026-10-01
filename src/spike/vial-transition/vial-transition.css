@@ -1,0 +1,227 @@
+/*
+ * SPIKE — the flight, in native view-transition CSS.
+ *
+ * No JavaScript animates anything here. React names the participants
+ * (`<ViewTransition share|enter|exit="vt-…">`), the browser snapshots them, and
+ * these rules time the pseudo-elements. Everything is scoped to the spike's
+ * classes and to the header, which only moves while one of these runs.
+ *
+ * THE IDEA IT HAS TO CARRY: the same physical specimen, now examined more
+ * closely. So:
+ *
+ *   - the OBJECT is the one thing that travels, whole and crisp;
+ *   - the SET it stood on stays behind and dissolves with the old page;
+ *   - on a flagship, the WORLD it arrives in opens out of the card it left and
+ *     drifts to where it lands — the environment reacting to the product;
+ *   - the rest of the new page, its name included, settles in around an object
+ *     that has already arrived. (The name used to fly after the object as well;
+ *     with two things travelling, neither read as THE object.)
+ *
+ * Stacking, bottom to top: old page, world, new page, object, header.
+ */
+
+:root {
+  /*
+   * A curve that is visibly MOVING for most of its length. `--ease-out`
+   * finishes 97% of its travel by the midpoint, which reads as a page that
+   * simply loaded (docs/V2_LIVING_LABORATORY.md, trap 6). This one samples
+   * roughly 26% / 73% / 94% at the quarters.
+   */
+  --vt-travel: cubic-bezier(0.35, 0.05, 0.28, 0.95);
+  --vt-flight: 760ms;
+}
+
+/* Clicks during the flight reach the live page underneath. */
+::view-transition {
+  pointer-events: none;
+}
+
+/* --- The pages ---------------------------------------------------------------
+ *
+ * Not `root`: React switches the whole-page cross-fade off and collapses the
+ * root group, so these target each page's own boundary (`SpikePage`), which
+ * animates only for a card-initiated navigation.
+ */
+
+::view-transition-group(.vt-page-out) {
+  z-index: 0;
+}
+
+::view-transition-old(.vt-page-out) {
+  animation: 220ms cubic-bezier(0.4, 0, 1, 1) both vt-fade-out;
+}
+
+::view-transition-group(.vt-page-in) {
+  z-index: 2;
+}
+
+::view-transition-new(.vt-page-in) {
+  /* Starts before the old page has gone: a blank frame between a light
+     catalogue and a dark world reads as a flash. */
+  animation: 500ms cubic-bezier(0, 0, 0.2, 1) 140ms both vt-fade-in;
+}
+
+/* --- The world (flagships): opens from the card, drifts to the landing -------
+ *
+ * The card's stage and the page's world are a named PAIR — React animates
+ * shared names inside an entering page, not nested entering boundaries. But the
+ * pair's box does NOT morph (that is the card-expands-into-a-panel cliché):
+ * the group stays at the world's final geometry, the card's copy is dropped,
+ * and the world is uncovered by a circle that starts on the card.
+ */
+
+::view-transition-group(.vt-world) {
+  z-index: 1;
+  animation: none;
+}
+
+::view-transition-old(.vt-world) {
+  display: none;
+}
+
+::view-transition-new(.vt-world) {
+  /*
+   * A FEATHERED edge, not a clip: solid to 80% of the radius, then fading. A
+   * hard circle over the light catalogue read as a stencil cut (V2 notes, "the
+   * meniscus"); a soft one reads as the world's light spreading.
+   */
+  mask-image: radial-gradient(
+    circle at var(--vt-wx) var(--vt-wy),
+    #000 calc(var(--vt-wr) * 0.8),
+    transparent var(--vt-wr)
+  );
+  /*
+   * Two clocks. The radius opens fast from the first frame; the centre barely
+   * moves at first and then drifts. Together the world is seen to open IN the
+   * card and only then travel to where the object lands — with one curve for
+   * both, it slid off the card and read as a stain moving over its neighbours.
+   */
+  animation:
+    var(--vt-flight) cubic-bezier(0.3, 0, 0.2, 1) both vt-world-open,
+    var(--vt-flight) cubic-bezier(0.62, 0, 0.35, 1) both vt-world-drift;
+}
+
+/*
+ * The circle is three registered properties, so the browser can interpolate
+ * the mask it draws: its radius, and a centre that starts on the card and
+ * drifts to where the object lands. It ends large enough that the feathered
+ * edge is past every corner of the stage. Without the measured properties (no
+ * origin was recorded) it opens from the middle.
+ */
+@property --vt-wr {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --vt-wx {
+  syntax: "<length-percentage>";
+  inherits: false;
+  initial-value: 50%;
+}
+
+@property --vt-wy {
+  syntax: "<length-percentage>";
+  inherits: false;
+  initial-value: 50%;
+}
+
+@keyframes vt-world-open {
+  from {
+    --vt-wr: var(--vt-world-r0, 0px);
+  }
+  to {
+    --vt-wr: calc(var(--vt-world-r1, 120vmax) * 1.3);
+  }
+}
+
+@keyframes vt-world-drift {
+  from {
+    --vt-wx: var(--vt-world-x0, 50%);
+    --vt-wy: var(--vt-world-y0, 50%);
+  }
+  to {
+    --vt-wx: var(--vt-world-x1, 50%);
+    --vt-wy: var(--vt-world-y1, 50%);
+  }
+}
+
+/* --- The specimen: the one thing that travels whole ------------------------ */
+
+::view-transition-group(.vt-specimen) {
+  z-index: 4;
+  animation-duration: var(--vt-flight);
+  animation-timing-function: var(--vt-travel);
+}
+
+/*
+ * Old and new are the SAME object. Cross-fading two copies of it would only
+ * double its antialiased edge, and the old copy is the small raster scaled up.
+ * So only the new one is shown, from the first frame: it is the large raster
+ * scaled DOWN, which stays crisp for the whole flight (trap 4 in reverse).
+ */
+::view-transition-old(.vt-specimen) {
+  display: none;
+}
+
+::view-transition-new(.vt-specimen) {
+  animation: none;
+}
+
+/* --- Products with no still: the drawn plate travels whole ----------------- */
+
+::view-transition-group(.vt-plate) {
+  z-index: 4;
+  animation-duration: var(--vt-flight);
+  animation-timing-function: var(--vt-travel);
+}
+
+::view-transition-old(.vt-plate) {
+  animation: 320ms linear both vt-fade-out;
+}
+
+::view-transition-new(.vt-plate) {
+  animation: 320ms linear both vt-fade-in;
+}
+
+/* --- The chrome stays put: the specimen passes BEHIND the header ---------- */
+
+#site-header {
+  view-transition-name: vt-site-header;
+}
+
+::view-transition-group(vt-site-header) {
+  z-index: 100;
+  animation: none;
+}
+
+::view-transition-old(vt-site-header) {
+  display: none;
+}
+
+::view-transition-new(vt-site-header) {
+  animation: none;
+}
+
+@keyframes vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* A user who asked for no motion gets the new page at once — never a slower,
+   quieter version of the same travel. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}

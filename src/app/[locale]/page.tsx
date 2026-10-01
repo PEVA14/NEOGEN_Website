@@ -12,6 +12,7 @@ import {
   type RetaExperienceCopy,
 } from "@/components/experience";
 import { AreaExplorer, ClosingShelf, HomeGateway, ScienceBand, WorldBand } from "@/components/home";
+import { StageHost } from "@/components/experience/StageHost";
 import { routes } from "@/config/routes";
 import { getWorld, type WorldId } from "@/config/worlds";
 import { isLocale, localeTags } from "@/i18n/config";
@@ -279,6 +280,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   return (
     <>
+      {/* The one 3D canvas the hero, RETA, GLOW and GHK-Cu stages share — it
+          travels to whichever is on screen (see `StageHost`). */}
+      <StageHost />
       <Hero copy={heroCopy} />
 
       <HomeGateway

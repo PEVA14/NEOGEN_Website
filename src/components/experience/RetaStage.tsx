@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Suspense, useEffect, useRef, type ReactNode } from "react";
+import { Suspense, useEffect, useId, useMemo, useRef, type ReactNode } from "react";
 
 import type { WorldEnvironment } from "@/config/worlds";
 import type { ProductImage } from "@/content/media";
@@ -9,6 +9,7 @@ import { useFinePointer } from "@/hooks/useFinePointer";
 import { useSectionProgress } from "@/hooks/useSectionProgress";
 
 import { CanvasErrorBoundary } from "./CanvasErrorBoundary";
+import { HOST_SLOT_STYLE, useHostedScene, useStageHost, type HostedScene } from "./stageHostStore";
 import { useVialStage } from "./useVialStage";
 import { VialFallback } from "./VialFallback";
 import type { PointerState } from "./VialModel";
@@ -29,7 +30,6 @@ interface RetaStageProps {
   poster: ProductImage | null;
   /** Accessible name for the object, used by the frame and by the diagram. */
   posterAlt: string;
-  loadingLabel: string;
   staticLabel: string;
   /** Server-rendered copy, laid out around the product by the stylesheet. */
   children: ReactNode;
@@ -54,12 +54,13 @@ export function RetaStage({
   environment,
   poster,
   posterAlt,
-  loadingLabel,
   staticLabel,
   children,
 }: RetaStageProps) {
   const track = useRef<HTMLDivElement>(null);
-  const { tier, reducedMotion, palette, canRender3D } = useVialStage(track, { modelPath });
+  const { tier, reducedMotion, palette, canRender3D, noWebGL } = useVialStage(track, {
+    modelPath,
+  });
 
   /*
    * THE TURNTABLE'S DRIVE.
@@ -136,6 +137,30 @@ export function RetaStage({
 
   const fallback = <VialFallback poster={poster} diagramLabel={posterAlt} label={staticLabel} />;
 
+  /* The homepage's shared canvas (`StageHost`), when the page has one. */
+  const hosted = useStageHost();
+  const slot = useRef<HTMLDivElement>(null);
+  const hostId = useId();
+  const drivenBy = finePointer ? pointer : undefined;
+  const scene = useMemo<HostedScene | null>(
+    () =>
+      modelPath && palette
+        ? {
+            modelPath,
+            world: "reta",
+            environment,
+            palette,
+            progress,
+            reducedMotion,
+            tier,
+            variant: "sequence",
+            pointer: drivenBy,
+          }
+        : null,
+    [modelPath, palette, environment, progress, reducedMotion, tier, drivenBy],
+  );
+  useHostedScene(hostId, slot, hosted ? scene : null, canRender3D);
+
   return (
     <div ref={track} className={styles.scene} data-tier={tier}>
       <div
@@ -146,20 +171,19 @@ export function RetaStage({
         role="img"
         aria-label={posterAlt}
       >
-        {canRender3D && modelPath && palette ? (
+        {/* No stand-in while the vial loads (owner, 2026-09-30): the spot stays
+            empty and the vial fades in. The drawing is only for a device that
+            cannot run 3D at all. */}
+        {noWebGL ? (
+          fallback
+        ) : hosted ? (
+          <div ref={slot} style={HOST_SLOT_STYLE} />
+        ) : canRender3D && modelPath && palette ? (
           <CanvasErrorBoundary fallback={fallback}>
-            <Suspense
-              fallback={
-                <VialFallback
-                  poster={poster}
-                  diagramLabel={posterAlt}
-                  label={loadingLabel}
-                  loading
-                />
-              }
-            >
+            <Suspense fallback={null}>
               <RetaCanvas
                 modelPath={modelPath}
+                world="reta"
                 environment={environment}
                 palette={palette}
                 progress={progress}
@@ -170,9 +194,7 @@ export function RetaStage({
               />
             </Suspense>
           </CanvasErrorBoundary>
-        ) : (
-          fallback
-        )}
+        ) : null}
       </div>
 
       {children}

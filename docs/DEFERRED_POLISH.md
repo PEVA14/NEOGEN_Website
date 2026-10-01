@@ -157,7 +157,8 @@ lookup tables) is the entire difference between the 241 KB and 344 KB deferred
 
 They were chosen because a rect-area light draws a long specular streak down
 curved glass, which is what makes thickness and edges readable. But
-`worldEnvironment.ts` already builds tall emissive panels that produce
+the rig's reflection map (`studio/optics.ts`, `studioEnvironment` — shared
+with the stills since 2026-09-29) already builds tall emissive panels that produce
 streak-like reflections through the PMREM cubemap, so the direct lights are
 **partly redundant with the environment**. Swapping them for directional or spot
 lights would reclaim the 107 KB at some visual cost.

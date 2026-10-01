@@ -47,6 +47,7 @@ import { bagEnabled } from "@/payments";
 import { cardDetails, cardDetailsCopy } from "@/server/catalog";
 import { shopProducts } from "@/server/storefront";
 import { fillTemplate, presentationSummary, socialMetadata } from "@/lib/meta";
+import { SpikePage } from "@/spike/vial-transition/SpikePage";
 
 import type { Metadata } from "next";
 
@@ -434,7 +435,7 @@ export default async function ProductPage({
   );
 
   return (
-    <>
+    <SpikePage>
       {/* 01 — THE PRODUCT. Flagship environment, or the quiet plate. */}
       {world ? (
         <Section
@@ -457,6 +458,8 @@ export default async function ProductPage({
             }
             wordmark={product.name}
             posterAlt={product.name}
+            /* SPIKE (vial transition): the split studio still stands in here. */
+            slug={product.slug}
             loadingLabel={dict.home.reta.loadingLabel}
             staticLabel={dict.home.reta.staticLabel}
             viewerHint={pdp.viewerHint}
@@ -855,6 +858,6 @@ export default async function ProductPage({
           </Container>
         </Section>
       ) : null}
-    </>
+    </SpikePage>
   );
 }

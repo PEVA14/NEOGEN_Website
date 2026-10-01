@@ -1,0 +1,102 @@
+{
+  "reta": {
+    "ground": "/spike/vial-transition/reta/ground.jpg",
+    "specimen": "/spike/vial-transition/reta/specimen.png",
+    "frame": {
+      "width": 1600,
+      "height": 2000
+    },
+    "box": {
+      "left": 476,
+      "top": 297,
+      "width": 649,
+      "height": 1354,
+      "x": 0.2975,
+      "y": 0.1485,
+      "w": 0.405625,
+      "h": 0.677
+    },
+    "object": {
+      "x": 0.30125,
+      "y": 0.1515,
+      "w": 0.398125,
+      "h": 0.671
+    },
+    "query": null
+  },
+  "glow": {
+    "ground": "/spike/vial-transition/glow/ground.jpg",
+    "specimen": "/spike/vial-transition/glow/specimen.png",
+    "frame": {
+      "width": 1600,
+      "height": 2000
+    },
+    "box": {
+      "left": 476,
+      "top": 297,
+      "width": 649,
+      "height": 1354,
+      "x": 0.2975,
+      "y": 0.1485,
+      "w": 0.405625,
+      "h": 0.677
+    },
+    "object": {
+      "x": 0.30125,
+      "y": 0.1515,
+      "w": 0.398125,
+      "h": 0.671
+    },
+    "query": null
+  },
+  "ghk-cu": {
+    "ground": "/spike/vial-transition/ghk-cu/ground.jpg",
+    "specimen": "/spike/vial-transition/ghk-cu/specimen.png",
+    "frame": {
+      "width": 1600,
+      "height": 2000
+    },
+    "box": {
+      "left": 476,
+      "top": 297,
+      "width": 649,
+      "height": 1354,
+      "x": 0.2975,
+      "y": 0.1485,
+      "w": 0.405625,
+      "h": 0.677
+    },
+    "object": {
+      "x": 0.30125,
+      "y": 0.1515,
+      "w": 0.398125,
+      "h": 0.671
+    },
+    "query": null
+  },
+  "semaglutide": {
+    "ground": "/spike/vial-transition/semaglutide/ground.jpg",
+    "specimen": "/spike/vial-transition/semaglutide/specimen.png",
+    "frame": {
+      "width": 1600,
+      "height": 2000
+    },
+    "box": {
+      "left": 475,
+      "top": 297,
+      "width": 650,
+      "height": 1354,
+      "x": 0.296875,
+      "y": 0.1485,
+      "w": 0.40625,
+      "h": 0.677
+    },
+    "object": {
+      "x": 0.300625,
+      "y": 0.1515,
+      "w": 0.39875,
+      "h": 0.671
+    },
+    "query": "model=/models/semaglutide-v1.glb&label=printed&yaw=0"
+  }
+}

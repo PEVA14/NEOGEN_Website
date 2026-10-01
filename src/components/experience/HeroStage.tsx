@@ -1,13 +1,14 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Suspense, useRef } from "react";
+import { Suspense, useId, useMemo, useRef } from "react";
 
 import type { WorldEnvironment } from "@/config/worlds";
 import type { ProductImage } from "@/content/media";
 import { useSectionProgress } from "@/hooks/useSectionProgress";
 
 import { CanvasErrorBoundary } from "./CanvasErrorBoundary";
+import { HOST_SLOT_STYLE, useHostedScene, useStageHost, type HostedScene } from "./stageHostStore";
 import { useVialStage } from "./useVialStage";
 import { VialFallback } from "./VialFallback";
 import styles from "./Hero.module.css";
@@ -21,7 +22,6 @@ interface HeroStageProps {
   poster: ProductImage | null;
   /** Accessible name for the object, used by the frame and by the diagram. */
   posterAlt: string;
-  loadingLabel: string;
   staticLabel: string;
 }
 
@@ -42,17 +42,41 @@ export function HeroStage({
   environment,
   poster,
   posterAlt,
-  loadingLabel,
   staticLabel,
 }: HeroStageProps) {
   const stage = useRef<HTMLDivElement>(null);
-  const { tier, reducedMotion, palette, canRender3D } = useVialStage(stage, { modelPath });
+  const { tier, reducedMotion, palette, canRender3D, noWebGL } = useVialStage(stage, {
+    modelPath,
+  });
 
   // `exit`, not `through`: the hero is on screen at page load, so `through`
   // would start it half-way along its own track before the user has scrolled.
   const progress = useSectionProgress(stage, { mode: "exit" });
 
   const fallback = <VialFallback poster={poster} diagramLabel={posterAlt} label={staticLabel} />;
+
+  /* The homepage's shared canvas (`StageHost`), when the page has one. */
+  const hosted = useStageHost();
+  const slot = useRef<HTMLDivElement>(null);
+  const hostId = useId();
+  const scene = useMemo<HostedScene | null>(
+    () =>
+      modelPath && palette
+        ? {
+            modelPath,
+            // The RETA rig, as the RETA palette above: the hero's vial is RETA's.
+            world: "reta",
+            environment,
+            palette,
+            progress,
+            reducedMotion,
+            tier,
+            variant: "hero",
+          }
+        : null,
+    [modelPath, palette, environment, progress, reducedMotion, tier],
+  );
+  useHostedScene(hostId, slot, hosted ? scene : null, canRender3D);
 
   return (
     <div
@@ -63,15 +87,23 @@ export function HeroStage({
       role="img"
       aria-label={posterAlt}
     >
-      {canRender3D && modelPath && palette ? (
+      {/*
+       * NO STAND-IN WHILE THE VIAL LOADS (owner, 2026-09-30: "I don't like the
+       * placeholders that take the spot before the render finishes loading").
+       * The spot stays empty and the vial fades in once drawn. The drawing is
+       * only for a device that cannot run 3D at all.
+       */}
+      {noWebGL ? (
+        fallback
+      ) : hosted ? (
+        <div ref={slot} style={HOST_SLOT_STYLE} />
+      ) : canRender3D && modelPath && palette ? (
         <CanvasErrorBoundary fallback={fallback}>
-          <Suspense
-            fallback={
-              <VialFallback poster={poster} diagramLabel={posterAlt} label={loadingLabel} loading />
-            }
-          >
+          <Suspense fallback={null}>
             <RetaCanvas
               modelPath={modelPath}
+              // The RETA rig, as the RETA palette above: the hero's vial is RETA's.
+              world="reta"
               environment={environment}
               palette={palette}
               progress={progress}
@@ -81,9 +113,7 @@ export function HeroStage({
             />
           </Suspense>
         </CanvasErrorBoundary>
-      ) : (
-        fallback
-      )}
+      ) : null}
     </div>
   );
 }

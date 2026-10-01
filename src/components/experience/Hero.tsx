@@ -82,7 +82,6 @@ export function Hero({ copy }: { copy: HeroCopy }) {
           environment={world.environment}
           poster={media.poster}
           posterAlt={copy.vialAlt}
-          loadingLabel={copy.loadingLabel}
           staticLabel={copy.staticLabel}
         />
 

@@ -1,11 +1,21 @@
 "use client";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, type RefObject } from "react";
-import { ACESFilmicToneMapping, MathUtils, type PointLight, type RectAreaLight } from "three";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
+import {
+  MathUtils,
+  NeutralToneMapping,
+  WebGLRenderTarget,
+  type PointLight,
+  type RectAreaLight,
+  type Camera,
+  type Scene,
+  type Texture,
+  type WebGLRenderer,
+} from "three";
 import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLightUniformsLib.js";
 
-import type { WorldEnvironment } from "@/config/worlds";
+import type { WorldEnvironment, WorldId } from "@/config/worlds";
 import type { StageTier } from "@/hooks/useStageTier";
 
 import { Backdrop, RefractionGround } from "./Backdrop";
@@ -16,8 +26,9 @@ import {
   sampleTrack,
   type StageVariant,
 } from "./choreography";
+import { studioEnvironment } from "./studio/optics";
+import { WORLD_RIGS, type StudioRig } from "./studio/rig";
 import { VialModel, type PointerState, type StageAnchor } from "./VialModel";
-import { createWorldEnvironment } from "./worldEnvironment";
 import type { WorldPalette } from "./worldPalette";
 
 /**
@@ -31,16 +42,6 @@ const KEY_TINT: Record<WorldEnvironment["lightTemperature"], string> = {
   neutral: "#ffffff",
 };
 
-/** Glass and metal are defined almost entirely by what they reflect. */
-const ENV_INTENSITY: Record<WorldEnvironment["materialFocus"], number> = {
-  // Lowered from 1.5. Combined with the glass multiplier this was pushing the
-  // effective environment response to ~1.95 on a mirror-smooth surface, which
-  // is what turned the softboxes into broad white plates.
-  glass: 0.95,
-  metal: 1.0,
-  light: 0.85,
-};
-
 /**
  * Ambient fill. Very low by design — uniform light is what makes a subject read
  * flat. Contrast comes from the rig and the environment.
@@ -51,26 +52,36 @@ const AMBIENT_INTENSITY: Record<WorldEnvironment["atmosphere"], number> = {
   tactile: 0.16,
 };
 
-/** Image-based lighting from the world's own palette. */
-function SceneEnvironment({
-  palette,
-  environment,
-}: {
-  palette: WorldPalette;
-  environment: WorldEnvironment;
-}) {
+/**
+ * Image-based lighting: THE STILLS' OWN reflection map, from the world's studio
+ * rig (see `studio/optics`). Glass is defined almost entirely by what it
+ * reflects, and the stills' tall white strips are what draw the bright edge
+ * lines down the glass; the live stage's own palette-built room had nothing
+ * that bright, and the glass read as grey beside its photograph.
+ */
+function SceneEnvironment({ rig }: { rig: StudioRig }) {
   const gl = useThree((state) => state.gl);
 
-  const texture = useMemo(
-    () => createWorldEnvironment(gl, palette, environment),
-    [gl, palette, environment],
-  );
-
-  useEffect(() => () => texture.dispose(), [texture]);
+  const texture = useMemo(() => environmentFor(gl, rig), [gl, rig]);
 
   // Attached declaratively: R3F owns the scene object and it must not be
   // mutated from inside a component.
   return <primitive object={texture} attach="environment" />;
+}
+
+/*
+ * One reflection map per renderer and rig, kept for the renderer's life. A
+ * shared canvas shows each world many times; prefiltering the map again at
+ * every visit cost ~30 ms of main thread. Released with the renderer.
+ */
+const environments = new WeakMap<WebGLRenderer, Map<StudioRig, Texture>>();
+
+function environmentFor(gl: WebGLRenderer, rig: StudioRig): Texture {
+  let byRig = environments.get(gl);
+  if (!byRig) environments.set(gl, (byRig = new Map()));
+  let texture = byRig.get(rig);
+  if (!texture) byRig.set(rig, (texture = studioEnvironment(gl, rig)));
+  return texture;
 }
 
 /**
@@ -225,8 +236,10 @@ function StudioLights({
   );
 }
 
-interface RetaCanvasProps {
+export interface RetaCanvasProps {
   modelPath: string;
+  /** Whose studio rig lights the object — the same rig as its stills. */
+  world: WorldId;
   environment: WorldEnvironment;
   palette: WorldPalette;
   progress: RefObject<number>;
@@ -247,6 +260,12 @@ interface RetaCanvasProps {
    * world space and needs the whole frame to move through.
    */
   fill?: boolean;
+  /**
+   * SPIKE (vial transition): called once, just after the first frame that
+   * contains the model has been presented — the moment a still standing in for
+   * the object can dissolve into it.
+   */
+  onFirstFrame?: () => void;
 }
 
 /**
@@ -258,18 +277,9 @@ interface RetaCanvasProps {
  *
  * Default-exported because it is loaded through `next/dynamic`.
  */
-export default function RetaCanvas({
-  modelPath,
-  environment,
-  palette,
-  progress,
-  reducedMotion,
-  tier,
-  variant,
-  anchor,
-  pointer,
-  fill = false,
-}: RetaCanvasProps) {
+export default function RetaCanvas({ fill = false, ...scene }: RetaCanvasProps) {
+  /* Nothing is drawn until the shaders are compiled — see `Prewarm`. */
+  const [compiled, setCompiled] = useState(false);
   return (
     <Canvas
       // R3F spreads `style` after its own defaults, so this wins.
@@ -278,32 +288,139 @@ export default function RetaCanvas({
       // so the canvas and the page dissolve into each other with no edge and no
       // rectangular panel.
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
-      // Cap at 2 for the product page's framed presenter, and at 1.5 for the
-      // full-bleed homepage canvases (hero, RETA scene): at 2 a Retina laptop
-      // renders ~2880px of transmission glass every frame, and the difference
-      // from 1.5 is invisible at that size (performance audit, 2026-09-19).
-      dpr={variant === "presenter" ? [1, 2] : [1, 1.5]}
-      camera={{ fov: 28, position: [0, 0, CAMERA_Z], near: 0.1, far: 40 }}
-      // Reduced motion renders a single frame then stops entirely — no rAF
-      // loop, no battery drain, for a user who asked for no movement.
-      frameloop={reducedMotion ? "demand" : "always"}
-      onCreated={({ gl }) => {
-        // Filmic roll-off. The rig is genuinely HDR, and without tone mapping
-        // the specular streaks clip to flat white instead of holding falloff.
-        gl.toneMapping = ACESFilmicToneMapping;
-        // Pulled down from 1.05. ACES rolls off gracefully, but only if the
-        // signal reaching it is not already clipping — the neck, base glass and
-        // cap were all hitting pure white and losing material detail. White now
-        // belongs to the paper label and the cap, not to the glass.
-        gl.toneMappingExposure = variant === "hero" ? 0.62 : 0.72;
-
-        // The transmission pass re-renders the scene into an offscreen buffer.
-        // Halving its resolution on phones is invisible through refraction and
-        // is the single biggest win available here.
-        gl.transmissionResolutionScale = tier === "compact" ? 0.5 : 1;
-      }}
+      dpr={stageDpr(scene.variant, scene.tier)}
+      camera={STAGE_CAMERA}
+      frameloop={stageFrameloop(compiled, scene.reducedMotion, scene.tier)}
     >
-      <SceneEnvironment palette={palette} environment={environment} />
+      <StageScene {...scene} compiled={compiled} onCompiled={() => setCompiled(true)} />
+    </Canvas>
+  );
+}
+
+/** The one lens every stage uses. */
+export const STAGE_CAMERA = { fov: 28, position: [0, 0, CAMERA_Z] as const, near: 0.1, far: 40 };
+
+/*
+ * Cap at 2 for the product page's framed presenter, and at 1.5 for the
+ * full-bleed homepage canvases (hero, RETA scene): at 2 a Retina laptop
+ * renders ~2880px of transmission glass every frame, and the difference from
+ * 1.5 is invisible at that size (performance audit, 2026-09-19). Phones cap at
+ * 1.5 everywhere: a 3× screen at 2 drew ~1.8× the pixels of 1.5 through real
+ * glass, and it stuttered (owner, 2026-09-29).
+ */
+export function stageDpr(
+  variant: StageVariant,
+  tier: StageTier,
+  /** The canvas's CSS size, when known: phones then get a pixel budget. */
+  box?: { width: number; height: number } | null,
+): number | [number, number] {
+  if (tier === "compact" && box && box.width > 0 && box.height > 0) return phoneDpr(box);
+  return variant === "presenter" && tier !== "compact" ? [1, 2] : [1, 1.5];
+}
+
+/** Device pixels a phone canvas may draw, glass pass aside. */
+const PHONE_PIXEL_BUDGET = 550_000;
+
+/*
+ * A PHONE'S RESOLUTION BY BUDGET, NOT BY RATIO (owner, 2026-09-30: GLOW and
+ * GHK-Cu have "some angles that look very pixely").
+ *
+ * A fixed 1.5× suited the full-width hero and starved the small moment boxes:
+ * GLOW's canvas was 310 × 528 pixels, stretched 2× onto a 3× screen, and its
+ * glass's refraction image — half of that — 4×; the thin highlights stepped.
+ * Pixels cost the same wherever they are, so each canvas gets up to a fixed
+ * number of them: a small box draws at up to the screen's own density, a
+ * large one no lower than the 1.5× it had.
+ */
+function phoneDpr({ width, height }: { width: number; height: number }): number {
+  const device = Math.min(typeof window === "undefined" ? 2 : window.devicePixelRatio || 1, 3);
+  return Math.min(device, Math.max(1.5, Math.sqrt(PHONE_PIXEL_BUDGET / (width * height))));
+}
+
+/*
+ * Nothing until the shaders are compiled (`Prewarm`). Then: reduced motion
+ * renders a single frame and stops entirely — no rAF loop, no battery drain,
+ * for a user who asked for no movement; phones are stepped by
+ * `PhoneFrameBudget` instead of R3F's own loop.
+ */
+export function stageFrameloop(
+  compiled: boolean,
+  reducedMotion: boolean,
+  tier: StageTier,
+): "never" | "demand" | "always" {
+  if (!compiled) return "never";
+  if (reducedMotion) return "demand";
+  return tier === "compact" ? "never" : "always";
+}
+
+/**
+ * THE SCENE, without its canvas — so one renderer can show it for any stage.
+ *
+ * The product page wraps it in its own `<Canvas>` (`RetaCanvas`, above); the
+ * homepage's stages share ONE canvas that moves between them (`StageHost`),
+ * which remounts this for each stage it shows. Everything that belongs to the
+ * scene rather than the renderer is here, including the grade, which the
+ * shared renderer has to take from whichever world it is showing.
+ */
+export function StageScene({
+  onFirstFrame,
+  compiled,
+  onCompiled,
+  ...contents
+}: Omit<RetaCanvasProps, "fill"> & {
+  /** Whether `Prewarm` has finished — the loop is held until it has. */
+  compiled: boolean;
+  onCompiled: () => void;
+}) {
+  return (
+    <>
+      <Grade rig={WORLD_RIGS[contents.world]} tier={contents.tier} />
+      <SceneContents {...contents} />
+      {onFirstFrame ? <FirstFrame onFrame={onFirstFrame} /> : null}
+      <Prewarm onReady={onCompiled} />
+      {compiled && contents.tier === "compact" && !contents.reducedMotion ? (
+        <PhoneFrameBudget />
+      ) : null}
+    </>
+  );
+}
+
+/**
+ * What a stage's scene is made of — the reflection map, the backdrop, the
+ * lights and the vial — without anything that acts on the renderer or the
+ * loop. `StageScene` shows it; the homepage's canvas also builds it out of
+ * sight, ahead of time, to prepare a stage before it is reached
+ * (`SharedCanvas`).
+ */
+export function SceneContents({
+  modelPath,
+  world,
+  environment,
+  palette,
+  progress,
+  reducedMotion,
+  tier,
+  variant,
+  anchor,
+  pointer,
+  detached = false,
+}: Omit<RetaCanvasProps, "fill" | "onFirstFrame"> & {
+  /** A scene built only to be prepared: shows a copy of the vial. */
+  detached?: boolean;
+}) {
+  const rig = WORLD_RIGS[world];
+  /*
+   * Only the RETA sequence paints its whole frame — and not on a phone
+   * (owner, 2026-09-30: "the reta section staggers a lot"). There its canvas
+   * is a band inside the section, and an opaque band had to be faded into the
+   * page with a CSS mask, which makes the browser re-composite the masked WebGL
+   * layer every frame. See-through, like the hero, the section's own light
+   * shows around the vial and there is no edge to hide.
+   */
+  const fullFrame = variant === "sequence" && tier !== "compact";
+  return (
+    <>
+      <SceneEnvironment rig={rig} />
 
       {/* Behind the vial, and therefore inside the transmission buffer: this is
           what the glass actually refracts. */}
@@ -311,13 +428,13 @@ export default function RetaCanvas({
         palette={palette}
         tier={tier} // Only the homepage sequence owns its whole frame. The hero and the
         // PDP specimen both sit over DOM the canvas must not paint out.
-        scope={variant === "sequence" ? "full" : "local"}
+        scope={fullFrame ? "full" : "local"}
       />
 
       {/* The see-through scopes leave the glass nothing opaque to refract, so
           it saw three.js's half-white fill. This draws only in the refraction
           pass — see `RefractionGround`. */}
-      {variant === "sequence" ? null : <RefractionGround palette={palette} />}
+      {fullFrame ? null : <RefractionGround palette={palette} />}
 
       {/* NEUTRAL, not the world's light tone. Ambient is uniform: colouring it
           tints every surface at once, which is one of the ways the glass came
@@ -338,14 +455,179 @@ export default function RetaCanvas({
         progress={progress}
         reducedMotion={reducedMotion}
         tier={tier}
-        // The hero canvas is transparent, so the glass has no dark environment
-        // behind it to contrast against and the same reflections read as milky
-        // white. Damping the environment there keeps it reading as glass.
-        envIntensity={ENV_INTENSITY[environment.materialFocus] * (variant === "hero" ? 0.7 : 1)}
+        rig={rig}
         variant={variant}
         anchor={anchor}
         pointer={pointer}
+        detached={detached}
       />
-    </Canvas>
+    </>
   );
+}
+
+/**
+ * THE STILLS' GRADE, set on the renderer for the world being shown.
+ *
+ * The rig is genuinely HDR and needs a roll-off, but ACES at the 0.62–0.72
+ * exposure this stage used greyed every white — label, highlights, the glass's
+ * edge lines — which is half of why the glass read as milky beside its
+ * photograph. Neutral keeps whites white and colour true, at the rig's own
+ * exposure. The transmission pass re-renders the scene into an offscreen
+ * buffer; halving its resolution on phones is invisible through refraction.
+ *
+ * A LAYOUT effect, first in the scene: tone mapping is part of every shader
+ * program, so it has to be in place before `Prewarm` compiles them.
+ */
+function Grade({ rig, tier }: { rig: StudioRig; tier: StageTier }) {
+  // Read through `get()`: the renderer is R3F's to own, and this sets its
+  // grade the way `onCreated` used to, not a value React rendered from.
+  const get = useThree((state) => state.get);
+  useLayoutEffect(() => {
+    const { gl } = get();
+    gl.toneMapping = NeutralToneMapping;
+    gl.toneMappingExposure = rig.exposure;
+    gl.transmissionResolutionScale = tier === "compact" ? 0.5 : 1;
+  }, [get, rig, tier]);
+  return null;
+}
+
+/**
+ * COMPILE FIRST, DRAW SECOND (owner, 2026-09-29: the homepage "is still pretty
+ * laggy" on a phone).
+ *
+ * Measured on a homepage handover, the largest single block of main thread was
+ * the first draw waiting on its shaders — ~70 ms at desktop speed, before the
+ * label upload, the lighting map and the first glass pass. three's first use
+ * of a program reads its link status, which blocks until the GPU has compiled
+ * the glass, label and cap programs.
+ *
+ * So the canvas starts with its loop off (`frameloop="never"`), and this asks
+ * three to compile every program the scene will use IN THE BACKGROUND
+ * (`compileAsync`, via KHR_parallel_shader_compile where the browser has it;
+ * elsewhere it compiles as before, a frame later). Twice: once for the screen,
+ * and once with a render target bound, because the glass renders the opaque
+ * scene into its own target first, and a target changes the programs (linear
+ * output, no tone mapping) though not with its size — a 1×1 stand-in yields
+ * the same programs. Only then does the loop start.
+ *
+ * Nothing shows the gap: a stage is handed its canvas while it is still
+ * ~40% of a screen away (`useVialStage`), so the compile is over before the
+ * section arrives. Mounted after the scene's contents, so the model, lights
+ * and environment it compiles for are all in place.
+ */
+/**
+ * Compiles every program `scene` needs, for the screen and for the glass's
+ * transmission pass, in the background. See `Prewarm`.
+ */
+export function compileScene(gl: WebGLRenderer, scene: Scene, camera: Camera): Promise<unknown> {
+  const target = new WebGLRenderTarget(1, 1);
+  const previous = gl.getRenderTarget();
+  const screen = gl.compileAsync(scene, camera);
+  gl.setRenderTarget(target);
+  const glassPass = gl.compileAsync(scene, camera);
+  gl.setRenderTarget(previous);
+  return Promise.all([screen, glassPass])
+    .catch(() => undefined)
+    .finally(() => target.dispose());
+}
+
+function Prewarm({ onReady }: { onReady: () => void }) {
+  const gl = useThree((state) => state.gl);
+  const scene = useThree((state) => state.scene);
+  const camera = useThree((state) => state.camera);
+  const invalidate = useThree((state) => state.invalidate);
+  const ready = useRef(onReady);
+  useEffect(() => {
+    ready.current = onReady;
+  });
+
+  useEffect(() => {
+    let live = true;
+    void compileScene(gl, scene, camera).then(() => {
+      if (!live) return;
+      ready.current();
+      // A demand-driven (reduced-motion) canvas draws its one frame now.
+      invalidate();
+    });
+    return () => {
+      live = false;
+    };
+  }, [gl, scene, camera, invalidate]);
+
+  return null;
+}
+
+/** A phone draws the vial at most this often. */
+const PHONE_FPS = 30;
+
+/**
+ * THE PHONE'S FRAME BUDGET (owner, 2026-09-29: "it stutters just a tiny bit").
+ *
+ * Every frame of this scene renders the scene twice — once into the glass's
+ * transmission image, once to the screen — and on a phone that was more than
+ * the frame had. Nothing here moves fast: the presenter turns a full circle in
+ * over a minute and the homepage arcs are scroll-paced, so 30 steady frames a
+ * second read as the same motion as an uneven 60.
+ *
+ * Replaces R3F's own loop (`frameloop="never"`) with one that
+ *   - draws at most PHONE_FPS times a second, whatever the display's rate
+ *     (every other frame at 60 Hz, every fourth at 120 Hz), and
+ *   - draws nothing while the canvas is off screen. A stage keeps its canvas
+ *     mounted through a generous margin either side of the viewport (see
+ *     `useVialStage`), and until now it rendered the whole time.
+ *
+ * Its clock runs only while it draws, and a single step is capped, so a vial
+ * scrolled back into view resumes where it was instead of jumping by the
+ * time it spent away. `advance` takes that clock in seconds.
+ */
+function PhoneFrameBudget() {
+  const advance = useThree((state) => state.advance);
+  const canvas = useThree((state) => state.gl.domElement);
+
+  useEffect(() => {
+    let visible = true;
+    const observer = new IntersectionObserver(([entry]) => {
+      visible = entry?.isIntersecting ?? true;
+    });
+    observer.observe(canvas);
+
+    const interval = 1000 / PHONE_FPS;
+    let raf = 0;
+    let last = -Infinity;
+    let clock = 0;
+    const tick = (now: number) => {
+      raf = requestAnimationFrame(tick);
+      // A couple of milliseconds of slack, or a 60 Hz display whose frames
+      // land a hair early would skip two frames instead of one.
+      if (!visible || now - last < interval - 2) {
+        if (!visible) last = -Infinity;
+        return;
+      }
+      clock += last === -Infinity ? 0 : Math.min((now - last) / 1000, 0.1);
+      last = now;
+      advance(clock);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(raf);
+      observer.disconnect();
+    };
+  }, [advance, canvas]);
+
+  return null;
+}
+
+/**
+ * SPIKE (vial transition). The Canvas suspends its parent until the model has
+ * loaded, so the first `useFrame` here is the first frame WITH the object; the
+ * callback waits one more animation frame so that frame has been presented.
+ */
+function FirstFrame({ onFrame }: { onFrame: () => void }) {
+  const done = useRef(false);
+  useFrame(() => {
+    if (done.current) return;
+    done.current = true;
+    requestAnimationFrame(() => onFrame());
+  });
+  return null;
 }
