@@ -1,8 +1,13 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-10-01**: **the homepage's vials are there from the first
-paint, and its 3D no longer works while you scroll** (§8aj). Before that, the
-same day: **the specifications ribbon is permanent**
+Last updated **2026-10-01**: **the specifications ribbon runs on phones too**
+— upright, the vial whole across the top, its label's name and range rolling
+off as the band unrolls down into the panel (§8ai). **Flagship idea #2 ("the
+label unrolls into the data sheet") is done and permanent; #3 is next — not
+started, and its brief is not yet recorded in the repo.** Before that, the
+same day: **the homepage's vials are there from the first paint, and its 3D
+no longer works while you scroll** (§8aj); **the specifications ribbon is
+permanent**
 (§8ai) — on the flagships' product pages a band unwinds off a vial into
 the panel that holds section 02. Before that, 2026-09-30: **the flagship stand-in is
 the live vial's own first frame** (§8ah), and the product page sees the
@@ -2580,9 +2585,24 @@ made permanent ("make the ribbon permanent too").
   step, GHK-Cu's two) keeps a step's width from the left instead of
   stretching; a name never breaks inside a word (GHK-Cu's hyphen). Checked
   landed at 1024, 1440 and 1920: no overflow.
-- **Fallbacks**: under 64rem, reduced motion, no WebGL 2 — section 02 as it
-  was. A failure after mount shows the panel at once (error boundary). The
-  panel prints.
+- **Fallbacks**: reduced motion, no WebGL 2 — section 02 as it was. A
+  failure after mount shows the panel at once (error boundary). The panel
+  prints.
+- **Upright on phones and tablets** (owner, 2026-10-01: "make this section
+  work for phones as well, we could do the exact same thing but
+  vertically"): under 64rem the bench is the wide one a quarter turn
+  clockwise — the vial whole across the top (the half vial's mid-page cut
+  "looks so weird"; now only the page's sides cut it), its band at rest
+  reading as its label — logo, name and range, upright, which roll off and
+  fade as it unwinds ("have the text start on the vial and then disappear")
+  while the landing logo fades in — the band unrolling down into a panel
+  whose content (stacked) sets its length, the stripe down its left with its
+  notice set vertically, the heading above. The overlay works in the band's
+  own frame (page boxes turned back, camera rolled a quarter), so the
+  geometry, print and shader are the wide ones. A short unwind (a tablet, a
+  phone's GLOW) carries one drifting logo instead of two. Checked landed at
+  402, 375 and 768 wide (RETA, GLOW, GHK-Cu): no overflow; the wide bench
+  unchanged at 1024, 1440, 1920.
 - **Cost** (laptop, production build): no frames while scrolling, before or
   after; ~0.1 ms a frame during the run; 0.9 MB of GPU texture; canvas made
   within a screen of the bench; no multisampling at 2×.
@@ -2610,7 +2630,11 @@ made permanent ("make the ribbon permanent too").
 - **Owner to judge**: the CLS when the bench replaces the plain section
   after hydration (it is below the fold on a laptop); whether GLOW and
   GHK-Cu should keep the flagship label's navy band (their real labels are
-  navy; their worlds are amber and copper).
+  navy; their worlds are amber and copper); on a real phone, the upright
+  bench — its feel, its frame rate (4×-throttled: a steady 60), and the
+  sticky header over the vial at some scroll positions.
+- **Status**: flagship idea #2 is complete and permanent (RETA, GLOW,
+  GHK-Cu; wide and upright). Idea #3 is next; nothing of it is built.
 
 ## 8ah. The stand-in matches the live vial (2026-09-30)
 

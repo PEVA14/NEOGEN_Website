@@ -2,7 +2,14 @@
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef, type RefObject } from "react";
-import { DoubleSide, ShaderMaterial, Texture, type BufferGeometry, type Mesh } from "three";
+import {
+  CanvasTexture,
+  DoubleSide,
+  ShaderMaterial,
+  Texture,
+  type BufferGeometry,
+  type Mesh,
+} from "three";
 
 import {
   layRibbon,
@@ -12,6 +19,7 @@ import {
   ribbonGeometry,
   ribbonPrint,
   setOpacity,
+  type Box,
   type RibbonPlan,
   type RibbonPrint,
 } from "./ribbon";
@@ -43,6 +51,9 @@ export interface RibbonMarks {
   hairline: RefObject<HTMLElement | null>;
   stripe: RefObject<HTMLElement | null>;
   lockup: RefObject<HTMLElement | null>;
+  /** The panel's name and range: what the vial carries at rest, upright. */
+  name: RefObject<HTMLElement | null>;
+  range: RefObject<HTMLElement | null>;
   vial: RefObject<HTMLElement | null>;
 }
 
@@ -55,25 +66,48 @@ export interface RibbonMarks {
  * The canvas spans the band's strip of the bench, not all of it: a little
  * above (nothing rises past the band's top edge) and more below (what curves
  * toward the viewer is seen a little lower, looking down).
+ *
+ * UPRIGHT (a phone; owner, 2026-10-01: "the exact same thing but
+ * vertically"): the same scene a quarter turn clockwise — the vial lies along
+ * the bench's top, the band unrolls down the page. Nothing is re-modelled:
+ * every box the page measures is turned back into the band's own frame
+ * (`frame`), and the camera rolls a quarter, so the picture it draws is the
+ * wide one, turned.
  */
 export default function RibbonOverlay({
   marks,
   stripe,
+  upright,
 }: {
   marks: RibbonMarks;
   /** The label's stripe, three stops (`Bench.stripe`). */
   stripe: readonly [string, string, string];
+  /** The band runs down the page, not across it. */
+  upright: boolean;
 }) {
   return (
     <Canvas
-      style={{
-        position: "absolute",
-        insetInline: 0,
-        top: "calc(var(--band-top) - 1rem)",
-        width: "100%",
-        height: "calc(var(--band-h) * 1.2 + 1rem)",
-        pointerEvents: "none",
-      }}
+      key={upright ? "upright" : "across"}
+      style={
+        upright
+          ? {
+              /* Turned: "above" the band is the page's right, "below" its left. */
+              position: "absolute",
+              insetBlock: 0,
+              left: "calc(var(--band-left) - var(--band-w) * 0.2)",
+              width: "calc(var(--band-w) * 1.2 + 1rem)",
+              height: "100%",
+              pointerEvents: "none",
+            }
+          : {
+              position: "absolute",
+              insetInline: 0,
+              top: "calc(var(--band-top) - 1rem)",
+              width: "100%",
+              height: "calc(var(--band-h) * 1.2 + 1rem)",
+              pointerEvents: "none",
+            }
+      }
       /* Multisampling only on 1× screens: at 2× the band's edges hold without
          it, and its buffers would be most of the canvas's memory. */
       gl={{ alpha: true, antialias: window.devicePixelRatio < 2 }}
@@ -84,24 +118,44 @@ export default function RibbonOverlay({
       orthographic
       camera={{
         position: [0, DISTANCE * Math.sin(TILT), DISTANCE * Math.cos(TILT)],
-        rotation: [-TILT, 0, 0],
+        // Upright, rolled a quarter: the band's length runs down the screen.
+        rotation: [-TILT, 0, upright ? Math.PI / 2 : 0],
         zoom: 1,
         near: 1,
         far: DISTANCE * 2,
       }}
       aria-hidden="true"
     >
-      <Band marks={marks} colours={stripe} />
+      <Band marks={marks} colours={stripe} upright={upright} />
     </Canvas>
   );
+}
+
+/**
+ * A page box in the band's frame. Across, as it is. Upright, turned a quarter
+ * back: the band's length is the page's downward axis, and across the band
+ * "down" is the page's leftward one.
+ */
+function frame(box: DOMRect, upright: boolean): Box {
+  if (!upright) return box;
+  return {
+    left: box.top,
+    right: box.bottom,
+    top: -box.right,
+    bottom: -box.left,
+    width: box.height,
+    height: box.width,
+  };
 }
 
 function Band({
   marks,
   colours,
+  upright,
 }: {
   marks: RibbonMarks;
   colours: readonly [string, string, string];
+  upright: boolean;
 }) {
   const mesh = useRef<Mesh>(null);
   const occluder = useRef<Mesh>(null);
@@ -109,6 +163,9 @@ function Band({
   const paper = useRef<Paper | null>(null);
   const plan = useRef<RibbonPlan | null>(null);
   const logo = useRef<Texture | null>(null);
+  /** The name and range, drawn once per size for the vial's front (upright). */
+  const words = useRef<{ key: string; texture: CanvasTexture } | null>(null);
+  const label = useRef<[number, number, number, number] | null>(null);
   const shown = useRef(-1);
   /** The band has come into view: it starts on the next frame. */
   const due = useRef(false);
@@ -200,12 +257,12 @@ function Band({
     }
 
     // Page pixels → this canvas's world (centre origin, y up, z = 0 plane).
-    const canvasBox = state.gl.domElement.getBoundingClientRect();
+    const canvasBox = frame(state.gl.domElement.getBoundingClientRect(), upright);
     const toX = (x: number) => x - canvasBox.left - canvasBox.width / 2;
     const toY = (y: number) => (canvasBox.top + canvasBox.height / 2 - y) / Math.cos(TILT);
 
-    const box = panel.getBoundingClientRect();
-    const vialBox = vial.getBoundingClientRect();
+    const box = frame(panel.getBoundingClientRect(), upright);
+    const vialBox = frame(vial.getBoundingClientRect(), upright);
     const axisPage = vialBox.left + vialBox.width / 2;
     const radius = vialBox.right - axisPage;
 
@@ -217,27 +274,46 @@ function Band({
     const key = `${Math.round(box.width)}x${Math.round(box.height)}:${Math.round(radius)}`;
     if (paper.current.key !== key) {
       plan.current = planRibbon(radius, box.right - axisPage, box.height);
-      paper.current.print(
-        ribbonPrint(
-          plan.current,
-          axisPage,
-          box,
-          {
-            hairline: hairline.getBoundingClientRect(),
-            stripe: stripe.getBoundingClientRect(),
-            lockup: lock.getBoundingClientRect(),
-          },
-          radius,
-        ),
-        key,
+      const print = ribbonPrint(
+        plan.current,
+        axisPage,
+        box,
+        {
+          hairline: frame(hairline.getBoundingClientRect(), upright),
+          stripe: frame(stripe.getBoundingClientRect(), upright),
+          lockup: frame(lock.getBoundingClientRect(), upright),
+        },
+        radius,
+        upright,
       );
+      label.current = print.label;
+      paper.current.print(print, key);
     }
     paper.current.ink(logo.current);
+    const nameEl = marks.name.current;
+    const rangeEl = marks.range.current;
+    if (label.current && nameEl && rangeEl && words.current?.key !== paper.current.key) {
+      const [x0, x1, y0, y1] = label.current;
+      words.current?.texture.dispose();
+      words.current = {
+        key: paper.current.key,
+        texture: drawWords(nameEl, rangeEl, y1 - y0, x1 - x0),
+      };
+    }
 
     const top = toY(box.top);
     const bottom = toY(box.bottom);
+    const t = phase(p, ...RIBBON.unroll);
+    /* Upright, the logo that ends at the vial's front would show under the
+       name at rest; it comes in as the name goes. */
+    paper.current.logos(1, upright ? phase(t, 0.3, 0.75) : 1);
+    paper.current.words(
+      label.current && words.current ? words.current.texture : null,
+      label.current,
+      1 - phase(t, 0.15, 0.55),
+    );
     const axisZ = layRibbon(geometry.current, plan.current!, {
-      t: phase(p, ...RIBBON.unroll),
+      t,
       axis: toX(axisPage),
       radius,
       top,
@@ -271,8 +347,12 @@ interface Paper {
   key: string;
   print(print: RibbonPrint, key: string): void;
   ink(logo: Texture | null): void;
+  /** The name and range at rest (upright): their picture, where, how much. */
+  words(texture: Texture | null, rect: [number, number, number, number] | null, on: number): void;
   /** The vial's silhouette edge (world x) and how far its shadow reaches. */
   behind(edge: number, reach: number): void;
+  /** How much of each logo shows: the one at rest, the one laid down. */
+  logos(atRest: number, atEnd: number): void;
 }
 
 /**
@@ -298,6 +378,11 @@ function makePaper(stripe: readonly [string, string, string]): Paper {
     lockupBack: { value: [0, 0] },
     logo: { value: null as Texture | null },
     inked: { value: 0 },
+    label: { value: null as Texture | null },
+    labelRect: { value: [0, 1, 0, 1] },
+    labelOn: { value: 0 },
+    uprightMarks: { value: 0 },
+    logoOn: { value: [1, 1] },
     edge: { value: 0 },
     reach: { value: 1 },
   };
@@ -323,6 +408,11 @@ function makePaper(stripe: readonly [string, string, string]): Paper {
       uniform vec2 lockupBack;
       uniform sampler2D logo;
       uniform float inked;
+      uniform sampler2D label;
+      uniform vec4 labelRect;
+      uniform float labelOn;
+      uniform float uprightMarks;
+      uniform vec2 logoOn;
       uniform float edge;
       uniform float reach;
       varying float vX;
@@ -359,14 +449,30 @@ function makePaper(stripe: readonly [string, string, string]): Paper {
         float g = clamp((x - stripe.z) / (stripe.w - stripe.z), 0.0, 1.0);
         vec3 band = g < 0.5 ? mix(stripeA, stripeB, g * 2.0) : mix(stripeB, stripeC, g * 2.0 - 1.0);
         ink = mix(ink, band, cover(y, stripe.x, stripe.x + stripe.y));
+        // Upright, the vial's own name and range at rest, upright on the page:
+        // across the band is the page's width (right to left), along it the
+        // page's height — wound outward, bottom to top.
+        if (!gl_FrontFacing && labelOn > 0.0) {
+          vec2 at = vec2(
+            (labelRect.w - y) / (labelRect.w - labelRect.z),
+            (labelRect.y - x) / (labelRect.y - labelRect.x)
+          );
+          vec4 words = texture2D(label, clamp(at, 0.0, 1.0));
+          ink = mix(ink, words.rgb, words.a * labelOn
+            * cover(x, labelRect.x, labelRect.y) * cover(y, labelRect.z, labelRect.w));
+        }
         // The lockup is on the back only, twice. Seen from outside the wound
         // band that side runs right-to-left, so it is mirrored.
         float mark = 0.0;
         if (!gl_FrontFacing) {
           for (int i = 0; i < 2; i++) {
             float left = i == 0 ? lockupBack.x : lockupBack.y;
-            vec2 at = vec2(1.0 - (x - left) / lockup.y, (y - lockup.x) / lockup.z);
-            mark = max(mark, texture2D(logo, clamp(at, 0.0, 1.0)).a
+            // Across: mirrored along the band. Upright: set upright on the page,
+            // as the name beside it is.
+            vec2 at = uprightMarks > 0.5
+              ? vec2((lockup.x + lockup.z - y) / lockup.z, (left + lockup.y - x) / lockup.y)
+              : vec2(1.0 - (x - left) / lockup.y, (y - lockup.x) / lockup.z);
+            mark = max(mark, texture2D(logo, clamp(at, 0.0, 1.0)).a * (i == 0 ? logoOn.x : logoOn.y)
               * cover(x, left, left + lockup.y) * cover(y, lockup.x, lockup.x + lockup.z));
           }
         }
@@ -394,11 +500,20 @@ function makePaper(stripe: readonly [string, string, string]): Paper {
       uniforms.stripe.value = print.stripe;
       uniforms.lockup.value = print.lockup;
       uniforms.lockupBack.value = print.lockupBack;
+      uniforms.uprightMarks.value = print.upright ? 1 : 0;
       paper.key = key;
     },
     ink(logo) {
       uniforms.logo.value = logo;
       uniforms.inked.value = logo ? 1 : 0;
+    },
+    words(texture, rect, on) {
+      uniforms.label.value = texture;
+      if (rect) uniforms.labelRect.value = rect;
+      uniforms.labelOn.value = texture && rect ? on : 0;
+    },
+    logos(atRest, atEnd) {
+      uniforms.logoOn.value = [atRest, atEnd];
     },
     behind(edge, reach) {
       uniforms.edge.value = edge;
@@ -412,4 +527,58 @@ function makePaper(stripe: readonly [string, string, string]): Paper {
 function srgb(hex: string): [number, number, number] {
   const n = Number.parseInt(hex.slice(1), 16);
   return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+}
+
+/**
+ * The panel's name and range, set as the panel sets them — their own fonts,
+ * tracking, case and ink — on a transparent picture `width` × `height` CSS
+ * pixels (the page's own axes), for the vial's front at rest.
+ */
+function drawWords(name: HTMLElement, range: HTMLElement, width: number, height: number) {
+  const scale = 2;
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(width * scale));
+  canvas.height = Math.max(1, Math.round(height * scale));
+  const ctx = canvas.getContext("2d")!;
+  ctx.scale(scale, scale);
+  ctx.textBaseline = "top";
+
+  const set = (element: HTMLElement, size: number) => {
+    const style = getComputedStyle(element);
+    ctx.font = `${style.fontWeight} ${size}px ${style.fontFamily}`;
+    ctx.letterSpacing = style.letterSpacing === "normal" ? "0px" : style.letterSpacing;
+    ctx.fillStyle = style.color;
+    return style;
+  };
+
+  // The name, wrapped by words to the width, at the panel's size or smaller.
+  const nameStyle = getComputedStyle(name);
+  const words = (name.textContent ?? "").toUpperCase().split(/\s+/).filter(Boolean);
+  let size = parseFloat(nameStyle.fontSize);
+  set(name, size);
+  const widest = Math.max(...words.map((word) => ctx.measureText(word).width));
+  if (widest > width) size *= width / widest;
+  set(name, size);
+  const lines: string[] = [];
+  for (const word of words) {
+    const last = lines[lines.length - 1];
+    if (last && ctx.measureText(`${last} ${word}`).width <= width)
+      lines[lines.length - 1] = `${last} ${word}`;
+    else lines.push(word);
+  }
+  const lineHeight = size * 1.15;
+  const rangeSize = Math.min(parseFloat(getComputedStyle(range).fontSize), size * 0.8);
+  const total = lines.length * lineHeight + rangeSize * 0.7 + rangeSize;
+  let y = Math.max(0, (height - total) / 2);
+  for (const line of lines) {
+    ctx.fillText(line, 0, y);
+    y += lineHeight;
+  }
+  y += rangeSize * 0.7;
+  set(range, rangeSize);
+  ctx.fillText((range.textContent ?? "").toUpperCase(), 0, y);
+
+  const texture = new CanvasTexture(canvas);
+  texture.flipY = false;
+  return texture;
 }

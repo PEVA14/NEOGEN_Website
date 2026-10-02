@@ -486,8 +486,10 @@ held to these rules:
   back; nothing waits on it but the panel's own fade;
 - the specifications are real DOM in the reading order throughout — the
   canvas draws only paper and print, never content;
-- a narrow screen, reduced motion, no WebGL 2 or a product without a bench
-  get section 02 as it is; a failure after mount shows the panel at once;
+- under 64rem it runs upright — the same scene a quarter turn, the band
+  unrolling down the page; reduced motion, no WebGL 2 or a product without a
+  bench get section 02 as it is; a failure after mount shows the panel at
+  once;
 - its canvas draws only while the band moves (none while the page scrolls),
   and is made only when the bench is near;
 - the bench's vial is a still of the product's own container, bare (the

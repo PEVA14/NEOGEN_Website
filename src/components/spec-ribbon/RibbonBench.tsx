@@ -38,7 +38,7 @@ export interface RibbonStep {
  * under two seconds, and never wound back — until it is the panel that holds
  * section 02: every fact the ladder and the table hold, in real DOM.
  *
- * Without a wide screen, motion and WebGL: section 02 as it always was
+ * Without motion or WebGL 2: section 02 as it always was
  * (`children`). If the band cannot be drawn after all, the panel shows at once.
  */
 export function RibbonBench({
@@ -65,12 +65,14 @@ export function RibbonBench({
   /** Section 02's ladder and table, as they are: the fallback. */
   children: ReactNode;
 }) {
-  const run = useRibbonAllowed();
+  const { run, upright } = useRibbonAllowed();
   const bench = useRef<HTMLDivElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const hairline = useRef<HTMLSpanElement>(null);
   const stripe = useRef<HTMLParagraphElement>(null);
   const lockup = useRef<HTMLSpanElement>(null);
+  const nameText = useRef<HTMLParagraphElement>(null);
+  const rangeText = useRef<HTMLParagraphElement>(null);
   const vial = useRef<HTMLImageElement>(null);
   const near = useNear(bench, run);
   /* One pack for every presentation (RETA: ten vials) is said once. */
@@ -97,11 +99,18 @@ export function RibbonBench({
 
   return (
     <div className={styles.layout}>
+      {/* Upright, the vial lies along the bench's top: the heading stands above it. */}
+      {upright ? heading : null}
       <div className={styles.stage}>
-        <div ref={bench} className={styles.bench} style={look}>
-          {/* The section's heading, in the bench beside the vial's shoulder —
-            first in the reading order, as it always was. */}
-          <div className={styles.heading}>{heading}</div>
+        <div
+          ref={bench}
+          className={styles.bench}
+          style={look}
+          data-orientation={upright ? "upright" : "across"}
+        >
+          {/* Across, the section's heading stands in the bench beside the
+            vial's shoulder — first in the reading order, as it always was. */}
+          {upright ? null : <div className={styles.heading}>{heading}</div>}
           {/* eslint-disable-next-line @next/next/no-img-element -- sized by the bench, decorative */}
           <img
             ref={vial}
@@ -116,8 +125,18 @@ export function RibbonBench({
           {near ? (
             <CanvasErrorBoundary fallback={<Reveal panel={panel} />}>
               <RibbonOverlay
-                marks={{ bench, panel, hairline, stripe, lockup, vial }}
+                marks={{
+                  bench,
+                  panel,
+                  hairline,
+                  stripe,
+                  lockup,
+                  vial,
+                  name: nameText,
+                  range: rangeText,
+                }}
                 stripe={config.stripe}
+                upright={upright}
               />
             </CanvasErrorBoundary>
           ) : null}
@@ -129,7 +148,7 @@ export function RibbonBench({
             <span ref={lockup} className={styles.lockup} aria-hidden="true" />
             <div className={styles.content}>
               <div className={styles.identity}>
-                <p className={styles.name}>
+                <p ref={nameText} className={styles.name}>
                   {name.split(" ").map((word, i) => (
                     <span key={i}>
                       {i > 0 ? " " : null}
@@ -137,7 +156,9 @@ export function RibbonBench({
                     </span>
                   ))}
                 </p>
-                <p className={styles.range}>{range}</p>
+                <p ref={rangeText} className={styles.range}>
+                  {range}
+                </p>
               </div>
               <div className={styles.ladder}>
                 <p className={styles.key}>{stepsLabel}</p>
@@ -176,9 +197,14 @@ export function RibbonBench({
   );
 }
 
-/** Wide screen, motion allowed, WebGL 2. Decided on the client, after hydration. */
-function useRibbonAllowed(): boolean {
-  const [run, setRun] = useState(false);
+/**
+ * Motion allowed and WebGL 2 — decided on the client, after hydration. A wide
+ * screen runs the band across the page; anything narrower, down it
+ * (`upright`; owner, 2026-10-01: "make this section work for phones as well
+ * … the exact same thing but vertically").
+ */
+function useRibbonAllowed(): { run: boolean; upright: boolean } {
+  const [state, setState] = useState({ run: false, upright: false });
   useEffect(() => {
     const wide = window.matchMedia("(min-width: 64rem)");
     const still = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -189,7 +215,7 @@ function useRibbonAllowed(): boolean {
         return false;
       }
     })();
-    const update = () => setRun(webgl && wide.matches && !still.matches);
+    const update = () => setState({ run: webgl && !still.matches, upright: !wide.matches });
     update();
     wide.addEventListener("change", update);
     still.addEventListener("change", update);
@@ -198,7 +224,7 @@ function useRibbonAllowed(): boolean {
       still.removeEventListener("change", update);
     };
   }, []);
-  return run;
+  return state;
 }
 
 /**

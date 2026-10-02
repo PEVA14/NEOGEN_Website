@@ -215,10 +215,24 @@ export function layRibbon(
   return axisZ;
 }
 
+/**
+ * A box in the band's frame: CSS pixels, x along the band, y down across it.
+ * On a wide screen that is the page's own frame; upright (a phone), the
+ * page's boxes turned a quarter back into it (`RibbonOverlay`).
+ */
+export interface Box {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+  width: number;
+  height: number;
+}
+
 interface Marks {
-  hairline: DOMRect;
-  stripe: DOMRect;
-  lockup: DOMRect;
+  hairline: Box;
+  stripe: Box;
+  lockup: Box;
 }
 
 /**
@@ -247,28 +261,85 @@ export interface RibbonPrint {
   lockup: [number, number, number];
   /** Its left edge on the back, at rest and laid down. */
   lockupBack: [number, number];
+  /**
+   * Upright only: where the back carries the product's name and range at
+   * rest — along the band from, to; across it from, to. Null across.
+   */
+  label: [number, number, number, number] | null;
+  /**
+   * Upright, the logo is set upright on the page too, beside the name: its
+   * `lockup` is then across-from, along-length, across-width.
+   */
+  upright: boolean;
 }
 
 export function ribbonPrint(
   plan: RibbonPlan,
   axisPage: number,
-  panel: DOMRect,
+  panel: Box,
   marks: Marks,
   radius: number,
+  /** The whole vial is in view (upright), not only the half by its edge. */
+  whole = false,
 ): RibbonPrint {
   const X = (pageX: number) => plan.woundAtEnd + (pageX - axisPage);
   const Y = (pageY: number) => pageY - panel.top;
   /* Where the vial's visible quarter is — between its front and its right
      edge, half a radius in — at rest and once laid down. The second is on an
-     inner turn at rest, and comes round into view as the outer turns leave. */
-  const shown = 1.25 * Math.PI * radius;
+     inner turn at rest, and comes round into view as the outer turns leave.
+
+     Unless the band unwinds less than that quarter and a logo (a short panel:
+     a phone's GLOW, a tablet): then the first would still be in view at the
+     end, beside the second. One logo instead, midway — in view at rest, it
+     drifts round by the little the band unwinds.
+
+     The whole vial in view (upright): the logo faces the viewer square on,
+     and the front that shows it is a half turn wide, not a quarter. */
+  const shown = (whole ? 1 : 1.25) * Math.PI * radius;
+  const inView = (whole ? 1 : 0.5) * Math.PI * radius;
   const half = marks.lockup.width / 2;
+  const unwound = plan.woundAtRest - plan.woundAtEnd;
+  const atRest = plan.woundAtRest - shown - half;
+  const atEnd = plan.woundAtEnd - shown - half;
+  const once = (atRest + atEnd) / 2;
+  const both = unwound >= inView + marks.lockup.width;
+
+  /* Upright, the logo reads upright, left-aligned with the name, above it at
+     rest; a second one stands at the vial's front once the band is laid
+     down. They are always apart: the band has unwound between them. */
+  type Logos = Pick<RibbonPrint, "lockup" | "lockupBack" | "upright">;
+  let logos: Logos = {
+    lockup: [Y(marks.lockup.top), marks.lockup.width, marks.lockup.height],
+    lockupBack: both ? [atRest, atEnd] : [once, once],
+    upright: false,
+  };
+  if (whole) {
+    const width = 0.42 * panel.height;
+    const length = (width * 239) / 744;
+    const from = (wound: number, d: number) => wound - d * Math.PI * radius - length / 2;
+    logos = {
+      lockup: [0.78 * panel.height - width, length, width],
+      lockupBack: [from(plan.woundAtRest, 0.8), from(plan.woundAtEnd, 1)],
+      upright: true,
+    };
+  }
   return {
     length: plan.length,
     height: panel.height,
     hairline: [Y(marks.hairline.top), Math.max(1, marks.hairline.height)],
     stripe: [Y(marks.stripe.top), marks.stripe.height, X(marks.stripe.left), X(marks.stripe.right)],
-    lockup: [Y(marks.lockup.top), marks.lockup.width, marks.lockup.height],
-    lockupBack: [plan.woundAtRest - shown - half, plan.woundAtEnd - shown - half],
+    ...logos,
+    /* The name and range on the vial at rest (owner, 2026-10-01: "have the
+       text start on the vial and then disappear since we see more of it"):
+       below the logo on the front, between the stripe and the hairline. The
+       band carries them off as it unwinds, and they fade as it does. */
+    label: whole
+      ? [
+          plan.woundAtRest - 1.29 * Math.PI * radius,
+          plan.woundAtRest - 0.95 * Math.PI * radius,
+          0.1 * panel.height,
+          0.78 * panel.height,
+        ]
+      : null,
   };
 }

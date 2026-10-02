@@ -27,10 +27,28 @@ band (owner, 2026-10-01: "too much empty space") — still first in the reading
 order. The panel is real DOM in the reading order from the start; it is only
 transparent until the band lands (and on paper it always shows).
 
-**Without it** — a product with no bench (`benches.ts`), a screen under
-64rem, reduced motion, no WebGL 2 — section 02 renders exactly as it always
-has. If the band's code or WebGL fails after all, an error boundary shows the
-panel at once.
+**Upright, under 64rem** (phones and tablets; owner, 2026-10-01: "the exact
+same thing but vertically"): the whole bench a quarter turn clockwise. The
+vial lies across the bench's top, cap to the right — WHOLE, cut only by the
+page's sides (its half, cut flat mid-page, "looks so weird"), and longer than
+a phone is wide, so its body (and the band) can be most of the width; the band
+unrolls DOWN the page into the panel. Since the whole vial shows, at rest its
+band reads as its label (owner, 2026-10-01: "have the text start on the vial
+and then disappear"): the logo, then the product's name and range, upright —
+set from the panel's own name and range elements, in their fonts — which roll
+off with the band and fade as it unwinds, while the logo that ends square on
+the vial's front fades in. The hairline runs down the panel's
+right, the stripe down its left (its notice set vertically); the
+specifications inside stay upright and stacked, and set the panel's length;
+the heading stands above the bench. Nothing is re-modelled: `RibbonOverlay`
+turns every measured box back into the band's own frame (`frame`) and rolls
+its camera a quarter, so it draws the wide picture, turned. Where the band
+unwinds less than a quarter turn and a logo (a short panel), the vial carries
+one logo that drifts, not two.
+
+**Without it** — a product with no bench (`benches.ts`), reduced motion, no
+WebGL 2 — section 02 renders exactly as it always has. If the band's code or
+WebGL fails after all, an error boundary shows the panel at once.
 
 ## How
 
@@ -83,6 +101,10 @@ the run — none while the page scrolls, before or after (R3F's own scroll
 re-measure is off). About 0.1 ms a frame during the run. 0.9 MB of texture on
 the GPU (the spike's painted prints were 74 MB). The canvas is made when the
 bench is within a screen of the window; multisampling only below 2×.
+
+Upright, 402 × 874 phone at 4× CPU throttle: the run at a steady 16.7 ms a
+frame, no long task, none drawn while scrolling after; 1.4 MB of texture (the
+logo and the vial's label words). Not yet judged on a real phone.
 
 ## The vial still
 

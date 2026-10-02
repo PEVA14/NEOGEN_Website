@@ -250,3 +250,148 @@
     opacity: 1 !important;
   }
 }
+
+/* ------------------------------------------------------------------------
+ * UPRIGHT — a phone, or anything under 64rem (owner, 2026-10-01: "the exact
+ * same thing but vertically"). The wide bench a quarter turn clockwise: the
+ * vial lies across the bench's top, cap to the right — whole: cut by the
+ * page's sides, as the wide bench's is by the page's edge, never mid-page
+ * (owner, 2026-10-01: the half vial's cut "looks so weird"); the band
+ * is wound round its body and unrolls DOWN the page into the panel. What was
+ * the band's top edge is now its right, its bottom its left: the hairline
+ * runs down the right, the stripe down the left. The specifications inside
+ * stay upright, stacked, and set the panel's length.
+ *
+ * Sized from the bench's width: the vial is longer than it (its cap and foot
+ * run off the sides), so its body — and the band — can be most of a phone's
+ * width.
+ * --------------------------------------------------------------------- */
+.bench[data-orientation="upright"] {
+  /* The vial's length, lying along the top. */
+  --vial-l: min(calc(100vw * 1.25), 64rem);
+  --vial-r: calc(var(--vial-l) * var(--vial-radius));
+  /* The band's width — within the vial's straight body — centred on the page. */
+  --band-w: calc(var(--vial-l) * 0.56);
+  --band-left: calc(50% - var(--band-w) / 2);
+
+  block-size: auto;
+  /* The vial's whole diameter, then the panel, which sets the bench's height;
+     the vial and the canvas lie over them. */
+  padding-block: calc(var(--vial-r) * 2) var(--space-lg);
+}
+
+/* Turned a quarter clockwise about its centre, a radius below the bench's top;
+   its body's middle (`--vial-body` of its length from the cap) is the band's
+   middle, the page's. */
+.bench[data-orientation="upright"] .vial {
+  inset-block-start: var(--vial-r);
+  inset-inline-start: calc(50% + (var(--vial-body) - 0.5) * var(--vial-l));
+  block-size: var(--vial-l);
+  translate: -50% -50%;
+  rotate: 90deg;
+}
+
+.bench[data-orientation="upright"] .panel {
+  position: relative;
+  inset: auto;
+  margin-inline-start: var(--band-left);
+  inline-size: var(--band-w);
+  block-size: auto;
+  container-type: inline-size;
+}
+
+/* The vial's shadow falls from its edge, now the panel's top. */
+.bench[data-orientation="upright"] .panel::after {
+  inset-inline: 0;
+  inset-block: 0 auto;
+  inline-size: auto;
+  block-size: calc(var(--vial-r) * 0.18);
+  background: linear-gradient(180deg, rgb(0 0 0 / 0.12), rgb(0 0 0 / 0));
+}
+
+.bench[data-orientation="upright"] .hairline {
+  inset-inline: auto 7%;
+  inset-block: 0;
+  inline-size: 1px;
+  block-size: auto;
+}
+
+/* Measured for the band's print only: the lockup turned with the band. */
+.bench[data-orientation="upright"] .lockup {
+  inset-inline: auto 13%;
+  inset-block-start: 4%;
+  inline-size: calc(var(--vial-r) * 0.8 * 239 / 744);
+  block-size: calc(var(--vial-r) * 0.8);
+  aspect-ratio: auto;
+}
+
+/* Physical sides: its vertical writing mode would turn logical ones with it. */
+.bench[data-orientation="upright"] .stripe {
+  top: 0;
+  bottom: 0;
+  left: 8.5%;
+  right: auto;
+  width: 6.5%;
+  height: auto;
+  writing-mode: vertical-rl;
+  background: linear-gradient(180deg, var(--stripe-a), var(--stripe-b) 50%, var(--stripe-c));
+  font-size: clamp(0.5625rem, 3.2cqi, 0.8125rem);
+}
+
+/* Between the stripe and the hairline, in the reading order, stacked. */
+.bench[data-orientation="upright"] .content {
+  position: relative;
+  inset: auto;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8cqi;
+  align-items: start;
+  padding: 10cqi 12cqi 10cqi 21cqi;
+}
+
+.bench[data-orientation="upright"] .key {
+  font-size: clamp(0.5625rem, 3cqi, 0.75rem);
+}
+
+.bench[data-orientation="upright"] .name {
+  font-size: clamp(1.125rem, 7.4cqi, 1.75rem);
+}
+
+.bench[data-orientation="upright"] .range {
+  font-size: clamp(0.875rem, 4.8cqi, 1.125rem);
+}
+
+/* The ladder as rows, two to a line where they fit. */
+.bench[data-orientation="upright"] .ladder ol {
+  grid-auto-flow: row;
+  grid-auto-columns: auto;
+  grid-template-columns: repeat(auto-fill, minmax(6.5em, 1fr));
+  column-gap: 1.2em;
+  margin-block-start: 0.8em;
+  border-inline-start: 0;
+}
+
+.bench[data-orientation="upright"] .ladder li {
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  gap: 0.6em;
+  padding: 0.55em 0;
+  border-inline-end: 0;
+  border-block-end: 1px solid #d9d9d9;
+}
+
+.bench[data-orientation="upright"] .stepIndex,
+.bench[data-orientation="upright"] .stepPack {
+  font-size: clamp(0.5625rem, 2.8cqi, 0.6875rem);
+}
+
+.bench[data-orientation="upright"] .stepValue {
+  font-size: clamp(1.5rem, 10cqi, 2.5rem);
+}
+
+.bench[data-orientation="upright"] .stepUnit {
+  font-size: clamp(0.5625rem, 3cqi, 0.75rem);
+}
+
+.bench[data-orientation="upright"] .facts dd {
+  font-size: clamp(0.875rem, 4.6cqi, 1.0625rem);
+}
