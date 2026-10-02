@@ -197,22 +197,6 @@ html[data-world-forming]::view-transition-new(.vt-page-in) {
   block-size: 100%;
 }
 
-/* --- Products with no still: the drawn plate travels whole ----------------- */
-
-::view-transition-group(.vt-plate) {
-  z-index: 4;
-  animation-duration: var(--vt-flight);
-  animation-timing-function: var(--vt-travel);
-}
-
-::view-transition-old(.vt-plate) {
-  animation: 320ms linear both vt-fade-out;
-}
-
-::view-transition-new(.vt-plate) {
-  animation: 320ms linear both vt-fade-in;
-}
-
 /* --- The chrome stays put: the specimen passes BEHIND the header ---------- */
 
 #site-header {

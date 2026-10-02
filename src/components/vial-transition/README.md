@@ -18,7 +18,8 @@ npm run build && npx next start -p 3110
 
 Open `/es/productos` and tap RETA, GLOW, GHK-Cu or Semaglutide — in the grid
 or, for the three flagships, in the masthead strip. Products with no studio
-still travel as their drawn plate.
+still send their drawn vial alone (`SpecimenPlate travel`), and the bench they
+land on sets it down (`components/product/bench`).
 
 ## What it does
 
@@ -42,7 +43,8 @@ one (see 3 below) — there is deliberately no way-back flight.
 - `components/ui/ProductCard.tsx` — `transition` prop; two-layer still; names; warm-up
 - `components/catalog/CatalogBrowser.tsx` — the grid passes `transition`
 - `components/catalog/Storefront.tsx` — the masthead strip travels too (`SpecimenLink`)
-- `components/product/ProductPlate.tsx` — the page shows the card's still, split
+- `components/product/bench/ProductBench.tsx` — every non-flagship page: the
+  card's still, split, or the drawn vial, landing on the bench
 - `components/product/ProductStage.tsx` — stand-in, 3D hold, world pairing
 - `components/experience/RetaCanvas.tsx` — `onFirstFrame`
 - `components/experience/studio/StudioScene.tsx` — `captureGround` / `captureMask` passes
@@ -140,7 +142,8 @@ the element's transform from the card's, so the vial leaves the card upright
 and takes the lean as it lands. The flying picture fills the card's box
 (`block-size: 100%`), which is a few percent narrower than the stand-in's.
 
-## Not done yet
+## Drawn products
 
-In `docs/DEFERRED_POLISH.md`: split `SpecimenPlate` so drawn products travel
-as objects rather than as a whole plate.
+Done 2026-10-02 with the bench: a drawn product's card names only its drawn
+vial (`SpecimenPlate travel`), so the object leaves its set behind exactly as a
+rendered specimen does. The whole-plate flight (`vt-plate`) is gone.

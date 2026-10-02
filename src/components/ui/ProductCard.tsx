@@ -2,14 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useId, useRef, useState, ViewTransition, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import { Mono } from "@/components/typography";
 import { SpecimenPlate } from "@/components/ui/SpecimenPlate";
 import { WorldDot } from "@/components/ui/WorldDot";
 import { CARD_SIZES, commerceStill, productMedia, stillMedia } from "@/content/media";
 import { arm, useArmed } from "@/components/vial-transition/armed";
-import { BENCH_PROTOTYPES } from "@/components/product/bench/prototypes";
 import { boxOf, markIncoming } from "@/components/vial-transition/incoming";
 import { SPECIMEN_NAVIGATION } from "@/components/vial-transition/PageTransition";
 import { SpecimenLayers } from "@/components/vial-transition/SpecimenLayers";
@@ -303,38 +302,21 @@ export function ProductCard({
             />
           ) : (
             /*
-             * A product that opens on the bench (prototype) sends its drawn
-             * VIAL, as a rendered specimen is sent, and leaves its set behind;
-             * every other drawn product still sends the whole plate.
+             * A drawn product sends its drawn VIAL, as a rendered specimen is
+             * sent, and leaves its set behind with the card: the bench it
+             * lands on sets it down on its own.
              */
-            <TravelsAs
-              name={
-                transition && !BENCH_PROTOTYPES.has(slug)
-                  ? armed
-                    ? names.plate(slug)
-                    : "auto"
-                  : null
-              }
-              share="vt-plate"
-            >
-              <SpecimenPlate
-                areaId={areaId}
-                world={world}
-                name={name}
-                presentations={presentations}
-                /* A store shelf is not a numbered register. */
-                index={variant === "store" ? undefined : index}
-                annotation={presentationRange ?? undefined}
-                size={format === "feature" ? "feature" : "card"}
-                travel={
-                  transition && BENCH_PROTOTYPES.has(slug)
-                    ? armed
-                      ? names.specimen(slug)
-                      : "auto"
-                    : null
-                }
-              />
-            </TravelsAs>
+            <SpecimenPlate
+              areaId={areaId}
+              world={world}
+              name={name}
+              presentations={presentations}
+              /* A store shelf is not a numbered register. */
+              index={variant === "store" ? undefined : index}
+              annotation={presentationRange ?? undefined}
+              size={format === "feature" ? "feature" : "card"}
+              travel={transition ? (armed ? names.specimen(slug) : "auto") : null}
+            />
           )}
         </span>
 
@@ -416,29 +398,6 @@ export function ProductCard({
         </>
       ) : null}
     </article>
-  );
-}
-
-/**
- * The vial transition: a named shared-element participant, or nothing at
- * all. Without a name the children render exactly as before — no boundary.
- * `auto` keeps the boundary (so arming never remounts the plate) but pairs with
- * nothing.
- */
-function TravelsAs({
-  name,
-  share,
-  children,
-}: {
-  name: string | null;
-  share: string;
-  children: ReactNode;
-}) {
-  if (!name) return children;
-  return (
-    <ViewTransition name={name} share={share} default="none">
-      {children}
-    </ViewTransition>
   );
 }
 

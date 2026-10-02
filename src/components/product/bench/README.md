@@ -1,10 +1,9 @@
 # The bench — every product's opening, in the bright field
 
-Prototype of 2026-10-02 (overnight session). The Living Laboratory baseline for
-the products that are not flagships: **every product is alive; flagships are
-simply allowed to become cinematic.** Shown only for the slugs in
-`prototypes.ts`; every other product still opens on `ProductPlate`. Removing a
-slug returns its page to exactly what it was.
+The Living Laboratory baseline for every product that is not a flagship:
+**every product is alive; flagships are simply allowed to become cinematic.**
+Prototyped on Semaglutide on 2026-10-02 and rolled out the same day to every
+product without a world, on the owner's approval. It replaced `ProductPlate`.
 
 ## See it
 
@@ -12,12 +11,12 @@ slug returns its page to exactly what it was.
 npm run build && npx next start -p 3110
 ```
 
-Open `/es/productos` and tap Semaglutide (the baseline), or open any of the
-stress tests directly: `tirzepatide`, `bac-water`, `lipo-c-with-b12`, `hcg`,
-`cjc-1295-without-dac-ipamorelin`, `dermorphin`,
-`healthy-hair-skin-nails-blend`. Development mode does not prefetch, so the
-flight from the card only plays in a production build (vial-transition
-README).
+Open `/es/productos` and tap Semaglutide (the enhanced tier: a render) or any
+drawn product. The products the grammar was stress-tested on: `tirzepatide`,
+`bac-water`, `lipo-c-with-b12`, `hcg`, `cjc-1295-without-dac-ipamorelin`,
+`dermorphin`, `healthy-hair-skin-nails-blend`. Development mode does not
+prefetch, so the flight from the card only plays in a production build
+(vial-transition README).
 
 ## The idea
 
@@ -105,7 +104,6 @@ different order of object.
 ## Files
 
 - `ProductBench.tsx` / `.module.css` — the opening
-- `prototypes.ts` — which products open on it
 - `../arrival.ts` — `useArrival`, shared with RETA's formation
 - `components/ui/SpecimenPlate.tsx` — `travel` (the drawn vial alone),
   `data-part` on the contact shadow, reflection and liquid
@@ -122,9 +120,9 @@ different order of object.
 2. **A feathered still shows its own box.** The feather has to fade out inside
    the image's box, or its straight edges appear; a round feather also crossed
    the set's horizon band and drew a ring.
-3. **The drawn plate's liquid sits behind the label.** A level that keeps flat
-   could never be seen; on the bench it fills to the shoulder (CSS only — the
-   plate everywhere else is unchanged).
+3. **The drawn plate's liquid sat behind the label**, where a level that keeps
+   flat could never be seen. It now fills to the shoulder, in the drawing
+   itself, so card and bench show the same vial (owner, 2026-10-02).
 4. **A back/forward within 2.5 s replayed a card arrival** with no flight (and
    held RETA's canvas): a history navigation now clears the arrival mark
    (`incoming.ts`).

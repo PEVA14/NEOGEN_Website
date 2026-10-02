@@ -199,16 +199,10 @@
   block-size: 100%;
 }
 
-/*
- * A liquid turns about its own surface, inside the glass (the physics). On
- * the bench it fills to the shoulder: the drawn plate's level sits behind the
- * label, where a level that keeps flat could never be seen. (The plate's own
- * level is unchanged everywhere else — PROJECT_STATE, the bench.)
- */
+/* A liquid turns about its own surface, inside the glass (the physics). */
 .lean :global([data-part="liquid"]) {
   transform-box: fill-box;
   transform-origin: 50% 1%;
-  translate: 0 -84px;
 }
 
 /* --- The caption rail -------------------------------------------------- */

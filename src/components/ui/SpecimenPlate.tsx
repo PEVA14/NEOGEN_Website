@@ -259,11 +259,15 @@ function VialObject({
       {/* Contents, clipped to the glass. */}
       <g clipPath={`url(#${id("body")})`}>
         {liquid ? (
-          /* The liquid in a group of its own, wider than the glass, so a page
-             can keep its surface level when the vial leans. */
+          /*
+           * Filled to the shoulder, so the surface shows above the label
+           * (owner, 2026-10-02 — it used to sit behind the label, where it
+           * could not be seen). In a group of its own, wider than the glass,
+           * so a page can keep the surface level when the vial leans.
+           */
           <g data-part="liquid">
-            <rect x="0" y="200" width="200" height="220" fill={`url(#${id("fill")})`} />
-            <ellipse cx="100" cy="200" rx="72" ry="4" fill="var(--vial-fill)" opacity="0.9" />
+            <rect x="0" y="116" width="200" height="220" fill={`url(#${id("fill")})`} />
+            <ellipse cx="100" cy="116" rx="72" ry="4" fill="var(--vial-fill)" opacity="0.9" />
           </g>
         ) : (
           <>

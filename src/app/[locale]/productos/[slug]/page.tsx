@@ -9,7 +9,6 @@ import {
   FlagshipInterlude,
   MediaStrip,
   PresentationLadder,
-  ProductPlate,
   ProductStage,
   SpecTable,
   WorldMaterial,
@@ -28,7 +27,6 @@ import { siteConfig } from "@/config/site";
 import { getWorld } from "@/config/worlds";
 import { commerceStill, galleryImages, productMedia, resolveStageStill } from "@/content/media";
 import { ProductBench, type BenchSpecimen } from "@/components/product/bench/ProductBench";
-import { BENCH_PROTOTYPES } from "@/components/product/bench/prototypes";
 import { specimenFor } from "@/components/vial-transition/specimens";
 import { compoundRecord, hasRecord, lineIds } from "@/content/compendium";
 import { termsInText } from "@/content/glossary";
@@ -62,10 +60,12 @@ import type { Metadata } from "next";
  * TWO TEMPLATES, ONE PAGE.
  * -----------------------
  * The three flagships open in `ProductStage`: their own Experience world, a
- * live 3D viewer, commerce inside the environment. The other ~83 open in
- * `ProductPlate`: the same information architecture in Quiet Mode with static
- * media. A world costs a GLB, an art direction and a WebGL context; 86 of them
- * is not a catalogue, it is 86 bespoke sites.
+ * live 3D viewer, commerce inside the environment. Every other product opens
+ * on `ProductBench`: the same information architecture, the product standing
+ * in its studio in the bright field — set down when it arrives, responsive at
+ * rest, quiet after (owner, 2026-10-02: "every product is alive; flagships are
+ * simply allowed to become cinematic"). A world costs a GLB, an art direction
+ * and a WebGL context; the bench costs images and CSS.
  *
  * Below the opening both are identical — specifications, documentation,
  * research, related compounds — because that spine is the product record, and
@@ -441,16 +441,15 @@ export default async function ProductPage({
 
   /* The bench: the split render the card travels from, or the drawing. */
   const benchRender = specimenFor(product.slug);
-  const bench: BenchSpecimen | null =
-    world || !BENCH_PROTOTYPES.has(product.slug)
-      ? null
-      : benchRender
-        ? {
-            kind: "render",
-            specimen: benchRender,
-            alt: commerceStill(product.slug)?.alt ?? product.name,
-          }
-        : { kind: "drawn", name: product.name, annotation: presentationRange(product) };
+  const bench: BenchSpecimen | null = world
+    ? null
+    : benchRender
+      ? {
+          kind: "render",
+          specimen: benchRender,
+          alt: commerceStill(product.slug)?.alt ?? product.name,
+        }
+      : { kind: "drawn", name: product.name, annotation: presentationRange(product) };
 
   return (
     <PageTransition>
@@ -491,8 +490,8 @@ export default async function ProductPage({
           </ProductStage>
         </Section>
       ) : bench ? (
-        /* The bench (prototype, `bench/prototypes.ts`): the product standing
-           in its studio, alive in the bright field. */
+        /* The bench: the product standing in its studio, alive in the
+           bright field (`components/product/bench`). */
         <Section mode="quiet" padded={false} aria-label={product.name}>
           <ProductBench
             slug={product.slug}
@@ -508,21 +507,7 @@ export default async function ProductPage({
             {commercePanel}
           </ProductBench>
         </Section>
-      ) : (
-        <Section mode="quiet" aria-label={product.name} className="max-md:pt-(--space-md)">
-          <Container width="full">
-            <ProductPlate
-              slug={product.slug}
-              name={product.name}
-              areaId={areas[0]?.id ?? null}
-              presentations={product.variants.length}
-              annotation={presentationRange(product)}
-            >
-              {commercePanel}
-            </ProductPlate>
-          </Container>
-        </Section>
-      )}
+      ) : null}
 
       {/* Supplementary photography, when it exists. Nothing today. */}
       {gallery.length > 0 ? (

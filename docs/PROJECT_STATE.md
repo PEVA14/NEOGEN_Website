@@ -1,10 +1,10 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-10-02** (overnight session): **the Living Laboratory
-baseline for every non-flagship product — "the bench" — is prototyped on
-Semaglutide and stress-tested on seven more, behind an allowlist, awaiting the
-owner's decision on whether it is the quality bar** (§8am: the grammar, the
-tiers, the asset audit and the rollout plan). Committed locally as
+Last updated **2026-10-02**: **every non-flagship product now opens on "the
+bench"** — the Living Laboratory baseline, approved by the owner after the
+overnight prototype on Semaglutide and rolled out the same day; `ProductPlate`
+is retired (§8am: the grammar, the tiers, the asset audit, the owner's four
+decisions). Committed locally as
 checkpoints, not pushed. RETA #3 and #4 (§8ak, §8al) are committed as a
 checkpoint too (`9e3fcfa`); #3 is approved directionally, #4 (always on, no
 button) awaits review. GLOW and GHK-Cu: not started, by instruction. Before that, the same day: **the specifications ribbon runs on phones too**
@@ -2548,8 +2548,8 @@ between the flight's start and the formation's end.
 
 ## 8am. The Living Laboratory baseline: the bench (2026-10-02, PROTOTYPE)
 
-**Status: prototype, behind `components/product/bench/prototypes.ts`, NOT
-rolled out, awaiting the owner's decision.** Commits `00b0d52` (the bench),
+**Status: approved and rolled out to every product without a world
+(2026-10-02, owner: "Yes"). The allowlist and `ProductPlate` are gone.** Commits `00b0d52` (the bench),
 `7a0c2ab` (shared settle curve and arrival), and the docs commit after them.
 Mechanism, grammar, tiers and traps: `components/product/bench/README.md`.
 
@@ -2615,24 +2615,26 @@ skin 4, materials 3, none 2 (dermorphin, b12-methylcobalamin). By form: solid
 - Falls back without going bland: no area → neutral studio stone; one
   presentation → no index; long names → two-line label; liquid → visible level.
 
-**Decisions for the owner.**
+**The owner's decisions (2026-10-02).**
 
-1. Is the bench the quality bar for the catalogue? (If yes: rollout below.)
-2. The drawn plate's liquid sits behind its label everywhere else; the bench
-   fills it to the shoulder so the level can be seen. Keep that on the bench
-   only, or adopt it on the cards too?
-3. Batch-render studio stills (enhanced tier) — and with which label?
-4. Semaglutide's still still carries DEMO_ARTWORK lines; the bench shows it
-   larger than the plate did.
+1. **The bench is the bar** — rolled out to every non-flagship product.
+2. **Liquids fill to the shoulder everywhere** (option B): in the drawing
+   itself (`SpecimenPlate`), so the card and the bench show the same vial and
+   the level that keeps flat can be seen.
+3. **No batch renders yet.** The owner plans a final 3D vial with its
+   contents (liquid or powder) and still has to finish the final label; the
+   enhanced tier waits for both. Do not run `capture-studio` for more products
+   until then.
+4. **Semaglutide's still keeps its DEMO_ARTWORK lines for now**, larger on the
+   bench than on the plate; accepted until the final label (still a launch
+   blocker, §6).
 
-**Recommended rollout (not started).** (1) Owner approves the bench on
-Semaglutide. (2) Flip the allowlist to "every product without a world" in one
-commit (the drawn tier needs no assets) and walk one product per area and per
-form on desktop and phone. (3) Make the drawn vial travel alone for every
-product (`SpecimenPlate travel`; DEFERRED_POLISH). (4) Retire `ProductPlate`
-once nothing uses it. (5) Enhanced tier per product as renders are approved:
-`capture-studio` → `capture-specimen` → `check:media`. (6) Record the bench in
-CONVENTIONS §11 alongside the vial transition and the ribbon.
+**Rolled out (2026-10-02).** The page chooses the world or the bench; every
+drawn product sends its drawn vial alone from its card (the whole-plate flight
+and `names.plate` are gone); `ProductPlate` and the allowlist are deleted;
+CONVENTIONS §11 records the bench's rules. Walked one product per area and per
+form (BPC157, Melanotan 1, MGF, Epithalon, PE-22-28, Sterile Water,
+L-carnitine, Cagrilintide, Dermorphin) at 1440 and 390.
 
 ## 8al. Flagship idea #4: the specimen under inspection (2026-10-02, PROTOTYPE)
 

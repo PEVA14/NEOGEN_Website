@@ -500,6 +500,28 @@ held to these rules:
   rule to fit any of them — the panel as long as what it holds, never
   per-product sizes.
 
+**Every other product opens on the bench (owner decision, 2026-10-02).** "Every
+product is alive; flagships are simply allowed to become cinematic." A product
+without a world stands in its studio, in the bright field —
+`components/product/bench/` (its README has the grammar, the tiers and the
+traps). It is held to these rules:
+
+- images, SVG and CSS only — the bench never mounts a canvas; live 3D, a
+  world and bespoke choreography stay the flagships';
+- what varies comes from data or assets only: the discovery area (the
+  bench's material, 6% of the area's hue), the physical form (a liquid keeps
+  level), the presentations, the composition, and whether a split studio
+  render exists (`specimens.json`: the enhanced tier). Never a visual family
+  that implies a scientific relationship;
+- the formation keys off `useArrival` (`components/product/arrival.ts`, shared
+  with RETA's): after a card tap it plays with the flight; on a direct entry
+  it is CSS from the first paint; under reduced motion it does not exist;
+- after it, nothing moves but what a pointer or a choice of presentation moves,
+  and the rail shows only verified registry data;
+- the openings (`ProductStage`, `ProductBench`) are the product page's
+  Experience moments and live in `components/product`, beside the record they
+  open — the one place outside `components/experience` with client motion.
+
 What a V1 product viewer does:
 
 - holds a stable composition, anchored to a measured DOM box;

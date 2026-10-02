@@ -72,7 +72,6 @@ export function specimenFor(slug: string): Specimen | null {
 export const names = {
   /** A flagship card's stage, and the world it opens into on the product page. */
   world: (slug: string) => `vt-world-${slug}`,
+  /** A rendered cut-out, or a drawn product's drawn vial. */
   specimen: (slug: string) => `vt-specimen-${slug}`,
-  /** Products with no still: their drawn plate travels whole. */
-  plate: (slug: string) => `vt-plate-${slug}`,
 };

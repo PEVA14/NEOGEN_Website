@@ -13,9 +13,8 @@
 > - **Products with no studio still travel as a whole drawn plate**, not as an
 >   object leaving its set. Fix: split `SpecimenPlate` the way the stills are
 >   split. Today that is 81 of 85 products, all Quiet Mode.
->   **Partly done (2026-10-02):** `SpecimenPlate travel` sends the drawn vial
->   alone — used by the products that open on the bench prototype
->   (PROJECT_STATE §8am). It becomes the rule if the bench is rolled out.
+>   **Done (2026-10-02):** every drawn product sends its drawn vial alone
+>   (`SpecimenPlate travel`) and lands on the bench (PROJECT_STATE §8am).
 
 > **Phase 12.1 update (2026-09-14) — discovery area depth.** Deferred on
 > purpose, each for a stated reason:
