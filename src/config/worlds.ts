@@ -43,11 +43,27 @@ export interface WorldEnvironment {
   materialFocus: "glass" | "light" | "metal";
 }
 
+/**
+ * How the world forms around its specimen at the top of the product page
+ * (`components/product/formation.ts`). `null`: the world is simply there.
+ *
+ *   calibration  RETA — the store's light goes out, the world's cold light
+ *                travels with the specimen, and the instrument's lines are
+ *                projected outward from the specimen's axes as it lands.
+ */
+export type WorldFormation = "calibration";
+
 export interface ProductWorld {
   id: WorldId;
   /** Brand name — a proper noun, not translated copy. */
   label: string;
   environment: WorldEnvironment;
+  formation: WorldFormation | null;
+  /**
+   * Whether the product page's live specimen can be put under inspection
+   * (`components/product/SpecimenInspection`, flagship idea #4). RETA first.
+   */
+  inspection: boolean;
 }
 
 export const worlds: Record<WorldId, ProductWorld> = {
@@ -60,6 +76,8 @@ export const worlds: Record<WorldId, ProductWorld> = {
       atmosphere: "restrained",
       materialFocus: "glass",
     },
+    formation: "calibration",
+    inspection: true,
   },
   glow: {
     id: "glow",
@@ -70,6 +88,8 @@ export const worlds: Record<WorldId, ProductWorld> = {
       atmosphere: "luminous",
       materialFocus: "light",
     },
+    formation: null,
+    inspection: false,
   },
   "ghk-cu": {
     id: "ghk-cu",
@@ -80,6 +100,8 @@ export const worlds: Record<WorldId, ProductWorld> = {
       atmosphere: "tactile",
       materialFocus: "metal",
     },
+    formation: null,
+    inspection: false,
   },
 };
 

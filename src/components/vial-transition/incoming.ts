@@ -24,7 +24,12 @@ export interface OriginRect {
   height: number;
 }
 
-let pending: { slug: string; at: number; origin: OriginRect | null } | null = null;
+let pending: {
+  slug: string;
+  at: number;
+  origin: OriginRect | null;
+  specimen: OriginRect | null;
+} | null = null;
 
 /** Whether a view transition can play at all in this browser, for this user. */
 export function transitionWillPlay(): boolean {
@@ -33,9 +38,29 @@ export function transitionWillPlay(): boolean {
   return !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-export function markIncoming(slug: string, origin: OriginRect | null = null): void {
+/**
+ * `origin` is the card's whole media box (where a world's circle opens);
+ * `specimen` the vial's own box inside it, which on a flagship card is off to
+ * one side (where a world's light starts — `product/formation.ts`).
+ */
+export function markIncoming(
+  slug: string,
+  origin: OriginRect | null = null,
+  specimen: OriginRect | null = null,
+): void {
   if (!transitionWillPlay()) return;
-  pending = { slug, at: performance.now(), origin };
+  pending = { slug, at: performance.now(), origin, specimen };
+}
+
+/** The box a card's element occupied on screen, if there is one. */
+export function boxOf(element: Element | null | undefined): OriginRect | null {
+  const r = element?.getBoundingClientRect();
+  return r ? { x: r.left, y: r.top, width: r.width, height: r.height } : null;
+}
+
+/** The specimen's own box on the card it left, else the card's media box. */
+export function incomingSpecimen(slug: string): OriginRect | null {
+  return isIncoming(slug) ? (pending?.specimen ?? pending?.origin ?? null) : null;
 }
 
 /** The origin of a specimen arriving at this product's page, if one is. */

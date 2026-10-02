@@ -1,0 +1,130 @@
+/*
+ * The specimen under inspection. See SpecimenInspection.tsx.
+ *
+ * Everything that moves is a box the size of the media frame, moved by
+ * `translate` in percentages of ITSELF — so of the frame — and drawn by a
+ * pseudo-element at its origin. The scene writes those translations once a
+ * frame; layout never runs for them.
+ */
+
+/*
+ * It takes a finger: a horizontal drag turns the vial, a vertical one still
+ * scrolls the page. A mouse's events pass up to the stage, which turns the
+ * vial as the cursor crosses it.
+ */
+.layer {
+  position: absolute;
+  inset: 0;
+  /* The frame (`.media`) takes no pointer, and that is inherited. */
+  pointer-events: auto;
+  touch-action: pan-y;
+}
+
+.geometry {
+  position: absolute;
+  inset: 0;
+  /* Comes up once the live vial has drawn — after #3's formation. */
+  transition: opacity var(--cinematic-duration-sm) var(--ease-standard);
+
+  @starting-style {
+    opacity: 0;
+  }
+}
+
+.markAcross,
+.markDown,
+.spanAcross,
+.spanDown,
+.index,
+.reading {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* The span read off a scale: the edge's own line, in the world's accent. */
+.spanAcross,
+.spanDown {
+  transform-origin: 0 0;
+}
+
+.spanAcross::before,
+.spanDown::before,
+.markAcross::before,
+.markDown::before,
+.index::before {
+  content: "";
+  position: absolute;
+  inset-block-start: -1px;
+  inset-inline-start: -1px;
+}
+
+.spanAcross::before {
+  inline-size: 100%;
+  block-size: 1px;
+  background-color: var(--world-accent);
+}
+
+.spanDown::before {
+  inline-size: 1px;
+  block-size: 100%;
+  background-color: var(--world-accent);
+}
+
+/*
+ * The extent marks: where the silhouette reaches, on the scale. Longer than
+ * the graduations they stand among (0.75rem), in the world's light ink.
+ */
+.markAcross::before {
+  inline-size: 1px;
+  block-size: 1.125rem;
+  background-color: var(--ink-primary);
+}
+
+.markDown::before {
+  inline-size: 1.125rem;
+  block-size: 1px;
+  background-color: var(--ink-primary);
+}
+
+/* The label's index: out of the frame, up to its reading. */
+.index {
+  opacity: 0;
+}
+
+.index::before {
+  inset-block-start: calc(-1px - 0.625rem);
+  inline-size: 1px;
+  block-size: 0.625rem;
+  background-color: var(--ink-primary);
+}
+
+/* The reading: instrument output, above the top edge, from the index. */
+.reading {
+  opacity: 0;
+}
+
+.readingText {
+  position: absolute;
+  inset-block-end: calc(100% + 0.875rem);
+  inset-inline-start: 0.5rem;
+  display: grid;
+  gap: 0.15em;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  line-height: 1.3;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--ink-secondary);
+}
+
+.readingText > :first-child {
+  color: var(--ink-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .geometry {
+    transition-duration: var(--motion-duration-fast);
+  }
+}

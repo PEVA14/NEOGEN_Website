@@ -28,6 +28,7 @@ import {
 } from "./choreography";
 import { studioEnvironment } from "./studio/optics";
 import { WORLD_RIGS, type StudioRig } from "./studio/rig";
+import type { SpecimenProbe } from "./specimenProbe";
 import { VialModel, type PointerState, type StageAnchor } from "./VialModel";
 import type { WorldPalette } from "./worldPalette";
 
@@ -251,6 +252,8 @@ export interface RetaCanvasProps {
   anchor?: RefObject<StageAnchor | null>;
   /** Cursor over the stage. Product page only; absent on touch. */
   pointer?: RefObject<PointerState>;
+  /** Product page: where the specimen stands, for its inspection. */
+  probe?: RefObject<SpecimenProbe | null>;
   /**
    * Cover the positioned box the canvas is mounted in, rather than taking the
    * layout's own size. The product page mounts it in the media frame's live
@@ -411,6 +414,7 @@ export function SceneContents({
   variant,
   anchor,
   pointer,
+  probe,
   detached = false,
 }: Omit<RetaCanvasProps, "fill" | "onFirstFrame"> & {
   /** A scene built only to be prepared: shows a copy of the vial. */
@@ -472,6 +476,7 @@ export function SceneContents({
         variant={variant}
         anchor={anchor}
         pointer={pointer}
+        probe={probe}
         detached={detached}
       />
     </>

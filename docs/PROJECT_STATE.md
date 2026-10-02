@@ -1,6 +1,9 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-10-01**: **the specifications ribbon runs on phones too**
+Last updated **2026-10-02**: **flagship idea #4 ("the specimen under
+inspection") is prototyped on RETA, uncommitted, awaiting the owner's review**
+(§8al, brief recorded there). #3 ("the world comes out of the product",
+§8ak) is **approved directionally**, also still uncommitted. Before that, the same day: **the specifications ribbon runs on phones too**
 — upright, the vial whole across the top, its label's name and range rolling
 off as the band unrolls down into the panel (§8ai). **Flagship idea #2 ("the
 label unrolls into the data sheet") is done and permanent; #3 is next — not
@@ -2481,6 +2484,110 @@ that off for its scroll-to-top unless `<html data-scroll-behavior="smooth">`
 is set. In Safari a new page therefore painted at the old page's scroll
 position and glided up. `app/[locale]/layout.tsx` now sets the attribute;
 in-page anchors stay smooth. Verified in iOS 26.3 Safari (simulator).
+
+## 8ak. Flagship idea #3: the world comes out of the product (2026-10-01, PROTOTYPE)
+
+**Status: approved directionally by the owner (2026-10-02: "I like the
+result. Preserve it"); RETA only, NOT committed.** Do not extend it to GLOW or
+GHK-Cu, or anywhere else, until the owner says.
+
+**The brief (owner, 2026-10-01), condensed.** #1 established that the
+specimen persists across surfaces; #2 that it can become information; #3 that
+it can transform its environment — "the product doesn't enter a world, the
+product creates its world." The owner wants one continuous causal sequence
+(catalogue → specimen leaves the card → the environment responds during
+travel → it lands → the RETA world finishes forming → Quiet Mode), with no
+seam where "the page transition ends and the RETA animation begins". RETA's
+vocabulary: precision, measurement, calibration, controlled light, technical
+instrumentation, "a beautifully engineered scientific instrument waking up
+around a specimen". Explicitly refused: a literal circle expanding from the
+vial, generic HUD, scanning lines, neon grids, particles, glowing borders,
+sci-fi overlays, decorative data; scroll hijacking; fake delays; unsupported
+specification data. Direct entry gets a restrained initialization of its own,
+never a fake catalogue flight. Reduced motion and accessibility preserved.
+The owner allowed Motion / Motion+ / `motion/three` if they materially help.
+This is an owner-directed exception to "worlds physically transforming the
+interface" being deferred to V2 (CONVENTIONS §11).
+
+**What was built (a "calibration").** `config/worlds.ts` gives RETA
+`formation: "calibration"`; `components/product/formation.ts` decides the
+arrival (`specimen` after a card tap, `direct` otherwise) and measures where
+the light starts; the motion is CSS in `ProductStage.module.css`
+("Formation") plus one rule in `vial-transition.css`.
+
+- After a card tap, RETA's world no longer opens as a circle (GLOW and
+  GHK-Cu still do): the store dims evenly, and the world's light — its
+  atmosphere, made an element — leaves the card with the vial, gathered round
+  it, on the flight's own curve. The page's type waits for the dark
+  (`html[data-world-forming]`).
+- As the vial lands, the instrument is projected from the specimen's axes:
+  each frame edge grows from its midpoint, the column rule from the vial's
+  height, the caption rail from its axis; the registration marks lock at the
+  corners; the graduations spread to their pitch; the light rises off the vial
+  into its resting wash; the ghosted name is exposed as it passes.
+- The canvas stays unmounted until the light's animation ends (~1.7 s after
+  the tap), so its boot never shares a frame with motion; the stand-in is the
+  live vial's first frame, so the only visible effect is that the vial starts
+  to turn once the instrument is complete.
+- Direct entry: the same projection, shorter, from the first paint
+  (server-rendered, no JavaScript needed); the light warms in place.
+- Only `transform` and `opacity` move. No new dependency: Motion+'s easing
+  generator supplied two springs, baked into CSS `linear()`.
+- Also fixed on the way, for all three flagships: while the canvas booted, the
+  media well drew the world's interior material study (RETA's graticule)
+  behind the stand-in, which then vanished under the live vial.
+
+Evaluated on a production build in headless Chrome, at 1440×900 and 390×844,
+from the catalogue grid, the phone strip and by direct URL; reduced motion;
+GLOW's circle unchanged; at 4× CPU throttle on the phone there is no long task
+between the flight's start and the formation's end.
+
+## 8al. Flagship idea #4: the specimen under inspection (2026-10-02, PROTOTYPE)
+
+**Status: prototype on RETA only, NOT committed, awaiting the owner's review.**
+
+**The brief (owner, 2026-10-02), condensed.** After #1–#3 have settled into
+Quiet Mode, make the live RETA specimen feel genuinely inspectable — "an
+object being examined by an instrument" — rewarding someone who stays,
+without becoming another cinematic sequence or a dashboard. Not a literal
+"three callout lines". Refused: sci-fi HUDs, crosshairs, floating holographic
+labels, fake or random measurements, excessive callouts, constant motion,
+decorative data. Every displayed fact must come from existing product
+data/content; abstract instrument geometry is fine. Overlays that track the
+3D object must be derived from the real camera/model. The settled page stays
+quiet. Test mouse, touch, keyboard, reduced motion and resizing.
+
+**What was built.** `config/worlds.ts` gives RETA `inspection: true`;
+`components/product/SpecimenInspection.tsx` (+ `.module.css`) is the page side;
+`components/experience/specimenProbe.ts` measures the model.
+
+- **Always on, no control** (owner, 2026-10-02: "remove the inspeccionar
+  button and make its use be always on, since it's something very simple").
+  A first version had an `[ INSPECCIONAR ]` toggle that stopped the turn and
+  presented the label; both went with the button. It fades in once the live
+  vial has drawn — after a card tap, after #3's formation.
+- The vial keeps its slow turn. The frame's graduated edges read the
+  specimen's extent — a mark at each side of the silhouette and the span
+  between, on the scale, never on the object, and with no numbers (no
+  verified dimension exists). An index on the top edge follows the label's
+  front and carries the reading: the product's name and `researchUse.label`,
+  both existing copy. It shows while the label faces the lens and fades as it
+  turns away, so it comes and goes with each revolution.
+- Turning it: the cursor as before; a horizontal drag across the frame on a
+  touch screen (`touch-action: pan-y`, so the page still scrolls).
+- All positions are projected from the posed model through the scene's camera
+  each frame (rims of each part for the silhouette; the label mesh's front
+  for the index), so they hold through turning and resizing.
+- Reduced motion: the vial does not move; marks and reading show for the
+  resting pose.
+- Measured with the first version: no long tasks and unchanged frame times
+  (median 16.6 ms at 4× CPU throttle) while measuring and turning.
+
+**Known limits.** The reading sits beside the DRAFT label ("70 MG", "99%
+PURITY", a lot number and expiry — `DEMO_ARTWORK`, §6.6a) and deliberately
+repeats none of it, but the replacement label should be
+checked against the reading before launch. The selected presentation would
+be the natural second reading once the label no longer states a strength.
 
 ## 8aj. The homepage: the vial from the first paint, and no work mid-scroll (2026-10-01)
 

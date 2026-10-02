@@ -93,6 +93,8 @@ export function SpecimenLayers({
         >
           <span
             className={styles.specimen}
+            /* Found by the card on tap: where a world's light starts. */
+            data-specimen=""
             style={{
               left: pct(box.x),
               top: pct(box.y),

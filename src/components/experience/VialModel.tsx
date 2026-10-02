@@ -15,6 +15,12 @@ import type { StudioRig } from "./studio/rig";
 import type { StageTier } from "@/hooks/useStageTier";
 
 import {
+  measureSpecimen,
+  readSpecimen,
+  type SpecimenGeometry,
+  type SpecimenProbe,
+} from "./specimenProbe";
+import {
   CAMERA_Z,
   IDLE_FLOAT,
   IDLE_ROTATION,
@@ -98,6 +104,8 @@ type LoadedGltf = { scene: Group };
 /** A vial with the rig's finish applied, ready to be placed in any scene. */
 interface PreparedVial {
   root: Group;
+  /** The printed label's mesh, if the model has one: what inspection reads. */
+  label: Mesh | null;
 }
 
 /* One backlight card per rig for the page, like the prepared vial: a shared
@@ -165,6 +173,7 @@ function preparedVial(
   root.scale.setScalar(scale);
   root.position.set(-centre.x * scale, -centre.y * scale, -centre.z * scale);
 
+  let labelMesh: Mesh | null = null;
   root.traverse((child) => {
     if (!(child instanceof Mesh) || !(child.material instanceof MeshStandardMaterial)) return;
 
@@ -199,6 +208,7 @@ function preparedVial(
      * `RetaCanvas`).
      */
     const finish = finishMaterial(child, material, rig, size.y);
+    if (finish === "label") labelMesh = child;
 
     /*
      * A PHONE'S LABEL AT 1024. The printed sheet ships at 2048², and uploading
@@ -210,7 +220,7 @@ function preparedVial(
     if (finish === "label" && label !== null) shrinkMap(material, label);
   });
 
-  return (byTier[key] = { root });
+  return (byTier[key] = { root, label: labelMesh });
 }
 
 /**
@@ -266,6 +276,8 @@ interface VialModelProps {
   anchor?: RefObject<StageAnchor | null>;
   /** Cursor over the stage. Presenter variant only; absent on touch. */
   pointer?: RefObject<PointerState>;
+  /** Presenter only: reports where the specimen stands, while enabled. */
+  probe?: RefObject<SpecimenProbe | null>;
 }
 
 export function VialModel({
@@ -277,6 +289,7 @@ export function VialModel({
   variant,
   anchor,
   pointer,
+  probe,
   detached = false,
 }: VialModelProps) {
   const gltf = useLoader(GLTFLoader, modelPath);
@@ -304,6 +317,8 @@ export function VialModel({
   const pitch = useRef(0);
   const shiftX = useRef(0);
   const shiftY = useRef(0);
+  /** The model's geometry, measured once for the inspection's readings. */
+  const specimen = useRef<SpecimenGeometry | null>(null);
 
   /*
    * Prepared once per page and shared (see `preparedVial` below), so it is
@@ -326,6 +341,14 @@ export function VialModel({
   useEffect(() => {
     invalidate();
   }, [invalidate, viewport.width, viewport.height]);
+
+  // An inspection opened on a still frame (reduced motion) asks for one.
+  useEffect(() => {
+    const listener = probe?.current;
+    if (!listener) return;
+    listener.connect(invalidate);
+    return () => listener.connect(null);
+  }, [probe, invalidate]);
 
   /** Resolves the full pose at a given progress. */
   const applyPose = (at: number, time: number | null) => {
@@ -453,6 +476,12 @@ export function VialModel({
         pose.rotZ,
       );
       node.scale.setScalar(pose.scale);
+
+      const listener = probe?.current;
+      if (listener?.listening()) {
+        specimen.current ??= measureSpecimen(node, model.label);
+        listener.report(readSpecimen(node, state.camera, specimen.current));
+      }
       return;
     }
 

@@ -102,6 +102,28 @@
 }
 
 /*
+ * A WORLD THAT FORMS (RETA — `product/formation.ts`) does not open as a
+ * circle. The store's light simply goes out, evenly, while the specimen
+ * travels: the world's ground comes up over the catalogue, and what comes out
+ * of the card is the world's LIGHT, which travels inside this layer with the
+ * vial (ProductStage.module.css, "Formation"). A shape opening from the card
+ * would say the world is a place the vial is carried into; the light says the
+ * vial brings it.
+ *
+ * Name AND class, so this outranks the class rule above.
+ */
+::view-transition-new(vt-world-reta.vt-world) {
+  mask-image: none;
+  animation: 420ms cubic-bezier(0.3, 0, 0.2, 1) both vt-fade-in;
+}
+
+/* …and the page's own type comes up once the room is dark, not over the
+   catalogue as it dims (`data-world-forming`, set by `product/formation.ts`). */
+html[data-world-forming]::view-transition-new(.vt-page-in) {
+  animation-delay: 300ms;
+}
+
+/*
  * The circle is three registered properties, so the browser can interpolate
  * the mask it draws: its radius, and a centre that starts on the card and
  * drifts to where the object lands. It ends large enough that the feathered

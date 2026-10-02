@@ -316,3 +316,424 @@
     display: none;
   }
 }
+
+/* --- Formation: the world comes out of the product ------------------------
+ *
+ * Flagship idea #3, RETA first (`formation.ts`, `config/worlds.ts`). The
+ * world is not a place the specimen is carried into; the specimen brings it.
+ *
+ *   1. The store's light goes out, evenly, while the vial travels
+ *      (vial-transition.css). What leaves the card with the vial is the
+ *      world's LIGHT — the atmosphere below, small and close around it.
+ *   2. As it lands, the instrument is projected outward from the specimen's
+ *      axes: each edge of the frame grows from the point the specimen's axis
+ *      crosses it, the column rule from its height, the caption rail from its
+ *      axis. Nothing is drawn round the vial and nothing crosses it — no
+ *      bounding box, no crosshair — the axes are only where every line
+ *      begins.
+ *   3. The registration marks lock where the edges meet; the graduations
+ *      spread to their pitch from the same axes; the light rises off the vial
+ *      to where it rests, above, and the name across the field is exposed as
+ *      it passes.
+ *   4. Then nothing moves but the vial, which starts to turn once the
+ *      instrument around it is complete: Quiet Mode.
+ *
+ * The vial is at the media frame's centre (the live box is the frame grown
+ * evenly — liveFrame.ts), so "from the specimen's axes" is `50%` of the frame,
+ * in CSS alone, for both arrivals.
+ *
+ * Only `transform` (as `scale`/`translate`) and `opacity` move: the
+ * compositor runs all of it. Under reduced motion none of it exists — the
+ * page is its own end state.
+ */
+
+.stage[data-formation] {
+  /*
+   * Springs, as CSS (Motion+'s easing generator, baked into `linear()`).
+   * `--wf-settle`: critically damped, 0.45 s perceived — an instrument's
+   * needle coming to rest, with no overshoot (nothing in RETA bounces).
+   * (`--wf-rise`, overdamped, 0.7 s — starts at once, settles slowly — is
+   * written into the light's keyframes, which cannot read a variable.)
+   */
+  --wf-settle: linear(
+    0,
+    0.0507,
+    0.1614,
+    0.2915,
+    0.4192,
+    0.5342,
+    0.6326,
+    0.714,
+    0.7796,
+    0.8317,
+    0.8723,
+    0.9038,
+    0.9279,
+    0.9462,
+    0.96,
+    0.9704,
+    0.9781,
+    0.9839,
+    0.9882,
+    0.9913,
+    0.9937,
+    0.9954,
+    0.9966,
+    0.9975,
+    0.9982,
+    0.9987,
+    1
+  );
+  --wf-settle-time: 800ms;
+}
+
+/*
+ * One clock, from the moment the new page is committed — which, after a card
+ * tap, is when the flight begins (760 ms, `--vt-flight`). The instrument
+ * starts deploying a little BEFORE the vial lands, so there is no instant at
+ * which the transition has ended and an effect begins.
+ */
+.stage[data-arrival="specimen"] {
+  --wf-edges: 560ms;
+  --wf-rails: 660ms;
+  --wf-name: 820ms;
+  --wf-marks: 880ms;
+  --wf-ticks: 940ms;
+}
+
+/* Nothing travelled: the specimen stands there and the instrument wakes. */
+.stage[data-arrival="direct"] {
+  --wf-edges: 80ms;
+  --wf-rails: 160ms;
+  --wf-name: 240ms;
+  --wf-marks: 380ms;
+  --wf-ticks: 440ms;
+}
+
+/* The light: the world's atmosphere as an object, so it can move. */
+.stage[data-formation] .field {
+  position: relative;
+  overflow: clip;
+  background-image: none;
+}
+
+/*
+ * Centred on the stage's top edge, with the same ellipse the world's
+ * `--world-atmosphere` draws (120% × 90% of the stage, at its top centre): at
+ * rest it is that wash exactly. Its centre is the light's transform origin,
+ * so `translate` puts the light's centre anywhere.
+ *
+ * 1.6× the stage's width and 2× its height, so the ellipse has faded out
+ * (at 65% of its radius) before it reaches the element's edges. At the
+ * stage's own width its sides were cut straight, which the stage hid at rest
+ * and which showed as a lit rectangle the moment the light was scaled down.
+ */
+.light {
+  position: absolute;
+  inset-inline: -30%;
+  inset-block-start: -100%;
+  block-size: 200%;
+  background-image: radial-gradient(
+    75% 45% at 50% 50%,
+    color-mix(in oklab, var(--world-accent) 22%, transparent) 0%,
+    transparent 65%
+  );
+}
+
+/*
+ * The same light, gathered: while it travels with the vial it is held close
+ * round it and so reads denser, and it disperses as the vial lands and the
+ * light opens. Round, a little wider than the media frame, and never drawn
+ * at rest — after a direct arrival, never at all.
+ */
+.lightCore {
+  --core: calc(var(--well-inline) * 1.5);
+
+  position: absolute;
+  inset-inline-start: 50%;
+  inset-block-start: 0;
+  inline-size: var(--core);
+  block-size: var(--core);
+  margin-inline-start: calc(var(--core) / -2);
+  margin-block-start: calc(var(--core) / -2);
+  background-image: radial-gradient(
+    closest-side,
+    color-mix(in oklab, var(--world-accent) 24%, transparent) 0%,
+    color-mix(in oklab, var(--world-accent) 9%, transparent) 50%,
+    transparent 100%
+  );
+  opacity: 0;
+}
+
+/* The frame's edges are lines rather than a border, so each can grow. */
+.stage[data-formation] .media {
+  border-color: transparent;
+}
+
+.edges {
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+}
+
+.edges > span {
+  position: absolute;
+  background-color: var(--border-subtle);
+}
+
+.edges > [data-edge="top"],
+.edges > [data-edge="bottom"] {
+  inset-inline: 0;
+  block-size: 1px;
+}
+
+.edges > [data-edge="top"] {
+  inset-block-start: 0;
+}
+
+.edges > [data-edge="bottom"] {
+  inset-block-end: 0;
+}
+
+.edges > [data-edge="left"],
+.edges > [data-edge="right"] {
+  inset-block: 0;
+  inline-size: 1px;
+}
+
+.edges > [data-edge="left"] {
+  inset-inline-start: 0;
+}
+
+.edges > [data-edge="right"] {
+  inset-inline-end: 0;
+}
+
+/* The caption rail and the column rule, likewise. */
+.stage[data-formation] .caption {
+  border-block-start-color: transparent;
+}
+
+.stage[data-formation] .caption::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: -1px;
+  block-size: 1px;
+  background-color: var(--border-subtle);
+}
+
+@media (min-width: 64rem) {
+  .stage[data-formation] .commerce {
+    border-inline-start-color: transparent;
+  }
+
+  .stage[data-formation] .commerce::before {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: -1px;
+    inline-size: 1px;
+    background-color: var(--border-subtle);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .stage[data-arrival="specimen"] .light {
+    animation: wf-light-travel 1450ms linear both;
+  }
+
+  .stage[data-arrival="specimen"] .lightCore {
+    animation:
+      wf-core-travel 1450ms linear both,
+      wf-core-gather 1450ms linear both;
+  }
+
+  .stage[data-arrival="direct"] .light {
+    animation: wf-light-wake 1100ms var(--ease-standard) both;
+  }
+
+  .stage[data-formation] .edges > [data-edge="top"],
+  .stage[data-formation] .edges > [data-edge="bottom"],
+  .stage[data-formation] .caption::before,
+  .stage[data-formation] [data-world-material] > [data-edge="top"] {
+    animation: wf-project-x var(--wf-settle-time) var(--wf-settle) var(--wf-edges) both;
+  }
+
+  .stage[data-formation] .edges > [data-edge="left"],
+  .stage[data-formation] .edges > [data-edge="right"],
+  .stage[data-formation] .commerce::before,
+  .stage[data-formation] [data-world-material] > [data-edge="left"] {
+    animation: wf-project-y var(--wf-settle-time) var(--wf-settle) var(--wf-edges) both;
+  }
+
+  /* Further from the specimen, a beat later. */
+  .stage[data-formation] .caption::before,
+  .stage[data-formation] .commerce::before {
+    animation-delay: var(--wf-rails);
+  }
+
+  /* The graduations spread from the same axes to their pitch. */
+  .stage[data-formation] [data-world-material] > [data-edge] {
+    animation-delay: var(--wf-ticks);
+  }
+
+  .stage[data-formation] .media::before {
+    animation: wf-register-start 600ms var(--wf-settle) var(--wf-marks) both;
+  }
+
+  .stage[data-formation] .media::after {
+    animation: wf-register-end 600ms var(--wf-settle) var(--wf-marks) both;
+  }
+
+  .stage[data-formation] .caption > * {
+    animation: wf-expose 500ms var(--ease-standard) var(--wf-marks) both;
+  }
+
+  /* The name across the field, exposed as the light passes over it. */
+  .stage[data-formation] .wordmarkLayer {
+    animation: wf-expose 1100ms var(--ease-standard) var(--wf-name) both;
+  }
+}
+
+/*
+ * The light leaves the card with the vial, on the flight's own curve and
+ * clock (`--vt-travel`, 760 ms of 1450 = 52.4%), held close around it; then
+ * rises off it to its rest, opening into the world's wash (`--wf-rise`).
+ *
+ * The curves are written out: a keyframe's own `animation-timing-function`
+ * does not resolve `var()` and silently falls back to linear — the light
+ * then trailed the vial by a third of the screen.
+ */
+@keyframes wf-light-travel {
+  from {
+    translate: var(--wf-x0, 0px) var(--wf-y0, 0px);
+    scale: var(--wf-s0x, 0.16) var(--wf-s0y, 0.16);
+    animation-timing-function: cubic-bezier(0.35, 0.05, 0.28, 0.95);
+  }
+
+  52.4% {
+    translate: var(--wf-x1, 0px) var(--wf-y1, 0px);
+    scale: var(--wf-s1x, 0.3) var(--wf-s1y, 0.3);
+    animation-timing-function: linear(
+      0,
+      0.0681,
+      0.1838,
+      0.2969,
+      0.3972,
+      0.4839,
+      0.5583,
+      0.622,
+      0.6765,
+      0.7232,
+      0.7631,
+      0.7973,
+      0.8265,
+      0.8516,
+      0.873,
+      0.8913,
+      0.907,
+      0.9204,
+      0.9319,
+      0.9417,
+      0.9501,
+      0.9573,
+      0.9635,
+      0.9687,
+      0.9733,
+      0.9771,
+      0.9804,
+      0.9832,
+      0.9857,
+      0.9877,
+      0.9895,
+      0.991,
+      0.9923,
+      0.9934,
+      0.9944,
+      0.9952,
+      0.9959,
+      0.9965,
+      0.997,
+      0.9974,
+      0.9978,
+      1
+    );
+  }
+
+  to {
+    translate: 0 0;
+    scale: 1;
+  }
+}
+
+@keyframes wf-core-travel {
+  from {
+    translate: var(--wf-x0, 0px) var(--wf-y0, 0px);
+    animation-timing-function: cubic-bezier(0.35, 0.05, 0.28, 0.95);
+  }
+
+  52.4%,
+  to {
+    translate: var(--wf-x1, 0px) var(--wf-y1, 0px);
+  }
+}
+
+/* Gathered as the store's light goes out; dispersed as the light opens. */
+@keyframes wf-core-gather {
+  from {
+    opacity: 0;
+    animation-timing-function: cubic-bezier(0.3, 0, 0.2, 1);
+  }
+
+  22%,
+  52.4% {
+    opacity: 1;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+  }
+
+  85%,
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes wf-light-wake {
+  from {
+    opacity: 0;
+    scale: 0.9;
+  }
+}
+
+@keyframes wf-project-x {
+  from {
+    scale: 0 1;
+  }
+}
+
+@keyframes wf-project-y {
+  from {
+    scale: 1 0;
+  }
+}
+
+/* The marks travel out with the edges and lock on the corners. */
+@keyframes wf-register-start {
+  from {
+    opacity: 0;
+    translate: 0.5rem 0.5rem;
+  }
+}
+
+@keyframes wf-register-end {
+  from {
+    opacity: 0;
+    translate: -0.5rem -0.5rem;
+  }
+}
+
+@keyframes wf-expose {
+  from {
+    opacity: 0;
+  }
+}

@@ -9,7 +9,7 @@ import { SpecimenPlate } from "@/components/ui/SpecimenPlate";
 import { WorldDot } from "@/components/ui/WorldDot";
 import { CARD_SIZES, commerceStill, productMedia, stillMedia } from "@/content/media";
 import { arm, useArmed } from "@/components/vial-transition/armed";
-import { markIncoming } from "@/components/vial-transition/incoming";
+import { boxOf, markIncoming } from "@/components/vial-transition/incoming";
 import { SPECIMEN_NAVIGATION } from "@/components/vial-transition/PageTransition";
 import { SpecimenLayers } from "@/components/vial-transition/SpecimenLayers";
 import { names, specimenFor } from "@/components/vial-transition/specimens";
@@ -272,11 +272,7 @@ export function ProductCard({
             ? (event) => {
                 arm(armKey);
                 const media = event.currentTarget.querySelector(`.${styles.media}`);
-                const r = media?.getBoundingClientRect();
-                markIncoming(
-                  slug,
-                  r ? { x: r.left, y: r.top, width: r.width, height: r.height } : null,
-                );
+                markIncoming(slug, boxOf(media), boxOf(media?.querySelector("[data-specimen]")));
               }
             : undefined
         }

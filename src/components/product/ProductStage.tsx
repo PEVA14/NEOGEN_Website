@@ -1,7 +1,15 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Suspense, useEffect, useRef, ViewTransition, type ReactNode } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  ViewTransition,
+  type ReactNode,
+} from "react";
 
 import { CanvasErrorBoundary } from "@/components/experience/CanvasErrorBoundary";
 import { useVialStage } from "@/components/experience/useVialStage";
@@ -9,13 +17,17 @@ import { VialFallback } from "@/components/experience/VialFallback";
 import type { PointerState, StageAnchor } from "@/components/experience/VialModel";
 import { Mono } from "@/components/typography";
 import type { ProductImage } from "@/content/media";
-import type { WorldEnvironment, WorldId } from "@/config/worlds";
+import { getWorld, type WorldEnvironment, type WorldId } from "@/config/worlds";
 import { useFinePointer } from "@/hooks/useFinePointer";
 import { StageSpecimen } from "@/components/vial-transition/SpecimenLayers";
 import { names, specimenFor } from "@/components/vial-transition/specimens";
 import { useStageHandoff, useWorldOrigin } from "@/components/vial-transition/useStageHandoff";
 
+import { createProbe, type SpecimenProbe } from "@/components/experience/specimenProbe";
+
+import { useFormation } from "./formation";
 import { LIVE_FRAME_MARGIN } from "./liveFrame";
+import { SpecimenInspection } from "./SpecimenInspection";
 import styles from "./ProductStage.module.css";
 
 const RetaCanvas = dynamic(() => import("@/components/experience/RetaCanvas"), { ssr: false });
@@ -73,6 +85,12 @@ interface ProductStageProps {
   /** The commerce panel, server-rendered. */
   children: ReactNode;
   /**
+   * What the frame reads off the label when it faces the lens — verified
+   * copy only. Used only by a world with an inspection (`config/worlds.ts`),
+   * and only once the live vial has drawn.
+   */
+  inspection?: string[];
+  /**
    * The product, so its split studio still can stand in for the object and
    * receive the card's specimen (the vial transition). Absent → the drawn
    * stand-in.
@@ -120,6 +138,7 @@ export function ProductStage({
   wordmark,
   children,
   slug,
+  inspection,
 }: ProductStageProps) {
   const stage = useRef<HTMLDivElement>(null);
   const panel = useRef<HTMLDivElement>(null);
@@ -147,8 +166,16 @@ export function ProductStage({
    */
   const standIn = slug ? (specimenFor(slug)?.stage ?? null) : null;
   const handoff = useStageHandoff(slug ?? "");
-  const held = standIn !== null && handoff.holding;
-  useWorldOrigin(slug ?? "", standIn !== null && handoff.holding, stage, panel);
+  /*
+   * THE WORLD FORMING AROUND IT (flagship idea #3, RETA first): the world's
+   * light and the instrument's lines, timed with the flight — `formation.ts`.
+   * Only with a stand-in, which is what holds the object while it forms.
+   */
+  const formation = standIn ? getWorld(world).formation : null;
+  const formed = useFormation(slug ?? "", formation, stage, panel);
+  const held = standIn !== null && (handoff.holding || formed.forming);
+  // The world's opening circle, for the worlds that have no formation yet.
+  useWorldOrigin(slug ?? "", standIn !== null && !formation && handoff.holding, stage, panel);
 
   const viewer = canRender3D && modelPath && palette && !held ? { modelPath, palette } : null;
 
@@ -165,6 +192,20 @@ export function ProductStage({
   // `turn` is the homepage turntable's accumulated cursor drive; the presenter
   // ignores it and keeps its restrained yaw response.
   const pointer = useRef<PointerState>({ x: 0, y: 0, active: false, turn: 0 });
+
+  /*
+   * INSPECTION (flagship idea #4): the live vial, read by its frame as it
+   * turns — `SpecimenInspection`. From the moment the canvas has drawn, which
+   * after a card tap is after the world has formed: it belongs to the quiet
+   * page. The probe is how the scene reports where the specimen stands.
+   */
+  const [initialProbe] = useState(createProbe);
+  const probe = useRef<SpecimenProbe>(initialProbe);
+  const inspectable = Boolean(inspection) && getWorld(world).inspection && standIn !== null;
+  const turnSpecimen = useCallback((radians: number) => {
+    pointer.current.turn += radians;
+    probe.current.invalidate();
+  }, []);
 
   /*
    * Pointer response. A cached rect rather than a measurement per move: the
@@ -226,10 +267,14 @@ export function ProductStage({
   /* The name printed on the fallback object's label. */
   const objectName = wordmark;
 
+  /*
+   * The specimen in the media frame is the stand-in. Behind it, nothing: the
+   * material study's interior (RETA's graticule) is drawn only behind a static
+   * still, and showing it while the canvas boots made a grid appear and then
+   * vanish under the live vial. The frame's edge marks are `frameMarks`.
+   */
   const fallback = standIn ? (
-    // The specimen in the media frame is the stand-in; only the world's
-    // material study is drawn behind it.
-    <div className={styles.mediaWell}>{material}</div>
+    <div className={styles.mediaWell} />
   ) : (
     <div className={styles.mediaWell}>
       {material}
@@ -245,13 +290,31 @@ export function ProductStage({
   );
 
   return (
-    <div ref={stage} className={styles.stage} data-world={world}>
-      {/* The environment. Full-bleed, with the world's atmospheric wash. */}
+    <div
+      ref={stage}
+      className={styles.stage}
+      data-world={world}
+      data-formation={formation ?? undefined}
+      data-arrival={formation ? formed.arrival : undefined}
+    >
+      {/* The environment. Full-bleed, with the world's atmospheric wash —
+          which, in a world that forms, is a light of its own (`.light`). */}
       {standIn ? (
         /* Paired with the card's stage, so the world can open out of the
-           card the specimen left and drift to where it lands (see the CSS). */
+           card the specimen left (see the CSS). */
         <ViewTransition name={names.world(slug ?? "")} share="vt-world" default="none">
-          <div className={styles.field} aria-hidden="true" />
+          <div className={styles.field} aria-hidden="true">
+            {formation ? (
+              <>
+                <span
+                  className={styles.light}
+                  data-motion="cinematic"
+                  onAnimationEnd={formed.onFormed}
+                />
+                <span className={styles.lightCore} data-motion="cinematic" />
+              </>
+            ) : null}
+          </div>
         </ViewTransition>
       ) : (
         <div className={styles.field} aria-hidden="true" />
@@ -274,7 +337,7 @@ export function ProductStage({
             <Suspense
               fallback={
                 standIn ? (
-                  <div className={styles.mediaWell}>{material}</div>
+                  <div className={styles.mediaWell} />
                 ) : (
                   <div className={styles.mediaWell}>
                     {material}
@@ -304,7 +367,10 @@ export function ProductStage({
                     tier={tier}
                     variant="presenter"
                     anchor={anchor}
-                    pointer={finePointer ? pointer : undefined}
+                    /* A touch screen has no cursor, but a finger's drag on
+                       the frame turns the vial too (the inspection). */
+                    pointer={finePointer || inspectable ? pointer : undefined}
+                    probe={inspectable ? probe : undefined}
                     onFirstFrame={standIn ? handoff.onFirstFrame : undefined}
                   />
                 </div>
@@ -334,7 +400,20 @@ export function ProductStage({
               onShare={handoff.onShare}
             />
           ) : null}
+          {formation ? (
+            /* The frame's four edges, drawn as lines so each can be
+               projected from the specimen's axis (see "Formation"). */
+            <span className={styles.edges} aria-hidden="true" data-motion="cinematic">
+              <span data-edge="top" />
+              <span data-edge="right" />
+              <span data-edge="bottom" />
+              <span data-edge="left" />
+            </span>
+          ) : null}
           {frameMarks}
+          {inspection && inspectable && viewer && handoff.live ? (
+            <SpecimenInspection reading={inspection} probe={probe} onTurn={turnSpecimen} />
+          ) : null}
           <div className={styles.caption}>
             {/* Two gates: a live viewer to respond, and (in CSS) a cursor to
                 respond to. */}

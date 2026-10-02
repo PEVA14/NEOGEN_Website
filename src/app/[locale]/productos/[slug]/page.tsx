@@ -463,6 +463,10 @@ export default async function ProductPage({
             /* The split studio still stands in here, and receives the card's
                specimen (the vial transition). */
             slug={product.slug}
+            /* What the frame reads off the label: the compound and its
+               status, both already on this page — nothing measured or
+               invented. */
+            inspection={[product.name, dict.researchUse.label]}
             loadingLabel={dict.home.reta.loadingLabel}
             staticLabel={dict.home.reta.staticLabel}
             viewerHint={pdp.viewerHint}

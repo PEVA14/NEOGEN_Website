@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, type ReactNode } from "react";
 
 import { arm, useArmed } from "./armed";
-import { markIncoming } from "./incoming";
+import { boxOf, markIncoming } from "./incoming";
 import { SpecimenLayers } from "./SpecimenLayers";
 import { SPECIMEN_NAVIGATION } from "./PageTransition";
 import { specimenFor } from "./specimens";
@@ -83,8 +83,11 @@ export function SpecimenLink({
       onPointerDown={warm}
       onClick={() => {
         arm(key);
-        const r = media.current?.getBoundingClientRect();
-        markIncoming(slug, r ? { x: r.left, y: r.top, width: r.width, height: r.height } : null);
+        markIncoming(
+          slug,
+          boxOf(media.current),
+          boxOf(media.current?.querySelector("[data-specimen]")),
+        );
       }}
       transitionTypes={[SPECIMEN_NAVIGATION]}
     >
