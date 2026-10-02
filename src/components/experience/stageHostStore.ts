@@ -61,6 +61,7 @@ export function markHostFailed(): void {
 export function markDrawn(id: string): void {
   if (!requests.has(id)) return;
   drawn = id;
+  shown.add(id);
   emit();
 }
 
@@ -160,6 +161,14 @@ export function useKnownScenes(): readonly { id: string; scene: HostedScene }[] 
 }
 
 const EMPTY: readonly { id: string; scene: HostedScene }[] = [];
+
+/** Stages the canvas has drawn on this page, once revealed. */
+const shown = new Set<string>();
+
+/** Whether the canvas has shown `id`'s stage before, on this page. */
+export function hasShown(id: string): boolean {
+  return shown.has(id);
+}
 
 /** Which stage the canvas has drawn, if any. */
 export function useDrawnStage(): string | null {

@@ -1,8 +1,10 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-10-01**: **the specifications ribbon is permanent**
-(§8ai) — on RETA's product page a band unwinds off a vial into the panel
-that holds section 02. Before that, 2026-09-30: **the flagship stand-in is
+Last updated **2026-10-01**: **the homepage's vials are there from the first
+paint, and its 3D no longer works while you scroll** (§8aj). Before that, the
+same day: **the specifications ribbon is permanent**
+(§8ai) — on the flagships' product pages a band unwinds off a vial into
+the panel that holds section 02. Before that, 2026-09-30: **the flagship stand-in is
 the live vial's own first frame** (§8ah), and the product page sees the
 vial straight on. Before that, the same day: **the vial transition is permanent** (§8ag) —
 from the catalogue, the tapped vial flies into its product page. Before that,
@@ -2475,6 +2477,82 @@ is set. In Safari a new page therefore painted at the old page's scroll
 position and glided up. `app/[locale]/layout.tsx` now sets the attribute;
 in-page anchors stay smooth. Verified in iOS 26.3 Safari (simulator).
 
+## 8aj. The homepage: the vial from the first paint, and no work mid-scroll (2026-10-01)
+
+Owner: the homepage "feels kinda stuttery and not smooth at all, I don't like
+that the models take a while to load, either add a non-3d render while it
+loads or optimize it. Find a way". Measured first (production build, laptop
+1440×900 and a 402 px phone at 4× CPU throttle, scrolling top to bottom):
+
+- **the hero vial appeared at ~1.6 s**, fading in from an empty spot;
+- **scrolling in the first ~1.5 s collided with the 3D start**: long tasks of
+  74–89 ms (laptop) and 105–151 ms (phone), stalls up to 100 / 167 ms; one
+  call — uploading the 2048² label — was 85 ms on its own;
+- **preparing the next stages ahead landed mid-scroll**: 50–58 ms (laptop),
+  67–133 ms (phone);
+- **the shared canvas drew ~60 glass frames a second off screen** on a wide
+  screen, through every section between two stages;
+- scrolling after everything had settled was already at 60 fps on a laptop,
+  with single dropped frames at handovers.
+
+Both remedies, as the owner allowed:
+
+- **Stand-ins that are the vial's own first frame** (`StageStandIn`,
+  `npm run capture:home`, `public/images/home/`): the hero (both tiers), the
+  GLOW and GHK-Cu moments, RETA on a phone (on a wide screen the RETA canvas
+  paints the whole scene and is drawn before it is reached). Server-rendered,
+  placed by the canvas's own geometry, hidden once the live vial has faded in
+  over it — and shown again whenever the canvas leaves for another stage, so a
+  box is never empty. Not the placeholders turned down on 2026-09-30: the
+  photograph is the frame the canvas draws first, so the live vial replaces it
+  unseen. For that: the hero's reduced-motion pose is now progress 0 (was
+  0.05), and its first frame is placed instead of easing in from the canvas's
+  centre (it used to slide in). Measured against the live canvas at
+  1440, 1280, 1920 and 1024 wide and two phones: silhouette overlap 0.93–0.99,
+  centres within ~1 px. Captured on the GPU (the software renderer drew the
+  hero's halo fainter). `check:media` fails on a stand-in from another model.
+- **No heavy 3D work while scrolling** (`whenScrollQuiet`): the canvas starts,
+  and prepares stages ahead, only after 200 ms without scrolling (and at
+  idle). The stand-ins cover the wait.
+- **Nothing drawn off screen**: every stage's loop is `FrameBudget` (it was
+  phone and presenter only), drawing from a fifth of a screen ahead.
+- **The homepage's label at 1024** on a wide screen too (`labelSize`; the
+  product page keeps 2048 there): the upload went from 85 ms to under 3 ms;
+  indistinguishable at the hero's largest (1920 wide, 2×).
+
+**Then, scrolling back up** (owner: "you see two renders and it looks/gets
+glitchy and stuttery"): the hero's live vial came back in the pose of the
+scroll position it was met at — turned ~19° and moved along its arc from the
+photograph's opening pose — and faded in over the photograph: two vials. Now
+the photograph is for a stage's first arrival only, a stage handed the canvas
+back draws at once (`pauseOffscreen` false on the shared canvas — RETA had
+waited ~1.3 s for its own box to come within 20%), and a return fades in over
+250 ms. A copy of the canvas's last frame stood in on returns for a few
+hours; read back from WebGL, Safari drew it overexposed. Removed.
+
+**And the real cause of the "lighting" and "side to side" glitch** (owner,
+Safari: "created new ones with lighting, it also keeps glitching going from
+side to side super quickly"): R3F times a stepped frame as `timestamp −
+clock.elapsedTime`, the homepage's canvas (and its clock) lives for the whole
+page, and `FrameBudget` — remounted with every stage — counted from 0 again.
+The first frame after each hand-over was minus however long the page had been
+open: every damped value (lights, turn) was extrapolated to infinity or NaN.
+Chrome draws NaN light as none, so it never showed there; Safari drew it white
+and the turn jumped. It existed on phones since the phone budget (2026-09-29);
+making every stage budgeted brought it to desktop. `FrameBudget` now starts
+from the canvas's own clock and never steps backwards. Reproduced and verified
+in Safari (iPad simulator, real swipes: RETA and GLOW returns); in Chrome, two
+full passes down and up: no non-finite light or rotation.
+
+Measured after: **hero vial on screen at 49 ms** (laptop; was ~1.6 s), 97 ms
+on the throttled phone; LCP 112 ms (laptop), now the hero's photograph; CLS 0. Scrolling straight after load: worst stall 67 ms, long task ~50 ms
+(laptop; were 100 / 89). Scrolling after load settles: no long task; the
+phone's 133 ms stall at GHK-Cu is gone. **Left**: on a 4×-throttled phone,
+scrolling in the first ~1.5 s still meets one ~110 ms task — three.js's own
+evaluation and the model's parse, single blocks; and handovers still drop a
+frame or two as the canvas is resized to the next box. **Owner to judge on a
+real phone.**
+
 ## 8ai. The specifications ribbon, made permanent (2026-10-01)
 
 Flagship idea #2, "the label unrolls into the data sheet", prototyped as a
@@ -2493,22 +2571,46 @@ made permanent ("make the ribbon permanent too").
   panel), `RibbonOverlay` (the band's canvas and paper shader), `ribbon.ts`
   (geometry, print layout, script), `benches.ts` (per product: the vial
   still, its model, the label's colours). README has the mechanism.
-- **RETA only** — the only product with a bench still. Others keep section
-  02 as it is; adding one is a still and an entry (README).
+- **The three flagships** (owner: "make benches for GLOW and GHK-Cu too").
+  They share the V4 container — their models differ only in the label's
+  picture, measured byte for byte — and one label design, so one still of
+  the bare container (`public/images/containers/v4-bare.webp`) and one set
+  of label colours serve all three; no new render was needed. Other products
+  keep section 02 as it is (README: adding one). A short ladder (GLOW's one
+  step, GHK-Cu's two) keeps a step's width from the left instead of
+  stretching; a name never breaks inside a word (GHK-Cu's hyphen). Checked
+  landed at 1024, 1440 and 1920: no overflow.
 - **Fallbacks**: under 64rem, reduced motion, no WebGL 2 — section 02 as it
   was. A failure after mount shows the panel at once (error boundary). The
   panel prints.
 - **Cost** (laptop, production build): no frames while scrolling, before or
   after; ~0.1 ms a frame during the run; 0.9 MB of GPU texture; canvas made
   within a screen of the bench; no multisampling at 2×.
-- **Guard**: `check:media` fails when the bench still is missing, outside its
-  product folder or rendered from another model than the page loads.
+- **Seam and label** (owner, 2026-10-01: the vial "not so empty, maybe leave
+  the logo there", "the separation looks way too obvious"): the band's back
+  prints the lockup a second time where the vial shows it once laid down
+  (the panel's own lockup is gone); the wound part meets the panel level at
+  the vial's edge (it sat 15–35 px below) but keeps its arc across the front
+  (levelled flat it read as "a plain white rectangle"), one white paper lit
+  from the front a little right (~75% at the rim, no grey seam), ink unlit by
+  the sheen, and the vial's soft shadow on the band where it comes out from
+  behind the glass.
+- **The heading in the bench** (owner: "move the title so it's within the
+  height of the vial, there's too much empty space"): beside the vial's
+  shoulder, aligned with the panel's text, resting just above the band; the
+  section is a heading's height shorter. Checked at 1024, 1440 and 1920, ES
+  and EN, RETA and GLOW.
+- **Guard**: `check:media` fails when the bench still is missing, or when a
+  bench's page model is another container than the still's — a fingerprint
+  of every byte of geometry and every material setting, the label's picture
+  aside (it tells the V4 from the old jar).
 - **Removed with the spike**: the flag, the two earlier versions, the label
   hooks in `VialModel` and `RetaCanvas` (`unroll`, `rig`, `SceneLighting`),
   and the `?vialcapture` mode that rendered the still (DEFERRED_POLISH).
 - **Owner to judge**: the CLS when the bench replaces the plain section
   after hydration (it is below the fold on a laptop); whether GLOW and
-  GHK-Cu get benches.
+  GHK-Cu should keep the flagship label's navy band (their real labels are
+  navy; their worlds are amber and copper).
 
 ## 8ah. The stand-in matches the live vial (2026-09-30)
 

@@ -1,0 +1,60 @@
+/*
+ * The stand-in fills the stage's box (as the canvas does) and is a size
+ * container, so the photograph is placed in the canvas's own units:
+ * 100cqh is the canvas height, 100cqw its width.
+ */
+.frame {
+  position: absolute;
+  inset: 0;
+  container-type: size;
+  pointer-events: none;
+}
+
+/* Gone once the live vial has faded in over it (StageHost: 450 ms). */
+.frame[data-live] {
+  visibility: hidden;
+  transition: visibility 0s linear 500ms;
+}
+
+.shot {
+  --ax: var(--full-ax);
+  --x: var(--full-x);
+  --y: var(--full-y);
+  --w: var(--full-w);
+  --h: var(--full-h);
+
+  position: absolute;
+  inset-inline-start: calc(50cqw + var(--ax) * 100cqw + var(--x) * 100cqh);
+  inset-block-start: calc(50cqh + var(--y) * 100cqh);
+  inline-size: calc(var(--w) * 100cqh);
+  block-size: calc(var(--h) * 100cqh);
+  max-inline-size: none;
+}
+
+@media (max-width: 47.99rem) {
+  .shot {
+    --ax: var(--compact-ax);
+    --x: var(--compact-x);
+    --y: var(--compact-y);
+    --w: var(--compact-w);
+    --h: var(--compact-h);
+  }
+
+  /* No shot for this tier: nothing (and, lazy, nothing fetched). */
+  .frame:not([data-compact]) {
+    display: none;
+  }
+}
+
+@media (min-width: 48rem) {
+  .frame:not([data-full]) {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The canvas appears at once for reduced motion; so does the hand-over. */
+  .frame[data-live] {
+    transition: none;
+  }
+}

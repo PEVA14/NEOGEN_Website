@@ -14,6 +14,7 @@ import {
   stageDpr,
   stageFrameloop,
 } from "./RetaCanvas";
+import { whenScrollQuiet } from "./scrollQuiet";
 import {
   markDrawn,
   markHostFailed,
@@ -79,16 +80,26 @@ export default function SharedCanvas({
   useEffect(() => {
     if (!candidate) return;
     const next = { key: warmKey(candidate.scene), scene: candidate.scene };
-    // Safari has no idle callback; a short delay after the last change is the
-    // nearest thing it offers.
+    /* Only while the page is still (owner, 2026-10-01: "stuttery"): measured,
+       a preparation landing mid-scroll cost 50–130 ms. The stage stands in
+       with its photograph meanwhile. Then at idle — Safari has no idle
+       callback; a short delay is the nearest thing it offers. */
     const idle = (window as { requestIdleCallback?: Window["requestIdleCallback"] })
       .requestIdleCallback;
-    if (!idle) {
-      const handle = window.setTimeout(() => setWarming(next), 500);
-      return () => window.clearTimeout(handle);
-    }
-    const handle = idle(() => setWarming(next), { timeout: 3000 });
-    return () => window.cancelIdleCallback(handle);
+    let cancelIdle = () => {};
+    const cancelQuiet = whenScrollQuiet(() => {
+      if (!idle) {
+        const handle = window.setTimeout(() => setWarming(next), 500);
+        cancelIdle = () => window.clearTimeout(handle);
+        return;
+      }
+      const handle = idle(() => setWarming(next), { timeout: 3000 });
+      cancelIdle = () => window.cancelIdleCallback(handle);
+    });
+    return () => {
+      cancelQuiet();
+      cancelIdle();
+    };
   }, [candidate]);
 
   /* A stage reached while it was still being prepared is simply shown; the
@@ -102,7 +113,7 @@ export default function SharedCanvas({
         gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
         dpr={scene ? stageDpr(scene.variant, scene.tier, box) : [1, 1.5]}
         camera={STAGE_CAMERA}
-        frameloop={scene ? stageFrameloop(compiled, scene.reducedMotion, scene.tier) : "never"}
+        frameloop={scene ? stageFrameloop(compiled, scene.reducedMotion) : "never"}
       >
         {active && scene && key ? (
           <Suspense fallback={null}>
@@ -112,6 +123,10 @@ export default function SharedCanvas({
               compiled={compiled}
               onCompiled={() => setCompiledKey(key)}
               onFirstFrame={() => setFirstFrameKey(key)}
+              /* A stage holds this canvas only within its hand-over margin,
+                 so it draws whenever it does: a stage handed back is drawn
+                 before it is in view (it waited for its own box to be). */
+              pauseOffscreen={false}
             />
           </Suspense>
         ) : null}

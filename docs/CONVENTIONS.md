@@ -356,21 +356,35 @@ box, with that section's drawn plate as its first paint and fallback.
   with `compileAsync` (screen and glass-pass variants), and `VialModel` takes
   its finished object from `preparedVial`, kept per model, rig and tier for
   the page. A handover between stages then pays for GPU uploads only, not for
-  a blocking shader link or a rebuilt model. Phones: pixel ratio ≤ 1.5, 30 fps
-  and nothing off screen (`FrameBudget`), label at 1024. The product page's
-  presenter keeps its canvas once granted (`useVialStage`'s `keep`) and its
-  loop is `FrameBudget` too, every frame on screen and none off it.
+  a blocking shader link or a rebuilt model. Every stage's loop is
+  `FrameBudget`: nothing drawn off screen (it starts a fifth of a screen
+  early), every frame on a wide screen, 30 fps on a phone. Phones: pixel
+  ratio ≤ 1.5. The label is 1024 everywhere but the product page on a wide
+  screen (`labelSize`): the 2048² upload was 85 ms in one call. The product
+  page's presenter keeps its canvas once granted (`useVialStage`'s `keep`).
 - **The homepage has ONE canvas, and it travels.** `StageHost` renders a
   single `<Canvas>` into a container it owns and moves that container into
   the active stage's slot; React never sees the move, so the context, the
   compiled programs, the uploaded textures and the reflection maps survive
   every handover. Stages ask through `stageHostStore` (`useHostedScene`).
-  NO STAND-IN WHILE THE VIAL LOADS (owner, 2026-09-30): the spot stays empty
-  and the canvas fades in once it has drawn; the drawing (`VialFallback`, a
-  moment's plate) shows only when the device cannot run WebGL
-  (`useVialStage().noWebGL`, known only after hydration). They announce
-  their scene early; after its first draw the canvas prepares every other
-  announced scene at idle, out of sight (`WarmUp`). A page without a
+  EACH STAGE STANDS IN WITH ITS OWN FIRST FRAME (owner, 2026-10-01; it was
+  an empty spot, 2026-09-30): `StageStandIn`, a photograph of the frame the
+  canvas draws first (`npm run capture:home`), server-rendered and placed in
+  the canvas's own geometry (container units), until the canvas has drawn
+  there and faded in over it. So the first draw must BE that frame: the hero
+  rests at progress 0 and places its first frame instead of easing into it,
+  and turntables start at zero. Re-take the shots when a model, rig, lens or
+  track changes (`check:media` catches the model). The photograph is for a
+  stage's FIRST arrival; a stage handed the canvas back draws at once (the
+  shared canvas does not pause off screen: a stage holds it only within its
+  hand-over margin), so a return is usually drawn before it is in view.
+  `FrameBudget` must step from the canvas's own clock, never from 0: R3F
+  times a stepped frame as `timestamp − clock.elapsedTime`, and a loop
+  remounted under a living canvas would send every damped value to NaN. The drawing
+  (`VialFallback`, a moment's plate) shows only when the device cannot run
+  WebGL (`useVialStage().noWebGL`, known only after hydration). The canvas
+  starts, and prepares the other announced scenes (`WarmUp`), only while the
+  page is not scrolling (`whenScrollQuiet`) and at idle. A page without a
   host (none today) falls back to each stage's own `RetaCanvas`. The scene
   itself is `StageScene`, shared with the product page's `RetaCanvas`.
 - **One WebGL context per page, and the stages arbitrate for it.**
@@ -461,7 +475,7 @@ is held to the rules below:
   both) — or its lighting, materials or pose (nothing can check those).
 
 **A second exception, by owner decision (2026-10-01): the specifications
-ribbon.** On RETA's product page, section 02 opens on a bench: a still of the
+ribbon.** On the flagships' product pages, section 02 opens on a bench: a still of the
 bare vial at the page's edge, and a label-styled band wound round it that
 unwinds once into the panel holding the specifications —
 `components/spec-ribbon/` (its README has the mechanism and the cost). It is
@@ -476,8 +490,9 @@ held to these rules:
   get section 02 as it is; a failure after mount shows the panel at once;
 - its canvas draws only while the band moves (none while the page scrolls),
   and is made only when the bench is near;
-- the bench's vial is a still rendered from the product's model, and
-  `check:media` fails when the model changes without a re-render.
+- the bench's vial is a still of the product's own container, bare (the
+  flagships share one: same V4 container, labels aside), and `check:media`
+  fails when a page's model is another container than the still's.
 
 What a V1 product viewer does:
 

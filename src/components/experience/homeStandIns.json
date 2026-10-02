@@ -1,0 +1,88 @@
+{
+  "hero": {
+    "full": {
+      "src": "/images/home/hero-full-reta-v7.webp",
+      "width": 1378,
+      "height": 1254,
+      "anchorX": 0.19,
+      "x": -0.87671,
+      "y": -0.5,
+      "w": 1.09888,
+      "h": 1,
+      "model": "/models/reta-v7.glb"
+    },
+    "compact": {
+      "src": "/images/home/hero-compact-reta-v7.webp",
+      "width": 603,
+      "height": 1215,
+      "anchorX": 0.02,
+      "x": -0.25807,
+      "y": -0.5,
+      "w": 0.4963,
+      "h": 1,
+      "model": "/models/reta-v7.glb"
+    }
+  },
+  "glow": {
+    "full": {
+      "src": "/images/home/glow-full-glow-v4.webp",
+      "width": 536,
+      "height": 912,
+      "anchorX": 0,
+      "x": -0.29411,
+      "y": -0.5,
+      "w": 0.58822,
+      "h": 1.00086,
+      "model": "/models/glow-v4.glb"
+    },
+    "compact": {
+      "src": "/images/home/glow-full-glow-v4.webp",
+      "width": 536,
+      "height": 912,
+      "anchorX": 0,
+      "x": -0.29411,
+      "y": -0.5,
+      "w": 0.58822,
+      "h": 1.00086,
+      "model": "/models/glow-v4.glb"
+    }
+  },
+  "ghk-cu": {
+    "full": {
+      "src": "/images/home/ghk-cu-full-ghk-cu-v4.webp",
+      "width": 403,
+      "height": 685,
+      "anchorX": 0,
+      "x": -0.2941,
+      "y": -0.5,
+      "w": 0.5882,
+      "h": 0.9998,
+      "model": "/models/ghk-cu-v4.glb"
+    },
+    "compact": {
+      "src": "/images/home/ghk-cu-full-ghk-cu-v4.webp",
+      "width": 403,
+      "height": 685,
+      "anchorX": 0,
+      "x": -0.2941,
+      "y": -0.5,
+      "w": 0.5882,
+      "h": 0.9998,
+      "model": "/models/ghk-cu-v4.glb"
+    }
+  },
+  "reta": {
+    "full": null,
+    "compact": {
+      "src": "/images/home/reta-compact-reta-v7.webp",
+      "width": 603,
+      "height": 624,
+      "anchorX": 0,
+      "x": -0.48319,
+      "y": -0.5,
+      "w": 0.96638,
+      "h": 1.00004,
+      "model": "/models/reta-v7.glb"
+    }
+  }
+}

@@ -29,6 +29,14 @@ const DURATION = 1.7;
 /** It starts once the band's top edge is this far up the window. */
 const TRIGGER = 0.7;
 
+/*
+ * The vial's shadow on the band where it comes out from behind the glass:
+ * how dark at the vial's edge, and how far it reaches, in vial radii. The
+ * panel draws the same (`.panel::after`), so nothing changes as it resolves.
+ */
+const SHADOW = 0.12;
+const SHADOW_REACH = 0.18;
+
 export interface RibbonMarks {
   bench: RefObject<HTMLElement | null>;
   panel: RefObject<HTMLElement | null>;
@@ -234,7 +242,10 @@ function Band({
       radius,
       top,
       bottom,
+      level: Math.tan(TILT),
     });
+    // Where the flat band comes out from behind the vial: its edge, in world x.
+    paper.current.behind(toX(axisPage) + radius, radius * SHADOW_REACH);
 
     /* The vial's body, in depth only: what passes behind the glass is hidden. */
     hide.position.set(toX(axisPage), (top + bottom) / 2, axisZ);
@@ -260,6 +271,8 @@ interface Paper {
   key: string;
   print(print: RibbonPrint, key: string): void;
   ink(logo: Texture | null): void;
+  /** The vial's silhouette edge (world x) and how far its shadow reaches. */
+  behind(edge: number, reach: number): void;
 }
 
 /**
@@ -281,10 +294,12 @@ function makePaper(stripe: readonly [string, string, string]): Paper {
     size: { value: [1, 1] },
     hairline: { value: [0, 0] },
     stripe: { value: [0, 0, 0, 1] },
-    lockup: { value: [0, 0, 1, 1] },
-    lockupBack: { value: 0 },
+    lockup: { value: [0, 1, 1] },
+    lockupBack: { value: [0, 0] },
     logo: { value: null as Texture | null },
     inked: { value: 0 },
+    edge: { value: 0 },
+    reach: { value: 1 },
   };
   const material = new ShaderMaterial({
     uniforms,
@@ -292,9 +307,11 @@ function makePaper(stripe: readonly [string, string, string]): Paper {
     vertexShader: `
       varying vec2 vUv;
       varying vec3 vNormal;
+      varying float vX;
       void main() {
         vUv = uv;
         vNormal = normal;
+        vX = position.x;
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       }
     `,
@@ -302,18 +319,25 @@ function makePaper(stripe: readonly [string, string, string]): Paper {
       uniform vec2 size;
       uniform vec2 hairline;
       uniform vec4 stripe;
-      uniform vec4 lockup;
-      uniform float lockupBack;
+      uniform vec3 lockup;
+      uniform vec2 lockupBack;
       uniform sampler2D logo;
       uniform float inked;
+      uniform float edge;
+      uniform float reach;
+      varying float vX;
       uniform vec3 stripeA;
       uniform vec3 stripeB;
       uniform vec3 stripeC;
       varying vec2 vUv;
       varying vec3 vNormal;
-      const vec3 LIGHT = vec3(-0.4, 0.27, 0.876);
-      const vec3 FRONT = vec3(1.0);
-      const vec3 BACK = vec3(247.0, 246.0, 242.0) / 255.0;
+      // From the front, a little right: white across the vial's front, falling
+      // to ~75% at its edge — round, without the grey seam a light from the
+      // left made where the band meets the white panel.
+      const vec3 LIGHT = vec3(0.45, 0.2, 0.9);
+      // The vial's shadow on the band passing behind it (the panel's ::after).
+      const float SHADOW = ${SHADOW.toFixed(3)};
+      const vec3 PAPER = vec3(1.0);
       const vec3 RULE = vec3(180.0) / 255.0;
 
       // How much of this pixel's footprint along v lies in [a, b]: edges
@@ -330,21 +354,33 @@ function makePaper(stripe: readonly [string, string, string]): Paper {
 
         float x = vUv.x * size.x;
         float y = vUv.y * size.y;
-        vec3 ink = gl_FrontFacing ? FRONT : BACK;
+        vec3 ink = PAPER;
         ink = mix(ink, RULE, cover(y, hairline.x, hairline.x + hairline.y));
         float g = clamp((x - stripe.z) / (stripe.w - stripe.z), 0.0, 1.0);
         vec3 band = g < 0.5 ? mix(stripeA, stripeB, g * 2.0) : mix(stripeB, stripeC, g * 2.0 - 1.0);
         ink = mix(ink, band, cover(y, stripe.x, stripe.x + stripe.y));
-        // Seen from outside the wound band, the back runs right-to-left: mirrored.
-        float left = gl_FrontFacing ? lockup.x : lockupBack;
-        vec2 at = vec2((x - left) / lockup.z, (y - lockup.y) / lockup.w);
-        if (!gl_FrontFacing) at.x = 1.0 - at.x;
-        float mark = texture2D(logo, clamp(at, 0.0, 1.0)).a
-          * cover(x, left, left + lockup.z) * cover(y, lockup.y, lockup.y + lockup.w) * inked;
+        // The lockup is on the back only, twice. Seen from outside the wound
+        // band that side runs right-to-left, so it is mirrored.
+        float mark = 0.0;
+        if (!gl_FrontFacing) {
+          for (int i = 0; i < 2; i++) {
+            float left = i == 0 ? lockupBack.x : lockupBack.y;
+            vec2 at = vec2(1.0 - (x - left) / lockup.y, (y - lockup.x) / lockup.z);
+            mark = max(mark, texture2D(logo, clamp(at, 0.0, 1.0)).a
+              * cover(x, left, left + lockup.y) * cover(y, lockup.x, lockup.x + lockup.z));
+          }
+        }
+        mark *= inked;
         ink = mix(ink, vec3(0.0), mark);
+        // Where the flat band comes out from behind the vial, the vial's soft
+        // shadow on it — composed in sRGB, as the panel's own gradient is.
+        if (gl_FrontFacing && n.z > 0.999) {
+          ink *= 1.0 - SHADOW * clamp(1.0 - (vX - edge) / reach, 0.0, 1.0);
+        }
 
         vec3 base = sRGBTransferEOTF(vec4(ink, 1.0)).rgb;
-        gl_FragColor = vec4(base * shade + sheen, 1.0);
+        // The sheen lights the paper, not the ink: black stays black at the seam.
+        gl_FragColor = vec4(base * (shade + sheen), 1.0);
         #include <colorspace_fragment>
       }
     `,
@@ -363,6 +399,10 @@ function makePaper(stripe: readonly [string, string, string]): Paper {
     ink(logo) {
       uniforms.logo.value = logo;
       uniforms.inked.value = logo ? 1 : 0;
+    },
+    behind(edge, reach) {
+      uniforms.edge.value = edge;
+      uniforms.reach.value = reach;
     },
   };
   return paper;

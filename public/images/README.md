@@ -1,10 +1,12 @@
 # Images
 
-| Directory    | Contents                                                          |
-| ------------ | ----------------------------------------------------------------- |
-| `products/`  | Product photography, one folder per product slug.                 |
-| `editorial/` | Research Hub and long-form article imagery.                       |
-| `textures/`  | Material/macro studies, glass and metallic surfaces, lab details. |
+| Directory     | Contents                                                                                                               |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `products/`   | Product photography, one folder per product slug.                                                                      |
+| `home/`       | The homepage's 3D stand-ins: each stage's first frame, photographed (`npm run capture:home`).                          |
+| `containers/` | A container, not a product: the bare V4 vial the specifications ribbon stands on its bench (`components/spec-ribbon`). |
+| `editorial/`  | Research Hub and long-form article imagery.                                                                            |
+| `textures/`   | Material/macro studies, glass and metallic surfaces, lab details.                                                      |
 
 ## Where a product image goes
 

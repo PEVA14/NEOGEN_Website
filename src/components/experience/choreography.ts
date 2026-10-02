@@ -231,14 +231,16 @@ export function poseTrack(tier: StageTier, variant: StageVariant = "sequence"): 
 }
 
 /**
- * The resolved frame for reduced motion.
+ * The resolved frame for reduced motion, for the hero (and the presenter,
+ * whose track is constant): the pose the page OPENS on, progress 0 — the
+ * whole vial, diagonal, uncropped, label readable. Reduced motion removes the
+ * movement, never the product.
  *
- * Sits just inside the REVEAL state: the whole vial, diagonal, uncropped, label
- * readable. Deliberately NOT the MATERIAL close-up — a heavy crop is a poor
- * static frame for someone who will never scroll it into context. Reduced
- * motion removes the movement, never the product.
+ * Exactly the opening pose (it was 0.05) because the hero's stand-in is
+ * photographed in reduced motion (`scripts/capture-home.mjs`) and must be the
+ * frame a moving hero draws first, so the live vial replaces it unseen.
  */
-export const RESTING_PROGRESS = 0.05;
+export const RESTING_PROGRESS = 0;
 
 /**
  * The resolved frame per variant. The RETA scene's strongest pose is its

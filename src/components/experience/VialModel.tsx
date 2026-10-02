@@ -109,8 +109,21 @@ function backlightFor(rig: StudioRig) {
   return backlights.get(rig) ?? null;
 }
 
-/** The longest side a phone's label texture keeps. */
-const PHONE_LABEL_SIZE = 1024;
+/** The longest side a phone's label texture keeps — and the homepage's. */
+const SMALL_LABEL_SIZE = 1024;
+
+/*
+ * THE HOMEPAGE'S LABEL AT 1024 TOO (owner, 2026-10-01: the homepage "feels
+ * kinda stuttery"). Uploading the 2048² sheet was the largest single block of
+ * the homepage's 3D start — 85 ms in one call on a laptop — and it lands
+ * whenever a stage first draws. The homepage shows the vial at most ~60% of a
+ * canvas drawn at ≤ 1.5×, so the label's visible half spans well under 1024
+ * pixels: 1024 holds it. The product page, which shows it larger and at 2×,
+ * keeps the full sheet on a wide screen.
+ */
+function labelSize(variant: StageVariant, tier: StageTier): number | null {
+  return tier === "compact" || variant !== "presenter" ? SMALL_LABEL_SIZE : null;
+}
 
 /*
  * PREPARED ONCE, SHARED BETWEEN CANVASES (owner, 2026-09-29: the homepage
@@ -127,14 +140,20 @@ const PHONE_LABEL_SIZE = 1024;
  *
  * Keyed by the parsed GLTF, which `useLoader` caches for the page.
  */
-const prepared = new WeakMap<object, Map<StudioRig, Partial<Record<StageTier, PreparedVial>>>>();
+const prepared = new WeakMap<object, Map<StudioRig, Record<string, PreparedVial>>>();
 
-function preparedVial(gltf: LoadedGltf, rig: StudioRig, tier: StageTier): PreparedVial {
+function preparedVial(
+  gltf: LoadedGltf,
+  rig: StudioRig,
+  tier: StageTier,
+  label: number | null,
+): PreparedVial {
   let byRig = prepared.get(gltf);
   if (!byRig) prepared.set(gltf, (byRig = new Map()));
   let byTier = byRig.get(rig);
   if (!byTier) byRig.set(rig, (byTier = {}));
-  const cached = byTier[tier];
+  const key = `${tier}:${label ?? "full"}`;
+  const cached = byTier[key];
   if (cached) return cached;
 
   const root = gltf.scene.clone(true);
@@ -188,10 +207,10 @@ function preparedVial(gltf: LoadedGltf, rig: StudioRig, tier: StageTier): Prepar
      * a few hundred pixels at most — the canvas is capped at 1.5× — so 1024
      * holds the type while costing a quarter of the upload.
      */
-    if (finish === "label" && tier === "compact") shrinkMap(material, PHONE_LABEL_SIZE);
+    if (finish === "label" && label !== null) shrinkMap(material, label);
   });
 
-  return (byTier[tier] = { root });
+  return (byTier[key] = { root });
 }
 
 /**
@@ -280,6 +299,8 @@ export function VialModel({
    */
   const spin = useRef(0);
   const yaw = useRef(0);
+  /** Whether the hero has drawn its first frame (placed, not eased). */
+  const placed = useRef(false);
   const pitch = useRef(0);
   const shiftX = useRef(0);
   const shiftY = useRef(0);
@@ -288,7 +309,7 @@ export function VialModel({
    * Prepared once per page and shared (see `preparedVial` below), so it is
    * never disposed here: the next canvas that shows this vial picks it up.
    */
-  const model = preparedVial(gltf, rig, tier);
+  const model = preparedVial(gltf, rig, tier, labelSize(variant, tier));
   const shown = useMemo(() => (detached ? model.root.clone() : model.root), [detached, model]);
 
   /*
@@ -469,6 +490,20 @@ export function VialModel({
     }
 
     const pose = applyPose(progress.current, state.clock.elapsedTime);
+
+    /*
+     * The FIRST frame is the pose itself, not a step toward it from the
+     * group's default (centre, upright, unit scale) — the hero used to slide in
+     * from the middle of its canvas as it faded in. Its stand-in is this pose
+     * (`StageStandIn`), so the live vial now takes over from it unseen.
+     */
+    if (!placed.current) {
+      placed.current = true;
+      node.position.set(pose.x, pose.y, pose.z);
+      node.rotation.set(pose.rotX, pose.rotY, pose.rotZ);
+      node.scale.setScalar(pose.scale);
+      return;
+    }
 
     // Damped toward the target rather than assigned. Scroll events arrive
     // unevenly, and easing toward the target keeps motion continuous on a

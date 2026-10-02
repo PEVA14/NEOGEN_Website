@@ -10,6 +10,7 @@
  *
  *   npm run check:media
  */
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 
@@ -256,10 +257,12 @@ for (const [slug, specimen] of Object.entries(SPECIMENS)) {
 /* --------------------------------------------- the specifications ribbon --- */
 
 /*
- * THE BENCH'S VIAL IS THE PRODUCT'S OWN, BARE. The ribbon (`spec-ribbon`)
- * stands a render of the vial without its label at the bench's edge and
- * winds its band round it; a model re-exported without a re-render would put
- * the old vial on the bench, silently.
+ * THE BENCH'S VIAL IS THE PRODUCT'S OWN CONTAINER, BARE. The ribbon
+ * (`spec-ribbon`) stands a render of a vial without its label at the bench's
+ * edge and winds its band round it. The flagships share that render, because
+ * their models differ only in the label's picture; a model re-exported in
+ * another shape, glass or cap — or a product on another container — would
+ * stand the wrong vial on the bench, silently.
  */
 for (const [slug, bench] of allBenches()) {
   if (!products.some((p) => p.slug === slug)) {
@@ -270,15 +273,78 @@ for (const [slug, bench] of allBenches()) {
   if (!existsSync(path.join(PUBLIC, bench.vial.src))) {
     fail("ribbon bench still is missing", `${slug} → ${bench.vial.src}`);
   }
-  if (!bench.vial.src.startsWith(`/images/products/${slug}/`)) {
-    fail("ribbon bench still outside its product folder", `${slug} → ${bench.vial.src}`);
-  }
-  if (bench.vial.model !== MEDIA[slug]?.model) {
+  const model = MEDIA[slug]?.model;
+  if (!model || !existsSync(path.join(PUBLIC, model))) {
+    fail("ribbon bench for a product with no model", slug);
+  } else if (containerOf(model) !== containerOf(bench.vial.model)) {
     fail(
-      "ribbon bench still rendered from another model",
-      `${slug} → ${bench.vial.model}, but the page loads ${MEDIA[slug]?.model ?? "no model"}; ` +
-        "re-render it (components/spec-ribbon/README.md)",
+      "ribbon bench still is of another container",
+      `${slug} loads ${model}, which differs from ${bench.vial.model} (the still's) beyond its ` +
+        "label; re-render the still (components/spec-ribbon/README.md)",
     );
+  }
+}
+
+/**
+ * What a model is apart from its label's picture: every byte of its geometry
+ * and every setting of its meshes, nodes and materials — names aside.
+ */
+function containerOf(src) {
+  const buf = readFileSync(path.join(PUBLIC, src));
+  let json = null;
+  let bin = null;
+  for (let offset = 12; offset < buf.length;) {
+    const length = buf.readUInt32LE(offset);
+    const type = buf.readUInt32LE(offset + 4);
+    const data = buf.subarray(offset + 8, offset + 8 + length);
+    if (type === 0x4e4f534a) json = JSON.parse(data.toString("utf8"));
+    else if (type === 0x004e4942) bin = data;
+    offset += 8 + length;
+  }
+  const pictures = new Set((json.images ?? []).map((image) => image.bufferView));
+  const hash = createHash("sha256");
+  json.bufferViews.forEach((view, i) => {
+    const start = view.byteOffset ?? 0;
+    if (!pictures.has(i)) hash.update(bin.subarray(start, start + view.byteLength));
+  });
+  const unnamed = (value) =>
+    JSON.stringify(value ?? [], (key, v) => (key === "name" ? undefined : v));
+  for (const part of ["accessors", "meshes", "nodes", "materials", "textures", "samplers"]) {
+    hash.update(unnamed(json[part]));
+  }
+  return hash.digest("hex");
+}
+
+/* ------------------------------------------------ the homepage's stand-ins --- */
+
+/*
+ * A HOMEPAGE STAGE'S STAND-IN IS ITS LIVE VIAL'S FIRST FRAME
+ * (`components/experience/StageStandIn`). Photographed from the model the
+ * stage loads (`npm run capture:home`); a model re-exported or re-labelled
+ * without a re-take would show the old vial until the live one replaced it.
+ */
+const HOME_STAND_INS = JSON.parse(
+  readFileSync("src/components/experience/homeStandIns.json", "utf8"),
+);
+const HOME_PRODUCT = { hero: "reta", reta: "reta", glow: "glow", "ghk-cu": "ghk-cu" };
+for (const [stage, tiers] of Object.entries(HOME_STAND_INS)) {
+  const product = HOME_PRODUCT[stage];
+  if (!product) {
+    fail("stand-in for an unknown homepage stage", stage);
+    continue;
+  }
+  for (const shot of Object.values(tiers)) {
+    if (!shot) continue;
+    if (!existsSync(path.join(PUBLIC, shot.src))) {
+      fail("homepage stand-in is missing", `${stage} → ${shot.src}`);
+    }
+    if (shot.model !== MEDIA[product]?.model) {
+      fail(
+        "homepage stand-in photographed from another model",
+        `${stage} → ${shot.model}, but the stage loads ${MEDIA[product]?.model ?? "no model"}; ` +
+          "re-run npm run capture:home",
+      );
+    }
   }
 }
 

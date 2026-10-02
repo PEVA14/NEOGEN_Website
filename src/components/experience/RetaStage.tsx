@@ -10,6 +10,7 @@ import { useSectionProgress } from "@/hooks/useSectionProgress";
 
 import { CanvasErrorBoundary } from "./CanvasErrorBoundary";
 import { HOST_SLOT_STYLE, useHostedScene, useStageHost, type HostedScene } from "./stageHostStore";
+import { StageStandIn } from "./StageStandIn";
 import { useVialStage } from "./useVialStage";
 import { VialFallback } from "./VialFallback";
 import type { PointerState } from "./VialModel";
@@ -159,21 +160,24 @@ export function RetaStage({
         : null,
     [modelPath, palette, environment, progress, reducedMotion, tier, drivenBy],
   );
-  useHostedScene(hostId, slot, hosted ? scene : null, canRender3D);
+  const live = useHostedScene(hostId, slot, hosted ? scene : null, canRender3D);
 
   return (
     <div ref={track} className={styles.scene} data-tier={tier}>
       <div
         className={styles.canvasLayer}
+        data-home-stage="reta"
         // Cinematic tier: motion.css neutralises anything under this
         // attribute when the user prefers reduced motion (CONVENTIONS §4).
         data-motion="cinematic"
         role="img"
         aria-label={posterAlt}
       >
-        {/* No stand-in while the vial loads (owner, 2026-09-30): the spot stays
-            empty and the vial fades in. The drawing is only for a device that
-            cannot run 3D at all. */}
+        {/* The vial's first frame, photographed, until the live vial is in
+            (`StageStandIn`); phones only — on a wider screen the canvas paints
+            the whole scene, and is drawn before the section arrives. The
+            drawing is only for a device that cannot run 3D at all. */}
+        {noWebGL ? null : <StageStandIn stage="reta" live={live} />}
         {noWebGL ? (
           fallback
         ) : hosted ? (

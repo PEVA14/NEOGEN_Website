@@ -9,6 +9,7 @@ import { useSectionProgress } from "@/hooks/useSectionProgress";
 
 import { CanvasErrorBoundary } from "./CanvasErrorBoundary";
 import { HOST_SLOT_STYLE, useHostedScene, useStageHost, type HostedScene } from "./stageHostStore";
+import { StageStandIn } from "./StageStandIn";
 import { useVialStage } from "./useVialStage";
 import { VialFallback } from "./VialFallback";
 import styles from "./Hero.module.css";
@@ -76,11 +77,12 @@ export function HeroStage({
         : null,
     [modelPath, palette, environment, progress, reducedMotion, tier],
   );
-  useHostedScene(hostId, slot, hosted ? scene : null, canRender3D);
+  const live = useHostedScene(hostId, slot, hosted ? scene : null, canRender3D);
 
   return (
     <div
       ref={stage}
+      data-home-stage="hero"
       data-world-tint="reta"
       className={styles.stage}
       data-motion="cinematic"
@@ -88,11 +90,12 @@ export function HeroStage({
       aria-label={posterAlt}
     >
       {/*
-       * NO STAND-IN WHILE THE VIAL LOADS (owner, 2026-09-30: "I don't like the
-       * placeholders that take the spot before the render finishes loading").
-       * The spot stays empty and the vial fades in once drawn. The drawing is
-       * only for a device that cannot run 3D at all.
+       * The vial's own first frame, photographed, from the first paint until
+       * the live vial has faded in over it (owner, 2026-10-01: "add a non-3d
+       * render while it loads"). Not the drawn placeholder the owner turned
+       * down (2026-09-30) — that is only for a device that cannot run 3D.
        */}
+      {noWebGL ? null : <StageStandIn stage="hero" live={live} priority />}
       {noWebGL ? (
         fallback
       ) : hosted ? (

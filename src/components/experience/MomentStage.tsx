@@ -8,6 +8,7 @@ import { useSectionProgress } from "@/hooks/useSectionProgress";
 
 import { CanvasErrorBoundary } from "./CanvasErrorBoundary";
 import { HOST_SLOT_STYLE, useHostedScene, useStageHost, type HostedScene } from "./stageHostStore";
+import { hasStandIn, StageStandIn, type HomeStage } from "./StageStandIn";
 import { useVialStage } from "./useVialStage";
 
 /**
@@ -79,11 +80,13 @@ export function MomentStage({
         : null,
     [modelPath, palette, world, environment, progress, reducedMotion, tier],
   );
-  useHostedScene(hostId, slot, hosted ? scene : null, canRender3D);
+  const live = useHostedScene(hostId, slot, hosted ? scene : null, canRender3D);
+  const stage = world as HomeStage;
 
   return (
     <div
       ref={box}
+      data-home-stage={world}
       className={className}
       data-tier={tier}
       /* Cinematic tier: `motion.css` neutralises anything under this attribute
@@ -92,9 +95,12 @@ export function MomentStage({
       role="img"
       aria-label={label}
     >
-      {/* No stand-in while the vial loads (owner, 2026-09-30): the box stays
-          empty and the vial fades in. The section's drawn plate remains for a
-          device that cannot run 3D, and for a world with no model at all. */}
+      {/* The vial's first frame, photographed, until the live vial is in
+          (`StageStandIn`). The section's drawn plate remains for a device
+          that cannot run 3D, and for a world with no model at all. */}
+      {noWebGL || !modelPath || !hasStandIn(stage) ? null : (
+        <StageStandIn stage={stage} live={live} />
+      )}
       {noWebGL || !modelPath ? (
         children
       ) : hosted ? (

@@ -97,9 +97,11 @@ export function RibbonBench({
 
   return (
     <div className={styles.layout}>
-      {heading}
       <div className={styles.stage}>
         <div ref={bench} className={styles.bench} style={look}>
+          {/* The section's heading, in the bench beside the vial's shoulder —
+            first in the reading order, as it always was. */}
+          <div className={styles.heading}>{heading}</div>
           {/* eslint-disable-next-line @next/next/no-img-element -- sized by the bench, decorative */}
           <img
             ref={vial}
@@ -127,7 +129,14 @@ export function RibbonBench({
             <span ref={lockup} className={styles.lockup} aria-hidden="true" />
             <div className={styles.content}>
               <div className={styles.identity}>
-                <p className={styles.name}>{name}</p>
+                <p className={styles.name}>
+                  {name.split(" ").map((word, i) => (
+                    <span key={i}>
+                      {i > 0 ? " " : null}
+                      <span className={styles.word}>{word}</span>
+                    </span>
+                  ))}
+                </p>
                 <p className={styles.range}>{range}</p>
               </div>
               <div className={styles.ladder}>

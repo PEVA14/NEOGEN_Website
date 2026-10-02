@@ -3,7 +3,8 @@
 import dynamic from "next/dynamic";
 import { useEffect, useLayoutEffect, useState } from "react";
 
-import { setHostMounted, useActiveRequest, useDrawnStage } from "./stageHostStore";
+import { whenScrollQuiet } from "./scrollQuiet";
+import { hasShown, setHostMounted, useActiveRequest, useDrawnStage } from "./stageHostStore";
 
 /* three.js arrives only with the canvas, never in the page's initial payload. */
 const SharedCanvas = dynamic(() => import("./SharedCanvas"), { ssr: false });
@@ -36,9 +37,17 @@ export function StageHost() {
   const container = typeof document === "undefined" ? null : hostContainer();
   const active = useActiveRequest();
   const drawn = useDrawnStage();
-  /* The WebGL context is made when a stage first asks, then kept for the page. */
+  /*
+   * The WebGL context is made when a stage first asks — and the page is not
+   * scrolling (`whenScrollQuiet`): its start is the heaviest thing the page
+   * does, and the stage's photograph covers the wait — then kept for the page.
+   */
   const [started, setStarted] = useState(false);
-  if (active && !started) setStarted(true);
+  const asking = active !== null;
+  useEffect(() => {
+    if (!asking || started) return;
+    return whenScrollQuiet(() => setStarted(true));
+  }, [asking, started]);
 
   useEffect(() => {
     setHostMounted(true);
@@ -48,8 +57,8 @@ export function StageHost() {
   /*
    * Carry the canvas to the active stage, hidden at once (the previous stage's
    * vial must never show in the new box), and FADE IT IN once it has drawn
-   * there. The spot is empty until then — no stand-in (owner, 2026-09-30) —
-   * so the vial arrives rather than appears; at once for reduced motion.
+   * there, over the stage's photograph of that same frame (`StageStandIn`),
+   * which then goes; at once for reduced motion.
    */
   useLayoutEffect(() => {
     if (!active) return;
@@ -62,10 +71,15 @@ export function StageHost() {
     if (drawn !== active.id) {
       element.style.transition = "none";
       element.style.opacity = "0";
+      // Noted before this arrival is drawn (drawing marks it shown).
+      element.dataset.returning = hasShown(active.id) ? "1" : "";
       return;
     }
+    /* The first arrival fades in over the stage's photograph; a return —
+       usually drawn before it is in view — in a shorter fade from nothing. */
     const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    element.style.transition = still ? "none" : "opacity 450ms cubic-bezier(0.2, 0, 0, 1)";
+    const fade = element.dataset.returning ? 250 : 450;
+    element.style.transition = still ? "none" : `opacity ${fade}ms cubic-bezier(0.2, 0, 0, 1)`;
     element.style.opacity = "1";
   }, [active, drawn]);
 

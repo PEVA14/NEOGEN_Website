@@ -3,8 +3,8 @@
 > **Specifications ribbon made permanent (2026-10-01).** Deferred: a way to
 > re-render the bench's vial still (the bare vial on the page's paper) — the
 > spike's capture mode was not kept; the studio page could learn to drop the
-> label. `check:media` fails when RETA's model changes without one. Benches
-> for GLOW and GHK-Cu need their own stills (PROJECT_STATE §8ai).
+> label. Only needed if the flagships' container changes shape, glass or cap
+> (`check:media` fails then); re-labelling needs nothing (PROJECT_STATE §8ai).
 >
 > **Vial transition made permanent (2026-09-30).** One refinement deferred
 > (the flagship stand-in now IS the live vial's first frame — PROJECT_STATE

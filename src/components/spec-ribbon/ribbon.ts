@@ -69,6 +69,7 @@ export function ribbonGeometry(): BufferGeometry {
   // Each column's place across (x) and in depth (z): the band is straight up and down.
   geometry.userData.along = along;
   geometry.userData.xz = new Float32Array((COLUMNS + 1) * 2);
+  geometry.userData.lift = new Float32Array(COLUMNS + 1);
   return geometry;
 }
 
@@ -127,12 +128,29 @@ export function layRibbon(
     radius,
     top,
     bottom,
-  }: { t: number; axis: number; radius: number; top: number; bottom: number },
+    level,
+  }: {
+    t: number;
+    axis: number;
+    radius: number;
+    top: number;
+    bottom: number;
+    /**
+     * tan of the camera's downward tilt. The part wound round the vial is
+     * raised by the vial's axis depth × this, so at the vial's edge it is
+     * exactly level with the panel it runs into — no step where the band
+     * leaves the vial (owner, 2026-10-01) — while across the front it still
+     * dips in the gentle arc of a band seen wrapped round glass, a little
+     * from above (levelled flat, it read as "a plain white rectangle").
+     */
+    level: number;
+  },
 ): number {
   const position = geometry.getAttribute("position") as BufferAttribute;
   const normal = geometry.getAttribute("normal") as BufferAttribute;
   const along = geometry.userData.along as Float32Array;
   const xz = geometry.userData.xz as Float32Array;
+  const lift = geometry.userData.lift as Float32Array;
   const wound = plan.woundAtRest + (plan.woundAtEnd - plan.woundAtRest) * t;
   const run = plan.runAtRest + (plan.runAtEnd - plan.runAtRest) * t;
   const rolled = Math.max(0, plan.length - wound - run);
@@ -141,11 +159,16 @@ export function layRibbon(
   const axisZ = outer;
   const rollOuter = Math.sqrt((rolled * plan.thickness) / Math.PI);
   const k = plan.thickness / (2 * Math.PI);
+  /* Where the outer turn crosses the vial's edge (x = axis + radius) — the
+     panel's edge — it sits this far forward; raised by that, it is level
+     with the panel exactly there. */
+  const seam = (axisZ + Math.sqrt(Math.max(0, outer * outer - radius * radius))) * level;
 
   for (let c = 0; c < along.length; c += 1) {
     const s = along[c]! * plan.length;
     let x: number;
     let z: number;
+    lift[c] = 0;
     if (s < wound) {
       // d: back along the band from where it leaves the vial.
       const d = wound - s;
@@ -153,6 +176,7 @@ export function layRibbon(
       const r = outer - perTurn * d;
       x = axis + r * Math.sin(alpha);
       z = axisZ + r * Math.cos(alpha);
+      lift[c] = seam;
     } else if (s < wound + run || rollOuter < 0.01) {
       x = axis + (s - wound);
       z = 0;
@@ -181,8 +205,8 @@ export function layRibbon(
     const length = Math.hypot(dx, dz) || 1;
     const x = xz[c * 2]!;
     const z = xz[c * 2 + 1]!;
-    position.setXYZ(c * 2, x, top, z);
-    position.setXYZ(c * 2 + 1, x, bottom, z);
+    position.setXYZ(c * 2, x, top + lift[c]!, z);
+    position.setXYZ(c * 2 + 1, x, bottom + lift[c]!, z);
     normal.setXYZ(c * 2, -dz / length, 0, dx / length);
     normal.setXYZ(c * 2 + 1, -dz / length, 0, dx / length);
   }
@@ -204,10 +228,13 @@ interface Marks {
  * The paper shader draws them; nothing is painted ahead.
  *
  *   front  the side that ends up facing the viewer, laid down: the panel's own
- *          marks — hairline, stripe, lockup — measured off its elements, so the
+ *          marks — hairline and stripe — measured off its elements, so the
  *          panel resolves over the same marks
  *   back   the side wound outward on the vial and round the roll: the same
- *          hairline and stripe, and the lockup where the vial shows it at rest
+ *          hairline and stripe, and the lockup twice — where the vial shows it
+ *          at rest, and where it shows it once the band is laid down, so the
+ *          vial keeps its label (owner, 2026-10-01: "make the vial here not be
+ *          so empty, maybe leave the logo there"). The panel has none.
  */
 export interface RibbonPrint {
   length: number;
@@ -216,10 +243,10 @@ export interface RibbonPrint {
   hairline: [number, number];
   /** top, height, and where its gradient runs from and to along the band */
   stripe: [number, number, number, number];
-  /** front's left, top, width, height */
-  lockup: [number, number, number, number];
-  /** The back's lockup, left edge. */
-  lockupBack: number;
+  /** The lockup's top, width and height. */
+  lockup: [number, number, number];
+  /** Its left edge on the back, at rest and laid down. */
+  lockupBack: [number, number];
 }
 
 export function ribbonPrint(
@@ -231,16 +258,17 @@ export function ribbonPrint(
 ): RibbonPrint {
   const X = (pageX: number) => plan.woundAtEnd + (pageX - axisPage);
   const Y = (pageY: number) => pageY - panel.top;
-  /* Where the vial's visible quarter is at rest — between its front and its
-     right edge, half a radius in — so the wound band reads as the vial's own
-     label before it unwinds. */
-  const atRest = plan.woundAtRest - 1.25 * Math.PI * radius;
+  /* Where the vial's visible quarter is — between its front and its right
+     edge, half a radius in — at rest and once laid down. The second is on an
+     inner turn at rest, and comes round into view as the outer turns leave. */
+  const shown = 1.25 * Math.PI * radius;
+  const half = marks.lockup.width / 2;
   return {
     length: plan.length,
     height: panel.height,
     hairline: [Y(marks.hairline.top), Math.max(1, marks.hairline.height)],
     stripe: [Y(marks.stripe.top), marks.stripe.height, X(marks.stripe.left), X(marks.stripe.right)],
-    lockup: [X(marks.lockup.left), Y(marks.lockup.top), marks.lockup.width, marks.lockup.height],
-    lockupBack: atRest - marks.lockup.width / 2,
+    lockup: [Y(marks.lockup.top), marks.lockup.width, marks.lockup.height],
+    lockupBack: [plan.woundAtRest - shown - half, plan.woundAtEnd - shown - half],
   };
 }

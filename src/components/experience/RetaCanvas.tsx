@@ -287,7 +287,7 @@ export default function RetaCanvas({ fill = false, ...scene }: RetaCanvasProps) 
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
       dpr={stageDpr(scene.variant, scene.tier)}
       camera={STAGE_CAMERA}
-      frameloop={stageFrameloop(compiled, scene.reducedMotion, scene.tier, scene.variant)}
+      frameloop={stageFrameloop(compiled, scene.reducedMotion)}
     >
       <StageScene {...scene} compiled={compiled} onCompiled={() => setCompiled(true)} />
     </Canvas>
@@ -337,27 +337,24 @@ function phoneDpr({ width, height }: { width: number; height: number }): number 
 /*
  * Nothing until the shaders are compiled (`Prewarm`). Then: reduced motion
  * renders a single frame and stops entirely — no rAF loop, no battery drain,
- * for a user who asked for no movement; phones, and the product page's
- * presenter everywhere, are stepped by `FrameBudget` instead of R3F's own loop.
+ * for a user who asked for no movement; everything else is stepped by
+ * `FrameBudget` instead of R3F's own loop — nothing drawn off screen.
  */
-export function stageFrameloop(
-  compiled: boolean,
-  reducedMotion: boolean,
-  tier: StageTier,
-  variant?: StageVariant,
-): "never" | "demand" | "always" {
+export function stageFrameloop(compiled: boolean, reducedMotion: boolean): "never" | "demand" {
   if (!compiled) return "never";
-  if (reducedMotion) return "demand";
-  return budgeted(tier, variant) ? "never" : "always";
+  return reducedMotion ? "demand" : "never";
 }
 
-/** Whether `FrameBudget` steps this stage, and at what rate (null: every frame). */
-function budgeted(tier: StageTier, variant?: StageVariant): { fps: number | null } | null {
-  if (tier === "compact") return { fps: PHONE_FPS };
-  /* The presenter keeps its canvas while the page is read below it
-     (`useVialStage`'s `keep`), so it must draw nothing while it is away. */
-  if (variant === "presenter") return { fps: null };
-  return null;
+/**
+ * How `FrameBudget` steps a stage: a phone at most PHONE_FPS, anything else
+ * every frame (null) — and every stage nothing while it is off screen. The
+ * presenter keeps its canvas while the page is read below it (`useVialStage`'s
+ * `keep`); the homepage's shared canvas stays in a stage until the next one
+ * wins it, and drew ~60 glass frames a second through the sections between
+ * (owner, 2026-10-01: the homepage "feels kinda stuttery").
+ */
+function budgeted(tier: StageTier): { fps: number | null } {
+  return tier === "compact" ? { fps: PHONE_FPS } : { fps: null };
 }
 
 /**
@@ -373,20 +370,25 @@ export function StageScene({
   onFirstFrame,
   compiled,
   onCompiled,
+  pauseOffscreen = true,
   ...contents
 }: Omit<RetaCanvasProps, "fill"> & {
   /** Whether `Prewarm` has finished — the loop is held until it has. */
   compiled: boolean;
   onCompiled: () => void;
+  /** Draw nothing while the canvas is off screen (default). */
+  pauseOffscreen?: boolean;
 }) {
-  const budget = budgeted(contents.tier, contents.variant);
+  const budget = budgeted(contents.tier);
   return (
     <>
       <Grade rig={WORLD_RIGS[contents.world]} tier={contents.tier} />
       <SceneContents {...contents} />
       {onFirstFrame ? <FirstFrame onFrame={onFirstFrame} /> : null}
       <Prewarm onReady={onCompiled} />
-      {compiled && budget && !contents.reducedMotion ? <FrameBudget fps={budget.fps} /> : null}
+      {compiled && budget && !contents.reducedMotion ? (
+        <FrameBudget fps={budget.fps} pauseOffscreen={pauseOffscreen} />
+      ) : null}
     </>
   );
 }
@@ -592,21 +594,39 @@ const PHONE_FPS = 30;
  * scrolled back into view resumes where it was instead of jumping by the
  * time it spent away. `advance` takes that clock in seconds.
  */
-function FrameBudget({ fps }: { fps: number | null }) {
+function FrameBudget({ fps, pauseOffscreen }: { fps: number | null; pauseOffscreen: boolean }) {
   const advance = useThree((state) => state.advance);
   const canvas = useThree((state) => state.gl.domElement);
+  const get = useThree((state) => state.get);
 
   useEffect(() => {
     let visible = true;
-    const observer = new IntersectionObserver(([entry]) => {
-      visible = entry?.isIntersecting ?? true;
-    });
+    /* The product page's presenter keeps its canvas while the page is read
+       below it, so it pauses off screen — from a little ahead, so it is drawn
+       before it is seen. The homepage's shared canvas does not pause: a stage
+       holds it only within its hand-over margin (`pauseOffscreen` false). */
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        visible = !pauseOffscreen || (entry?.isIntersecting ?? true);
+      },
+      { rootMargin: "20% 0px" },
+    );
     observer.observe(canvas);
 
     const interval = fps === null ? 0 : 1000 / fps;
     let raf = 0;
     let last = -Infinity;
-    let clock = 0;
+    /*
+     * FROM THE CANVAS'S OWN CLOCK, NEVER FROM ZERO (owner, 2026-10-01: in
+     * Safari, the vial came back "glitchy", overexposed and "going from side to
+     * side super quickly"). R3F times a stepped frame as `timestamp −
+     * clock.elapsedTime`, and the homepage's canvas — with its clock — lives
+     * for the whole page while a stage's loop is remounted at every hand-over.
+     * Counting from 0 again made that first frame minus however long the page
+     * had been open: every damped value (the lights, the turn) was extrapolated
+     * to infinity or NaN. Chrome drew NaN light as none; Safari as white.
+     */
+    let clock = get().clock.elapsedTime;
     const tick = (now: number) => {
       raf = requestAnimationFrame(tick);
       // A couple of milliseconds of slack, or a 60 Hz display whose frames
@@ -615,7 +635,7 @@ function FrameBudget({ fps }: { fps: number | null }) {
         if (!visible) last = -Infinity;
         return;
       }
-      clock += last === -Infinity ? 0 : Math.min((now - last) / 1000, 0.1);
+      clock += last === -Infinity ? 0 : Math.max(0, Math.min((now - last) / 1000, 0.1));
       last = now;
       advance(clock);
     };
@@ -624,7 +644,7 @@ function FrameBudget({ fps }: { fps: number | null }) {
       cancelAnimationFrame(raf);
       observer.disconnect();
     };
-  }, [advance, canvas, fps]);
+  }, [advance, canvas, fps, pauseOffscreen, get]);
 
   return null;
 }
