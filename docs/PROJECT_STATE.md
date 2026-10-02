@@ -1,9 +1,13 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-10-02**: **flagship idea #4 ("the specimen under
-inspection") is prototyped on RETA, uncommitted, awaiting the owner's review**
-(§8al, brief recorded there). #3 ("the world comes out of the product",
-§8ak) is **approved directionally**, also still uncommitted. Before that, the same day: **the specifications ribbon runs on phones too**
+Last updated **2026-10-02** (overnight session): **the Living Laboratory
+baseline for every non-flagship product — "the bench" — is prototyped on
+Semaglutide and stress-tested on seven more, behind an allowlist, awaiting the
+owner's decision on whether it is the quality bar** (§8am: the grammar, the
+tiers, the asset audit and the rollout plan). Committed locally as
+checkpoints, not pushed. RETA #3 and #4 (§8ak, §8al) are committed as a
+checkpoint too (`9e3fcfa`); #3 is approved directionally, #4 (always on, no
+button) awaits review. GLOW and GHK-Cu: not started, by instruction. Before that, the same day: **the specifications ribbon runs on phones too**
 — upright, the vial whole across the top, its label's name and range rolling
 off as the band unrolls down into the panel (§8ai). **Flagship idea #2 ("the
 label unrolls into the data sheet") is done and permanent; #3 is next — not
@@ -2541,6 +2545,94 @@ Evaluated on a production build in headless Chrome, at 1440×900 and 390×844,
 from the catalogue grid, the phone strip and by direct URL; reduced motion;
 GLOW's circle unchanged; at 4× CPU throttle on the phone there is no long task
 between the flight's start and the formation's end.
+
+## 8am. The Living Laboratory baseline: the bench (2026-10-02, PROTOTYPE)
+
+**Status: prototype, behind `components/product/bench/prototypes.ts`, NOT
+rolled out, awaiting the owner's decision.** Commits `00b0d52` (the bench),
+`7a0c2ab` (shared settle curve and arrival), and the docs commit after them.
+Mechanism, grammar, tiers and traps: `components/product/bench/README.md`.
+
+**The brief (owner, overnight session 2026-10-02), condensed.** Establish the
+baseline Living Laboratory experience for EVERY product, Semaglutide as the
+test case: standard → alive, premium, memorable ("this website is fucking
+nice"); enhanced → richer; flagship → bespoke, cinematic ("holy shit"). "Every
+product is alive. Flagships are simply allowed to become cinematic." A
+reusable grammar, not `same PDP + accent colour` and not `RETA but weaker`;
+variation only where data or assets support it, never pseudo-scientific
+categories. No GLOW/GHK-Cu work, no blind rollout, no Research or checkout
+redesign, no push.
+
+**The diagnosis.** The cliff between RETA and every other product was not
+animation. RETA is an object standing in a space; every other product was a
+picture in a filled box beside a form. Then: no arrival response (the set
+faded in with the page, the vial's shadow there before it landed), no life at
+rest, and no relationship between the object and the interface.
+
+**What was built — the bench (bright field).** The studio the still was made
+in, extended across the stage, in the discovery area's material (6% of its
+hue; a render's set re-lit by luminosity blending); one lamp; open
+registration marks and a caption rail. Arrival: the vial is set down — the
+last 0.8% onto the bench, then its floor/shadow/reflection form from the
+contact point, the marks register, the rail draws. At rest: a 2° lean on its
+base under a fine pointer; a liquid keeps level and settles. State: the rail
+reads the selected presentation (`5 mg × 10 viales · P-01 / 04`), a change
+sets the vial down again, and the price comes up into place (that last one on
+every product page). Images/SVG/CSS only; no canvas.
+
+**Tiers (objective, asset-driven).** Standard = the bench with the drawn
+vial. Enhanced = a split studio render (`specimens.json`) — photographic
+specimen, real set. Flagship = a world (`config/worlds.ts`) with live 3D and
+bespoke choreography. Live 3D stays flagship-only on purpose.
+
+**Stress tests** (all on the bench now): Tirzepatide (same area, 7
+presentations), Bac. Water (liquid, materials), Lipo-C with B12 (five-part
+composition, one presentation), HCG (IU, hormonal), CJC-1295 without DAC +
+Ipamorelin (longest name, blend, growth), Dermorphin (no area), Healthy Hair
+Skin Nails Blend (liquid, long name, skin). Findings: area material, form and
+presentation structure produce real, honest variation; name length and IU vs
+mg do not; a product with no area correctly falls back to the neutral studio.
+Beyond these drivers, drawn products ARE close to one template with an area
+tone — more variation has to come from assets (renders), not invented
+categories.
+
+**Asset audit (85 products).** 3 flagships (model + studio + split +
+stand-in); 1 render with split layers (Semaglutide; its label is DEMO_ARTWORK
+except name and range); 0 photographs; 81 drawn only. Non-flagships by area:
+metabolic 15, growth 14, recovery 13, longevity 12, neuro 12, hormonal 7,
+skin 4, materials 3, none 2 (dermorphin, b12-methylcobalamin). By form: solid
+67, blend 6, volume 6, IU 2, solution 1. 43 have one presentation.
+
+- Works today for every product: the drawn bench (standard tier) — no new
+  assets needed.
+- Derivable safely: split layers from any registered studio still
+  (`capture-specimen`), which is all the enhanced tier needs.
+- Needs new rendering: a studio still per product. The pipeline exists
+  (`capture-studio` on the V4 container); the open question is the LABEL —
+  the owner's artwork relabelled carries draft lines (`DEMO_ARTWORK`), the
+  generated label (`studio/label.ts`) is clean but is not the real packaging.
+  Owner decision before any batch render.
+- Falls back without going bland: no area → neutral studio stone; one
+  presentation → no index; long names → two-line label; liquid → visible level.
+
+**Decisions for the owner.**
+
+1. Is the bench the quality bar for the catalogue? (If yes: rollout below.)
+2. The drawn plate's liquid sits behind its label everywhere else; the bench
+   fills it to the shoulder so the level can be seen. Keep that on the bench
+   only, or adopt it on the cards too?
+3. Batch-render studio stills (enhanced tier) — and with which label?
+4. Semaglutide's still still carries DEMO_ARTWORK lines; the bench shows it
+   larger than the plate did.
+
+**Recommended rollout (not started).** (1) Owner approves the bench on
+Semaglutide. (2) Flip the allowlist to "every product without a world" in one
+commit (the drawn tier needs no assets) and walk one product per area and per
+form on desktop and phone. (3) Make the drawn vial travel alone for every
+product (`SpecimenPlate travel`; DEFERRED_POLISH). (4) Retire `ProductPlate`
+once nothing uses it. (5) Enhanced tier per product as renders are approved:
+`capture-studio` → `capture-specimen` → `check:media`. (6) Record the bench in
+CONVENTIONS §11 alongside the vial transition and the ribbon.
 
 ## 8al. Flagship idea #4: the specimen under inspection (2026-10-02, PROTOTYPE)
 

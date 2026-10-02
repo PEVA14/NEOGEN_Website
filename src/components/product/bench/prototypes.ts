@@ -15,4 +15,8 @@ export const BENCH_PROTOTYPES: ReadonlySet<string> = new Set([
   "bac-water", // sold by volume: a liquid, in the materials area
   "lipo-c-with-b12", // a stated five-part composition, one presentation
   "hcg", // sold in units (IU), hormonal area
+  // Trying to break it:
+  "cjc-1295-without-dac-ipamorelin", // the longest name, a two-part blend
+  "dermorphin", // no discovery area at all
+  "healthy-hair-skin-nails-blend", // a liquid with a long name, skin area
 ]);
