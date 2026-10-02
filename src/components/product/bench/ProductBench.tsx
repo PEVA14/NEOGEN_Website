@@ -8,7 +8,7 @@ import { names, type Specimen } from "@/components/vial-transition/specimens";
 import { scaleSizes } from "@/components/vial-transition/SpecimenLayers";
 import { PLATE_SIZES } from "@/content/media";
 
-import { useArrival } from "./arrival";
+import { useArrival } from "../arrival";
 import styles from "./ProductBench.module.css";
 
 import type { DiscoveryAreaId } from "@/data/discovery";
@@ -35,10 +35,6 @@ const LEVEL_STIFFNESS = 170;
 const LEVEL_DAMPING = 5.5;
 /** The slosh a set-down gives it, in degrees per second. */
 const SET_DOWN_SLOSH = 70;
-
-/** A critically damped settle (Motion+'s easing generator, 0.45 s). */
-const SETTLE_EASE =
-  "linear(0, 0.0507, 0.1614, 0.2915, 0.4192, 0.5342, 0.6326, 0.714, 0.7796, 0.8317, 0.8723, 0.9038, 0.9279, 0.9462, 0.96, 0.9704, 0.9781, 0.9839, 0.9882, 0.9913, 0.9937, 0.9954, 0.9966, 0.9975, 0.9982, 0.9987, 1)";
 
 /** When a specimen arriving from a card touches down (ProductBench.module.css). */
 const TOUCHDOWN_MS = { specimen: 760, direct: 140 } as const;
@@ -190,7 +186,8 @@ export function ProductBench({
     if (!node || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     node.animate([{ translate: "0 -0.6%" }, { translate: "0 0" }], {
       duration: 520,
-      easing: SETTLE_EASE,
+      // The system's settle (motion.css), read rather than copied.
+      easing: getComputedStyle(node).getPropertyValue("--ease-settle").trim() || "ease-out",
     });
     window.setTimeout(() => slosh.current(SET_DOWN_SLOSH * 0.6), 120);
   }, [selected]);

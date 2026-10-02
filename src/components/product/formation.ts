@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useLayoutEffect, useState, type RefObject } from "react";
 
 import type { WorldFormation } from "@/config/worlds";
-import { incomingSpecimen, isIncoming } from "@/components/vial-transition/incoming";
+import { incomingSpecimen } from "@/components/vial-transition/incoming";
+
+import { useArrival } from "./arrival";
 
 /**
  * THE WORLD COMES OUT OF THE PRODUCT — the product page's side of it.
@@ -29,7 +31,7 @@ import { incomingSpecimen, isIncoming } from "@/components/vial-transition/incom
  * Everything that moves is CSS on `transform` and `opacity`, so the compositor
  * runs it; nothing is written per frame from here (V2 notes, trap 7).
  */
-export type Arrival = "specimen" | "direct";
+export type { Arrival } from "./arrival";
 
 /**
  * The light's size while it is held round the vial: the radius of its ellipse
@@ -52,9 +54,7 @@ export function useFormation(
   stage: RefObject<HTMLElement | null>,
   panel: RefObject<HTMLElement | null>,
 ) {
-  const [arrival] = useState<Arrival>(() =>
-    formation && isIncoming(slug) ? "specimen" : "direct",
-  );
+  const arrival = useArrival(slug, formation !== null);
   /*
    * While a specimen's world forms, the 3D stays unmounted: the canvas boot is
    * ~240ms of main thread (CONVENTIONS §11, rule 2) and belongs after the

@@ -14,7 +14,9 @@
    * collapsed into one shared beige". A render's set takes the same tone by
    * luminosity (`.set`), so its own light, shadow and reflection survive.
    */
-  --bench-stone: color-mix(in oklab, #e9e5dc 90%, var(--area-hue, #e9e5dc));
+  /* 6%: at 10% the metabolic bench read as a cold grey placeholder; at 4%
+     the eight areas collapsed back into one beige (compared side by side). */
+  --bench-stone: color-mix(in oklab, #e9e5dc 94%, var(--area-hue, #e9e5dc));
   --bench-band: max(var(--gutter), calc((100vw - var(--container-max)) / 2));
   --bench-gap: var(--space-4xl);
   /* Capped by the height too, so the caption rail is in the first screen of
@@ -278,53 +280,21 @@
   --bench-at-rail: 200ms;
 }
 
-.stage {
-  --bench-settle: linear(
-    0,
-    0.0507,
-    0.1614,
-    0.2915,
-    0.4192,
-    0.5342,
-    0.6326,
-    0.714,
-    0.7796,
-    0.8317,
-    0.8723,
-    0.9038,
-    0.9279,
-    0.9462,
-    0.96,
-    0.9704,
-    0.9781,
-    0.9839,
-    0.9882,
-    0.9913,
-    0.9937,
-    0.9954,
-    0.9966,
-    0.9975,
-    0.9982,
-    0.9987,
-    1
-  );
-}
-
 @media (prefers-reduced-motion: no-preference) {
   .set {
-    animation: bench-set 720ms var(--bench-settle) var(--bench-at-set) both;
+    animation: bench-set 720ms var(--ease-settle) var(--bench-at-set) both;
   }
 
   .frame::before {
-    animation: bench-register-start 600ms var(--bench-settle) var(--bench-at-marks) both;
+    animation: bench-register-start 600ms var(--ease-settle) var(--bench-at-marks) both;
   }
 
   .frame::after {
-    animation: bench-register-end 600ms var(--bench-settle) var(--bench-at-marks) both;
+    animation: bench-register-end 600ms var(--ease-settle) var(--bench-at-marks) both;
   }
 
   .rail::before {
-    animation: bench-draw 700ms var(--bench-settle) var(--bench-at-rail) both;
+    animation: bench-draw 700ms var(--ease-settle) var(--bench-at-rail) both;
   }
 
   .rail > * {
@@ -336,7 +306,7 @@
   .stage[data-specimen="drawn"] :global([data-part="contact"]) {
     transform-box: fill-box;
     transform-origin: center;
-    animation: bench-contact 640ms var(--bench-settle) var(--bench-at-set) both;
+    animation: bench-contact 640ms var(--ease-settle) var(--bench-at-set) both;
   }
 
   .stage[data-specimen="drawn"] :global([data-part="reflection"]) {
@@ -350,7 +320,7 @@
 
   /* Set down: the last few millimetres onto the bench, as its floor forms. */
   .settle {
-    animation: bench-touchdown 520ms var(--bench-settle) var(--bench-at-touch) both;
+    animation: bench-touchdown 520ms var(--ease-settle) var(--bench-at-touch) both;
   }
 }
 

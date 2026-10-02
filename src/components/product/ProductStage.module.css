@@ -350,40 +350,12 @@
 .stage[data-formation] {
   /*
    * Springs, as CSS (Motion+'s easing generator, baked into `linear()`).
-   * `--wf-settle`: critically damped, 0.45 s perceived — an instrument's
-   * needle coming to rest, with no overshoot (nothing in RETA bounces).
+   * `--wf-settle`: the system's `--ease-settle` (motion.css) — an
+   * instrument's needle coming to rest, with no overshoot.
    * (`--wf-rise`, overdamped, 0.7 s — starts at once, settles slowly — is
    * written into the light's keyframes, which cannot read a variable.)
    */
-  --wf-settle: linear(
-    0,
-    0.0507,
-    0.1614,
-    0.2915,
-    0.4192,
-    0.5342,
-    0.6326,
-    0.714,
-    0.7796,
-    0.8317,
-    0.8723,
-    0.9038,
-    0.9279,
-    0.9462,
-    0.96,
-    0.9704,
-    0.9781,
-    0.9839,
-    0.9882,
-    0.9913,
-    0.9937,
-    0.9954,
-    0.9966,
-    0.9975,
-    0.9982,
-    0.9987,
-    1
-  );
+  --wf-settle: var(--ease-settle);
   --wf-settle-time: 800ms;
 }
 
