@@ -3,8 +3,9 @@
 Product page, section 02. A label-styled band wound round a vial at the
 bench's edge unwinds across the page and becomes the panel that holds the
 section's specifications. Built as a spike (2026-09-30, from the owner's
-sketches), made permanent on 2026-10-01 (owner). On the three flagships — RETA, GLOW
-and GHK-Cu; CONVENTIONS §11
+sketches), made permanent on 2026-10-01 (owner). On every product page —
+first on the three flagships, then on all of them the same day (owner: "every
+vial should have it in its product page, not only reta"); CONVENTIONS §11
 records why it is the second exception to the static product page.
 
 ## What it does
@@ -46,15 +47,42 @@ its camera a quarter, so it draws the wide picture, turned. Where the band
 unwinds less than a quarter turn and a logo (a short panel), the vial carries
 one logo that drifts, not two.
 
-**Without it** — a product with no bench (`benches.ts`), reduced motion, no
-WebGL 2 — section 02 renders exactly as it always has. If the band's code or
+**Without it** — reduced motion, no WebGL 2 — section 02 renders exactly as it always has. If the band's code or
 WebGL fails after all, an error boundary shows the panel at once.
 
 ## How
 
-- **Per product** (`benches.ts`): the vial still with its body's proportions,
-  the model it was rendered from, and the label's stripe and ink. Plain data;
-  `check:media` reads it.
+- **One bench** (`benches.ts`, `BENCH`): the vial still with its body's
+  proportions, the model it was rendered from, and the label's stripe and
+  ink. Plain data; `check:media` reads it. What is per product — the name, the
+  range, the presentations, the classification — comes from the catalogue.
+- **As long as what it holds** (owner, 2026-10-01: "too much blank space when
+  there's not enough info"): across, the panel is sized by its content, from
+  55 % of the run (vial's edge to the bench's margin) to all of it — a single
+  presentation lands a band about two-thirds as long as RETA's seven. The
+  canvas measures the panel, so the band unwinds to wherever it ends. To make
+  that possible the panel is no longer a container: its type is sized from
+  `--u` (a hundredth of the band's height, what `cqb` was), and each part has
+  a most it takes of the run (name 22 %, ladder 55 %, facts 24 %).
+- **The catalogue's tail**, every case laid out by rule rather than by hand:
+  - the name is set smaller when its longest word (`--word-chars`) would not
+    fit its column (SURVODUTIDE, (METHYLCOBALAMIN)); on the upright vial it is
+    fitted to the label's height as well (`drawWords`; "CJC-1295 without DAC +
+    Ipamorelin" is four lines);
+  - a range is set in its ends (`rangeEnds`, one box each), so it breaks
+    between them, after the dash, and inside one only after a sign when the
+    end is longer than the line (Lipo-C's five components) — never between a
+    number and its unit; the vial's print breaks the same way;
+  - a step is 12 % of the run, or as wide as its figure at full size (Lipo-C's
+    "15+50+50+5+1"), seven sharing 55 %; its figure is smaller when it would
+    not fit (`--steps`, `--chars`, `--reserve` for the padding and the unit
+    beside): L-carnitine's six "1200"s are set smaller than RETA's seven. A
+    unit of more than a word ("mg / 10 ml") goes under its figure. Upright,
+    the columns are as wide as the longest figure needs, as many to a line as
+    fit.
+  Audited 2026-10-01 on all 85 products at 375, 390, 768, 1024, 1440 and 1920
+  wide (in iframes, the layout only): no overflow, no overlap, nothing into
+  the hairline or the stripe.
 - **Geometry** (`ribbon.ts`, `layRibbon`): one strip, three parts — a spiral
   round the vial (outermost turn leaving at its back, heading right; upstream
   it passes the front, so on the visible half it is seen wrapped round the
@@ -115,15 +143,16 @@ refracting the page's paper (`#f3f0ea`) rather than RETA's dark world; on
 RETA's own rig the glass read as navy. 900 × 1640 canvas at 2×, then measured
 for `bodyTop`, `bodyBottom` and `radius`.
 
-**One still for the three flagships.** RETA, GLOW and GHK-Cu ship on the same
-V4 container and differ only in the label's picture (`reta-v7.glb`,
-`glow-v4.glb`, `ghk-cu-v4.glb` are byte-identical in geometry and materials),
-and the still does not show the label — so a render from any of them is the
-same picture. They also wear one label design, re-lettered, so the band's
-stripe and ink are the same too (`benches.ts`). `check:media` fingerprints
-each bench's page model — every byte of geometry and every material setting,
-the label's picture aside — against the model the still was rendered from,
-and fails on a mismatch.
+**One still for every product.** Every product ships in the V4 container: the
+flagships differ only in the label's picture (`reta-v7.glb`, `glow-v4.glb`,
+`ghk-cu-v4.glb` are byte-identical in geometry and materials), and every
+other product is shot on RETA's model (the studio reads `MEDIA.reta.model`).
+The still does not show the label, so a render from any of them is the same
+picture. They also wear one label design, re-lettered, so the band's stripe
+and ink are the same too (`benches.ts`). `check:media` fingerprints every
+product's model — every byte of geometry and every material setting, the
+label's picture aside — against the model the still was rendered from, and
+fails on a mismatch, or when that model is not RETA's.
 
 The capture mode that rendered it lived in the spike and was not kept (it
 needed label-hiding hooks in `VialModel`). Re-labelling a flagship needs
@@ -133,9 +162,10 @@ needs that mode rebuilt, or the studio page taught to drop the label
 
 ## Adding a product
 
-A product on the V4 container with the flagship label: an entry in
-`benches.ts` reusing `V4_BARE` and `FLAGSHIP_LABEL`. On another container, or
-another label design: a still of that bare vial (as above), its body measured
-off it, and its label's colours. The panel lays out one to seven presentations
-(a short ladder keeps a step's width, from the left). Nothing else is per
-product.
+Nothing: a new product in the catalogue opens section 02 on the bench. The
+panel lays out one to seven presentations and sets its own length; a figure,
+name or range longer than any today is shrunk to fit, so re-run the audit
+above if one is much longer. A product on another container, or under another label
+design, would need its own bench — a still of that bare vial (as above), its
+body measured off it, its label's colours — and `benchFor` back in
+`benches.ts`; `check:media` fails until then if it ships a model.

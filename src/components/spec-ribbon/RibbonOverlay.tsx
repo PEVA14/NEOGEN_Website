@@ -551,32 +551,63 @@ function drawWords(name: HTMLElement, range: HTMLElement, width: number, height:
     return style;
   };
 
-  // The name, wrapped by words to the width, at the panel's size or smaller.
+  // The name and the range, each wrapped by words to the width, at the panel's
+  // sizes or smaller — small enough that every line fits the label's height.
+  // The range breaks where the panel's does: between its ends, and inside one
+  // only after a sign (RibbonBench joins the rest with no-break spaces).
   const nameStyle = getComputedStyle(name);
   const words = (name.textContent ?? "").toUpperCase().split(/\s+/).filter(Boolean);
+  // The range's ends (`rangeEnds`): whole where they fit, else by their signs.
+  const ends = [...range.querySelectorAll<HTMLElement>(":scope > span > span")].map((end) =>
+    (end.textContent ?? "").toUpperCase(),
+  );
+  const rangeFont = parseFloat(getComputedStyle(range).fontSize);
+  const wrap = (parts: string[]) => {
+    const lines: string[] = [];
+    for (const part of parts) {
+      const last = lines[lines.length - 1];
+      if (last && ctx.measureText(`${last} ${part}`).width <= width)
+        lines[lines.length - 1] = `${last} ${part}`;
+      else lines.push(part);
+    }
+    return lines;
+  };
+  const widest = (parts: string[]) => Math.max(0, ...parts.map((p) => ctx.measureText(p).width));
   let size = parseFloat(nameStyle.fontSize);
   set(name, size);
-  const widest = Math.max(...words.map((word) => ctx.measureText(word).width));
-  if (widest > width) size *= width / widest;
-  set(name, size);
-  const lines: string[] = [];
-  for (const word of words) {
-    const last = lines[lines.length - 1];
-    if (last && ctx.measureText(`${last} ${word}`).width <= width)
-      lines[lines.length - 1] = `${last} ${word}`;
-    else lines.push(word);
+  if (widest(words) > width) size *= width / widest(words);
+  let lines: string[] = [];
+  let rangeLines: string[] = [];
+  let rangeSize = 0;
+  let total = 0;
+  // Shrinking can re-wrap into fewer lines, so measure until it fits.
+  for (let pass = 0; pass < 4; pass++) {
+    set(name, size);
+    lines = wrap(words);
+    rangeSize = Math.min(rangeFont, size * 0.8);
+    set(range, rangeSize);
+    const terms = ends.flatMap((end) =>
+      ctx.measureText(end).width <= width ? [end] : end.split(" "),
+    );
+    if (widest(terms) > width) rangeSize *= width / widest(terms);
+    set(range, rangeSize);
+    rangeLines = wrap(terms);
+    total = (lines.length * size + (rangeLines.length - 1) * rangeSize) * 1.15 + rangeSize * 1.7;
+    if (total <= height) break;
+    size *= height / total;
   }
-  const lineHeight = size * 1.15;
-  const rangeSize = Math.min(parseFloat(getComputedStyle(range).fontSize), size * 0.8);
-  const total = lines.length * lineHeight + rangeSize * 0.7 + rangeSize;
   let y = Math.max(0, (height - total) / 2);
+  set(name, size);
   for (const line of lines) {
     ctx.fillText(line, 0, y);
-    y += lineHeight;
+    y += size * 1.15;
   }
   y += rangeSize * 0.7;
   set(range, rangeSize);
-  ctx.fillText((range.textContent ?? "").toUpperCase(), 0, y);
+  for (const line of rangeLines) {
+    ctx.fillText(line, 0, y);
+    y += rangeSize * 1.15;
+  }
 
   const texture = new CanvasTexture(canvas);
   texture.flipY = false;

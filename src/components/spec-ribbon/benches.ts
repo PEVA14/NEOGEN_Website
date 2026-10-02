@@ -1,7 +1,6 @@
 /**
- * THE SPECIFICATIONS RIBBON, PER PRODUCT — which products have one, and what
- * of theirs it is made of. A product without an entry keeps section 02 as it
- * is. Plain data (no three.js), so `check:media` can read it.
+ * THE SPECIFICATIONS RIBBON'S BENCH — what every product's ribbon is made of.
+ * Plain data (no three.js), so `check:media` can read it.
  */
 
 /** The bench's vial: a bare container (no label), rendered on the page's paper. */
@@ -31,10 +30,13 @@ export interface Bench {
 }
 
 /*
- * The flagships share one container — the V4 crimp-top — and one label design,
- * re-lettered per product (`content/media/registry.ts`). Their models differ
- * only in the label's picture, so one still of the bare container is every
- * flagship's bench vial, and the label's colours are every flagship's band.
+ * EVERY PRODUCT SHIPS IN ONE CONTAINER — the V4 crimp-top — under one label
+ * design, re-lettered per product (`content/media/registry.ts`). The flagships'
+ * models differ only in the label's picture, and every other product is shot
+ * on RETA's container wearing its own name. So one still of the bare
+ * container is every product's bench vial, and the label's colours are every
+ * product's band; the name and range on the vial are drawn per product at run
+ * time (`RibbonOverlay`, `drawWords`).
  */
 const V4_BARE: BenchVial = {
   src: "/images/containers/v4-bare.webp",
@@ -46,23 +48,10 @@ const V4_BARE: BenchVial = {
   radius: 0.2265,
 };
 
-/** The flagship label: its stripe's ink to navy, and its navy. */
-const FLAGSHIP_LABEL = {
+/** The bench every product page sets section 02 on. */
+export const BENCH: Bench = {
+  vial: V4_BARE,
+  // The label's stripe, ink to navy, and its navy.
   stripe: ["#010104", "#1b1a67", "#3432c8"],
   ink: "#00167a",
-} as const;
-
-const BENCHES: Readonly<Record<string, Bench>> = {
-  reta: { vial: V4_BARE, ...FLAGSHIP_LABEL },
-  glow: { vial: V4_BARE, ...FLAGSHIP_LABEL },
-  "ghk-cu": { vial: V4_BARE, ...FLAGSHIP_LABEL },
 };
-
-export function benchFor(slug: string): Bench | null {
-  return BENCHES[slug] ?? null;
-}
-
-/** Every product with a bench, for `check:media`. */
-export function allBenches(): readonly (readonly [string, Bench])[] {
-  return Object.entries(BENCHES);
-}

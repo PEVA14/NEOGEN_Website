@@ -2574,17 +2574,44 @@ made permanent ("make the ribbon permanent too").
 
 - **`components/spec-ribbon/`**: `RibbonBench` (the bench and the DOM
   panel), `RibbonOverlay` (the band's canvas and paper shader), `ribbon.ts`
-  (geometry, print layout, script), `benches.ts` (per product: the vial
+  (geometry, print layout, script), `benches.ts` (the bench: the vial
   still, its model, the label's colours). README has the mechanism.
 - **The three flagships** (owner: "make benches for GLOW and GHK-Cu too").
   They share the V4 container — their models differ only in the label's
   picture, measured byte for byte — and one label design, so one still of
   the bare container (`public/images/containers/v4-bare.webp`) and one set
-  of label colours serve all three; no new render was needed. Other products
-  keep section 02 as it is (README: adding one). A short ladder (GLOW's one
+  of label colours serve all three; no new render was needed. A short ladder (GLOW's one
   step, GHK-Cu's two) keeps a step's width from the left instead of
   stretching; a name never breaks inside a word (GHK-Cu's hyphen). Checked
   landed at 1024, 1440 and 1920: no overflow.
+- **Every product** (owner, 2026-10-01: "every vial should have it in its
+  product page, not only reta"): all 85 product pages open section 02 on the
+  bench. Every product ships in the one container under the one label design
+  (generic products are shot on RETA's model, re-lettered), so `benches.ts`
+  is a single `BENCH`; the name and range are the product's own, drawn at run
+  time — no asset per product. What the catalogue's tail needed: a name on the
+  upright vial is fitted to the label's height as well as its width ("CJC-1295
+  without DAC + Ipamorelin" is four lines); a range breaks only between its
+  ends, after the dash, never inside "5 mg + 5 mg" (`unbroken`, in the panel
+  and on the vial); a ladder's figures are sized to their step from the step
+  count and the longest figure (L-carnitine's six "1200"s are set smaller
+  than RETA's seven), and a unit of more than a word ("mg / 10 ml") goes
+  under its figure. Checked landed on CJC-1295 + Ipamorelin, L-carnitine and
+  RETA at 1440 and 390: no overflow, RETA unchanged.
+- **As long as what it holds** (owner, 2026-10-01, on Survodutide: "glitchyness
+  with the names and the info in some", "too much blank space when there's
+  not enough info"): the name ran into the ladder (one long word in a fixed
+  column), and 76 of 85 products have one or two presentations in a band
+  built for seven. Across, the panel is now sized by its content — 55 % of
+  the run to all of it; most products land at 60–80 % — and the band unwinds
+  to its end. Each part has a most it takes of the run; the name shrinks by
+  its longest word; a range breaks between its ends, and inside one only
+  after a sign (Lipo-C's five components); a step widens to a long figure
+  (Lipo-C's blend) and its figure shrinks to fit beside its unit. Upright,
+  the ladder's columns are as wide as the longest figure needs. Audited on
+  all 85 products at 375, 390, 768, 1024, 1440 and 1920: no overflow or
+  overlap (it had found 2–4 px of overflow in RETA's ladder at 1024, and
+  twelve products at 768).
 - **Fallbacks**: reduced motion, no WebGL 2 — section 02 as it was. A
   failure after mount shows the panel at once (error boundary). The panel
   prints.
@@ -2620,10 +2647,11 @@ made permanent ("make the ribbon permanent too").
   shoulder, aligned with the panel's text, resting just above the band; the
   section is a heading's height shorter. Checked at 1024, 1440 and 1920, ES
   and EN, RETA and GLOW.
-- **Guard**: `check:media` fails when the bench still is missing, or when a
-  bench's page model is another container than the still's — a fingerprint
-  of every byte of geometry and every material setting, the label's picture
-  aside (it tells the V4 from the old jar).
+- **Guard**: `check:media` fails when the bench still is missing, when any
+  product's model is another container than the still's — a fingerprint of
+  every byte of geometry and every material setting, the label's picture
+  aside (it tells the V4 from the old jar) — or when the still's model is not
+  RETA's, the container every product without a model ships in.
 - **Removed with the spike**: the flag, the two earlier versions, the label
   hooks in `VialModel` and `RetaCanvas` (`unroll`, `rig`, `SceneLighting`),
   and the `?vialcapture` mode that rendered the still (DEFERRED_POLISH).
@@ -2633,8 +2661,8 @@ made permanent ("make the ribbon permanent too").
   navy; their worlds are amber and copper); on a real phone, the upright
   bench — its feel, its frame rate (4×-throttled: a steady 60), and the
   sticky header over the vial at some scroll positions.
-- **Status**: flagship idea #2 is complete and permanent (RETA, GLOW,
-  GHK-Cu; wide and upright). Idea #3 is next; nothing of it is built.
+- **Status**: flagship idea #2 is complete and permanent — on every product
+  page since 2026-10-01 (it began on RETA, GLOW and GHK-Cu); wide and upright. Idea #3 is next; nothing of it is built.
 
 ## 8ah. The stand-in matches the live vial (2026-09-30)
 

@@ -148,7 +148,15 @@ export function RibbonBench({
             <span ref={lockup} className={styles.lockup} aria-hidden="true" />
             <div className={styles.content}>
               <div className={styles.identity}>
-                <p ref={nameText} className={styles.name}>
+                <p
+                  ref={nameText}
+                  className={styles.name}
+                  style={
+                    {
+                      "--word-chars": Math.max(...name.split(" ").map((word) => word.length)),
+                    } as CSSProperties
+                  }
+                >
                   {name.split(" ").map((word, i) => (
                     <span key={i}>
                       {i > 0 ? " " : null}
@@ -157,16 +165,31 @@ export function RibbonBench({
                   ))}
                 </p>
                 <p ref={rangeText} className={styles.range}>
-                  {range}
+                  {rangeEnds(range).map((end, i) => (
+                    <span key={i}>
+                      {i > 0 ? " " : null}
+                      <span className={styles.end}>{end}</span>
+                    </span>
+                  ))}
                 </p>
               </div>
               <div className={styles.ladder}>
                 <p className={styles.key}>{stepsLabel}</p>
-                <ol>
+                <ol
+                  style={
+                    {
+                      "--steps": steps.length,
+                      "--chars": Math.max(...steps.map((step) => step.value.length)),
+                    } as CSSProperties
+                  }
+                >
                   {steps.map((step) => (
                     <li key={step.index}>
                       <span className={styles.stepIndex}>{step.index}</span>
-                      <span className={styles.stepValue}>
+                      <span
+                        className={styles.stepValue}
+                        data-stacked={step.unit.includes(" ") || undefined}
+                      >
                         {step.value}
                         <span className={styles.stepUnit}>{step.unit}</span>
                       </span>
@@ -203,6 +226,18 @@ export function RibbonBench({
  * (`upright`; owner, 2026-10-01: "make this section work for phones as well
  * … the exact same thing but vertically").
  */
+/**
+ * A range in its ends — "5 mg + 5 mg –", "10 mg + 10 mg" — each set as one box
+ * (`.end`), so a line breaks between them first, and inside one only after a
+ * sign when it is longer than the line (Lipo-C's five components): never
+ * between a number and its unit, nor before a sign.
+ */
+function rangeEnds(range: string): string[] {
+  return range
+    .split(/(?<=[–·]) /)
+    .map((end) => end.replace(/ (?=[^\d\s])/g, "\u00a0").replace(/(\d) /g, "$1\u00a0"));
+}
+
 function useRibbonAllowed(): { run: boolean; upright: boolean } {
   const [state, setState] = useState({ run: false, upright: false });
   useEffect(() => {

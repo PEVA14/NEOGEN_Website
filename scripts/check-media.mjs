@@ -17,7 +17,7 @@ import path from "node:path";
 import { products } from "../src/data/catalog/index.ts";
 import { DEMO_ARTWORK, MEDIA } from "../src/content/media/registry.ts";
 import { LIVE_FRAME_MARGIN } from "../src/components/product/liveFrame.ts";
-import { allBenches } from "../src/components/spec-ribbon/benches.ts";
+import { BENCH } from "../src/components/spec-ribbon/benches.ts";
 
 const PUBLIC = "public";
 const IMAGE_TYPES = new Set([".jpg", ".jpeg", ".png", ".webp", ".avif"]);
@@ -257,32 +257,36 @@ for (const [slug, specimen] of Object.entries(SPECIMENS)) {
 /* --------------------------------------------- the specifications ribbon --- */
 
 /*
- * THE BENCH'S VIAL IS THE PRODUCT'S OWN CONTAINER, BARE. The ribbon
- * (`spec-ribbon`) stands a render of a vial without its label at the bench's
- * edge and winds its band round it. The flagships share that render, because
- * their models differ only in the label's picture; a model re-exported in
- * another shape, glass or cap — or a product on another container — would
- * stand the wrong vial on the bench, silently.
+ * THE BENCH'S VIAL IS THE CONTAINER, BARE. The ribbon (`spec-ribbon`) stands a
+ * render of the vial without its label at the edge of every product's section
+ * 02 and winds its band round it. Every product ships in one container: a
+ * product with a model of its own differs from RETA's only in the label's
+ * picture, and one without is shot on RETA's (the studio reads
+ * `MEDIA.reta.model`). A model re-exported in another shape, glass or cap — or
+ * a product moved onto another container — would stand the wrong vial on every
+ * bench, silently.
  */
-for (const [slug, bench] of allBenches()) {
-  if (!products.some((p) => p.slug === slug)) {
-    fail("ribbon bench for an unknown product", `"${slug}" is not a slug in the catalog`);
-    continue;
-  }
+if (!existsSync(path.join(PUBLIC, BENCH.vial.src))) {
   // Decorative (alt=""): the panel beside it says everything.
-  if (!existsSync(path.join(PUBLIC, bench.vial.src))) {
-    fail("ribbon bench still is missing", `${slug} → ${bench.vial.src}`);
-  }
-  const model = MEDIA[slug]?.model;
-  if (!model || !existsSync(path.join(PUBLIC, model))) {
-    fail("ribbon bench for a product with no model", slug);
-  } else if (containerOf(model) !== containerOf(bench.vial.model)) {
+  fail("ribbon bench still is missing", BENCH.vial.src);
+}
+const benchContainer = containerOf(BENCH.vial.model);
+for (const [slug, entry] of Object.entries(MEDIA)) {
+  if (!entry.model || !existsSync(path.join(PUBLIC, entry.model))) continue;
+  if (containerOf(entry.model) !== benchContainer) {
     fail(
       "ribbon bench still is of another container",
-      `${slug} loads ${model}, which differs from ${bench.vial.model} (the still's) beyond its ` +
-        "label; re-render the still (components/spec-ribbon/README.md)",
+      `${slug} loads ${entry.model}, which differs from ${BENCH.vial.model} (the still's) ` +
+        "beyond its label; re-render the still (components/spec-ribbon/README.md)",
     );
   }
+}
+if (MEDIA.reta?.model !== BENCH.vial.model) {
+  fail(
+    "ribbon bench still is not of the canonical container",
+    `the still was rendered from ${BENCH.vial.model}; products without a model ship in ` +
+      `${MEDIA.reta?.model} — re-render the still, or name its model (spec-ribbon/benches.ts)`,
+  );
 }
 
 /**

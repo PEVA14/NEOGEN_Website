@@ -475,7 +475,7 @@ is held to the rules below:
   both) — or its lighting, materials or pose (nothing can check those).
 
 **A second exception, by owner decision (2026-10-01): the specifications
-ribbon.** On the flagships' product pages, section 02 opens on a bench: a still of the
+ribbon.** On every product page, section 02 opens on a bench: a still of the
 bare vial at the page's edge, and a label-styled band wound round it that
 unwinds once into the panel holding the specifications —
 `components/spec-ribbon/` (its README has the mechanism and the cost). It is
@@ -487,14 +487,18 @@ held to these rules:
 - the specifications are real DOM in the reading order throughout — the
   canvas draws only paper and print, never content;
 - under 64rem it runs upright — the same scene a quarter turn, the band
-  unrolling down the page; reduced motion, no WebGL 2 or a product without a
-  bench get section 02 as it is; a failure after mount shows the panel at
-  once;
+  unrolling down the page; reduced motion or no WebGL 2 get section 02 as
+  it is; a failure after mount shows the panel at once;
 - its canvas draws only while the band moves (none while the page scrolls),
   and is made only when the bench is near;
-- the bench's vial is a still of the product's own container, bare (the
-  flagships share one: same V4 container, labels aside), and `check:media`
-  fails when a page's model is another container than the still's.
+- the bench's vial is a still of the container, bare — one for every
+  product, since every product ships in the V4 (labels aside) — and
+  `check:media` fails when any product's model is another container than
+  the still's;
+- it is the same for every product: nothing per product but what the
+  catalogue says (name, range, presentations, classification), laid out by
+  rule to fit any of them — the panel as long as what it holds, never
+  per-product sizes.
 
 What a V1 product viewer does:
 

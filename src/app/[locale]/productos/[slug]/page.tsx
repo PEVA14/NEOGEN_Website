@@ -20,7 +20,7 @@ import { CitationRail } from "@/components/research";
 import { Body, Mono } from "@/components/typography";
 import { ProductCard, TextLink } from "@/components/ui";
 import { PageTransition } from "@/components/vial-transition/PageTransition";
-import { benchFor } from "@/components/spec-ribbon/benches";
+import { BENCH } from "@/components/spec-ribbon/benches";
 import { RibbonBench } from "@/components/spec-ribbon/RibbonBench";
 import { FlagshipShop } from "@/components/storefront";
 import { routes } from "@/config/routes";
@@ -555,14 +555,13 @@ export default async function ProductPage({
                 />
               </>
             );
-            const bench = benchFor(product.slug);
             /* The specifications ribbon (components/spec-ribbon): a band
-               unwound off the vial becomes the panel that holds this section.
-               Without it — no bench for this product, a narrow screen,
-               reduced motion, no WebGL — the section as it is. */
-            return bench ? (
+               unwound off the vial becomes the panel that holds this section,
+               on every product. Without it — reduced motion, no WebGL — the
+               section as it is, under its heading. */
+            return (
               <RibbonBench
-                bench={bench}
+                bench={BENCH}
                 heading={header}
                 name={product.name}
                 range={presentationRange(product)}
@@ -591,11 +590,6 @@ export default async function ProductPage({
               >
                 {section}
               </RibbonBench>
-            ) : (
-              <>
-                {header}
-                {section}
-              </>
             );
           })()}
         </Container>
