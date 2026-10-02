@@ -98,6 +98,32 @@ export function AddToBag({
   }, [enabled]);
 
   const selected = variants.find((v) => v.variantId === selectedId) ?? variants[0];
+
+  /*
+   * THE PRICE ANSWERS THE CHOICE. When the presentation changes, the new
+   * figure comes up into place (interface motion: shortened, not removed,
+   * under reduced motion — the duration tokens do that). Never on first
+   * paint: the price is simply there.
+   */
+  const priceRef = useRef<HTMLSpanElement>(null);
+  const priced = useRef(selectedId);
+  useEffect(() => {
+    if (priced.current === selectedId) return;
+    priced.current = selectedId;
+    const node = priceRef.current;
+    if (!node) return;
+    const duration = parseFloat(
+      getComputedStyle(node).getPropertyValue("--motion-duration-slow") || "340",
+    );
+    node.animate(
+      [
+        { opacity: 0, translate: "0 0.18em" },
+        { opacity: 1, translate: "0 0" },
+      ],
+      { duration, easing: "cubic-bezier(0.2, 0, 0.1, 1)" },
+    );
+  }, [selectedId]);
+
   const soldOut = selected?.availability === "unavailable";
   const canAdd = enabled && Boolean(selected?.price) && !soldOut;
 
@@ -205,7 +231,9 @@ export function AddToBag({
           </Mono>
           {selected?.price ? (
             <>
-              <span className={styles.priceValue}>{formatPrice(selected.price, localeTag)}</span>
+              <span ref={priceRef} className={styles.priceValue}>
+                {formatPrice(selected.price, localeTag)}
+              </span>
               {selected.pack ? (
                 <Mono size="2xs" className={styles.pack}>
                   {selected.presentation} {selected.pack}

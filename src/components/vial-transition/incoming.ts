@@ -43,6 +43,19 @@ export function transitionWillPlay(): boolean {
  * `specimen` the vial's own box inside it, which on a flagship card is off to
  * one side (where a world's light starts — `product/formation.ts`).
  */
+/*
+ * A back or forward navigation never carries a specimen — React runs it
+ * without a view transition (README, trap 3) — so it clears any mark. Without
+ * this, going back and then forward within the window replayed a card
+ * arrival with no flight: a flagship held its canvas, and a bench set its
+ * specimen down from nowhere.
+ */
+if (typeof window !== "undefined") {
+  window.addEventListener("popstate", () => {
+    pending = null;
+  });
+}
+
 export function markIncoming(
   slug: string,
   origin: OriginRect | null = null,

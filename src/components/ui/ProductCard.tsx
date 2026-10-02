@@ -9,6 +9,7 @@ import { SpecimenPlate } from "@/components/ui/SpecimenPlate";
 import { WorldDot } from "@/components/ui/WorldDot";
 import { CARD_SIZES, commerceStill, productMedia, stillMedia } from "@/content/media";
 import { arm, useArmed } from "@/components/vial-transition/armed";
+import { BENCH_PROTOTYPES } from "@/components/product/bench/prototypes";
 import { boxOf, markIncoming } from "@/components/vial-transition/incoming";
 import { SPECIMEN_NAVIGATION } from "@/components/vial-transition/PageTransition";
 import { SpecimenLayers } from "@/components/vial-transition/SpecimenLayers";
@@ -301,8 +302,19 @@ export function ProductCard({
               loading="lazy"
             />
           ) : (
+            /*
+             * A product that opens on the bench (prototype) sends its drawn
+             * VIAL, as a rendered specimen is sent, and leaves its set behind;
+             * every other drawn product still sends the whole plate.
+             */
             <TravelsAs
-              name={transition ? (armed ? names.plate(slug) : "auto") : null}
+              name={
+                transition && !BENCH_PROTOTYPES.has(slug)
+                  ? armed
+                    ? names.plate(slug)
+                    : "auto"
+                  : null
+              }
               share="vt-plate"
             >
               <SpecimenPlate
@@ -314,6 +326,13 @@ export function ProductCard({
                 index={variant === "store" ? undefined : index}
                 annotation={presentationRange ?? undefined}
                 size={format === "feature" ? "feature" : "card"}
+                travel={
+                  transition && BENCH_PROTOTYPES.has(slug)
+                    ? armed
+                      ? names.specimen(slug)
+                      : "auto"
+                    : null
+                }
               />
             </TravelsAs>
           )}

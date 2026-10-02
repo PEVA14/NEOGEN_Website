@@ -1,0 +1,464 @@
+/*
+ * The bench — see ProductBench.tsx.
+ *
+ * Bright field: the studio's own stone, extended across the stage, so the
+ * still's edges vanish into it and the specimen stands in a space rather than
+ * in a box. The flagships' worlds are the dark field of the same idea.
+ */
+
+.stage {
+  /*
+   * THE AREA'S MATERIAL. The studio sweep's own stone (sampled off a render's
+   * edges, #e9e5dc), taking a trace of the area's hue — the Design Bible's
+   * colour stage between the neutral store and a world: "an area is never
+   * collapsed into one shared beige". A render's set takes the same tone by
+   * luminosity (`.set`), so its own light, shadow and reflection survive.
+   */
+  --bench-stone: color-mix(in oklab, #e9e5dc 90%, var(--area-hue, #e9e5dc));
+  --bench-band: max(var(--gutter), calc((100vw - var(--container-max)) / 2));
+  --bench-gap: var(--space-4xl);
+  /* Capped by the height too, so the caption rail is in the first screen of
+     a laptop (the frame is 5:4 tall: 50dvh wide is 62.5dvh high). */
+  --bench-well: min(100%, 34rem, 50dvh);
+  --mark: 1.25rem;
+
+  position: relative;
+  display: grid;
+  grid-template-areas: "stage";
+  isolation: isolate;
+  overflow-x: clip;
+  background-color: var(--bench-stone);
+  /* Where the bench ends and the record begins: the area's own hairline. */
+  border-block-end: 1px solid var(--area-line, var(--border-subtle));
+}
+
+.stage > * {
+  grid-area: stage;
+}
+
+/*
+ * THE LAMP. One light over the specimen, in the area's tone — the one place
+ * the area colours the bench, and only as light: brightest where the
+ * specimen stands, the stone falling a little darker towards the edges.
+ * Centred on the media column (1.06 of 2.06 fractions, halved).
+ */
+.field {
+  --lamp-x: calc(var(--bench-band) + (100% - 2 * var(--bench-band) - var(--bench-gap)) * 0.2573);
+
+  background-image:
+    radial-gradient(
+      36rem 32rem at var(--lamp-x) 40%,
+      color-mix(in oklab, var(--neogen-paper) 62%, var(--area-hue, var(--neogen-paper)) 5%) 0%,
+      color-mix(in oklab, var(--neogen-paper) 30%, transparent) 45%,
+      color-mix(in oklab, var(--neogen-paper) 8%, transparent) 75%,
+      transparent 100%
+    ),
+    radial-gradient(
+      120% 110% at var(--lamp-x) 40%,
+      transparent 55%,
+      color-mix(in oklab, var(--bench-stone) 92%, var(--neogen-graphite)) 100%
+    );
+  pointer-events: none;
+}
+
+.composition {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.06fr) minmax(0, 1fr);
+  gap: var(--bench-gap);
+  /* Top-aligned: a long purchase column must not push the specimen and its
+     rail below the fold. */
+  align-items: start;
+  padding-block: var(--space-2xl) var(--space-3xl);
+  padding-inline: var(--bench-band);
+}
+
+/*
+ * THE FRAME: open. Registration marks at two corners and a caption rail —
+ * the instrument's marks, with no box drawn round the specimen and no fill
+ * behind it; the bench is the ground.
+ */
+.frame {
+  position: relative;
+  justify-self: center;
+  inline-size: var(--bench-well);
+  aspect-ratio: 4 / 5;
+}
+
+.frame::before,
+.frame::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  inline-size: var(--mark);
+  block-size: var(--mark);
+  border: 1px solid var(--area-line, var(--border-default));
+}
+
+.frame::before {
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  border-block-end: 0;
+  border-inline-end: 0;
+}
+
+.frame::after {
+  inset-block-end: 0;
+  inset-inline-end: 0;
+  border-block-start: 0;
+  border-inline-start: 0;
+}
+
+.fit {
+  position: absolute;
+  inset: 0;
+}
+
+/*
+ * THE SET — floor, shadow and reflection — feathered into the stone, so the
+ * still has no edge. Two masks, intersected: the feather (always), and the
+ * set forming outward from where the vial touches down (`--bench-set`, open
+ * at rest; the formation animates it).
+ */
+.set,
+.drawnSet {
+  position: absolute;
+  inset: 0;
+  mask-image:
+    radial-gradient(
+      var(--bench-set) calc(var(--bench-set) * 0.55) at 50% var(--bench-contact, 82%),
+      #000 55%,
+      transparent 100%
+    ),
+    /* Wide and low: the floor and the light on the wall behind the
+       specimen, fading out before the set's horizon band can draw a ring —
+       and inside the image's own box, whose edges would otherwise show. */
+    radial-gradient(50% 42% at 50% 58%, #000 38%, rgb(0 0 0 / 0.5) 66%, transparent 96%);
+  mask-composite: intersect;
+}
+
+/* The render's studio, re-lit in the area's tone: its luminance over the
+   stage's hue. The specimen above it is untouched — only the room changes. */
+.set {
+  mix-blend-mode: luminosity;
+}
+
+/*
+ * A DRAWING'S SET — no render to cut it from, so it is drawn the way the
+ * drawn plate draws its sweep: a lit wall falling to a soft horizon, a floor
+ * below it, in the bench's own stone. Feathered and formed exactly as a
+ * render's set is.
+ */
+.drawnSet {
+  background:
+    radial-gradient(
+      46% 34% at 50% 38%,
+      color-mix(in oklab, var(--bench-stone) 55%, #fff),
+      transparent 100%
+    ),
+    linear-gradient(
+      180deg,
+      var(--bench-stone) 0%,
+      var(--bench-stone) 62%,
+      color-mix(in oklab, var(--bench-stone) 94%, #000) 70%,
+      color-mix(in oklab, var(--bench-stone) 70%, #fff) 74%,
+      color-mix(in oklab, var(--bench-stone) 85%, #fff) 100%
+    );
+}
+
+.set img {
+  object-fit: cover;
+}
+
+@property --bench-set {
+  syntax: "<length-percentage>";
+  inherits: false;
+  initial-value: 260%;
+}
+
+.specimen {
+  position: absolute;
+  display: block;
+}
+
+.lean,
+.settle {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.cutout {
+  object-fit: contain;
+}
+
+/* A drawn specimen: the drawing alone, filling its box. */
+.settle > :global([data-bare]) {
+  block-size: 100%;
+}
+
+/*
+ * A liquid turns about its own surface, inside the glass (the physics). On
+ * the bench it fills to the shoulder: the drawn plate's level sits behind the
+ * label, where a level that keeps flat could never be seen. (The plate's own
+ * level is unchanged everywhere else — PROJECT_STATE, the bench.)
+ */
+.lean :global([data-part="liquid"]) {
+  transform-box: fill-box;
+  transform-origin: 50% 1%;
+  translate: 0 -84px;
+}
+
+/* --- The caption rail -------------------------------------------------- */
+
+.rail {
+  position: absolute;
+  inset-block-start: calc(100% + var(--space-xs));
+  inset-inline: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding-block-start: var(--space-xs);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--area-ink, var(--ink-muted));
+  font-variant-numeric: tabular-nums;
+}
+
+.rail::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  block-size: 1px;
+  background-color: var(--area-line, var(--border-subtle));
+}
+
+.reading {
+  color: var(--ink-primary);
+}
+
+/* --- Commerce ---------------------------------------------------------- */
+
+.commerce {
+  position: relative;
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  padding-inline-start: var(--space-2xl);
+}
+
+.commerce::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: 1px;
+  background-color: var(--area-line, var(--border-subtle));
+}
+
+/* --- Formation --------------------------------------------------------- */
+
+.stage[data-arrival="specimen"] {
+  --bench-at-touch: 600ms;
+  /* Just after contact: before it, the set's baked footprint would show
+     under a vial still a few pixels up. */
+  --bench-at-set: 760ms;
+  --bench-at-marks: 820ms;
+  --bench-at-rail: 700ms;
+}
+
+.stage[data-arrival="direct"] {
+  --bench-at-touch: 0ms;
+  --bench-at-set: 160ms;
+  --bench-at-marks: 300ms;
+  --bench-at-rail: 200ms;
+}
+
+.stage {
+  --bench-settle: linear(
+    0,
+    0.0507,
+    0.1614,
+    0.2915,
+    0.4192,
+    0.5342,
+    0.6326,
+    0.714,
+    0.7796,
+    0.8317,
+    0.8723,
+    0.9038,
+    0.9279,
+    0.9462,
+    0.96,
+    0.9704,
+    0.9781,
+    0.9839,
+    0.9882,
+    0.9913,
+    0.9937,
+    0.9954,
+    0.9966,
+    0.9975,
+    0.9982,
+    0.9987,
+    1
+  );
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .set {
+    animation: bench-set 720ms var(--bench-settle) var(--bench-at-set) both;
+  }
+
+  .frame::before {
+    animation: bench-register-start 600ms var(--bench-settle) var(--bench-at-marks) both;
+  }
+
+  .frame::after {
+    animation: bench-register-end 600ms var(--bench-settle) var(--bench-at-marks) both;
+  }
+
+  .rail::before {
+    animation: bench-draw 700ms var(--bench-settle) var(--bench-at-rail) both;
+  }
+
+  .rail > * {
+    animation: bench-expose 420ms var(--ease-standard) var(--bench-at-marks) both;
+  }
+
+  /* A drawing's set: its contact shadow spreads from under the foot, its
+     reflection comes up, as the vial touches down. */
+  .stage[data-specimen="drawn"] :global([data-part="contact"]) {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: bench-contact 640ms var(--bench-settle) var(--bench-at-set) both;
+  }
+
+  .stage[data-specimen="drawn"] :global([data-part="reflection"]) {
+    animation: bench-expose 640ms var(--ease-standard) var(--bench-at-set) both;
+  }
+
+  /* A new presentation's reading comes up in place of the last. */
+  .reading {
+    animation: bench-read 320ms var(--ease-standard) both;
+  }
+
+  /* Set down: the last few millimetres onto the bench, as its floor forms. */
+  .settle {
+    animation: bench-touchdown 520ms var(--bench-settle) var(--bench-at-touch) both;
+  }
+}
+
+@keyframes bench-set {
+  from {
+    --bench-set: 0%;
+  }
+}
+
+@keyframes bench-contact {
+  from {
+    opacity: 0;
+    scale: 0.35 1;
+  }
+}
+
+@keyframes bench-touchdown {
+  from {
+    translate: 0 -0.8%;
+  }
+}
+
+@keyframes bench-register-start {
+  from {
+    opacity: 0;
+    translate: 0.5rem 0.5rem;
+  }
+}
+
+@keyframes bench-register-end {
+  from {
+    opacity: 0;
+    translate: -0.5rem -0.5rem;
+  }
+}
+
+@keyframes bench-draw {
+  from {
+    scale: 0 1;
+  }
+}
+
+@keyframes bench-expose {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes bench-read {
+  from {
+    opacity: 0;
+    translate: 0 0.35em;
+  }
+}
+
+/* --- A tablet: side by side, closer ----------------------------------- */
+
+@media (min-width: 48rem) and (max-width: 63.999rem) {
+  .stage {
+    --bench-gap: var(--space-xl);
+    --mark: 1rem;
+  }
+
+  .commerce {
+    padding-inline-start: var(--space-xl);
+  }
+}
+
+/* --- Stacked (phones) ------------------------------------------------- */
+
+@media (max-width: 47.999rem) {
+  .stage {
+    --bench-gap: var(--space-xl);
+    --bench-well: min(100%, 26rem);
+    --mark: 1rem;
+  }
+
+  .composition {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    padding-block: var(--space-lg) var(--space-2xl);
+  }
+
+  .field {
+    --lamp-x: 50%;
+  }
+
+  /* A shorter frame on a phone, as the plate had: the name, the price and
+     the first presentations arrive with the object. */
+  .frame {
+    aspect-ratio: 1 / 1;
+    margin-block-end: var(--space-md);
+  }
+
+  .fit {
+    inset-inline: auto;
+    inset-inline-start: 50%;
+    block-size: 100%;
+    aspect-ratio: 4 / 5;
+    translate: -50% 0;
+  }
+
+  .commerce {
+    padding-inline-start: 0;
+    justify-items: stretch;
+  }
+
+  .commerce::before {
+    display: none;
+  }
+}

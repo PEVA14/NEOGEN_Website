@@ -26,7 +26,10 @@ import { FlagshipShop } from "@/components/storefront";
 import { routes } from "@/config/routes";
 import { siteConfig } from "@/config/site";
 import { getWorld } from "@/config/worlds";
-import { galleryImages, productMedia, resolveStageStill } from "@/content/media";
+import { commerceStill, galleryImages, productMedia, resolveStageStill } from "@/content/media";
+import { ProductBench, type BenchSpecimen } from "@/components/product/bench/ProductBench";
+import { BENCH_PROTOTYPES } from "@/components/product/bench/prototypes";
+import { specimenFor } from "@/components/vial-transition/specimens";
 import { compoundRecord, hasRecord, lineIds } from "@/content/compendium";
 import { termsInText } from "@/content/glossary";
 import { publicOverview } from "@/content/overview";
@@ -436,9 +439,22 @@ export default async function ProductPage({
     </CommercePanel>
   );
 
+  /* The bench: the split render the card travels from, or the drawing. */
+  const benchRender = specimenFor(product.slug);
+  const bench: BenchSpecimen | null =
+    world || !BENCH_PROTOTYPES.has(product.slug)
+      ? null
+      : benchRender
+        ? {
+            kind: "render",
+            specimen: benchRender,
+            alt: commerceStill(product.slug)?.alt ?? product.name,
+          }
+        : { kind: "drawn", name: product.name, annotation: presentationRange(product) };
+
   return (
     <PageTransition>
-      {/* 01 — THE PRODUCT. Flagship environment, or the quiet plate. */}
+      {/* 01 — THE PRODUCT. Flagship environment, the bench, or the quiet plate. */}
       {world ? (
         <Section
           mode="impact"
@@ -473,6 +489,24 @@ export default async function ProductPage({
           >
             {commercePanel}
           </ProductStage>
+        </Section>
+      ) : bench ? (
+        /* The bench (prototype, `bench/prototypes.ts`): the product standing
+           in its studio, alive in the bright field. */
+        <Section mode="quiet" padded={false} aria-label={product.name}>
+          <ProductBench
+            slug={product.slug}
+            areaId={areas[0]?.id ?? null}
+            specimen={bench}
+            presentations={product.variants.map((v) => ({
+              id: v.id,
+              label: `${formatStrength(v.strength)}${
+                v.vials ? ` ${dict.products.card.pack.replace("{n}", String(v.vials))}` : ""
+              }`,
+            }))}
+          >
+            {commercePanel}
+          </ProductBench>
         </Section>
       ) : (
         <Section mode="quiet" aria-label={product.name} className="max-md:pt-(--space-md)">

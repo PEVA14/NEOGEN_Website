@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useId, ViewTransition } from "react";
 
 import { Mono } from "@/components/typography";
 
@@ -51,6 +51,7 @@ export function SpecimenPlate({
   annotation,
   size = "card",
   bare = false,
+  travel = null,
 }: {
   /** Primary discovery area, for the label stripe. Null for unassigned products. */
   areaId: DiscoveryAreaId | null;
@@ -73,8 +74,23 @@ export function SpecimenPlate({
    * own light is the scene. The world's vial palette still applies.
    */
   bare?: boolean;
+  /**
+   * The vial transition: the view-transition name the OBJECT carries, so the
+   * drawn vial can leave its card alone and its set stay behind, as a
+   * rendered specimen does (`"auto"` while the card is not the tapped one).
+   * Null: the plate travels whole, or not at all, as its caller decides.
+   */
+  travel?: string | null;
 }) {
   void presentations;
+  const vial = (
+    <VialObject
+      className={styles.vial}
+      name={name}
+      line={annotation}
+      liquid={isLiquid(annotation)}
+    />
+  );
   return (
     <div
       className={styles.plate}
@@ -89,12 +105,13 @@ export function SpecimenPlate({
           <div className={styles.floor} aria-hidden="true" />
         </>
       )}
-      <VialObject
-        className={styles.vial}
-        name={name}
-        line={annotation}
-        liquid={isLiquid(annotation)}
-      />
+      {travel ? (
+        <ViewTransition name={travel} share="vt-specimen" default="none">
+          {vial}
+        </ViewTransition>
+      ) : (
+        vial
+      )}
       {index ? (
         <Mono size="2xs" className={styles.index}>
           {index}
@@ -220,17 +237,34 @@ function VialObject({
         </clipPath>
       </defs>
 
-      {/* Contact shadow and reflection — the object stands on something. */}
-      <ellipse cx="100" cy="317" rx="80" ry="7" fill={`url(#${id("shadow")})`} />
-      <rect x="31" y="317" width="138" height="20" fill={`url(#${id("reflection")})`} />
+      {/* Contact shadow and reflection — the object stands on something.
+          Tagged so a page can form them when the object is set down. */}
+      <ellipse
+        data-part="contact"
+        cx="100"
+        cy="317"
+        rx="80"
+        ry="7"
+        fill={`url(#${id("shadow")})`}
+      />
+      <rect
+        data-part="reflection"
+        x="31"
+        y="317"
+        width="138"
+        height="20"
+        fill={`url(#${id("reflection")})`}
+      />
 
       {/* Contents, clipped to the glass. */}
       <g clipPath={`url(#${id("body")})`}>
         {liquid ? (
-          <>
-            <rect x="29" y="200" width="142" height="116" fill={`url(#${id("fill")})`} />
-            <ellipse cx="100" cy="200" rx="70" ry="4" fill="var(--vial-fill)" opacity="0.9" />
-          </>
+          /* The liquid in a group of its own, wider than the glass, so a page
+             can keep its surface level when the vial leans. */
+          <g data-part="liquid">
+            <rect x="0" y="200" width="200" height="220" fill={`url(#${id("fill")})`} />
+            <ellipse cx="100" cy="200" rx="72" ry="4" fill="var(--vial-fill)" opacity="0.9" />
+          </g>
         ) : (
           <>
             {/* A lyophilised cake below the label: a domed top catching the light. */}
