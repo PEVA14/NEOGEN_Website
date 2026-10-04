@@ -295,3 +295,10 @@
   outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: var(--focus-ring-offset-width);
 }
+
+/* The archive map takes the lines' place where there is room to operate it. */
+@media (min-width: 64rem) {
+  .lineGroups {
+    display: none;
+  }
+}

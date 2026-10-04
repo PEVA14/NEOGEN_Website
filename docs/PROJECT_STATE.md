@@ -1,6 +1,10 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-10-03**: **flagship idea #6 — GHK-Cu, "matter responds
+Last updated **2026-10-04**: **the everyday motion baseline is prototyped —
+homepage, Semaglutide and Research — committed as a checkpoint, not
+pushed, awaiting the owner's review** (§8aq; the language and its rejected concepts are in
+`src/components/motion/README.md`). The planned consolidation pass is paused
+by the owner until this baseline is approved. Before that, 2026-10-03: **flagship idea #6 — GHK-Cu, "matter responds
 to its specimen" — is committed, GHK-Cu only, after the owner's review** (§8ap): a copper plate the vial burnishes in flight, a turned
 lustre round the landing, the name etched into the plate. Before that, the
 same day: **flagship idea #5 — GLOW, "the blend as light" — is committed,
@@ -2553,6 +2557,48 @@ Evaluated on a production build in headless Chrome, at 1440×900 and 390×844,
 from the catalogue grid, the phone strip and by direct URL; reduced motion;
 GLOW's circle unchanged; at 4× CPU throttle on the phone there is no long task
 between the flight's start and the formation's end.
+
+## 8aq. The everyday motion baseline (2026-10-04, PROTOTYPE)
+
+**Brief (owner, 2026-10-04).** Outside the three flagship worlds NEOGEN still
+read as "a beautiful static website with occasional animation". Raise the
+interaction floor across the public experience — micro and meso moments that
+make normal browsing say "oh, that's cool", flagships still the ceiling.
+Phases: study Motion+; audit the homepage, a standard PDP and Research; define
+a micro/meso/macro vocabulary and rules against fatigue; explore and reject;
+prototype on homepage, one standard PDP (Semaglutide) and Research (going
+furthest there). Motion must never invent scientific structure. Do not roll
+out site-wide, abstract everything, touch checkout/ops, or push. Pause the
+consolidation pass. Stop for review.
+
+**Built** (committed as a checkpoint; principles, vocabulary and rejections in
+`src/components/motion/README.md`):
+
+- Homepage — the catalogue directory gains a specimen lens that rides the
+  column edge with the pointer, the vial leaning against its travel
+  (`home/DirectoryLens`); "Explora por área" gets a travelling area rule and a
+  shelf that enters from the side of the tab chosen; every product card now
+  lifts the vial off its set instead of zooming the card.
+- Semaglutide (and every product page's buy box) — one travelling mark for the
+  chosen presentation; price, pack line and dock price swap digit by digit in
+  the direction of the change (`ValueRoll`); the sourced profile is a
+  claim ↔ source instrument (`SourceTether`): a marker draws a leader to its
+  reference, a reference marks the sentences citing it. Markers became links
+  to the rail (`ref-01`…).
+- Research — the hub's lines section becomes the archive map on wide screens
+  (35 lines × 62 compounds; a dot only where a sourced sentence places a
+  compound in a line; the inspector quotes that sentence); the compound record
+  gets the tether (source cards, the list being far below), glossary words
+  marked at first use with their definitions in place (`TermLens`,
+  `termSpans`) — on phones too, by tap (owner, 2026-10-04), each card ending
+  in a link to the term's own glossary entry — and a reading needle in its
+  index.
+
+**Verified.** Every gate passes; axe clean on the changed pages at 1440 and
+390 except `landmark-unique` on the crumbs of every knowledge page, which
+predates this pass (the glossary shows it too). No long tasks while operating
+the map or the lens at 4× CPU throttle. The hub's HTML grows by the map's
+sentences (~25 KB of text per locale, carried twice by the RSC payload).
 
 ## 8ap. Flagship idea #6: GHK-Cu, matter responds to its specimen (2026-10-03, PROTOTYPE)
 

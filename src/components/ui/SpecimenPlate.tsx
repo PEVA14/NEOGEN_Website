@@ -188,7 +188,13 @@ function VialObject({
   const fits = (text: string) => text.length * CHAR * fontSize <= LABEL_WIDTH;
 
   return (
-    <svg viewBox="0 0 200 340" className={className} aria-hidden="true" focusable="false">
+    <svg
+      viewBox="0 0 200 340"
+      className={className}
+      aria-hidden="true"
+      focusable="false"
+      data-object=""
+    >
       <defs>
         {/* Glass: darker at the silhouette, clear through the middle. */}
         <linearGradient id={id("glass")} x1="0" x2="1" y1="0" y2="0">

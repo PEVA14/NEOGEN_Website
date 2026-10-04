@@ -21,7 +21,12 @@ import { publicArticles } from "@/content/editorial";
 import { RESEARCH_FUNCTION_GROUPS } from "@/content/functions";
 import { researchReferenceIndex, referencesForArea } from "@/content/research";
 import { publishedProducts } from "@/data/catalog";
-import { productsInArea, publicAreas } from "@/data/discovery";
+import {
+  ArchiveMap,
+  type ArchiveCompound,
+  type ArchiveStatements,
+} from "@/components/research/ArchiveMap";
+import { productsInArea, publicAreas, publicAreasFor } from "@/data/discovery";
 import { publicEvidenceIndex } from "@/domain/quality";
 import { isLocale, localeTags } from "@/i18n/config";
 import { getDictionary } from "@/i18n/getDictionary";
@@ -102,6 +107,61 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
   const lineGroups = linesByGroup(locale)
     .map((g) => ({ ...g, lines: g.lines.filter((l) => linkable.has(l.fn.id)) }))
     .filter((g) => g.lines.length > 0);
+
+  /*
+   * THE ARCHIVE MAP's data — every linkable line, every compound placed in
+   * one by a sourced statement, and that statement. Columns are filed by the
+   * compound's first area, then by name: catalogue facts, never a grouping
+   * by likeness.
+   */
+  const areaOrder = publicAreas().map((a) => a.id);
+  const placed = new Map<string, { product: (typeof publishedProducts)[number] }>();
+  for (const g of lineGroups)
+    for (const l of g.lines) for (const c of l.compounds) placed.set(c.product.slug, c);
+  const mapCompounds: ArchiveCompound[] = [...placed.values()]
+    .map(({ product }) => {
+      const area = publicAreasFor(product.slug)[0]?.id ?? null;
+      return {
+        slug: product.slug,
+        name: product.name,
+        area,
+        href: hasRecord(product.slug)
+          ? path(routes.compound(product.slug))
+          : path(routes.product(product.slug)),
+      };
+    })
+    .sort((a, b) => {
+      const ia = a.area ? areaOrder.indexOf(a.area) : 99;
+      const ib = b.area ? areaOrder.indexOf(b.area) : 99;
+      return ia - ib || a.name.localeCompare(b.name, locale);
+    });
+  const column = new Map(mapCompounds.map((c, i) => [c.slug, i]));
+  const mapStatements: Record<string, { text: string; sources: number }> = {};
+  const mapGroups = lineGroups.map(({ group, lines }) => ({
+    id: group,
+    label: RESEARCH_FUNCTION_GROUPS.find((g) => g.id === group)?.label[locale] ?? group,
+    lines: lines.map((line) => {
+      for (const c of line.compounds) {
+        const sources = new Set(c.statements.flatMap((st) => st.references.map((r) => r.id)));
+        mapStatements[`${line.fn.id}|${c.product.slug}`] = {
+          text: c.statements.map((st) => st.text).join(" "),
+          sources: sources.size,
+        };
+      }
+      return {
+        id: line.fn.id,
+        label: line.fn.label[locale],
+        href: path(routes.line(line.fn.id)),
+        members: line.compounds
+          .map((c) => column.get(c.product.slug) ?? -1)
+          .filter((i) => i >= 0)
+          .sort((a, b) => a - b),
+      };
+    }),
+  }));
+  const mapAreaNames = Object.fromEntries(
+    areaOrder.map((id) => [id, dict.discovery.areas[id].short]),
+  );
 
   const hasPublicDocuments = publicEvidenceIndex(publishedProducts).length > 0;
   const referenceIndex = researchReferenceIndex();
@@ -338,6 +398,14 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
               id="hub-lines-title"
               action={<TextLink href={path(routes.lines)}>{hub.lines.all}</TextLink>}
             />
+            <ArchiveMap
+              groups={mapGroups}
+              compounds={mapCompounds}
+              statements={mapStatements as ArchiveStatements}
+              copy={{ ...hub.lines.map, areas: mapAreaNames }}
+            />
+            {/* Phone and tablet: the lines as a list (the map is for a wide
+                screen and a pointer). */}
             <div className={styles.lineGroups}>
               {lineGroups.map(({ group, lines }) => (
                 <div key={group} className={styles.lineGroup}>

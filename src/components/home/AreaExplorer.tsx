@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useId, useRef, useState, type KeyboardEvent } from "react";
 
+import { useIndicator } from "@/components/motion/useIndicator";
 import { Container } from "@/components/primitives/Container";
 import { AreaIcon } from "@/components/ui/AreaIcon";
 import { ProductCard } from "@/components/ui/ProductCard";
@@ -75,13 +76,19 @@ export function AreaExplorer({
   areas: readonly ExplorerArea[];
 }) {
   const [active, setActive] = useState(0);
+  /* Which way the shelf moves: toward the tab chosen, along the row of tabs. */
+  const [direction, setDirection] = useState<1 | -1 | null>(null);
   /* Panels already opened stay rendered; unopened ones cost nothing. */
   const [opened, setOpened] = useState<ReadonlySet<number>>(() => new Set([0]));
   const open = (index: number) => {
+    if (index !== active) setDirection(index > active ? 1 : -1);
     setActive(index);
     setOpened((current) => (current.has(index) ? current : new Set(current).add(index)));
   };
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
+  const tablist = useRef<HTMLDivElement>(null);
+  const rule = useRef<HTMLSpanElement>(null);
+  useIndicator(tablist, rule, '[aria-selected="true"]', active);
   const baseId = useId();
   if (areas.length === 0) return null;
   const current = areas[active];
@@ -112,6 +119,7 @@ export function AreaExplorer({
     <section
       className={styles.explorer}
       data-area={current.id}
+      data-direction={direction ?? undefined}
       aria-labelledby={`${baseId}-title`}
       id="explora-areas"
     >
@@ -125,7 +133,9 @@ export function AreaExplorer({
           </h2>
         </header>
 
-        <div role="tablist" aria-label={copy.tabsLabel} className={styles.tabs}>
+        <div role="tablist" aria-label={copy.tabsLabel} className={styles.tabs} ref={tablist}>
+          {/* The chosen area's rule, travelling from tab to tab. */}
+          <span ref={rule} className={styles.rule} aria-hidden="true" />
           {areas.map((area, index) => (
             <button
               key={area.id}
@@ -179,8 +189,12 @@ export function AreaExplorer({
                 </div>
 
                 <ul className={styles.shelf}>
-                  {area.products.map((product) => (
-                    <li key={product.slug} className={styles.shelfItem}>
+                  {area.products.map((product, i) => (
+                    <li
+                      key={product.slug}
+                      className={styles.shelfItem}
+                      style={{ ["--i" as string]: i }}
+                    >
                       <ProductCard
                         slug={product.slug}
                         world={product.world}
@@ -196,7 +210,10 @@ export function AreaExplorer({
                       />
                     </li>
                   ))}
-                  <li className={styles.shelfItem}>
+                  <li
+                    className={styles.shelfItem}
+                    style={{ ["--i" as string]: area.products.length }}
+                  >
                     <Link href={area.href} className={styles.more}>
                       <span className={styles.moreFigure}>{pad(area.count)}</span>
                       <span className={styles.moreLabel}>

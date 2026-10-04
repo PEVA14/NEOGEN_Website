@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Container } from "@/components/primitives";
 import { AreaIcon } from "@/components/ui";
 
+import { DirectoryLens } from "./DirectoryLens";
 import styles from "./ClosingShelf.module.css";
 
 import type { WorldId } from "@/config/worlds";
@@ -12,7 +13,14 @@ export interface DirectoryArea {
   id: DiscoveryAreaId;
   name: string;
   href: string;
-  items: readonly { name: string; href: string; price: string | null; world: WorldId | null }[];
+  items: readonly {
+    slug: string;
+    name: string;
+    href: string;
+    price: string | null;
+    world: WorldId | null;
+    range: string;
+  }[];
 }
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -72,7 +80,8 @@ export function ClosingShelf({
           <p className={styles.lede}>{fill(copy.lede)}</p>
         </header>
 
-        <div className={styles.directory}>
+        {/* A specimen window travels with the pointer down the names. */}
+        <DirectoryLens className={styles.directory}>
           {areas.map((area) => (
             <section
               key={area.id}
@@ -95,7 +104,16 @@ export function ClosingShelf({
               <ul className={styles.items}>
                 {area.items.map((item) => (
                   <li key={item.href} className={styles.item}>
-                    <Link prefetch={false} href={item.href} className={styles.product}>
+                    <Link
+                      prefetch={false}
+                      href={item.href}
+                      className={styles.product}
+                      data-lens-slug={item.slug}
+                      data-lens-name={item.name}
+                      data-lens-range={item.range}
+                      data-lens-area={area.id}
+                      data-lens-world={item.world ?? undefined}
+                    >
                       <span className={styles.productName}>
                         {item.world ? (
                           <span
@@ -121,7 +139,7 @@ export function ClosingShelf({
               ) : null}
             </section>
           ))}
-        </div>
+        </DirectoryLens>
 
         <div className={styles.bar}>
           <p className={styles.facts}>{fill(copy.facts)}</p>

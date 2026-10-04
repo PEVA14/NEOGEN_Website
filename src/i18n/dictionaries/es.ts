@@ -1229,6 +1229,20 @@ const es = {
         title: "Líneas de investigación",
         lede: "Receptores, vías y procesos que estudia la literatura citada en los registros. Un compuesto aparece en una línea sólo si una afirmación con fuente de su registro lo sustenta.",
         all: "Todas las líneas",
+        map: {
+          rest: "Cada punto es una afirmación con fuente que sitúa a un compuesto en una línea. Pasa el cursor para leerla.",
+          lines: "líneas",
+          compounds: "compuestos",
+          points: "afirmaciones con fuente",
+          lineCount: "{n} compuestos",
+          compoundCount: "{n} líneas",
+          sources: "{n} fuentes",
+          source: "1 fuente",
+          openRecord: "Abrir el registro",
+          openLine: "Abrir la línea",
+          hint: "Teclado: Tab entra a los puntos, flechas para moverse, Enter fija.",
+          dot: "{compound} en {line}",
+        },
       },
       quality: {
         index: "04",
@@ -1478,6 +1492,7 @@ const es = {
         source: "Fuente de la identidad",
       },
       citation: "Referencia {n}",
+      termOpen: "Abrir en el glosario",
       documentation: {
         body: "La documentación analítica se vincula a una presentación o a un lote concretos, y se consulta en la ficha del producto, donde se muestra con su alcance exacto.",
         link: "Ver la documentación del producto",

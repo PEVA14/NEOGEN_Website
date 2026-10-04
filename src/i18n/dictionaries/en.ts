@@ -1133,6 +1133,20 @@ const en: Dictionary = {
         title: "Research lines",
         lede: "Receptors, pathways and processes studied by the literature the records cite. A compound appears in a line only if a sourced statement in its record supports it.",
         all: "All lines",
+        map: {
+          rest: "Each dot is a sourced statement that places a compound in a line. Point at one to read it.",
+          lines: "lines",
+          compounds: "compounds",
+          points: "sourced statements",
+          lineCount: "{n} compounds",
+          compoundCount: "{n} lines",
+          sources: "{n} sources",
+          source: "1 source",
+          openRecord: "Open the record",
+          openLine: "Open the line",
+          hint: "Keyboard: Tab into the dots, arrows to move, Enter to pin.",
+          dot: "{compound} in {line}",
+        },
       },
       quality: {
         index: "04",
@@ -1372,6 +1386,7 @@ const en: Dictionary = {
         source: "Source of identity",
       },
       citation: "Reference {n}",
+      termOpen: "Open in the glossary",
       documentation: {
         body: "Analytical documentation attaches to a specific presentation or lot, and is consulted on the product page, where it is shown with its exact scope.",
         link: "See the product's documentation",

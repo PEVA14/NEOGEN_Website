@@ -1,0 +1,124 @@
+/*
+ * THE WORD, DEFINED WHERE IT IS READ — see TermLens.tsx.
+ *
+ * The marked word: a dotted rule under it, the dictionary's convention for
+ * "this word is defined", in the text's own ink. Its definition is a paper
+ * card with a hairline, folded open downward from the word (a clip, not a
+ * fade-and-rise): it reads as the line opening, not a popup arriving.
+ */
+
+.lensRoot {
+  position: relative;
+}
+
+.lensRoot :global([data-term]) {
+  color: inherit;
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 1px;
+  /* Quiet at rest: a dozen defined words in a record must not read as a
+     page of links. */
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 0.24em;
+  transition: text-decoration-color var(--motion-duration-fast) var(--ease-standard);
+}
+
+.lensRoot :global([data-term]:hover),
+.lensRoot :global([data-term][data-open]) {
+  text-decoration-color: var(--ink-primary);
+  text-decoration-style: solid;
+}
+
+.lensRoot :global([data-term]:focus-visible) {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.card {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  z-index: 3;
+  inline-size: var(--w, 20rem);
+  translate: var(--x, 0) var(--y, 0);
+  display: grid;
+  gap: var(--space-3xs);
+  padding: var(--space-sm) var(--space-sm) var(--space-sm);
+  background: var(--surface-base);
+  border: 1px solid var(--border-strong);
+  border-block-start: 2px solid var(--ink-primary);
+  pointer-events: none;
+  opacity: 0;
+  clip-path: inset(0 calc(100% - var(--origin, 0px) - 1px) 100% var(--origin, 0px));
+  transition:
+    opacity var(--motion-duration-fast) linear,
+    clip-path var(--motion-duration-slow) var(--ease-out);
+}
+
+.card[data-on="true"] {
+  opacity: 1;
+  clip-path: inset(0 0 0 0);
+  /* It holds a link now: the pointer may go into it. */
+  pointer-events: auto;
+}
+
+/* Out to the term's own entry, for reading it on its own. */
+.card :global([data-def-link]) {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  min-block-size: 2.75rem;
+  margin-block: var(--space-3xs) calc(var(--space-sm) * -1);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-primary);
+  text-decoration: underline;
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 3px;
+}
+
+.card :global([data-def-link]:hover) {
+  text-decoration-color: var(--ink-primary);
+}
+
+.card :global([data-def-link]:focus-visible) {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.card :global(*) {
+  margin: 0;
+}
+
+.card :global([data-def-term]) {
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-lg);
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--ink-primary);
+}
+
+.card :global([data-def-kind]) {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.card :global([data-def-text]) {
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--ink-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+  }
+}

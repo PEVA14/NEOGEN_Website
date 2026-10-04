@@ -1,0 +1,163 @@
+/*
+ * CLAIM ↔ SOURCE — see SourceTether.tsx.
+ *
+ * Ink only. The leader is a hairline drawn from the number to its source
+ * (the path is `pathLength=1`, so drawing it is one dash travelling), ending
+ * in a small square — the registration mark the bench and the stages use.
+ * Nothing glows; the lit sentence gets a rule in its margin, the lit source
+ * comes forward and the others step back.
+ */
+
+.tether {
+  position: relative;
+}
+
+.leader {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.leader path {
+  fill: none;
+  stroke: var(--ink-primary);
+  stroke-width: 1;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.foot {
+  fill: var(--ink-primary);
+  opacity: 0;
+  transform: translate(calc(var(--x2, 0px) - 2.5px), calc(var(--y2, 0px) - 2.5px));
+}
+
+.leader[data-on="true"] path {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset var(--motion-duration-slow) var(--ease-out);
+}
+
+.leader[data-on="true"] .foot {
+  opacity: 1;
+  transition: opacity var(--motion-duration-fast) linear var(--motion-duration-base);
+}
+
+/* --- What lights -------------------------------------------------------- */
+
+/* Sentences: a rule in the margin, not a highlighter. */
+.tether :global([data-cites]) {
+  position: relative;
+}
+
+.tether :global([data-cites])::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.25em;
+  inset-inline-start: calc(var(--space-sm) * -1);
+  inline-size: 2px;
+  background: var(--ink-primary);
+  scale: 1 0;
+  transform-origin: 50% 0;
+  transition: scale var(--motion-duration-base) var(--ease-out);
+}
+
+.tether :global([data-cites][data-lit])::before {
+  scale: 1 1;
+}
+
+.tether[data-citing] :global([data-cites]:not([data-lit])) {
+  opacity: 0.45;
+}
+
+.tether :global([data-cites]) {
+  transition: opacity var(--motion-duration-base) var(--ease-standard);
+}
+
+/* Markers: the lit number inverts, the way a selected chip does. */
+.tether :global([data-cite][data-lit]) {
+  background: var(--surface-inverse);
+  background-clip: content-box;
+  color: var(--ink-inverse);
+  text-decoration-color: transparent;
+}
+
+/* Sources: the lit one stays, the others step back. */
+.tether :global([data-ref]) {
+  transition: opacity var(--motion-duration-base) var(--ease-standard);
+}
+
+.tether[data-active] :global([data-ref]:not([data-lit])),
+.tether[data-citing] :global([data-ref]:not([data-lit])) {
+  opacity: 0.35;
+}
+
+/* A tap that followed a marker: the entry it landed on says so. */
+.tether :global([data-ref]:target) {
+  animation: tether-target 1.6s var(--ease-standard);
+}
+
+@keyframes tether-target {
+  0%,
+  40% {
+    background: var(--surface-sunken, var(--neogen-chalk));
+  }
+}
+
+/* --- The margin card (the list is out of sight) ------------------------- */
+
+.card {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  z-index: 2;
+  inline-size: var(--w, 20rem);
+  translate: var(--x, 0) var(--y, 0);
+  display: grid;
+  gap: var(--space-3xs);
+  padding: var(--space-sm);
+  background: var(--surface-inverse);
+  color: var(--ink-inverse);
+  pointer-events: none;
+  opacity: 0;
+  clip-path: inset(0 0 100% 0);
+  transition:
+    opacity var(--motion-duration-fast) linear,
+    clip-path var(--motion-duration-base) var(--ease-out);
+}
+
+.card[data-on="true"] {
+  opacity: 1;
+  clip-path: inset(0 0 0 0);
+}
+
+.card :global(*) {
+  margin: 0;
+  color: inherit;
+}
+
+.card p {
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+}
+
+.cardIndex {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  opacity: 0.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .leader[data-on="true"] path,
+  .card {
+    transition: none;
+  }
+  .tether :global([data-cites])::before {
+    transition: none;
+  }
+}

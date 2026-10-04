@@ -21,9 +21,13 @@ export interface SectionIndexItem {
  * record is one document, and this is its table of contents: sticky beside the
  * text on a wide screen, a sticky strip under the header on a phone.
  *
- * The only motion is the marker moving to the section being read — state,
- * which is the one thing this project allows to move. It is a class change,
- * not an animation, so reduced motion needs no special case.
+ * THE NEEDLE (wide screens). The current section is marked by one rule that
+ * READS the document: it travels down the index as you read, sitting on an
+ * entry while its section begins and sliding toward the next as that
+ * section is read through — a needle on a scale, not a highlight jumping
+ * from row to row. It is the reading position, so it is state: kept under
+ * reduced motion (it only moves when you do). Without script, or on a
+ * phone, the current entry carries its own rule as before.
  *
  * Without JavaScript it is still a working list of anchor links.
  */
@@ -40,6 +44,56 @@ export function SectionIndex({
 }) {
   const [active, setActive] = useState<string | null>(items[0]?.id ?? null);
   const stripRef = useRef<HTMLOListElement>(null);
+  const needleRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const list = stripRef.current;
+    const needle = needleRef.current;
+    if (!list || !needle) return;
+    const wide = window.matchMedia("(min-width: 64rem)");
+    const sections = items
+      .map((item) => document.getElementById(item.id))
+      .filter((el): el is HTMLElement => el !== null);
+    const links = items.map((item) =>
+      list.querySelector<HTMLElement>(`[data-target="${item.id}"]`),
+    );
+    let frame = 0;
+    const read = () => {
+      frame = 0;
+      if (!wide.matches || sections.length === 0) return;
+      /* The reading line: a third of the way down the viewport. */
+      const line = window.innerHeight * 0.3;
+      let i = 0;
+      while (i < sections.length - 1 && sections[i + 1].getBoundingClientRect().top <= line) i++;
+      const top = sections[i].getBoundingClientRect().top;
+      const next = sections[i + 1]?.getBoundingClientRect().top;
+      const span = next !== undefined ? next - top : sections[i].offsetHeight;
+      const f = Math.min(1, Math.max(0, (line - top) / Math.max(span, 1)));
+      const a = links[i];
+      const b = links[i + 1] ?? a;
+      if (!a || !b) return;
+      /* Rest on the entry for the first part of its section, then travel. */
+      const t = Math.min(1, Math.max(0, (f - 0.35) / 0.65));
+      const y = list.offsetTop + a.offsetTop + (b.offsetTop - a.offsetTop) * t;
+      needle.style.setProperty("--y", `${y}px`);
+      needle.style.setProperty("--h", `${a.offsetHeight}px`);
+      needle.dataset.placed = "true";
+      list.dataset.needle = "true";
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(read);
+    };
+    read();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    wide.addEventListener("change", schedule);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      wide.removeEventListener("change", schedule);
+    };
+  }, [items]);
 
   useEffect(() => {
     const targets = items
@@ -79,6 +133,7 @@ export function SectionIndex({
   return (
     <nav aria-label={label} className={styles.index}>
       <p className={styles.title}>{title}</p>
+      <span ref={needleRef} className={styles.needle} aria-hidden="true" />
       <ol className={styles.list} ref={stripRef}>
         {items.map((item, i) => (
           <li key={item.id}>

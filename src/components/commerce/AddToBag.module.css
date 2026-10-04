@@ -27,9 +27,37 @@
 }
 
 .options {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2xs);
+}
+
+/*
+ * THE MARK — one charcoal block that travels to the chosen presentation
+ * (`useIndicator`). Until it has been placed (no script, first frame) the
+ * checked chip fills itself, as it always did; once it has, the chip leaves
+ * its fill to the mark and only its ink changes — the old chip's at once, as
+ * the mark leaves it, the new chip's as the mark arrives.
+ */
+.mark {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  inline-size: var(--w, 0);
+  block-size: var(--h, 0);
+  translate: var(--x, 0) var(--y, 0);
+  background: var(--surface-inverse);
+  pointer-events: none;
+  visibility: hidden;
+  transition:
+    translate var(--motion-duration-slow) var(--ease-settle),
+    inline-size var(--motion-duration-slow) var(--ease-settle),
+    block-size var(--motion-duration-slow) var(--ease-settle);
+}
+
+.mark[data-placed="true"]:not([data-empty]) {
+  visibility: visible;
 }
 
 /*
@@ -73,6 +101,17 @@
   background-color: var(--surface-inverse);
   border-color: var(--surface-inverse);
   color: var(--ink-inverse);
+}
+
+.variant > span {
+  position: relative;
+}
+
+.options:has(.mark[data-placed="true"]) .variant:has(input:checked) {
+  background-color: transparent;
+  transition:
+    border-color var(--motion-duration-fast) var(--ease-standard) var(--motion-duration-base),
+    color var(--motion-duration-fast) var(--ease-standard) var(--motion-duration-base);
 }
 
 .variant:has(input:focus-visible) {

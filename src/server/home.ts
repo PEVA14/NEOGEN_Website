@@ -142,7 +142,14 @@ export interface HomeData {
   directory: readonly {
     areaId: DiscoveryAreaId;
     href: string;
-    items: readonly { name: string; href: string; price: string | null; world: WorldId | null }[];
+    items: readonly {
+      slug: string;
+      name: string;
+      href: string;
+      price: string | null;
+      world: WorldId | null;
+      range: string;
+    }[];
   }[];
   /**
    * The strengths the catalogue carries most often ("10 mg"), as searches to
@@ -231,10 +238,12 @@ export async function homeData(locale: Locale): Promise<HomeData> {
       .map((product) => {
         const price = cheapest(product);
         return {
+          slug: product.slug,
           name: product.name,
           href: path(routes.product(product.slug)),
           price: price ? formatPrice(price, tag) : null,
           world: product.world,
+          range: presentationRange(product),
         };
       }),
   }));

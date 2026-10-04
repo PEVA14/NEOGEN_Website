@@ -15,7 +15,8 @@ import {
   ladderStep,
 } from "@/components/product";
 import { QualityRecord } from "@/components/quality";
-import { CitationRail } from "@/components/research";
+import { CitationMarks, CitationRail } from "@/components/research";
+import { SourceTether } from "@/components/motion/SourceTether";
 import { Body, Mono } from "@/components/typography";
 import { ProductCard, TextLink } from "@/components/ui";
 import { PageTransition } from "@/components/vial-transition/PageTransition";
@@ -169,8 +170,9 @@ export default async function ProductPage({
   }));
   const overview = publicOverview(product.slug, locale);
   const references = referencesForProduct(product.slug);
-  const citationNumber = (id: string) =>
-    String(references.findIndex((r) => r.id === id) + 1).padStart(2, "0");
+  const citationIndex = (id: string) => references.findIndex((r) => r.id === id) + 1;
+  /** `ref-01` — the profile's rail entry a citation marker points at. */
+  const refAnchor = (n: number) => `ref-${String(n).padStart(2, "0")}`;
   const worldStatement = world
     ? world.id === "reta"
       ? dict.home.reta.statement
@@ -741,7 +743,9 @@ export default async function ProductPage({
                 )
               }
             />
-            <div className="grid gap-(--space-xl) lg:grid-cols-12">
+            {/* Claim ↔ source: a marker draws its leader to the rail, a source
+                marks the sentences that cite it (`SourceTether`). */}
+            <SourceTether className="grid gap-(--space-xl) lg:grid-cols-12">
               <div className="flex flex-col gap-(--space-lg) lg:col-span-7">
                 {(
                   [
@@ -754,14 +758,19 @@ export default async function ProductPage({
                       <Mono size="2xs" className="text-(--ink-muted) uppercase">
                         {heading}
                       </Mono>
-                      {statements.map((statement) => (
-                        <Body key={statement.id}>
-                          {statement.text}{" "}
-                          <Mono size="2xs" className="text-(--ink-muted)">
-                            [{statement.references.map((r) => citationNumber(r.id)).join(", ")}]
-                          </Mono>
-                        </Body>
-                      ))}
+                      {statements.map((statement) => {
+                        const cites = statement.references.map((r) => citationIndex(r.id));
+                        return (
+                          <Body key={statement.id} data-cites={cites.join(" ")}>
+                            {statement.text}{" "}
+                            <CitationMarks
+                              citations={cites}
+                              anchor={refAnchor}
+                              label={dict.knowledge.record.citation}
+                            />
+                          </Body>
+                        );
+                      })}
                     </div>
                   ) : null,
                 )}
@@ -777,10 +786,10 @@ export default async function ProductPage({
                 ) : null}
               </div>
               <div className="lg:col-span-5">
-                <CitationRail references={references} copy={dict.citations} />
+                <CitationRail references={references} copy={dict.citations} anchorPrefix="ref-" />
                 {areaRoutes}
               </div>
-            </div>
+            </SourceTether>
           </Container>
         </Section>
       ) : null}

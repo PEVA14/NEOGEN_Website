@@ -2,6 +2,8 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 
+import { useIndicator } from "@/components/motion/useIndicator";
+import { ValueRoll } from "@/components/motion/ValueRoll";
 import { Mono } from "@/components/typography";
 import { ORDER_LIMITS } from "@/data/commerce/limits";
 import { formatPrice } from "@/data/commerce/format";
@@ -100,29 +102,15 @@ export function AddToBag({
   const selected = variants.find((v) => v.variantId === selectedId) ?? variants[0];
 
   /*
-   * THE PRICE ANSWERS THE CHOICE. When the presentation changes, the new
-   * figure comes up into place (interface motion: shortened, not removed,
-   * under reduced motion — the duration tokens do that). Never on first
-   * paint: the price is simply there.
+   * THE CHOICE TRAVELS, AND THE PRICE ANSWERS IT. One charcoal mark moves to
+   * the presentation chosen (rather than one chip going dark as another goes
+   * light), and the price rolls to its new figure in the direction it moved —
+   * a bigger presentation reads as the price going up (`ValueRoll`). Never on
+   * first paint: both are simply there.
    */
-  const priceRef = useRef<HTMLSpanElement>(null);
-  const priced = useRef(selectedId);
-  useEffect(() => {
-    if (priced.current === selectedId) return;
-    priced.current = selectedId;
-    const node = priceRef.current;
-    if (!node) return;
-    const duration = parseFloat(
-      getComputedStyle(node).getPropertyValue("--motion-duration-slow") || "340",
-    );
-    node.animate(
-      [
-        { opacity: 0, translate: "0 0.18em" },
-        { opacity: 1, translate: "0 0" },
-      ],
-      { duration, easing: "cubic-bezier(0.2, 0, 0.1, 1)" },
-    );
-  }, [selectedId]);
+  const optionsRef = useRef<HTMLDivElement>(null);
+  const markRef = useRef<HTMLSpanElement>(null);
+  useIndicator(optionsRef, markRef, "label:has(input:checked)", selectedId);
 
   const soldOut = selected?.availability === "unavailable";
   const canAdd = enabled && Boolean(selected?.price) && !soldOut;
@@ -165,7 +153,8 @@ export function AddToBag({
           <legend className={styles.legend}>
             <Mono size="2xs">{copy.variantLabel}</Mono>
           </legend>
-          <div className={styles.options}>
+          <div className={styles.options} ref={optionsRef}>
+            <span ref={markRef} className={styles.mark} aria-hidden="true" />
             {variants.map((variant) => (
               <label
                 key={variant.variantId}
@@ -232,12 +221,12 @@ export function AddToBag({
           {selected?.price ? (
             <>
               {/* `data-price-value`: a world may set its price in its own material. */}
-              <span ref={priceRef} className={styles.priceValue} data-price-value="">
-                {formatPrice(selected.price, localeTag)}
+              <span className={styles.priceValue} data-price-value="">
+                <ValueRoll value={formatPrice(selected.price, localeTag)} />
               </span>
               {selected.pack ? (
                 <Mono size="2xs" className={styles.pack}>
-                  {selected.presentation} {selected.pack}
+                  <ValueRoll value={`${selected.presentation} ${selected.pack}`} />
                 </Mono>
               ) : null}
             </>
@@ -281,7 +270,9 @@ export function AddToBag({
             </Mono>
           </div>
           {selected?.price ? (
-            <span className={styles.dockPrice}>{formatPrice(selected.price, localeTag)}</span>
+            <span className={styles.dockPrice}>
+              <ValueRoll value={formatPrice(selected.price, localeTag)} />
+            </span>
           ) : null}
           <button
             type="button"

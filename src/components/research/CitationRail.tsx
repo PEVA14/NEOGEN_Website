@@ -57,12 +57,13 @@ export function CitationRail({
           <li
             key={ref.id}
             className={styles.entry}
+            data-ref={startAt + i}
             id={anchorPrefix ? `${anchorPrefix}${String(startAt + i).padStart(2, "0")}` : undefined}
           >
-            <Mono size="2xs" className={styles.index} aria-hidden="true">
+            <Mono size="2xs" className={styles.index} aria-hidden="true" data-ref-index="">
               [{String(startAt + i).padStart(2, "0")}]
             </Mono>
-            <div className={styles.body}>
+            <div className={styles.body} data-ref-body="">
               <Mono size="2xs" className={styles.meta}>
                 {copy.sourceTypes[ref.sourceType]}
                 {ref.year ? ` · ${ref.year}` : ""}

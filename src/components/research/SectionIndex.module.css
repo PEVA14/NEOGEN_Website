@@ -131,4 +131,33 @@
   .meta {
     margin-inline-start: auto;
   }
+
+  /* The needle, once script has placed it, replaces the entry's own rule. */
+  .list {
+    position: relative;
+  }
+
+  .needle {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    z-index: 1;
+    inline-size: 2px;
+    block-size: var(--h, 0);
+    translate: 0 var(--y, 0);
+    background: var(--ink-primary);
+    display: none;
+  }
+
+  .needle[data-placed="true"] {
+    display: block;
+  }
+
+  .list[data-needle="true"] .link[aria-current="location"] {
+    border-inline-start-color: transparent;
+  }
+}
+
+.needle {
+  display: none;
 }

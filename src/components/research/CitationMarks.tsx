@@ -29,6 +29,7 @@ export function CitationMarks({
           <a
             href={`#${anchor(n)}`}
             className={styles.mark}
+            data-cite={n}
             aria-label={label.replace("{n}", String(n))}
           >
             {String(n).padStart(2, "0")}

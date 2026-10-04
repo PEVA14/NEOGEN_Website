@@ -58,3 +58,61 @@ export function termsInText(text: string, locale: Locale): readonly GlossaryTerm
     term.matches[locale].some((needle) => mentions(folded, needle)),
   );
 }
+
+/** A run of a sentence, and the glossary term it is, when it is one. */
+export interface TermSpan {
+  text: string;
+  term: GlossaryTerm | null;
+}
+
+/**
+ * A sentence cut at the glossary words it uses — so a record can make its own
+ * vocabulary inspectable in place without rewriting a word of a sourced
+ * statement. The match is `termsInText`'s (whole words, folded), mapped back
+ * onto the original characters; the text of every span, joined, is the
+ * sentence exactly.
+ *
+ * `seen` carries across a document: a term is marked at its FIRST use only,
+ * so a record reads as prose with a few marked words, not a page of links.
+ */
+export function termSpans(text: string, locale: Locale, seen: Set<string>): readonly TermSpan[] {
+  /* Fold character by character, keeping where each folded character came from. */
+  let folded = "";
+  const origin: number[] = [];
+  let offset = 0;
+  for (const ch of text) {
+    for (const f of fold(ch)) {
+      folded += f;
+      origin.push(offset);
+    }
+    offset += ch.length;
+  }
+  origin.push(text.length);
+
+  const hits: { start: number; end: number; term: GlossaryTerm }[] = [];
+  for (const term of publicGlossary()) {
+    if (seen.has(term.id)) continue;
+    for (const needle of term.matches[locale]) {
+      const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const found = new RegExp(`(?:^|[^a-z0-9])(${escaped})(?:$|[^a-z0-9])`).exec(folded);
+      if (!found) continue;
+      const start = found.index + found[0].indexOf(found[1]);
+      const end = start + found[1].length;
+      if (hits.some((h) => start < h.end && end > h.start)) continue;
+      hits.push({ start: origin[start], end: origin[end], term });
+      seen.add(term.id);
+      break;
+    }
+  }
+  hits.sort((a, b) => a.start - b.start);
+
+  const spans: TermSpan[] = [];
+  let at = 0;
+  for (const hit of hits) {
+    if (hit.start > at) spans.push({ text: text.slice(at, hit.start), term: null });
+    spans.push({ text: text.slice(hit.start, hit.end), term: hit.term });
+    at = hit.end;
+  }
+  if (at < text.length) spans.push({ text: text.slice(at), term: null });
+  return spans;
+}

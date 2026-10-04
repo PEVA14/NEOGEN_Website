@@ -1,0 +1,121 @@
+/*
+ * THE DIRECTORY LENS — see DirectoryLens.tsx.
+ *
+ * A 4:5 window, the shape of every product frame on the site, with the
+ * instrument's registration corners instead of a border or a shadow. It
+ * opens as a clip from its own centre line (a shutter, not a fade-and-grow),
+ * and a new specimen replaces the last by travelling through the window in
+ * the direction the pointer went.
+ */
+
+.lens {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  z-index: var(--z-sticky);
+  inline-size: 168px;
+  aspect-ratio: 4 / 5;
+  pointer-events: none;
+  background: var(--surface-raised);
+  clip-path: inset(50% 0 50% 0);
+  opacity: 0;
+  transition:
+    clip-path var(--motion-duration-slow) var(--ease-out),
+    opacity var(--motion-duration-fast) linear;
+}
+
+.lens[data-open="true"] {
+  clip-path: inset(0 0 0 0);
+  opacity: 1;
+}
+
+.sample {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  animation: lens-in var(--motion-duration-slow) var(--ease-settle) both;
+}
+
+.sample[data-leaving="true"] {
+  animation: lens-out var(--motion-duration-slow) var(--ease-settle) both;
+}
+
+@keyframes lens-in {
+  from {
+    translate: 0 calc(var(--dir-sign, 1) * 100%);
+  }
+}
+
+@keyframes lens-out {
+  to {
+    translate: 0 calc(var(--dir-sign, 1) * -100%);
+  }
+}
+
+.sample[data-dir="-1"] {
+  --dir-sign: -1;
+}
+
+.sample > :global(*) {
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+/* The vial leans on its base against the window's travel. */
+.sample :global(svg),
+.object {
+  rotate: var(--sway, 0deg);
+  transform-origin: 50% 92%;
+}
+
+.studio {
+  position: relative;
+}
+
+.ground {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+.object {
+  position: absolute;
+  object-fit: contain;
+}
+
+.corner {
+  position: absolute;
+  inline-size: 10px;
+  block-size: 10px;
+  border-color: var(--ink-primary);
+  border-style: solid;
+  border-width: 0;
+}
+
+.corner[data-corner="tl"] {
+  inset-block-start: 6px;
+  inset-inline-start: 6px;
+  border-block-start-width: 1px;
+  border-inline-start-width: 1px;
+}
+
+.corner[data-corner="br"] {
+  inset-block-end: 6px;
+  inset-inline-end: 6px;
+  border-block-end-width: 1px;
+  border-inline-end-width: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lens,
+  .sample,
+  .sample[data-leaving="true"] {
+    transition: none;
+    animation: none;
+  }
+  .sample[data-leaving="true"] {
+    display: none;
+  }
+}

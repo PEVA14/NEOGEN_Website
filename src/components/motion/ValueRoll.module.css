@@ -1,0 +1,58 @@
+/*
+ * ValueRoll — see ValueRoll.tsx. Each digit is a window one figure tall with a
+ * strip of figures behind it; `--slot` says which one shows. The window is a
+ * little taller than the type so no figure is clipped, and the extra is taken
+ * back with a negative margin so the figure sits on its line as plain text
+ * would.
+ */
+
+.roll {
+  position: relative;
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The figure as text: what assistive technology and copy-paste get. */
+.text {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.strips {
+  --cell: 1.2em;
+
+  display: inline-flex;
+  align-items: flex-start;
+  margin-block: calc((var(--cell) - 1lh) / -2);
+  line-height: var(--cell);
+  white-space: pre;
+  /* Copying the price copies the figure once (the hidden text), not twice. */
+  user-select: none;
+}
+
+.sep,
+.column {
+  display: inline-block;
+  block-size: var(--cell);
+}
+
+.column {
+  position: relative;
+  overflow: clip;
+}
+
+.figure {
+  display: block;
+}
+
+/* The figure being replaced, laid over the new one as it leaves. */
+.leaving {
+  position: absolute;
+  inset: 0;
+  display: block;
+  text-align: center;
+}

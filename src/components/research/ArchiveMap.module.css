@@ -1,0 +1,384 @@
+/*
+ * THE ARCHIVE, LINE BY COMPOUND — see ArchiveMap.tsx.
+ *
+ * Graph paper and ink. Every cell is a faint point (a CSS background, not
+ * 2,000 elements); a membership is a solid square, the registration square
+ * the stages use. Area colour appears once, as the hairline bands that file
+ * the columns — a small mark, never a ground. The reticle is two bands that
+ * travel to where the pointer is; everything not under it steps back.
+ */
+
+.map {
+  --label: 17rem;
+  --gap: var(--space-md);
+  --row: 1.75rem;
+
+  display: none;
+}
+
+@media (min-width: 64rem) {
+  .map {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 19rem;
+    gap: var(--space-xl);
+    align-items: start;
+  }
+}
+
+.plate {
+  position: relative;
+  display: grid;
+  gap: var(--space-sm);
+  padding-block-end: var(--space-sm);
+}
+
+/* --- Head: the area bands that file the columns ------------------------- */
+
+.head,
+.row {
+  display: grid;
+  grid-template-columns: var(--label) minmax(0, 1fr);
+  gap: var(--gap);
+  align-items: center;
+}
+
+.bands {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  align-items: end;
+  block-size: 2.5rem;
+}
+
+.band {
+  position: relative;
+  block-size: 100%;
+  border-block-end: 2px solid var(--area-hue, var(--ink-muted));
+  margin-inline: 1px;
+}
+
+.bandName {
+  position: absolute;
+  inset-block-end: var(--space-2xs);
+  inset-inline-start: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  white-space: nowrap;
+  writing-mode: vertical-rl;
+  rotate: 180deg;
+  transform-origin: 50% 50%;
+  max-block-size: 100%;
+  overflow: hidden;
+  display: none;
+}
+
+/* --- Groups and rows ---------------------------------------------------- */
+
+.group {
+  display: grid;
+}
+
+.groupTitle {
+  margin: 0;
+  padding-block: var(--space-sm) var(--space-2xs);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  border-block-end: 1px solid var(--border-default);
+}
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  position: relative;
+  min-block-size: var(--row);
+  border-block-end: 1px solid var(--border-subtle);
+  transition: background-color var(--motion-duration-fast) var(--ease-standard);
+}
+
+.row[data-lit="true"] {
+  background: var(--surface-raised);
+}
+
+.rowLabel {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-xs);
+  min-inline-size: 0;
+  padding-inline-start: var(--space-2xs);
+  color: var(--ink-secondary);
+  font-size: var(--text-xs);
+  line-height: 1.2;
+  text-decoration: none;
+  transition: color var(--motion-duration-fast) var(--ease-standard);
+}
+
+.rowName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowCount {
+  margin-inline-start: auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--ink-muted);
+}
+
+.row[data-lit="true"] .rowLabel,
+.rowLabel:hover {
+  color: var(--ink-primary);
+}
+
+.rowLabel:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.cells {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  align-items: center;
+  block-size: var(--row);
+  /* Graph paper: one faint point per cell. */
+  background-image: radial-gradient(circle, var(--border-default) 0.9px, transparent 1.4px);
+  background-size: calc(100% / var(--cols)) 100%;
+  background-position: 0 50%;
+}
+
+/* --- The dots ----------------------------------------------------------- */
+
+.dot {
+  justify-self: center;
+  inline-size: 7px;
+  block-size: 7px;
+  padding: 0;
+  border: 0;
+  background: var(--ink-primary);
+  cursor: pointer;
+  transition:
+    opacity var(--motion-duration-base) var(--ease-standard),
+    scale var(--motion-duration-base) var(--ease-settle);
+}
+
+/* A larger target than the mark, without moving the mark. */
+.dot::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+}
+
+.dot {
+  position: relative;
+}
+
+/* Under the reticle, what is not on its row or column steps back. */
+.map[data-active="true"] .dot {
+  opacity: 0.22;
+}
+
+.map[data-active="true"] .row[data-lit="true"] .dot {
+  opacity: 1;
+}
+
+.map[data-active="true"] .dot[data-match="true"] {
+  opacity: 1;
+}
+
+.dot:hover,
+.dot:focus-visible,
+.dot[data-pinned="true"] {
+  opacity: 1;
+  scale: 1.6;
+}
+
+.dot:focus-visible {
+  outline: 1px solid var(--ink-primary);
+  outline-offset: 3px;
+}
+
+.dot[data-pinned="true"] {
+  outline: 1px solid var(--ink-primary);
+  outline-offset: 3px;
+}
+
+/* --- The reticle's column band ----------------------------------------- */
+
+.colBand {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: calc(var(--label) + var(--gap));
+  inline-size: calc((100% - var(--label) - var(--gap)) / var(--cols));
+  translate: calc(100% * var(--col)) 0;
+  background: color-mix(in oklab, var(--ink-primary) 6%, transparent);
+  border-inline: 1px solid var(--border-default);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    translate var(--motion-duration-base) var(--ease-settle),
+    opacity var(--motion-duration-fast) linear;
+}
+
+.colBand[data-on="true"] {
+  opacity: 1;
+}
+
+/* --- The inspector ------------------------------------------------------ */
+
+.inspector {
+  position: sticky;
+  inset-block-start: calc(var(--header-height) + var(--space-lg));
+  display: grid;
+  gap: var(--space-sm);
+  padding-block-start: var(--space-sm);
+  border-block-start: 2px solid var(--ink-primary);
+  min-block-size: 16rem;
+}
+
+.readout {
+  display: grid;
+  gap: var(--space-3xs);
+  margin: 0;
+  min-block-size: 2.5rem;
+}
+
+.readoutLine {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+
+.readoutCompound {
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-2xl);
+  line-height: 0.95;
+  text-transform: uppercase;
+  color: var(--ink-primary);
+}
+
+.readoutArea {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+/* The area's own mark, the one place its colour appears here. */
+.readoutArea::before {
+  content: "";
+  inline-size: 1rem;
+  block-size: 2px;
+  background: var(--area-hue);
+}
+
+.claim {
+  display: grid;
+  gap: var(--space-xs);
+  animation: claim-open var(--motion-duration-slow) var(--ease-out) both;
+}
+
+@keyframes claim-open {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.claimText {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--ink-primary);
+}
+
+.claimMeta,
+.small,
+.hint {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.claimLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.claimLink {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.figures {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.figure {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-xs);
+  margin: 0;
+}
+
+.figureValue {
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-5xl);
+  line-height: 0.9;
+}
+
+.figureLabel {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+
+.rest {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--ink-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .claim {
+    animation: none;
+  }
+  .colBand,
+  .dot {
+    transition: none;
+  }
+}

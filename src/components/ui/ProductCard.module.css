@@ -145,25 +145,20 @@
 }
 
 /*
- * A restrained media response. The plate lifts by a hair on hover — enough to
- * register as interactive, far short of a zoom. Nothing moves under reduced
- * motion.
+ * THE OBJECT, NOT THE CARD. Pointing at a product lifts the vial itself a
+ * little off its set — the floor, the shadow and the reflection stay where
+ * they are, so the gap under it is what reads — the way a specimen is picked
+ * up from a bench. It is the same object on every surface (the bench sets it
+ * down, the directory's lens carries it), so it behaves the same everywhere.
+ * The card does not zoom. Nothing moves under reduced motion.
  */
-.media > * {
-  transition: transform var(--motion-duration-slow) var(--ease-standard);
+.media :is([data-object], [data-specimen]) {
+  transition: translate var(--motion-duration-slow) var(--ease-settle);
 }
 
-.card:hover .media > * {
-  transform: scale(1.015);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .media > * {
-    transition: none;
-  }
-
-  .card:hover .media > * {
-    transform: none;
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .card:hover .media :is([data-object], [data-specimen]) {
+    translate: 0 -3%;
   }
 }
 
@@ -360,9 +355,9 @@
       visibility 0s linear 120ms;
   }
 
-  /* The plate's own hover lift would slide under a still panel; hold it. */
-  .card[data-reveal]:hover .media > * {
-    transform: none;
+  /* The object's lift would slide under a still panel; hold it. */
+  .card[data-reveal]:hover .media :is([data-object], [data-specimen]) {
+    translate: none;
   }
 }
 
