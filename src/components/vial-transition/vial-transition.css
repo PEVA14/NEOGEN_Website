@@ -124,6 +124,44 @@ html[data-world-forming]::view-transition-new(.vt-page-in) {
 }
 
 /*
+ * GLOW (`product/glow`) does not open as a circle either: its world is lit by
+ * the specimen, so the store's light goes out and what can be seen of the new
+ * page is what the vial's light reaches — the page's own type is masked by
+ * that light (`glow.module.css`), so it is not faded in here as well.
+ */
+::view-transition-new(vt-world-glow.vt-world) {
+  mask-image: none;
+  animation: 380ms cubic-bezier(0.3, 0, 0.2, 1) both vt-fade-in;
+}
+
+html[data-world-lit]::view-transition-new(.vt-page-in) {
+  animation: none;
+}
+
+/*
+ * …and the store does not go dark the way RETA's does. Its light goes down
+ * WARM, as if the only light left in it were the specimen's, and GLOW's world
+ * comes up over it; the vial carries its own light through the change
+ * (`glow.module.css`). (Tried: drawing the world only inside the vial's light
+ * from the first frame. A dark world inside a light, over a light store,
+ * read as a dark hole travelling with the vial — the light only reads as
+ * light once the room is dark.)
+ */
+html[data-world-lit]::view-transition-old(.vt-page-out) {
+  animation: 520ms cubic-bezier(0.3, 0, 0.3, 1) both vt-glow-dim;
+}
+
+html[data-world-lit]::view-transition-new(vt-world-glow.vt-world) {
+  animation: 340ms cubic-bezier(0.3, 0, 0.2, 1) 200ms both vt-fade-in;
+}
+
+@keyframes vt-glow-dim {
+  to {
+    filter: brightness(0.24) sepia(0.6) saturate(1.3);
+  }
+}
+
+/*
  * The circle is three registered properties, so the browser can interpolate
  * the mask it draws: its radius, and a centre that starts on the card and
  * drifts to where the object lands. It ends large enough that the feathered

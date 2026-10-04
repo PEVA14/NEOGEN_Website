@@ -59,6 +59,7 @@ export function CommercePanel({
   worldLabel,
   children,
   conditions,
+  descriptor,
 }: {
   copy: CommerceCopy;
   world: WorldId | null;
@@ -77,6 +78,11 @@ export function CommercePanel({
    * condition at the point of the decision rather than after it.
    */
   conditions?: ReactNode;
+  /**
+   * Renders the composition line in place of the plain descriptor, in its
+   * style — GLOW's, whose parts are links its light lands on.
+   */
+  descriptor?: (className: string) => ReactNode;
 }) {
   return (
     <div className={styles.panel}>
@@ -106,7 +112,10 @@ export function CommercePanel({
         </Mono>
       )}
 
-      <h1 className={styles.name}>{copy.name}</h1>
+      {/* `data-product-name`: a world may set its own name (GLOW's is gold). */}
+      <h1 className={styles.name} data-product-name="">
+        {copy.name}
+      </h1>
 
       {/* No SKU line. It is an internal identifier and customers do not shop
           by it; displaying `SKU — PLACEHOLDER` only advertised an empty field. */}
@@ -117,7 +126,11 @@ export function CommercePanel({
         </Mono>
       ) : null}
 
-      {copy.descriptor ? <p className={styles.descriptor}>{copy.descriptor}</p> : null}
+      {descriptor ? (
+        descriptor(styles.descriptor)
+      ) : copy.descriptor ? (
+        <p className={styles.descriptor}>{copy.descriptor}</p>
+      ) : null}
 
       <div className={styles.rule} />
 

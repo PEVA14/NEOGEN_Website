@@ -27,6 +27,9 @@ import { siteConfig } from "@/config/site";
 import { getWorld } from "@/config/worlds";
 import { commerceStill, galleryImages, productMedia, resolveStageStill } from "@/content/media";
 import { ProductBench, type BenchSpecimen } from "@/components/product/bench/ProductBench";
+import { blendConstituents } from "@/components/product/glow/composition";
+import { GlowConstituents } from "@/components/product/glow/GlowConstituents";
+import { GlowComposition } from "@/components/product/glow/GlowComposition";
 import { specimenFor } from "@/components/vial-transition/specimens";
 import { compoundRecord, hasRecord, lineIds } from "@/content/compendium";
 import { termsInText } from "@/content/glossary";
@@ -369,8 +372,43 @@ export default async function ProductPage({
       </nav>
     ) : null;
 
+  /*
+   * GLOW: its composition, read into parts its light can separate into — each
+   * linked to the product of that name, in proportion only when the parts add
+   * up to the strength it is sold at (`glow/composition.ts`).
+   */
+  const soleStrength =
+    product.variants.length === 1 && product.variants[0].strength.kind === "solid"
+      ? product.variants[0].strength.mg
+      : null;
+  const constituents =
+    world?.formation === "illumination"
+      ? blendConstituents(product.composition, publishedProducts)
+      : null;
+  /* The live vial's own first frame, as the composition moment's still. */
+  const glowStage = constituents ? specimenFor(product.slug)?.stage : null;
+  const glowStill = glowStage
+    ? { src: glowStage.src, width: glowStage.pixels.width, height: glowStage.pixels.height }
+    : null;
+
   const commercePanel = (
     <CommercePanel
+      descriptor={
+        constituents
+          ? (className) => (
+              <GlowConstituents
+                parts={constituents}
+                className={className}
+                hrefFor={Object.fromEntries(
+                  constituents
+                    .filter((part) => part.slug)
+                    .map((part) => [part.slug, path(routes.product(part.slug as string))]),
+                )}
+                linkLabel={pdp.shop.view}
+              />
+            )
+          : undefined
+      }
       world={product.world}
       /*
        * THE EYEBROW, IN PRIORITY ORDER.
@@ -618,8 +656,36 @@ export default async function ProductPage({
         </Container>
       </Section>
 
-      {/* Impact — the flagship's world, once more, between trust and reference. */}
-      {world ? (
+      {/* Impact — the flagship's world, once more, between trust and reference.
+          GLOW's is its composition, separated by its light (`product/glow`). */}
+      {world && constituents && glowStill ? (
+        <Section
+          mode="impact"
+          world={world.id}
+          atmosphere
+          padded={false}
+          aria-labelledby="interlude-title"
+        >
+          <GlowComposition
+            titleId="interlude-title"
+            eyebrow={pdp.shop.composition}
+            title={worldStatement}
+            vial={{ ...glowStill, alt: product.name }}
+            parts={constituents.map((part) => {
+              return {
+                ...part,
+                // The composition's own spelling, as the line under the name.
+                label: part.name,
+                product: part.slug ? path(routes.product(part.slug)) : null,
+                record: part.slug && hasRecord(part.slug) ? path(routes.compound(part.slug)) : null,
+              };
+            })}
+            productLabel={pdp.shop.view}
+            recordLabel={pdp.research.record}
+            totalLabel={`${product.name} · ${soleStrength} mg`}
+          />
+        </Section>
+      ) : world ? (
         <FlagshipInterlude
           world={world.id}
           titleId="interlude-title"
@@ -866,6 +932,11 @@ export default async function ProductPage({
                     ctaLabel={dict.home.products.cta}
                     details={detailsFor(item)}
                     detailsCopy={detailsCopy}
+                    /* The vial transition, as from the catalogue: a related
+                       product and a material never coincide (solvents share
+                       no area or category with a compound), so each product
+                       appears once on the page. */
+                    transition
                   />
                 </div>
               ))}
@@ -923,6 +994,7 @@ export default async function ProductPage({
                     ctaLabel={dict.home.products.cta}
                     details={detailsFor(item)}
                     detailsCopy={detailsCopy}
+                    transition
                   />
                 </div>
               ))}

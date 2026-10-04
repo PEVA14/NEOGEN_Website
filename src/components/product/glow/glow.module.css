@@ -1,0 +1,444 @@
+/*
+ * GLOW — the environment becomes light. See GlowLight.tsx.
+ *
+ * Positions are measured off the page and written on the stage as custom
+ * properties (stage pixels): --glow-x1/--glow-y1, the vial; --glow-x0/
+ * --glow-y0, where it left its card; --glow-floor, its foot; --glow-frame,
+ * the frame's height.
+ */
+
+/* --- GLOW's stage: no instrument, no wash ----------------------------- */
+
+/*
+ * The frame's border and registration marks are RETA's language, an
+ * instrument's; GLOW's vial stands in its own light, unframed. And the
+ * world's resting wash is the lamp below, centred on the vial, not a light
+ * from above.
+ */
+/*
+ * While the light arrives, the section's and the stage's own dark grounds
+ * (`[data-world]` paints its void) stand down: GLOW's field is the darkness,
+ * and in flight it is drawn only where the vial's light is. Either ground,
+ * over the whole page, covered the catalogue from the first frame.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  :global(section:has([data-glow-exposing])),
+  :global([data-world][data-glow-exposing]) {
+    background-color: transparent;
+  }
+}
+
+:global([data-glow-arrival]) :global([data-stage-field]) {
+  position: relative;
+  overflow: clip;
+  background-image: none;
+}
+
+:global([data-glow-arrival]) :global([data-stage-frame]) {
+  border-color: transparent;
+}
+
+:global([data-glow-arrival]) :global([data-stage-frame])::before,
+:global([data-glow-arrival]) :global([data-stage-frame])::after {
+  display: none;
+}
+
+/* --- The lamp: the vial's light, which is the room's ------------------- */
+
+.lamp,
+.floor {
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-start: 0;
+  pointer-events: none;
+}
+
+/*
+ * One source, falling off as light does — bright and close round the vial,
+ * a long warm tail across the room. Not a disc: no stop is hard, and its
+ * centre is behind the vial, which hides the hottest part.
+ */
+.lamp {
+  --lamp: calc(var(--glow-frame, 42rem) * 2.4);
+
+  inline-size: var(--lamp);
+  block-size: var(--lamp);
+  margin-inline-start: calc(var(--lamp) / -2);
+  margin-block-start: calc(var(--lamp) / -2);
+  translate: var(--glow-x1, 30vw) var(--glow-y1, 50vh);
+  background-image: radial-gradient(
+    closest-side,
+    color-mix(in oklab, var(--world-light) 34%, transparent) 0%,
+    color-mix(in oklab, var(--world-accent) 26%, transparent) 14%,
+    color-mix(in oklab, var(--world-accent) 13%, transparent) 34%,
+    color-mix(in oklab, var(--world-accent) 5%, transparent) 62%,
+    transparent 100%
+  );
+}
+
+/*
+ * Carried: while the vial travels, its light is close round it and so reads
+ * hotter; it opens out (into the lamp) as the vial lands. Never at rest.
+ */
+.carried {
+  --carried: calc(var(--glow-frame, 42rem) * 0.95);
+
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-start: 0;
+  inline-size: var(--carried);
+  block-size: var(--carried);
+  margin-inline-start: calc(var(--carried) / -2);
+  margin-block-start: calc(var(--carried) / -2);
+  translate: var(--glow-x1, 30vw) var(--glow-y1, 50vh);
+  background-image: radial-gradient(
+    closest-side,
+    color-mix(in oklab, var(--world-light) 30%, transparent) 0%,
+    color-mix(in oklab, var(--world-accent) 20%, transparent) 30%,
+    color-mix(in oklab, var(--world-accent) 7%, transparent) 64%,
+    transparent 100%
+  );
+  opacity: 0;
+  pointer-events: none;
+}
+
+/*
+ * The halo: the vial's light at rest, close behind it — what makes it read as
+ * the source. Behind the canvas, so the glass itself is untouched (it refracts
+ * its own pool, `RefractionGround`); about as bright at its centre as that
+ * pool, so what is seen through the glass continues what is seen round it,
+ * and taller than wide, as the vial is.
+ */
+.halo {
+  --halo-w: calc(var(--glow-frame, 42rem) * 0.62);
+  --halo-h: calc(var(--glow-frame, 42rem) * 0.9);
+
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-start: 0;
+  inline-size: var(--halo-w);
+  block-size: var(--halo-h);
+  margin-inline-start: calc(var(--halo-w) / -2);
+  margin-block-start: calc(var(--halo-h) / -2);
+  translate: var(--glow-x1, 30vw) var(--glow-y1, 50vh);
+  background-image: radial-gradient(
+    closest-side,
+    color-mix(in oklab, var(--world-light) 30%, transparent) 0%,
+    color-mix(in oklab, var(--world-light) 20%, transparent) 40%,
+    color-mix(in oklab, var(--world-accent) 8%, transparent) 72%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+/* Where the light meets the floor, under the vial's foot. */
+.floor {
+  --floor-w: calc(var(--glow-frame, 42rem) * 1.25);
+  --floor-h: calc(var(--glow-frame, 42rem) * 0.16);
+
+  inline-size: var(--floor-w);
+  block-size: var(--floor-h);
+  margin-inline-start: calc(var(--floor-w) / -2);
+  margin-block-start: calc(var(--floor-h) / -2);
+  translate: var(--glow-x1, 30vw) var(--glow-floor, 80vh);
+  background-image: radial-gradient(
+    closest-side,
+    color-mix(in oklab, var(--world-light) 16%, transparent),
+    color-mix(in oklab, var(--world-accent) 7%, transparent) 55%,
+    transparent
+  );
+}
+
+/* --- The page, revealed by that light ---------------------------------- */
+
+/*
+ * While the light arrives, the page's own layers — its type, the name across
+ * the field — are visible only where it reaches: revealed by illumination,
+ * not faded in. A light's falloff as a mask, moved and grown with
+ * `mask-position` and `mask-size`, which the browser interpolates itself; at
+ * rest there is no mask at all.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  /* Only where the light moves: under reduced motion nothing is masked —
+     the page is there, lit, from the first paint. */
+  :global([data-glow-exposing]) :global([data-stage-layer]) {
+    mask-image: radial-gradient(
+      closest-side,
+      #000 30%,
+      rgb(0 0 0 / 0.55) 50%,
+      rgb(0 0 0 / 0.18) 74%,
+      transparent 100%
+    );
+    mask-repeat: no-repeat;
+  }
+
+  /* After a card tap: the light leaves the card with the vial, on the
+     flight's own clock (760 ms of 1600 = 47.5%), then opens into the room. */
+  :global([data-glow-arrival="specimen"]) .lamp {
+    animation: glow-carry 1600ms linear both;
+  }
+
+  :global([data-glow-arrival="specimen"]) .carried {
+    animation: glow-carried 1600ms linear both;
+  }
+
+  :global([data-glow-arrival="specimen"]) .floor {
+    animation: glow-floor 1600ms linear both;
+  }
+
+  /* The halo is the light the vial lands in: it comes up as it lands. */
+  :global([data-glow-arrival="specimen"]) .halo {
+    animation: glow-halo 1600ms linear both;
+  }
+
+  :global([data-glow-arrival="specimen"][data-glow-exposing]) :global([data-stage-layer]) {
+    animation: glow-expose 1600ms linear both;
+  }
+
+  /* Direct: nothing travelled. The light comes up where the vial stands. */
+  :global([data-glow-arrival="direct"]) .lamp {
+    animation: glow-warm 1100ms cubic-bezier(0.2, 0, 0.1, 1) both;
+  }
+
+  :global([data-glow-arrival="direct"]) .floor {
+    animation: glow-floor-warm 1100ms cubic-bezier(0.2, 0, 0.1, 1) both;
+  }
+
+  :global([data-glow-arrival="direct"]) .halo {
+    animation: glow-warm 1100ms cubic-bezier(0.2, 0, 0.1, 1) both;
+  }
+
+  :global([data-glow-arrival="direct"][data-glow-exposing]) :global([data-stage-layer]) {
+    animation: glow-expose-direct 1100ms cubic-bezier(0.25, 0, 0.1, 1) both;
+  }
+}
+
+/* Keyframes write the curves out: a keyframe's own timing function cannot
+   read a variable (RETA #3's trap). */
+@keyframes glow-carry {
+  from {
+    translate: var(--glow-x0, var(--glow-x1)) var(--glow-y0, var(--glow-y1));
+    scale: 0.32;
+    animation-timing-function: cubic-bezier(0.35, 0.05, 0.28, 0.95);
+  }
+
+  47.5% {
+    translate: var(--glow-x1) var(--glow-y1);
+    scale: 0.42;
+    animation-timing-function: cubic-bezier(0.2, 0, 0.1, 1);
+  }
+
+  to {
+    translate: var(--glow-x1) var(--glow-y1);
+    scale: 1;
+  }
+}
+
+@keyframes glow-carried {
+  from {
+    translate: var(--glow-x0, var(--glow-x1)) var(--glow-y0, var(--glow-y1));
+    opacity: 0;
+    animation-timing-function: cubic-bezier(0.35, 0.05, 0.28, 0.95);
+  }
+
+  /* Shows as the room goes dark. */
+  22% {
+    opacity: 1;
+  }
+
+  47.5% {
+    translate: var(--glow-x1) var(--glow-y1);
+    opacity: 1;
+    scale: 1;
+    animation-timing-function: cubic-bezier(0.3, 0, 0.2, 1);
+  }
+
+  to {
+    translate: var(--glow-x1) var(--glow-y1);
+    opacity: 0;
+    scale: 1.8;
+  }
+}
+
+@keyframes glow-halo {
+  from,
+  47.5% {
+    opacity: 0;
+    scale: 0.7;
+    animation-timing-function: cubic-bezier(0.2, 0, 0.1, 1);
+  }
+}
+
+@keyframes glow-floor {
+  from,
+  47.5% {
+    opacity: 0;
+    scale: 0.3 1;
+    animation-timing-function: cubic-bezier(0.2, 0, 0.1, 1);
+  }
+}
+
+/*
+ * The reveal travels with the vial — the page is lit along its path — and
+ * opens into the room when it lands. Positions are the light's centre less
+ * half its size: `mask-position` places the mask's corner.
+ */
+@keyframes glow-expose {
+  from {
+    mask-size: 240px 240px;
+    mask-position: calc(var(--glow-x0, var(--glow-x1)) - 120px)
+      calc(var(--glow-y0, var(--glow-y1)) - 120px);
+    animation-timing-function: cubic-bezier(0.35, 0.05, 0.28, 0.95);
+  }
+
+  47.5% {
+    mask-size: 720px 720px;
+    mask-position: calc(var(--glow-x1) - 360px) calc(var(--glow-y1) - 360px);
+    animation-timing-function: cubic-bezier(0.3, 0, 0.15, 1);
+  }
+
+  to {
+    mask-size: 6800px 6800px;
+    mask-position: calc(var(--glow-x1) - 3400px) calc(var(--glow-y1) - 3400px);
+  }
+}
+
+@keyframes glow-warm {
+  from {
+    opacity: 0;
+    scale: 0.35;
+  }
+}
+
+@keyframes glow-floor-warm {
+  from {
+    opacity: 0;
+    scale: 0.4 1;
+  }
+}
+
+@keyframes glow-expose-direct {
+  from {
+    mask-size: 480px 480px;
+    mask-position: calc(var(--glow-x1) - 240px) calc(var(--glow-y1) - 240px);
+  }
+
+  to {
+    mask-size: 6800px 6800px;
+    mask-position: calc(var(--glow-x1) - 3400px) calc(var(--glow-y1) - 3400px);
+  }
+}
+
+/* --- The name, in gold ------------------------------------------------- */
+
+/*
+ * GLOW's name is set in gold leaf, not flat amber: each line lit from above —
+ * a pale highlight on the cap tops, the world's light through the body, a
+ * band of its deeper gold below the middle where a curved metal surface turns
+ * from the light, and a little light back at the foot. Sized to one line
+ * (`1lh`) so a name that wraps is lit the same on every line. The same faint
+ * shine as the composition line sits round it.
+ *
+ * Every few seconds a single bright line passes across it, as light crosses
+ * polished metal (owner, 2026-10-03): one sweep of ~1.4 s, then nothing until
+ * the next. It is a second background layer, a narrow diagonal highlight
+ * parked outside the name between sweeps; under reduced motion it never
+ * leaves its parking place.
+ *
+ * The darkest stop is the world's accent, ~6:1 on GLOW's void. Where text
+ * cannot be clipped to a background, or colours are forced, it stays the flat
+ * light the panel already sets.
+ */
+@supports ((background-clip: text) or (-webkit-background-clip: text)) {
+  @media (forced-colors: none) {
+    :global([data-glow-arrival]) :global([data-product-name]) {
+      background-image:
+        linear-gradient(
+          105deg,
+          transparent 45%,
+          color-mix(in oklab, var(--world-light) 25%, #fff) 50%,
+          transparent 55%
+        ),
+        linear-gradient(
+          180deg,
+          color-mix(in oklab, var(--world-light) 50%, #fff) 6%,
+          var(--world-light) 34%,
+          color-mix(in oklab, var(--world-light) 55%, var(--world-accent)) 54%,
+          var(--world-accent) 62%,
+          color-mix(in oklab, var(--world-accent) 50%, var(--world-light)) 84%,
+          color-mix(in oklab, var(--world-light) 85%, #fff) 100%
+        );
+      /* The sheen is 2.5× the name, so at 100% it sits wholly off its left
+         edge and at 0% wholly off its right. */
+      background-size:
+        250% 100%,
+        100% 1.05em;
+      background-size:
+        250% 100%,
+        100% 1lh;
+      background-repeat: no-repeat, repeat-y;
+      background-position:
+        100% 0,
+        0 0;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 0.3em color-mix(in oklab, var(--world-light) 20%, transparent));
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      /* First pass once the arrival has settled, then every 7 s. */
+      :global([data-glow-arrival]) :global([data-product-name]) {
+        animation: glow-sheen 7s 2.2s infinite;
+      }
+    }
+  }
+}
+
+@keyframes glow-sheen {
+  0% {
+    background-position:
+      100% 0,
+      0 0;
+    animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1);
+  }
+
+  20%,
+  100% {
+    background-position:
+      0% 0,
+      0 0;
+  }
+}
+
+/* --- The composition line, in that light ------------------------------ */
+
+/*
+ * A faint shine round the type, as if set close to the vial: the world's
+ * light, a few pixels out, never a halo you notice before the words. The part
+ * pointed at or focused takes a little more.
+ */
+:global([data-glow-composition]) {
+  text-shadow: 0 0 0.8em color-mix(in oklab, var(--world-light) 40%, transparent);
+}
+
+:global([data-glow-composition]) :global([data-constituent]) {
+  /* One part, one line: "BPC-157 10mg" never breaks after its name. */
+  white-space: nowrap;
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.3em;
+  text-decoration-color: color-mix(in oklab, currentColor 30%, transparent);
+  transition:
+    color var(--motion-duration-slow) var(--ease-standard),
+    text-shadow var(--motion-duration-slow) var(--ease-standard),
+    text-decoration-color var(--motion-duration-slow) var(--ease-standard);
+}
+
+:global([data-glow-composition]) :global(a[data-constituent]:hover),
+:global([data-glow-composition]) :global(a[data-constituent]:focus-visible) {
+  color: var(--world-light);
+  text-decoration-color: var(--world-light);
+  text-shadow: 0 0 0.8em color-mix(in oklab, var(--world-light) 48%, transparent);
+}

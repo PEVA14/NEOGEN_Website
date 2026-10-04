@@ -26,6 +26,7 @@ import { useStageHandoff, useWorldOrigin } from "@/components/vial-transition/us
 import { createProbe, type SpecimenProbe } from "@/components/experience/specimenProbe";
 
 import { useFormation } from "./formation";
+import { GlowLamp, useGlowArrival } from "./glow/GlowLight";
 import { LIVE_FRAME_MARGIN } from "./liveFrame";
 import { SpecimenInspection } from "./SpecimenInspection";
 import styles from "./ProductStage.module.css";
@@ -171,11 +172,18 @@ export function ProductStage({
    * light and the instrument's lines, timed with the flight — `formation.ts`.
    * Only with a stand-in, which is what holds the object while it forms.
    */
-  const formation = standIn ? getWorld(world).formation : null;
+  const worldFormation = standIn ? getWorld(world).formation : null;
+  const formation = worldFormation === "calibration" ? worldFormation : null;
   const formed = useFormation(slug ?? "", formation, stage, panel);
-  const held = standIn !== null && (handoff.holding || formed.forming);
+  /*
+   * GLOW's world is lit by its specimen (flagship idea #5, `glow/`): its own
+   * arrival, and its own light.
+   */
+  const glowing = worldFormation === "illumination";
+  const glow = useGlowArrival(slug ?? "", glowing, stage, panel);
+  const held = standIn !== null && (handoff.holding || formed.forming || glow.forming);
   // The world's opening circle, for the worlds that have no formation yet.
-  useWorldOrigin(slug ?? "", standIn !== null && !formation && handoff.holding, stage, panel);
+  useWorldOrigin(slug ?? "", standIn !== null && !worldFormation && handoff.holding, stage, panel);
 
   const viewer = canRender3D && modelPath && palette && !held ? { modelPath, palette } : null;
 
@@ -296,6 +304,8 @@ export function ProductStage({
       data-world={world}
       data-formation={formation ?? undefined}
       data-arrival={formation ? formed.arrival : undefined}
+      data-glow-arrival={glowing ? glow.arrival : undefined}
+      data-glow-exposing={glowing && glow.exposing ? "" : undefined}
     >
       {/* The environment. Full-bleed, with the world's atmospheric wash —
           which, in a world that forms, is a light of its own (`.light`). */}
@@ -303,7 +313,8 @@ export function ProductStage({
         /* Paired with the card's stage, so the world can open out of the
            card the specimen left (see the CSS). */
         <ViewTransition name={names.world(slug ?? "")} share="vt-world" default="none">
-          <div className={styles.field} aria-hidden="true">
+          <div className={styles.field} aria-hidden="true" data-stage-field="">
+            {glowing ? <GlowLamp onFormed={glow.onFormed} /> : null}
             {formation ? (
               <>
                 <span
@@ -322,7 +333,7 @@ export function ProductStage({
 
       {/* The name across the field, cropped by both edges. */}
       {wordmark ? (
-        <div className={styles.wordmarkLayer} aria-hidden="true">
+        <div className={styles.wordmarkLayer} aria-hidden="true" data-stage-layer="">
           <span className={styles.wordmark}>{wordmark}</span>
         </div>
       ) : null}
@@ -381,7 +392,7 @@ export function ProductStage({
           fallback
         )}
       </div>
-      <div className={styles.composition}>
+      <div className={styles.composition} data-stage-layer="">
         {/*
          * The media plate. Its box is EXACTLY the frame's box — the caption is
          * an absolutely positioned satellite — so the plate and the canvas
@@ -391,7 +402,7 @@ export function ProductStage({
          * Registration marks at opposing corners are pseudo-elements: an
          * instrument plate, not a picture frame, and no extra DOM.
          */}
-        <div ref={panel} className={styles.media}>
+        <div ref={panel} className={styles.media} data-stage-frame="">
           {standIn && slug ? (
             <StageSpecimen
               slug={slug}

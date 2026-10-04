@@ -50,8 +50,11 @@ export interface WorldEnvironment {
  *   calibration  RETA — the store's light goes out, the world's cold light
  *                travels with the specimen, and the instrument's lines are
  *                projected outward from the specimen's axes as it lands.
+ *   illumination GLOW — the specimen is the room's only light: the page is
+ *                revealed where its light falls, and the light parts into the
+ *                blend's constituents (`components/product/glow`).
  */
-export type WorldFormation = "calibration";
+export type WorldFormation = "calibration" | "illumination";
 
 export interface ProductWorld {
   id: WorldId;
@@ -88,7 +91,7 @@ export const worlds: Record<WorldId, ProductWorld> = {
       atmosphere: "luminous",
       materialFocus: "light",
     },
-    formation: null,
+    formation: "illumination",
     inspection: false,
   },
   "ghk-cu": {

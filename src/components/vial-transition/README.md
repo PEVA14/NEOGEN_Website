@@ -17,7 +17,8 @@ npm run build && npx next start -p 3110
 ```
 
 Open `/es/productos` and tap RETA, GLOW, GHK-Cu or Semaglutide — in the grid
-or, for the three flagships, in the masthead strip. Products with no studio
+or, for the three flagships, in the masthead strip — or, on any product page,
+a card in its related or materials row. Products with no studio
 still send their drawn vial alone (`SpecimenPlate travel`), and the bench they
 land on sets it down (`components/product/bench`).
 
@@ -43,6 +44,9 @@ one (see 3 below) — there is deliberately no way-back flight.
 - `components/ui/ProductCard.tsx` — `transition` prop; two-layer still; names; warm-up
 - `components/catalog/CatalogBrowser.tsx` — the grid passes `transition`
 - `components/catalog/Storefront.tsx` — the masthead strip travels too (`SpecimenLink`)
+- `app/[locale]/productos/[slug]/page.tsx` — the related and materials rows pass
+  `transition` (owner, 2026-10-03); a product page's own cards are standard
+  cards, so a flagship's world comes in with the page rather than out of the card
 - `components/product/bench/ProductBench.tsx` — every non-flagship page: the
   card's still, split, or the drawn vial, landing on the bench
 - `components/product/ProductStage.tsx` — stand-in, 3D hold, world pairing
@@ -91,11 +95,19 @@ and the registered still on disk (JPEG noise measures 0.4–0.6 / 255).
 4. **React holds the flight up to 500 ms for the new page's images**
    (`SUSPENSEY_FONT_AND_IMAGE_TIMEOUT`). Unwarmed, click-to-first-movement was
    0.5–0.8 s; warmed on hover/viewport it is 70–220 ms.
-5. **The morph needs the destination prefetched.** Otherwise `loading.tsx`
-   paints first, no pair forms, and it degrades to a normal navigation.
+5. **The morph needs the destination, not a loading state.** A loading boundary
+   over a product page paints first when the prefetch has gone stale, no pair
+   forms, and it degrades to a normal navigation. So no catalogue or product
+   route has one: `loading.tsx` lives only in `checkout/` and `pedido/[id]/`,
+   the routes rendered on demand (2026-10-03). Without it, a navigation keeps
+   the old page until the new one is ready, and then the specimen flies.
+   (A tab open across a rebuild falls back to full page loads — Next's
+   version-skew guard — which never animate; refresh it.)
 6. **A duplicated name anywhere on the page cancels the whole transition** — so
-   only the catalogue (grid and strip, armed on tap: see 9) is an origin, never
-   the homepage or a related row.
+   only compositions that list each product once are origins: the catalogue
+   (grid and strip, armed on tap: see 9) and a product page's related and
+   materials rows (which never share a product: solvents share no area or
+   category with a compound). Never the homepage.
 
 7. **Only one thing should travel.** The product name also flew, a beat behind
    the vial, into the page title; reviewing it in a real browser, two

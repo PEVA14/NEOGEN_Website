@@ -1,5 +1,12 @@
 /**
- * Route-level loading state.
+ * Route-level loading state — for the routes rendered on demand only.
+ *
+ * Checkout (and the order pages, `pedido/[id]/loading.tsx`) wait on the
+ * server; nothing else does. It used to sit over every `[locale]` route, where
+ * every page is prerendered and it never had a real wait to cover: a full page
+ * load painted it first (the footer jumping up, then the page), and a card
+ * navigation that missed its prefetch committed it instead of the destination,
+ * so the vial had nothing to land on (`vial-transition/README.md`, trap 5).
  *
  * Deliberately quiet: a text status, not a spinner. This is also the pattern
  * Phase 2's 3D loading state will follow — announce progress to assistive

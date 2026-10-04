@@ -1,6 +1,11 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-10-02**: **every non-flagship product now opens on "the
+Last updated **2026-10-03**: **flagship idea #5 — GLOW, "the blend as light" —
+is committed, GLOW only, after the owner's review** (§8an, brief recorded
+there): the light paths removed, a halo behind the vial, a shine round the
+composition, and the name in gold with a sweep of light every 7 s. With it
+(§8ao): product-page cards are vial-transition origins, and `loading.tsx` sits
+only over checkout and the order pages. Before that, the same day: **every non-flagship product now opens on "the
 bench"** — the Living Laboratory baseline, approved by the owner after the
 overnight prototype on Semaglutide and rolled out the same day; `ProductPlate`
 is retired (§8am: the grammar, the tiers, the asset audit, the owner's four
@@ -2545,6 +2550,88 @@ Evaluated on a production build in headless Chrome, at 1440×900 and 390×844,
 from the catalogue grid, the phone strip and by direct URL; reduced motion;
 GLOW's circle unchanged; at 4× CPU throttle on the phone there is no long task
 between the flight's start and the formation's end.
+
+## 8ao. Vial transition: product-page cards, and no loading state over static routes (2026-10-03)
+
+**Status: done, committed with #5.** Owner asked both.
+
+- **The product page's own cards fly.** The related and materials rows pass
+  `transition`, as the catalogue grid does; the two rows never share a product
+  (solvents share no area or category with a compound). A flagship reached from
+  one of them gets the vial but not the world opening out of the card — they
+  are standard cards; the world comes in with the page.
+- **`loading.tsx` moved from `[locale]/` to `checkout/` (and `pedido/[id]/`),**
+  the only routes rendered on demand. Over prerendered pages it never covered
+  a real wait: a full page load painted it first (the footer jumping up), and a
+  card navigation that missed its prefetch committed it instead of the
+  destination, so nothing flew (`vial-transition/README.md`, trap 5).
+- **Found on the way, not a bug:** a tab left open across a rebuild falls back
+  to full page loads (Next's version-skew guard) once its prefetches expire —
+  the owner's "after a while the transitions stop" on :3110 was this, caused by
+  rebuilds during the session. Refresh fixes it; on the real site it affects
+  only tabs open across a deploy (skew protection on the host would remove it).
+
+## 8an. Flagship idea #5: GLOW, the blend as light (2026-10-02, PROTOTYPE)
+
+**Status: committed after the owner's review (2026-10-03); GLOW only.**
+Do not start GHK-Cu, and do not generalise RETA + GLOW into a flagship
+abstraction yet (owner: decide that once GHK-Cu exists). Mechanism, the
+information rules and the traps: `components/product/glow/README.md`.
+
+**The brief (owner, 2026-10-02), condensed.** RETA is an instrument
+(calibrate → measure → inspect); GLOW needs a second physical language:
+illuminate → separate → reveal → recombine. "GLOW's specimen is the source of
+its world. Its light should reveal information." Continuous with #1 (the world
+begins because the specimen is already moving), uniquely GLOW, not amber RETA.
+The blend's real composition may become its signature interaction — separating
+into constituent records, navigable — with nothing invented (composition,
+proportions, relationships, mechanisms, effects). Refused: amber gradient
+animation, bloom everywhere, flares, particles, potion or skincare-ad
+aesthetics, neon, glassmorphism, rainbow prisms, RETA's grid/registration
+language, decorative data, permanent animation. Quiet → Impact → Quiet;
+intentional direct entry; a mobile interpretation; reduced motion; no scroll
+hijacking or fake delays; information in accessible DOM.
+
+**What was built.** RETA's world dims grey and forms an instrument; GLOW's
+store dims warm, the vial carries its own light, and the page is revealed
+where that light reaches; the room's resting light is centred on the vial. The
+light separates (once, after the live vial draws) onto the composition line's
+three parts, linked to their products, then recombines. Further down, in the
+interlude's place, the composition moment: the vial's light separates into
+three paths whose widths are each part's share of the stated 70 mg, landing on
+readings with the product and scientific-record links; pointing at the vial
+recombines it. Images, SVG, CSS and the existing R3F vial — no new dependency
+(Motion / `motion/three` were not needed: the light and the paths are
+DOM/SVG, and the 3D canvas is deliberately absent during the arrival).
+
+**Open for the owner.** The first ~400 ms share RETA's structure (the store
+dims, a light travels with the vial) — the difference is the warm dim, the
+carried light and the page revealed by it; judge whether that is distinct
+enough. The opening's separation is small on purpose (the composition moment
+is the signature). Performance could not be measured cleanly (machine under
+load); GLOW's arrival paints a moving mask and a filtered old page while it
+plays, more main-thread work than RETA's.
+
+**Owner's first review (2026-10-02): the light paths are removed.** "The glow
+that goes from the vial to the text is cute but it doesn't look good." Both
+separations are gone — the opening's (onto the composition line) and the
+composition moment's — along with `beam.ts` and the mass shares they drew.
+In their place, as asked: a halo of the vial's own light close behind it
+(behind the canvas, about as bright as the pool the glass refracts, so the
+glass reads the same), and a subtle shine of the same light round the
+composition line's type and the composition moment's readings (`text-shadow`,
+brighter on the part pointed at or focused). The composition moment's light
+comes up once when it is reached; the readings are always fully legible.
+Pointing at the vial no longer does anything.
+
+**Owner's second review (2026-10-03).** "Love it." Then: each constituent on
+one line (`white-space: nowrap`); GLOW's name in gold leaf — a static gradient
+from the world's light and accent, lit from above per line, ~6:1 at its
+darkest, flat light where text cannot be clipped or colours are forced — and
+"a shine effect, one of those bright lines that goes through the text every
+now and then": one ~1.4 s sweep every 7 s, none under reduced motion. That
+sweep is GLOW's one permanent animation, which the #5 brief had refused; the
+owner asked for it. `CommercePanel` marks its name `data-product-name`.
 
 ## 8am. The Living Laboratory baseline: the bench (2026-10-02, PROTOTYPE)
 
