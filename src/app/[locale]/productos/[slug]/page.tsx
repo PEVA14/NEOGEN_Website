@@ -511,7 +511,10 @@ export default async function ProductPage({
             frameMarks={
               media.model ? <WorldMaterial world={world.id} interior={false} /> : undefined
             }
-            wordmark={product.name}
+            /* The world's own name ("RETA", "GLOW", "GHK-Cu"), not the
+               catalogue's fuller one (owner: no "Peptide" or "Research"
+               across the field). */
+            wordmark={world.label}
             posterAlt={product.name}
             /* The split studio still stands in here, and receives the card's
                specimen (the vial transition). */

@@ -57,9 +57,20 @@
 
 /* --- The compound name, across the field ---------------------------------
  *
- * Behind the object and the panel, cropped by both edges. It sits BELOW the
- * canvas layer in the stack, so the live model passes in front of it exactly
- * as the Hero's vial passes in front of the NEOGEN wordmark.
+ * The world's own name ("RETA", "GLOW", "GHK-Cu" — `config/worlds.ts`),
+ * behind the object. It sits BELOW the canvas layer in the
+ * stack, so the live model passes in front of it exactly as the Hero's vial
+ * passes in front of the NEOGEN wordmark.
+ *
+ * ANCHORED TO THE OBJECT, not to the stage: laid out on the composition's own
+ * grid, centred on the media column and on the row the frame is centred on.
+ * Centred on the whole stage, a short name sat between the object and the
+ * panel, and on a short laptop screen it rode up and down with a stage taller
+ * than the window instead of with the vial. A long name still runs past the
+ * column and is cropped by the stage's edge.
+ *
+ * Sized by the window's height as well as its width (the frame is), so a
+ * short, wide screen does not get a name taller than its object.
  *
  * Held at 0.07: the field is the darkest surface on the site and this type is
  * enormous, so the opacity that reads as "ghosted poster" here is roughly half
@@ -67,16 +78,22 @@
  */
 .wordmarkLayer {
   display: grid;
-  place-items: center;
+  grid-template-columns: var(--stage-columns);
+  gap: var(--stage-gap);
+  align-items: center;
+  padding-block: var(--space-xl);
+  padding-inline: var(--stage-band);
   overflow: hidden;
   pointer-events: none;
 }
 
 .wordmark {
+  grid-column: 1;
+  justify-self: center;
   font-family: var(--font-display);
   font-stretch: var(--font-stretch-display);
   font-weight: 700;
-  font-size: clamp(6rem, 19vw, 20rem);
+  font-size: clamp(5rem, min(15vw, 30dvh), 16rem);
   line-height: 0.8;
   letter-spacing: var(--tracking-display);
   text-transform: uppercase;
@@ -307,13 +324,24 @@
   }
 
   /*
-   * No ghosted name when stacked. Centred on a stage that is now a column,
-   * it lands behind the format picker and the price instead of behind the
-   * object — reading as a stray band across the controls, not as a poster.
-   * The name is already the page's heading two lines above.
+   * Stacked, the name is set behind the object, not across the stage: in a
+   * box the frame's exact size and place (the same inline size, 4:5, the same
+   * padding above it), centred in it. Centred on the stage, which is now a
+   * column, it landed behind the format picker and the price — a stray band
+   * across the controls — which is why it used to be hidden here.
    */
   .wordmarkLayer {
-    display: none;
+    align-items: start;
+    padding-block: var(--space-2xl) var(--space-3xl);
+  }
+
+  .wordmark {
+    display: grid;
+    place-items: center;
+    align-self: start;
+    inline-size: var(--well-inline);
+    aspect-ratio: 4 / 5;
+    font-size: clamp(5rem, 30vw, 9rem);
   }
 }
 

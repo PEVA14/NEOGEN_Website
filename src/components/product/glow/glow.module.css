@@ -329,6 +329,62 @@
   }
 }
 
+/* --- The name across the field, in solid gold ------------------------- */
+
+/*
+ * GLOW's name behind the vial is not a ghost but a solid gold object standing
+ * in the vial's light (owner, 2026-10-04: "solid gold and shiny"): a deep gold
+ * body lit from above — a bright top, a dark turn below the middle and the
+ * hard reflection back off its lower face that polished gold has — a broad
+ * reflection across it, a soft shadow that gives it weight on the dark room,
+ * and the same sweep of light as the title, on the same 7 s clock. Where text
+ * cannot be clipped or colours are forced it stays the ordinary ghost.
+ */
+@supports ((background-clip: text) or (-webkit-background-clip: text)) {
+  @media (forced-colors: none) {
+    :global([data-glow-arrival]) :global([data-stage-wordmark]) {
+      background-image:
+        linear-gradient(105deg, transparent 45%, rgb(255 250 228 / 0.85) 50%, transparent 55%),
+        linear-gradient(100deg, transparent 18%, rgb(255 246 214 / 0.32) 30%, transparent 40%),
+        linear-gradient(
+          180deg,
+          #fff0c2 0%,
+          #f3cb6b 13%,
+          #c98e29 38%,
+          #85560f 50%,
+          #e8b64e 57%,
+          #b67f27 76%,
+          #6c430f 100%
+        );
+      background-size:
+        250% 100%,
+        100% 100%,
+        100% 1.05em;
+      background-size:
+        250% 100%,
+        100% 100%,
+        100% 1lh;
+      background-repeat: no-repeat, no-repeat, repeat-y;
+      background-position:
+        100% 0,
+        0 0,
+        0 0;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      opacity: 1;
+      filter: drop-shadow(0 0.06em 0.1em rgb(0 0 0 / 0.55))
+        drop-shadow(0 0 0.35em color-mix(in oklab, var(--world-light) 16%, transparent));
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      :global([data-glow-arrival]) :global([data-stage-wordmark]) {
+        animation: glow-sheen 7s 2.2s infinite;
+      }
+    }
+  }
+}
+
 /* --- The name, in gold ------------------------------------------------- */
 
 /*
@@ -359,6 +415,9 @@
           color-mix(in oklab, var(--world-light) 25%, #fff) 50%,
           transparent 55%
         ),
+        /* gold leaf: laid in sheets, it creases — a fine, uneven grain the
+           light catches here and there */
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.045 0.08' numOctaves='3' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 0.95 0 0 0 0 0.8 0 0 0 1.1 -0.55'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
         linear-gradient(
           180deg,
           color-mix(in oklab, var(--world-light) 50%, #fff) 6%,
@@ -372,13 +431,16 @@
          edge and at 0% wholly off its right. */
       background-size:
         250% 100%,
+        140px 140px,
         100% 1.05em;
       background-size:
         250% 100%,
+        140px 140px,
         100% 1lh;
-      background-repeat: no-repeat, repeat-y;
+      background-repeat: no-repeat, repeat, repeat-y;
       background-position:
         100% 0,
+        0 0,
         0 0;
       -webkit-background-clip: text;
       background-clip: text;
@@ -399,6 +461,7 @@
   0% {
     background-position:
       100% 0,
+      0 0,
       0 0;
     animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1);
   }
@@ -407,6 +470,7 @@
   100% {
     background-position:
       0% 0,
+      0 0,
       0 0;
   }
 }

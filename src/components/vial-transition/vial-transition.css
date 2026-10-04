@@ -155,6 +155,17 @@ html[data-world-lit]::view-transition-new(vt-world-glow.vt-world) {
   animation: 340ms cubic-bezier(0.3, 0, 0.2, 1) 200ms both vt-fade-in;
 }
 
+/*
+ * GHK-Cu (`product/ghk`) does not open as a circle either. Its world is a
+ * plate of tarnished copper that is simply THERE under the store as it goes —
+ * a quick, even fade — and what the specimen does to it is drawn inside the
+ * world while the specimen travels: it burnishes the plate along its path.
+ */
+::view-transition-new(vt-world-ghk-cu.vt-world) {
+  mask-image: none;
+  animation: 300ms cubic-bezier(0.3, 0, 0.2, 1) both vt-fade-in;
+}
+
 @keyframes vt-glow-dim {
   to {
     filter: brightness(0.24) sepia(0.6) saturate(1.3);

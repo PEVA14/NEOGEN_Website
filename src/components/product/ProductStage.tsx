@@ -26,7 +26,9 @@ import { useStageHandoff, useWorldOrigin } from "@/components/vial-transition/us
 import { createProbe, type SpecimenProbe } from "@/components/experience/specimenProbe";
 
 import { useFormation } from "./formation";
+import { BurnishField, useBurnishArrival } from "./ghk/BurnishField";
 import { GlowLamp, useGlowArrival } from "./glow/GlowLight";
+import reta from "./reta/reta.module.css";
 import { LIVE_FRAME_MARGIN } from "./liveFrame";
 import { SpecimenInspection } from "./SpecimenInspection";
 import styles from "./ProductStage.module.css";
@@ -181,7 +183,14 @@ export function ProductStage({
    */
   const glowing = worldFormation === "illumination";
   const glow = useGlowArrival(slug ?? "", glowing, stage, panel);
-  const held = standIn !== null && (handoff.holding || formed.forming || glow.forming);
+  /*
+   * GHK-Cu's world is matter that responds to its specimen (flagship idea #6,
+   * `ghk/`): a copper plate the vial burnishes as it travels and lands.
+   */
+  const burnishing = worldFormation === "burnish";
+  const burnish = useBurnishArrival(slug ?? "", burnishing);
+  const held =
+    standIn !== null && (handoff.holding || formed.forming || glow.forming || burnish.forming);
   // The world's opening circle, for the worlds that have no formation yet.
   useWorldOrigin(slug ?? "", standIn !== null && !worldFormation && handoff.holding, stage, panel);
 
@@ -306,6 +315,8 @@ export function ProductStage({
       data-arrival={formation ? formed.arrival : undefined}
       data-glow-arrival={glowing ? glow.arrival : undefined}
       data-glow-exposing={glowing && glow.exposing ? "" : undefined}
+      data-burnish={burnishing ? burnish.arrival : undefined}
+      data-burnish-forming={burnishing && burnish.forming ? "" : undefined}
     >
       {/* The environment. Full-bleed, with the world's atmospheric wash —
           which, in a world that forms, is a light of its own (`.light`). */}
@@ -314,7 +325,18 @@ export function ProductStage({
            card the specimen left (see the CSS). */
         <ViewTransition name={names.world(slug ?? "")} share="vt-world" default="none">
           <div className={styles.field} aria-hidden="true" data-stage-field="">
+            {/* RETA's ground: an optical table under the world's light. */}
+            {formation ? <span className={reta.table} /> : null}
             {glowing ? <GlowLamp onFormed={glow.onFormed} /> : null}
+            {burnishing ? (
+              <BurnishField
+                slug={slug ?? ""}
+                arrival={burnish.arrival}
+                reducedMotion={reducedMotion}
+                finePointer={finePointer}
+                onFormed={burnish.onFormed}
+              />
+            ) : null}
             {formation ? (
               <>
                 <span
@@ -334,7 +356,9 @@ export function ProductStage({
       {/* The name across the field, cropped by both edges. */}
       {wordmark ? (
         <div className={styles.wordmarkLayer} aria-hidden="true" data-stage-layer="">
-          <span className={styles.wordmark}>{wordmark}</span>
+          <span className={styles.wordmark} data-stage-wordmark="">
+            {wordmark}
+          </span>
         </div>
       ) : null}
 
@@ -436,7 +460,9 @@ export function ProductStage({
           </div>
         </div>
 
-        <div className={styles.commerce}>{children}</div>
+        <div className={styles.commerce} data-stage-commerce="">
+          {children}
+        </div>
       </div>
     </div>
   );

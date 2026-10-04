@@ -83,3 +83,17 @@ Nothing about what the parts do, how they interact or why they are combined.
 6. **Paths of light onto type read as streaks**, not as light, at the sizes
    the type is set (owner: "cute but it doesn't look good"). Removed; the
    type takes the light as a shine instead.
+
+## The name in solid gold (owner, 2026-10-04)
+
+GLOW's name across the field is solid, polished gold rather than a ghost: a
+deep gold body lit from above with the hard lower reflection of polished
+gold, a broad reflection, a soft shadow for weight, and the title's sweep of
+light on the same 7 s clock (`glow.module.css`, "in solid gold"). The title's
+gold is leaf: a fine crease grain under the sweep.
+
+Tried as GLOW's own texture and declined by the owner: reeded glass, then a
+gilded wall of gold leaf. Also tried and set aside on the way: back-lit paper
+(read as water or wood) and caustics thrown by the vial (thin, they read as
+veins — a vascular picture next to a blend whose parts' records mention
+angiogenesis is exactly the implication to avoid).

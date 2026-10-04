@@ -51,10 +51,13 @@ export interface WorldEnvironment {
  *                travels with the specimen, and the instrument's lines are
  *                projected outward from the specimen's axes as it lands.
  *   illumination GLOW — the specimen is the room's only light: the page is
- *                revealed where its light falls, and the light parts into the
- *                blend's constituents (`components/product/glow`).
+ *                revealed where its light falls (`components/product/glow`).
+ *   burnish      GHK-Cu — the world is a copper plate the specimen burnishes:
+ *                its grain is combed along the flight and settles into a
+ *                turned, lustrous finish round the landing, leaving the etched
+ *                name matte (`components/product/ghk`).
  */
-export type WorldFormation = "calibration" | "illumination";
+export type WorldFormation = "calibration" | "illumination" | "burnish";
 
 export interface ProductWorld {
   id: WorldId;
@@ -103,7 +106,7 @@ export const worlds: Record<WorldId, ProductWorld> = {
       atmosphere: "tactile",
       materialFocus: "metal",
     },
-    formation: null,
+    formation: "burnish",
     inspection: false,
   },
 };

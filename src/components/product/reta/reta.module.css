@@ -1,0 +1,110 @@
+/*
+ * RETA's material — the instrument's own surface (owner, 2026-10-04: each
+ * flagship its own texture). RETA is precision: calibrate, measure, inspect.
+ * Its ground is an OPTICAL TABLE — a black anodised aluminium breadboard with
+ * a regular grid of tapped mounting holes, the surface instruments are bolted
+ * to — and its name is LASER-MARKED into it: a rastered, frosted mark, the
+ * way anodised aluminium takes a laser. Its title is brushed aluminium.
+ *
+ * Static: nothing moves. The world's light (`.light`, the formation) passes
+ * over the table; the table itself is a picture of a surface, not a reading.
+ */
+
+/* --- The table ----------------------------------------------------------- */
+
+.table {
+  --pitch: 26px;
+
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    /* the rim of each tapped hole, lit from above: a hairline on its far wall */
+    radial-gradient(
+      circle at 50% 42%,
+      transparent 3.1px,
+      color-mix(in oklab, var(--world-light) 16%, transparent) 3.6px,
+      transparent 4.4px
+    ),
+    /* the hole */ radial-gradient(circle, rgb(0 0 0 / 0.6) 0 2.9px, transparent 3.4px),
+    /* anodised: a fine, bead-blasted tooth */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.8 0 0 0 0 0.88 0 0 0 0 1 0 0 0 0.07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:
+    var(--pitch) var(--pitch),
+    var(--pitch) var(--pitch),
+    160px 160px;
+  background-position:
+    calc(var(--pitch) / 2) calc(var(--pitch) / 2),
+    calc(var(--pitch) / 2) calc(var(--pitch) / 2),
+    0 0;
+  /* The table is under the object; it falls away into the dark before the
+     commerce column, which stays a plain ground. */
+  mask-image: radial-gradient(48% 62% at 26% 52%, #000 20%, transparent 78%);
+}
+
+@media (max-width: 63.999rem) {
+  .table {
+    --pitch: 20px;
+
+    mask-image: radial-gradient(90% 40% at 50% 22%, #000 25%, transparent 85%);
+  }
+}
+
+/* --- The name, laser-marked; the title, brushed aluminium ------------------ */
+
+@supports ((background-clip: text) or (-webkit-background-clip: text)) {
+  @media (forced-colors: none) {
+    /*
+     * A laser marks anodised aluminium in rastered lines that read frosted
+     * white: the name is those lines, not a flat ghost.
+     */
+    :global([data-world="reta"][data-formation]) :global([data-stage-wordmark]) {
+      background-image: repeating-linear-gradient(
+        180deg,
+        color-mix(in oklab, var(--world-light) 65%, #9aa6b4) 0 1px,
+        transparent 1px 2.6px
+      );
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      opacity: 0.2;
+    }
+
+    /*
+     * The title in brushed aluminium, cool: a pale highlight on the cap tops,
+     * blue-grey through the body, a darker turn below the middle, a fine
+     * horizontal brushing, and a hard edge under it. The darkest stop keeps
+     * ~3.5:1 on RETA's void for display-size type.
+     */
+    :global([data-world="reta"][data-formation]) :global([data-product-name]) {
+      background-image:
+        repeating-linear-gradient(
+          180deg,
+          rgb(255 255 255 / 0.08) 0 1px,
+          transparent 1px 3px,
+          rgb(0 0 0 / 0.08) 3px 4px,
+          transparent 4px 6px
+        ),
+        linear-gradient(
+          180deg,
+          #f1f6fb 4%,
+          color-mix(in oklab, var(--world-light) 70%, #a9b6c4) 32%,
+          #a3b3c4 50%,
+          #66778a 60%,
+          color-mix(in oklab, var(--world-light) 55%, #93a3b4) 84%,
+          #dfe8f1 100%
+        );
+      background-size:
+        100% 100%,
+        100% 1.05em;
+      background-size:
+        100% 100%,
+        100% 1lh;
+      background-repeat: repeat, repeat-y;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 2px 0 rgb(0 0 0 / 0.6));
+    }
+  }
+}

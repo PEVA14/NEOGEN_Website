@@ -1,11 +1,14 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-10-03**: **flagship idea #5 — GLOW, "the blend as light" —
-is committed, GLOW only, after the owner's review** (§8an, brief recorded
-there): the light paths removed, a halo behind the vial, a shine round the
-composition, and the name in gold with a sweep of light every 7 s. With it
-(§8ao): product-page cards are vial-transition origins, and `loading.tsx` sits
-only over checkout and the order pages. Before that, the same day: **every non-flagship product now opens on "the
+Last updated **2026-10-03**: **flagship idea #6 — GHK-Cu, "matter responds
+to its specimen" — is committed, GHK-Cu only, after the owner's review** (§8ap): a copper plate the vial burnishes in flight, a turned
+lustre round the landing, the name etched into the plate. Before that, the
+same day: **flagship idea #5 — GLOW, "the blend as light" — is committed,
+GLOW only, after the owner's review** (§8an, brief recorded there): the light
+paths removed, a halo behind the vial, a shine round the composition, and the
+name in gold with a sweep of light every 7 s. With it (§8ao): product-page
+cards are vial-transition origins, and `loading.tsx` sits only over checkout
+and the order pages. Before that, the same day: **every non-flagship product now opens on "the
 bench"** — the Living Laboratory baseline, approved by the owner after the
 overnight prototype on Semaglutide and rolled out the same day; `ProductPlate`
 is retired (§8am: the grammar, the tiers, the asset audit, the owner's four
@@ -2550,6 +2553,72 @@ Evaluated on a production build in headless Chrome, at 1440×900 and 390×844,
 from the catalogue grid, the phone strip and by direct URL; reduced motion;
 GLOW's circle unchanged; at 4× CPU throttle on the phone there is no long task
 between the flight's start and the formation's end.
+
+## 8ap. Flagship idea #6: GHK-Cu, matter responds to its specimen (2026-10-03, PROTOTYPE)
+
+**Status: prototype, GHK-Cu only, NOT committed, awaiting the owner's review.**
+Mechanism, integrity rules, traps and rejected concepts:
+`components/product/ghk/README.md`. Do not start a post-flagship abstraction
+(owner: not yet).
+
+**The brief (owner, 2026-10-03), condensed.** The third and last flagship
+language: material / attraction / depth — "matter responds to the specimen"
+(attract → orient → accumulate → settle → reveal depth), as metaphors for the
+interface, never implying magnetism, deposition, molecular organisation,
+binding or tissue effects. The world begins during travel (catalogue →
+specimen moves → material responds → lands → settles → Quiet). A settled
+interaction that follows from the metaphor; information embedded rather than
+overlaid where it can be. Refused: black + copper gradient, copper particles,
+metallic blobs, liquid metal, generic displacement shaders, field lines,
+molecules, HUD, RETA's measurement language, GLOW's illumination language in
+copper, constant ambient animation. Direct entry, a mobile interpretation,
+reduced motion, no scroll hijacking or fake delays, commerce usable,
+production performance. Explore several concepts, judge them in the browser,
+discard the mediocre ones; compare Semaglutide → RETA → GLOW → GHK-Cu.
+
+**What was built.** The world is a copper plate, tarnished until the specimen
+burnishes it: the grain is combed along the flight (a lustrous stroke behind
+the vial while it travels), settles into a turned finish round the landing and
+turns lustrous, and the name etched into the plate is what stays matte. At
+rest the plate answers a pointer (and a scroll) as metal answers light. One
+WebGL2 fragment shader (no three.js — the vial's R3F canvas is untouched),
+drawn only while something changes; the 3D is held until the plate settles.
+
+**Owner, first look (2026-10-03):** "Love the direction so far" — and "more of
+a heavy steel/copper/industrial vibe". Done in the shader alone: gunmetal steel
+under the copper, a hard steel highlight with copper shoulders, finer machined
+turning, sparse tool marks, a deeper machined etch (README, "Heavier"). Then:
+"I meant mostly for the text and stuff" — the name and the price are now set in
+the plate's metal (brushed copper over steel, a heavy edge), their glint driven
+by the plate's light (README, "The type"). The heavier plate stays unless the
+owner prefers the earlier one. Then, for ALL THREE flagships: the name across
+the field is the compound as its own label names it (`labelName` in the media
+layer — "Retatrutide", "GLOW", "GHK-Cu"; no "Peptide"/"Research"), and it is
+anchored to the object — the media column and the frame's row — sized by the
+window's height as well as its width (`ProductStage.module.css`). GHK-Cu's
+etching was clipped to "COPPE" (centred on the stage, under the plain commerce
+column, and its sheet narrower than the drawn type); fixed. Then (owner, 2026-10-04):
+the name across the field is the world's own label (`config/worlds.ts`:
+"RETA", "GLOW", "GHK-Cu"), and RETA and GLOW have their own materials, as
+GHK-Cu does — RETA an optical table (black anodised breadboard, a grid of
+tapped holes) with its name laser-marked in rastered lines and its title in
+brushed aluminium (`product/reta/reta.module.css`); GLOW's name across the
+field in solid, polished gold with the title's sweep of light (reeded glass and
+a gold-leaf wall were tried and declined by the owner), and gold LEAF in its
+title (a fine crease grain). Then: GHK-Cu keeps the heavy steel plate (owner),
+and the name is shown on phones and tablets too, for all three, centred behind
+the vial (in a box the frame's size and place, `ProductStage.module.css`,
+Compact) — it had been hidden there because, centred on the stacked stage, it
+landed behind the controls. All static; each falls away before the commerce column.
+
+**Open for the owner.** The settled interaction moves only reflection, not
+information: the only verified data embedded is the product's name (a
+strength or lot etched by the vial read as an assay hallmark, i.e. a purity
+claim). The commit before the flight is one long task (~130–160 ms, mostly
+React; the plate's share ~20 ms); under 4× CPU throttling GHK-Cu's arrival
+totals less long-task time than RETA's or GLOW's but its largest task is the
+largest (216 ms). The flagship interlude further down is still the generic
+one. Not tested in Safari or on a real phone GPU.
 
 ## 8ao. Vial transition: product-page cards, and no loading state over static routes (2026-10-03)
 

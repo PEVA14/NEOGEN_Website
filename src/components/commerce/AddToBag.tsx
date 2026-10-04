@@ -231,7 +231,8 @@ export function AddToBag({
           </Mono>
           {selected?.price ? (
             <>
-              <span ref={priceRef} className={styles.priceValue}>
+              {/* `data-price-value`: a world may set its price in its own material. */}
+              <span ref={priceRef} className={styles.priceValue} data-price-value="">
                 {formatPrice(selected.price, localeTag)}
               </span>
               {selected.pack ? (

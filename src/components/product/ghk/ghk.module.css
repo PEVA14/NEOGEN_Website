@@ -1,0 +1,126 @@
+/*
+ * GHK-Cu — the environment becomes material. See BurnishField.tsx.
+ */
+
+/*
+ * While a card's specimen burnishes the plate, the page's own dark grounds —
+ * the section's surface and the stage's `[data-world]` void — stand down. In
+ * the view transition they belong to the page's layer, ABOVE the world's, and
+ * covered the plate as the page faded in: the flight showed a flat ground and
+ * the burnishing only appeared once it was over (GLOW's trap 3, again).
+ */
+@media (prefers-reduced-motion: no-preference) {
+  :global(section:has([data-burnish-forming])),
+  :global([data-world][data-burnish-forming]) {
+    background-color: transparent;
+  }
+}
+
+/* The plate fills the field, under everything. */
+:global([data-burnish]) :global([data-stage-field]) {
+  position: relative;
+  overflow: clip;
+}
+
+.plate {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  pointer-events: none;
+}
+
+/*
+ * No instrument: the frame's border and registration marks are RETA's
+ * language. The vial is held by the material it stands over, not framed.
+ */
+:global([data-burnish]) :global([data-stage-frame]) {
+  border-color: transparent;
+}
+
+:global([data-burnish]) :global([data-stage-frame])::before,
+:global([data-burnish]) :global([data-stage-frame])::after {
+  display: none;
+}
+
+/*
+ * The name across the field is ETCHED into the plate: the printed ghost
+ * stands down from the first paint wherever scripts run (it stays in the
+ * DOM, hidden from assistive technology as before, and is what the etching is
+ * measured from) — shown, then swapped for the etching, it read as a flash.
+ * Where WebGL is missing or lost, `data-burnish-unsupported` brings it back;
+ * without scripts it was never hidden.
+ */
+@media (scripting: enabled) {
+  :global([data-burnish]) :global([data-stage-wordmark]) {
+    visibility: hidden;
+  }
+}
+
+:global([data-burnish][data-burnish-unsupported]) :global([data-stage-wordmark]) {
+  visibility: visible;
+}
+
+/* --- The type, in the plate's metal ------------------------------------- */
+
+/*
+ * GHK-Cu's name and price are cut from the same metal as the plate: copper
+ * over steel, lit from above per line (`1lh`) — a pale steel highlight on the
+ * cap tops, copper through the body, a darker turn below the middle — with a
+ * fine brushed grain inside the letters and a hard, heavy edge under them.
+ *
+ * A narrow highlight crosses the letters where the plate's light falls:
+ * `--ghk-sheen` is written by the plate (`BurnishField`) — it is burnished
+ * across once as the plate settles, then follows the pointer as the plate's
+ * reflection does. Without the plate (no WebGL, reduced motion) it simply
+ * rests. The darkest stop keeps ~3:1 on the void for display-size type, and
+ * where text cannot be clipped or colours are forced it stays flat ink.
+ */
+@supports ((background-clip: text) or (-webkit-background-clip: text)) {
+  @media (forced-colors: none) {
+    :global([data-burnish]) :global([data-product-name]),
+    :global([data-burnish]) :global([data-price-value]) {
+      background-image:
+        linear-gradient(
+          100deg,
+          transparent 46.5%,
+          color-mix(in oklab, #fff 42%, transparent) 50%,
+          transparent 53.5%
+        ),
+        repeating-linear-gradient(
+          180deg,
+          rgb(255 255 255 / 0.07) 0 1px,
+          transparent 1px 3px,
+          rgb(0 0 0 / 0.09) 3px 4px,
+          transparent 4px 7px
+        ),
+        linear-gradient(
+          180deg,
+          color-mix(in oklab, var(--world-light) 70%, #c9c6c2) 4%,
+          color-mix(in oklab, var(--world-accent) 45%, var(--world-light)) 30%,
+          color-mix(in oklab, var(--world-accent) 85%, var(--world-light)) 50%,
+          color-mix(in oklab, var(--world-accent) 72%, #3a3532) 60%,
+          color-mix(in oklab, var(--world-accent) 80%, var(--world-light)) 82%,
+          color-mix(in oklab, var(--world-accent) 40%, var(--world-light)) 100%
+        );
+      background-size:
+        300% 100%,
+        100% 100%,
+        100% 1.05em;
+      background-size:
+        300% 100%,
+        100% 100%,
+        100% 1lh;
+      background-repeat: no-repeat, repeat, repeat-y;
+      background-position:
+        var(--ghk-sheen, 55%) 0,
+        0 0,
+        0 0;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      /* Heavy: a hard edge under the letters, and their weight on the plate. */
+      filter: drop-shadow(0 2px 0 rgb(0 0 0 / 0.55)) drop-shadow(0 0.15em 0.25em rgb(0 0 0 / 0.35));
+    }
+  }
+}
