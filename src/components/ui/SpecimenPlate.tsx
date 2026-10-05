@@ -1,5 +1,6 @@
 import { useId, ViewTransition } from "react";
 
+import { MarkShape, markScale } from "@/components/brand/MarkShape";
 import { Mono } from "@/components/typography";
 
 import styles from "./SpecimenPlate.module.css";
@@ -307,14 +308,14 @@ function VialObject({
           The identity, as the rendered label sets it: the mark, then the
           wordmark. The MARK ALONE, not the full lockup — this plate is drawn
           at 200 units wide and shown smaller still inside a homepage moment,
-          and "PEPTIDES" does not survive that. The mark is five filled
-          circles and does.
+          and "PEPTIDES" does not survive that. The mark does.
 
-          Its ink is the artwork's own black against `--vial-label-ink`, which
-          is charcoal in both of this plate's surfaces; an <image> cannot take
-          `currentColor`, and at 9 units the difference is not visible.
+          Drawn from the mark's measured geometry (`brand/MarkShape`), so it
+          takes the label's own ink like the wordmark beside it.
         */}
-        <image href="/branding/neogen-mark.png" x="70" y="150" width="9" height="11.25" />
+        <g transform={`translate(70 150) scale(${markScale(9)})`} fill="var(--vial-label-ink)">
+          <MarkShape />
+        </g>
         <text
           x="106"
           y="159.5"

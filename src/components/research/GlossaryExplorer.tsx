@@ -1,12 +1,20 @@
 "use client";
 
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
-import { useId, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
-import { fold, matchesText } from "@/lib/search";
+import { TermLens } from "@/components/motion/TermLens";
+import { useIndicator } from "@/components/motion/useIndicator";
+import { ValueRoll } from "@/components/motion/ValueRoll";
+import { AreaMarks } from "@/components/ui/AreaMarks";
+import { fold, foldIndex, matchesText } from "@/lib/search";
 
 import styles from "./GlossaryExplorer.module.css";
+
+import type { DiscoveryAreaId } from "@/data/discovery";
 
 export interface GlossaryEntry {
   id: string;
@@ -16,7 +24,7 @@ export interface GlossaryEntry {
   definition: string;
   seeAlso: readonly { id: string; label: string }[];
   /** Records whose own published text uses the term. */
-  usedIn: readonly { name: string; href: string }[];
+  usedIn: readonly { name: string; href: string; areas?: readonly DiscoveryAreaId[] }[];
   note: { href: string; label: string } | null;
   destination: { href: string; label: string } | null;
 }
@@ -34,6 +42,10 @@ export interface GlossaryCopy {
   more: string;
   readMore: string;
   letters: string;
+  goTo: string;
+  backTerm: string;
+  backRecord: string;
+  dismiss: string;
 }
 
 /** How many record names a term lists before "and N more". */
@@ -75,6 +87,14 @@ export function GlossaryExplorer({
   const [category, setCategory] = useState<string>("all");
   const [view, setView] = useState<"category" | "alphabet">("category");
   const searchId = useId();
+  const reduced = useReducedMotion();
+  const router = useRouter();
+  const chipsRef = useRef<HTMLDivElement>(null);
+  const chipMark = useRef<HTMLSpanElement>(null);
+  const viewRef = useRef<HTMLDivElement>(null);
+  const viewMark = useRef<HTMLSpanElement>(null);
+  useIndicator(chipsRef, chipMark, '[aria-pressed="true"]', category);
+  useIndicator(viewRef, viewMark, '[aria-pressed="true"]', view);
 
   const results = useMemo(() => {
     const q = query.trim();
@@ -88,19 +108,6 @@ export function GlossaryExplorer({
       );
     });
   }, [entries, query, category]);
-
-  /*
-   * A "see also" link to a term the current filter hides would jump nowhere.
-   * Clearing the filter synchronously, before the browser follows the hash,
-   * puts the target back in the document in time for the jump.
-   */
-  const reveal = (id: string) => {
-    if (results.some((e) => e.id === id)) return;
-    flushSync(() => {
-      setQuery("");
-      setCategory("all");
-    });
-  };
 
   const sections = useMemo(() => {
     if (view === "category") {
@@ -122,8 +129,111 @@ export function GlossaryExplorer({
       .map(([letter, items]) => ({ key: `letra-${letter.toLowerCase()}`, heading: letter, items }));
   }, [view, results, categories]);
 
+  /*
+   * THE WAY BACK. Following a "see also" (or a definition card's link) to
+   * another term leaves a chip that returns to the term you were reading; a
+   * reader who came from a compound record (its inline definition's "Abrir en
+   * el glosario") gets one that returns to that record. The glossary is a
+   * place you consult, not a place you get lost in.
+   */
+  const [trail, setTrail] = useState<{ id: string; label: string } | null>(null);
+  const [fromRecord, setFromRecord] = useState<{
+    href: string;
+    name: string;
+    areas?: readonly DiscoveryAreaId[];
+  } | null>(null);
+  useEffect(() => {
+    /* Where the reader came from: the record's own note of it (a client
+       navigation from its inline definition), else the referrer (a full
+       page load). */
+    let fromPath: string | null = null;
+    try {
+      const note = JSON.parse(sessionStorage.getItem("neogen:from") ?? "null") as {
+        href: string;
+        at: number;
+      } | null;
+      sessionStorage.removeItem("neogen:from");
+      if (note && Date.now() - note.at < 15000) fromPath = note.href;
+    } catch {
+      fromPath = null;
+    }
+    if (!fromPath) {
+      try {
+        const ref = document.referrer ? new URL(document.referrer) : null;
+        if (ref && ref.origin === window.location.origin) fromPath = ref.pathname;
+      } catch {
+        fromPath = null;
+      }
+    }
+    if (!fromPath) return;
+    const record = entries.flatMap((e) => e.usedIn).find((r) => r.href === fromPath);
+    if (!record) return;
+    /* The record's colour comes along (color pass): the word arrived at
+       registers in it, and the way back is marked with it. */
+    const area = record.areas?.[0];
+    const target = window.location.hash
+      ? document.getElementById(decodeURIComponent(window.location.hash.slice(1)))
+      : null;
+    requestAnimationFrame(() => {
+      if (target) {
+        if (area) target.setAttribute("data-area", area);
+        target.setAttribute("data-arrived", "");
+      }
+      setFromRecord(record);
+    });
+  }, [entries]);
+
+  /* Go to a term on this page: reveal it if a filter hides it, bring it into
+     view, and let it register (an ink rule drawn across it). */
+  const goTo = useCallback(
+    (id: string, from: { id: string; label: string } | null) => {
+      if (!results.some((e) => e.id === id)) {
+        flushSync(() => {
+          setQuery("");
+          setCategory("all");
+        });
+      }
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (from) setTrail(from);
+      window.history.replaceState(window.history.state, "", `#${id}`);
+      el.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+      el.removeAttribute("data-arrived");
+      void el.offsetWidth;
+      el.setAttribute("data-arrived", "");
+      el.focus({ preventScroll: true });
+    },
+    [results, reduced],
+  );
+  const termOf = (el: HTMLElement | null) => {
+    const article = el?.closest<HTMLElement>("article[id]");
+    if (!article) return null;
+    const entry = entries.find((e) => e.id === article.id);
+    return entry ? { id: entry.id, label: entry.term } : null;
+  };
+
+  const q = query.trim();
+  const marked = (text: string) => {
+    const at = q ? foldIndex(text, q) : null;
+    if (!at) return text;
+    return (
+      <>
+        {text.slice(0, at[0])}
+        <mark className={styles.match}>{text.slice(at[0], at[1])}</mark>
+        {text.slice(at[1])}
+      </>
+    );
+  };
+  const present = new Set(sections.map((sec) => sec.heading));
+  const layout = reduced
+    ? { duration: 0 }
+    : { type: "spring" as const, stiffness: 420, damping: 42, mass: 0.9 };
+
   return (
-    <div className={styles.explorer}>
+    <TermLens
+      className={styles.explorer}
+      onFollow={(href, from) => goTo(href.replace(/^.*#/, ""), termOf(from))}
+    >
       <div className={styles.controls}>
         <div className={styles.searchField}>
           <label htmlFor={searchId} className={styles.label}>
@@ -141,7 +251,8 @@ export function GlossaryExplorer({
           />
         </div>
 
-        <div className={styles.chips} role="group" aria-label={copy.view.category}>
+        <div className={styles.chips} role="group" aria-label={copy.view.category} ref={chipsRef}>
+          <span ref={chipMark} className={styles.mark} aria-hidden="true" />
           {[{ id: "all", label: copy.categoryAll }, ...categories].map((c) => (
             <button
               key={c.id}
@@ -150,12 +261,13 @@ export function GlossaryExplorer({
               aria-pressed={category === c.id}
               onClick={() => setCategory(c.id)}
             >
-              {c.label}
+              <span>{c.label}</span>
             </button>
           ))}
         </div>
 
-        <div className={styles.view} role="group" aria-label={copy.view.label}>
+        <div className={styles.view} role="group" aria-label={copy.view.label} ref={viewRef}>
+          <span ref={viewMark} className={styles.mark} aria-hidden="true" />
           {(["category", "alphabet"] as const).map((v) => (
             <button
               key={v}
@@ -164,7 +276,7 @@ export function GlossaryExplorer({
               aria-pressed={view === v}
               onClick={() => setView(v)}
             >
-              {copy.view[v]}
+              <span>{copy.view[v]}</span>
             </button>
           ))}
         </div>
@@ -172,16 +284,33 @@ export function GlossaryExplorer({
 
       <div className={styles.status}>
         <p className={styles.count} aria-live="polite">
-          {results.length === 1 ? copy.result : copy.results.replace("{n}", String(results.length))}
+          <span className={styles.srOnly}>
+            {results.length === 1
+              ? copy.result
+              : copy.results.replace("{n}", String(results.length))}
+          </span>
+          <span aria-hidden="true">
+            <ValueRoll value={String(results.length).padStart(2, "0")} />{" "}
+            {(results.length === 1 ? copy.result : copy.results)
+              .replace("{n}", "")
+              .replace(/^1\s*/, "")
+              .trim()}
+          </span>
         </p>
-        {view === "alphabet" && sections.length > 1 ? (
+        {view === "alphabet" && results.length > 0 ? (
           <nav aria-label={copy.letters} className={styles.letters}>
             <ul>
-              {sections.map((s) => (
-                <li key={s.key}>
-                  <a href={`#${s.key}`}>{s.heading}</a>
-                </li>
-              ))}
+              {ALPHABET.map((letter) =>
+                present.has(letter) ? (
+                  <li key={letter}>
+                    <a href={`#letra-${letter.toLowerCase()}`}>{letter}</a>
+                  </li>
+                ) : (
+                  <li key={letter} aria-hidden="true">
+                    <span className={styles.absent}>{letter}</span>
+                  </li>
+                ),
+              )}
             </ul>
           </nav>
         ) : null}
@@ -190,97 +319,186 @@ export function GlossaryExplorer({
       {results.length === 0 ? (
         <p className={styles.empty}>{copy.empty}</p>
       ) : (
-        sections.map((section) => (
-          <section
-            key={section.key}
-            id={view === "alphabet" ? section.key : `tema-${section.key}`}
-            className={styles.section}
-            aria-labelledby={`${section.key}-h`}
-          >
-            <h2 id={`${section.key}-h`} className={styles.heading} data-view={view}>
-              {section.heading}
-            </h2>
-            <div className={styles.terms}>
-              {section.items.map((entry) => (
-                <article key={entry.id} id={entry.id} className={styles.term}>
-                  <h3 className={styles.termName}>
-                    {entry.term}
-                    {entry.abbreviation ? (
-                      <abbr className={styles.abbr} title={entry.term}>
-                        {entry.abbreviation}
-                      </abbr>
-                    ) : null}
-                  </h3>
-                  <p className={styles.definition}>{entry.definition}</p>
+        <AnimatePresence initial={false} mode="popLayout">
+          {sections.map((section) => (
+            <motion.section
+              layout="position"
+              transition={layout}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, transition: { duration: reduced ? 0 : 0.14 } }}
+              key={`${view}-${section.key}`}
+              id={view === "alphabet" ? section.key : `tema-${section.key}`}
+              className={styles.section}
+              aria-labelledby={`${section.key}-h`}
+            >
+              <h2 id={`${section.key}-h`} className={styles.heading} data-view={view}>
+                {section.heading}
+              </h2>
+              <div className={styles.terms}>
+                <AnimatePresence initial={false} mode="popLayout">
+                  {section.items.map((entry) => (
+                    <motion.article
+                      layout="position"
+                      transition={layout}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0, transition: { duration: reduced ? 0 : 0.12 } }}
+                      key={entry.id}
+                      id={entry.id}
+                      tabIndex={-1}
+                      className={styles.term}
+                    >
+                      <h3 className={styles.termName}>
+                        {marked(entry.term)}
+                        {entry.abbreviation ? (
+                          <abbr className={styles.abbr} title={entry.term}>
+                            {entry.abbreviation}
+                          </abbr>
+                        ) : null}
+                      </h3>
+                      <p className={styles.definition}>{marked(entry.definition)}</p>
 
-                  {entry.usedIn.length > 0 || entry.seeAlso.length > 0 ? (
-                    <dl className={styles.links}>
-                      {entry.usedIn.length > 0 ? (
-                        <div>
-                          <dt>{copy.usedIn}</dt>
-                          <dd>
-                            {entry.usedIn.slice(0, USED_IN_SHOWN).map((r, i) => (
-                              <span key={r.href}>
-                                {i > 0 ? ", " : null}
-                                <Link href={r.href} className={styles.inline}>
-                                  {r.name}
-                                </Link>
-                              </span>
-                            ))}
-                            {entry.usedIn.length > USED_IN_SHOWN ? (
-                              <span className={styles.more}>
-                                {" "}
-                                {copy.more.replace(
-                                  "{n}",
-                                  String(entry.usedIn.length - USED_IN_SHOWN),
-                                )}
-                              </span>
-                            ) : null}
-                          </dd>
+                      {entry.usedIn.length > 0 || entry.seeAlso.length > 0 ? (
+                        <dl className={styles.links}>
+                          {entry.usedIn.length > 0 ? (
+                            <div>
+                              <dt>{copy.usedIn}</dt>
+                              <dd>
+                                {entry.usedIn.slice(0, USED_IN_SHOWN).map((r, i) => (
+                                  <span key={r.href}>
+                                    {i > 0 ? ", " : null}
+                                    {r.areas && r.areas.length > 0 ? (
+                                      <>
+                                        <AreaMarks areas={r.areas} />{" "}
+                                      </>
+                                    ) : null}
+                                    <Link href={r.href} className={styles.inline}>
+                                      {r.name}
+                                    </Link>
+                                  </span>
+                                ))}
+                                {entry.usedIn.length > USED_IN_SHOWN ? (
+                                  <span className={styles.more}>
+                                    {" "}
+                                    {copy.more.replace(
+                                      "{n}",
+                                      String(entry.usedIn.length - USED_IN_SHOWN),
+                                    )}
+                                  </span>
+                                ) : null}
+                              </dd>
+                            </div>
+                          ) : null}
+                          {entry.seeAlso.length > 0 ? (
+                            <div>
+                              <dt>{copy.seeAlso}</dt>
+                              <dd>
+                                {entry.seeAlso.map((sa, i) => (
+                                  <span key={sa.id}>
+                                    {i > 0 ? ", " : null}
+                                    {/* Opens the related definition in place
+                                        (TermLens); the card's own link, or a
+                                        modified click, goes to the term. */}
+                                    <a
+                                      href={`#${sa.id}`}
+                                      className={styles.inline}
+                                      data-term={sa.id}
+                                    >
+                                      {sa.label}
+                                    </a>
+                                  </span>
+                                ))}
+                              </dd>
+                            </div>
+                          ) : null}
+                        </dl>
+                      ) : null}
+
+                      {entry.note || entry.destination ? (
+                        <div className={styles.routes}>
+                          {entry.note ? (
+                            <Link href={entry.note.href} className={styles.route}>
+                              {entry.note.label} <span aria-hidden="true">→</span>
+                            </Link>
+                          ) : null}
+                          {entry.destination ? (
+                            <Link href={entry.destination.href} className={styles.route}>
+                              {entry.destination.label} <span aria-hidden="true">→</span>
+                            </Link>
+                          ) : null}
                         </div>
                       ) : null}
-                      {entry.seeAlso.length > 0 ? (
-                        <div>
-                          <dt>{copy.seeAlso}</dt>
-                          <dd>
-                            {entry.seeAlso.map((s, i) => (
-                              <span key={s.id}>
-                                {i > 0 ? ", " : null}
-                                <a
-                                  href={`#${s.id}`}
-                                  className={styles.inline}
-                                  onClick={() => reveal(s.id)}
-                                >
-                                  {s.label}
-                                </a>
-                              </span>
-                            ))}
-                          </dd>
-                        </div>
-                      ) : null}
-                    </dl>
-                  ) : null}
-
-                  {entry.note || entry.destination ? (
-                    <div className={styles.routes}>
-                      {entry.note ? (
-                        <Link href={entry.note.href} className={styles.route}>
-                          {entry.note.label} <span aria-hidden="true">→</span>
-                        </Link>
-                      ) : null}
-                      {entry.destination ? (
-                        <Link href={entry.destination.href} className={styles.route}>
-                          {entry.destination.label} <span aria-hidden="true">→</span>
-                        </Link>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </article>
-              ))}
-            </div>
-          </section>
-        ))
+                    </motion.article>
+                  ))}
+                </AnimatePresence>
+              </div>
+            </motion.section>
+          ))}
+        </AnimatePresence>
       )}
-    </div>
+
+      {/* The definitions a "see also" lifts in place (TermLens). */}
+      <div hidden>
+        {entries.map((entry) => (
+          <div key={entry.id} data-def={entry.id}>
+            <p data-def-kind="">{categories.find((c) => c.id === entry.category)?.label ?? ""}</p>
+            <p data-def-term="">
+              {entry.term}
+              {entry.abbreviation ? ` · ${entry.abbreviation}` : ""}
+            </p>
+            <p data-def-text="">{entry.definition}</p>
+            <a href={`#${entry.id}`} data-def-link="">
+              {copy.goTo} <span aria-hidden="true">→</span>
+            </a>
+          </div>
+        ))}
+      </div>
+
+      {/* The way back: to the term you came from, or the record. */}
+      <AnimatePresence>
+        {trail || fromRecord ? (
+          <motion.div
+            key={trail ? `t-${trail.id}` : "record"}
+            className={styles.trail}
+            data-area={!trail ? fromRecord?.areas?.[0] : undefined}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            transition={reduced ? { duration: 0 } : { type: "spring", stiffness: 500, damping: 40 }}
+          >
+            <button
+              type="button"
+              className={styles.trailBack}
+              onClick={() => {
+                if (trail) {
+                  const back = trail;
+                  setTrail(null);
+                  goTo(back.id, null);
+                } else if (fromRecord) {
+                  if (window.history.length > 1) router.back();
+                  else router.push(fromRecord.href);
+                }
+              }}
+            >
+              <span aria-hidden="true">←</span>{" "}
+              {trail
+                ? copy.backTerm.replace("{term}", trail.label)
+                : copy.backRecord.replace("{name}", fromRecord?.name ?? "")}
+            </button>
+            <button
+              type="button"
+              className={styles.trailClose}
+              aria-label={copy.dismiss}
+              onClick={() => (trail ? setTrail(null) : setFromRecord(null))}
+            >
+              <span aria-hidden="true">×</span>
+            </button>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </TermLens>
   );
 }
+
+const ALPHABET = [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ"];

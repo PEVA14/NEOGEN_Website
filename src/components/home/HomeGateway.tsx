@@ -121,7 +121,17 @@ export function HomeGateway({ copy, data }: { copy: GatewayCopy; data: GatewayDa
             {copy.index} <span>/ {copy.label}</span>
           </p>
           <h2 id="gateway-title" className={styles.title}>
-            {copy.title}
+            {/* The brand's name in this title is where the hero's poster
+                NEOGEN lands as the page is scrolled (`HeroHandoff`). */}
+            {copy.title.includes("NEOGEN") ? (
+              <>
+                {copy.title.slice(0, copy.title.indexOf("NEOGEN"))}
+                <span data-handoff-target="">NEOGEN</span>
+                {copy.title.slice(copy.title.indexOf("NEOGEN") + "NEOGEN".length)}
+              </>
+            ) : (
+              copy.title
+            )}
           </h2>
           <p className={styles.lede}>{copy.lede}</p>
           <p className={styles.aside} aria-hidden="true">
@@ -190,6 +200,20 @@ export function HomeGateway({ copy, data }: { copy: GatewayCopy; data: GatewayDa
                   ).map(([value, label]) => (
                     <span key={label} className={styles.figure}>
                       <span className={styles.figureValue}>{pad(value)}</span>
+                      {/* The areas, counted as what they hold (color pass):
+                          one segment per area, in its colour, as long as its
+                          compounds — the palette the page then uses. */}
+                      {label === copy.research.areas ? (
+                        <span className={styles.figureShares} aria-hidden="true">
+                          {data.areas.map((area) => (
+                            <span
+                              key={area.id}
+                              data-area={area.id}
+                              style={{ flexGrow: area.count }}
+                            />
+                          ))}
+                        </span>
+                      ) : null}
                       <span className={styles.figureLabel}>{label}</span>
                     </span>
                   ))}

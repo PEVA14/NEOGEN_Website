@@ -124,3 +124,49 @@
     }
   }
 }
+
+/*
+ * WHILE THE PRICE ROLLS (owner, 2026-10-04: the price "glitches" on a new
+ * format). Clipped to the price, the metal is painted through each glyph
+ * where it rests — the travelling digits and their windows are ignored, so
+ * old and new figures printed over each other. For the length of the roll
+ * (`data-rolling`, `ValueRoll`) the metal moves onto the glyphs themselves,
+ * which carry it as they travel; the sheen rejoins when the figure settles.
+ */
+@supports ((background-clip: text) or (-webkit-background-clip: text)) {
+  @media (forced-colors: none) {
+    :global([data-burnish]) :global([data-price-value]):has(:global([data-rolling])) {
+      background-image: none;
+    }
+
+    :global([data-burnish])
+      :global([data-price-value])
+      :global([data-rolling])
+      :global([data-roll-glyph]) {
+      background-image:
+        repeating-linear-gradient(
+          180deg,
+          rgb(255 255 255 / 0.07) 0 1px,
+          transparent 1px 3px,
+          rgb(0 0 0 / 0.09) 3px 4px,
+          transparent 4px 7px
+        ),
+        linear-gradient(
+          180deg,
+          color-mix(in oklab, var(--world-light) 70%, #c9c6c2) 4%,
+          color-mix(in oklab, var(--world-accent) 45%, var(--world-light)) 30%,
+          color-mix(in oklab, var(--world-accent) 85%, var(--world-light)) 50%,
+          color-mix(in oklab, var(--world-accent) 72%, #3a3532) 60%,
+          color-mix(in oklab, var(--world-accent) 80%, var(--world-light)) 82%,
+          color-mix(in oklab, var(--world-accent) 40%, var(--world-light)) 100%
+        );
+      background-size:
+        100% 100%,
+        100% 100%;
+      background-repeat: repeat, no-repeat;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+  }
+}

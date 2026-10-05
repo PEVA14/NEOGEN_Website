@@ -350,14 +350,14 @@ export function stageFrameloop(compiled: boolean, reducedMotion: boolean): "neve
 
 /**
  * How `FrameBudget` steps a stage: a phone at most PHONE_FPS, anything else
- * every frame (null) — and every stage nothing while it is off screen. The
+ * at most DESKTOP_FPS — and every stage nothing while it is off screen. The
  * presenter keeps its canvas while the page is read below it (`useVialStage`'s
  * `keep`); the homepage's shared canvas stays in a stage until the next one
  * wins it, and drew ~60 glass frames a second through the sections between
  * (owner, 2026-10-01: the homepage "feels kinda stuttery").
  */
-function budgeted(tier: StageTier): { fps: number | null } {
-  return tier === "compact" ? { fps: PHONE_FPS } : { fps: null };
+function budgeted(tier: StageTier): { fps: number } {
+  return { fps: tier === "compact" ? PHONE_FPS : DESKTOP_FPS };
 }
 
 /**
@@ -385,7 +385,7 @@ export function StageScene({
   const budget = budgeted(contents.tier);
   return (
     <>
-      <Grade rig={WORLD_RIGS[contents.world]} tier={contents.tier} />
+      <Grade rig={WORLD_RIGS[contents.world]} />
       <SceneContents {...contents} />
       {onFirstFrame ? <FirstFrame onFrame={onFirstFrame} /> : null}
       <Prewarm onReady={onCompiled} />
@@ -496,7 +496,7 @@ export function SceneContents({
  * A LAYOUT effect, first in the scene: tone mapping is part of every shader
  * program, so it has to be in place before `Prewarm` compiles them.
  */
-function Grade({ rig, tier }: { rig: StudioRig; tier: StageTier }) {
+function Grade({ rig }: { rig: StudioRig }) {
   // Read through `get()`: the renderer is R3F's to own, and this sets its
   // grade the way `onCreated` used to, not a value React rendered from.
   const get = useThree((state) => state.get);
@@ -504,8 +504,21 @@ function Grade({ rig, tier }: { rig: StudioRig; tier: StageTier }) {
     const { gl } = get();
     gl.toneMapping = NeutralToneMapping;
     gl.toneMappingExposure = rig.exposure;
-    gl.transmissionResolutionScale = tier === "compact" ? 0.5 : 1;
-  }, [get, rig, tier]);
+    /*
+     * THE GLASS PASS AT HALF RESOLUTION, EVERYWHERE (owner, 2026-10-04:
+     * scrolling lagged after Tres mundos, "nothing changed"; then, of the
+     * product page, "it looks good even at half-resolution"). Measured on a
+     * Retina laptop, the homepage's RETA scene was fill-bound: 46 slow frames
+     * across the section at 2× against 5 at 1×, and 3 with no 3D at all.
+     * What the glass refracts is a smooth pool of light, which a half-size
+     * image shows the same. Phones had it already.
+     */
+    gl.transmissionResolutionScale = 0.5;
+    /* Shader diagnostics read each program's logs on first use, which waits
+       on the compile it was meant to skip (`Prewarm`): ~100 ms at a homepage
+       hand-over. Kept in development, where they report errors. */
+    gl.debug.checkShaderErrors = process.env.NODE_ENV !== "production";
+  }, [get, rig]);
   return null;
 }
 
@@ -579,6 +592,15 @@ function Prewarm({ onReady }: { onReady: () => void }) {
 const PHONE_FPS = 30;
 
 /**
+ * A laptop or desktop: every other frame of a 120 Hz or 144 Hz display,
+ * every frame at 60 Hz. Nothing on a stage moves fast — the homepage's arcs
+ * are scroll-paced, the presenter turns a full circle in over a minute — and
+ * at 120 Hz drawing twice as many glass frames as a 60 Hz screen was what
+ * the homepage's scroll waited on (owner, 2026-10-04).
+ */
+const DESKTOP_FPS = 72;
+
+/**
  * THE PHONE'S FRAME BUDGET (owner, 2026-09-29: "it stutters just a tiny bit").
  *
  * Every frame of this scene renders the scene twice — once into the glass's
@@ -589,8 +611,8 @@ const PHONE_FPS = 30;
  *
  * Replaces R3F's own loop (`frameloop="never"`) with one that
  *   - draws at most PHONE_FPS times a second, whatever the display's rate
- *     (every other frame at 60 Hz, every fourth at 120 Hz) — on a phone; the
- *     desktop presenter draws every frame (`fps` null) — and
+ *     (every other frame at 60 Hz, every fourth at 120 Hz) — on a phone, and
+ *     at most DESKTOP_FPS elsewhere — and
  *   - draws nothing while the canvas is off screen. A stage keeps its canvas
  *     mounted through a generous margin either side of the viewport (see
  *     `useVialStage`), and until now it rendered the whole time.

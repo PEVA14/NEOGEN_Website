@@ -700,6 +700,20 @@ const es = {
       areas: "Áreas de investigación",
       action: "Ir a NEOGEN Research",
       referencesAction: "Ver las referencias",
+      structure: {
+        hint: "Cada marca es uno de ellos. Señala una —o desliza sobre su fila— para ver con qué se conecta.",
+        scrubProfiles: "Recorrer los perfiles",
+        scrubReferences: "Recorrer las referencias",
+        scrubAreas: "Recorrer las áreas",
+        refs: "{n} referencias",
+        refsOne: "1 referencia",
+        areas: "{n} áreas",
+        areasOne: "1 área",
+        cited: "Citada en {n} perfiles",
+        citedOne: "Citada en 1 perfil",
+        profiles: "{n} perfiles",
+        profilesOne: "1 perfil",
+      },
     },
 
     /**
@@ -933,11 +947,17 @@ const es = {
       title: "Materiales de investigación",
       action: "Ver materiales",
     },
+    /* WHERE THE PRODUCT SITS — its catalogue area, A to Z, and the
+       laboratory materials. An area is a filing context, so the lede says
+       what it does not mean: no similar effect, combination or substitute. */
     related: {
       index: "05",
       label: "Productos",
-      qualifier: "Catálogo",
-      title: "Compuestos relacionados",
+      qualifier: "Misma área de catálogo",
+      title: "En el catálogo",
+      lede: "Su área, de la A a la Z, y los materiales de laboratorio. Compartir área no implica efectos similares, combinación ni sustitución.",
+      current: "Este compuesto",
+      count: "{n} productos",
       action: "Catálogo completo",
     },
   },
@@ -1144,6 +1164,17 @@ const es = {
         placeholder: "Compuesto, alias o presentación",
         submit: "Buscar",
       },
+      /* The archive plate on the hub's first screen (Research colour
+         completion): every compound once, coloured by its first area,
+         filled where a record exists. */
+      plate: {
+        label: "El archivo, compuesto por compuesto",
+        record: "Con registro científico",
+        noRecord: "Sin registro",
+        none: "Sin área",
+        summary:
+          "{n} compuestos en {areas} áreas de catálogo, cada uno en su primera área; {records} tienen registro científico.",
+      },
       stats: {
         label: "Contenido del archivo",
         compounds: "Compuestos",
@@ -1221,6 +1252,11 @@ const es = {
            rather than "Entrar" / "Enter", which named no destination. */
         enter: "Ver en el catálogo",
         all: "Ver el catálogo completo",
+        /* An area opens in place into its compounds (finishing pass). */
+        open: "Ver sus compuestos",
+        close: "Cerrar",
+        compendium: "Abrir en el compendio",
+        roster: "Compuestos de {area}, de la A a la Z",
       },
       lines: {
         index: "03",
@@ -1242,6 +1278,11 @@ const es = {
           openLine: "Abrir la línea",
           hint: "Teclado: Tab entra a los puntos, flechas para moverse, Enter fija.",
           dot: "{compound} en {line}",
+          scrub: "Recorrer los compuestos",
+          scrubIdle: "Ningún compuesto elegido",
+          touchHint:
+            "Desliza sobre la barra de áreas para recorrer los compuestos. Toca una línea para ver los suyos.",
+          clear: "Quitar la selección",
         },
       },
       quality: {
@@ -1569,6 +1610,10 @@ const es = {
       more: "y {n} más",
       readMore: "Leer la nota",
       letters: "Ir a la letra",
+      goTo: "Ir al término",
+      backTerm: "Volver a {term}",
+      backRecord: "Volver al registro de {name}",
+      dismiss: "Cerrar",
       destinations: {
         peptides: "Qué es un péptido",
         compendium: "Compendio",
@@ -1898,6 +1943,17 @@ const es = {
       reportId: "Informe",
       view: "Ver documento",
       external: "abre en otra pestaña",
+      /* The presentation being bought, held up to the record. The count is
+         the resolver's; nothing here can raise it. */
+      inHand: {
+        label: "En inspección",
+        choose: "Presentación a inspeccionar",
+        documents: "Documentos públicos",
+      },
+      guides: {
+        coa: "Cómo leer un certificado de análisis",
+        model: "Cómo se vincula la documentación",
+      },
       chain: {
         label: "Cómo se resuelve la evidencia",
         steps: {

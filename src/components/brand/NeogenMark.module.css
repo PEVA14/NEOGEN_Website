@@ -1,0 +1,181 @@
+/*
+ * THE NEOGEN MARK — see NeogenMark.tsx.
+ *
+ * At rest: the artwork's parts, filled with `currentColor`, nothing applied.
+ * The caller sets the height; the width follows the artwork's own box.
+ */
+
+.mark {
+  display: block;
+  inline-size: auto;
+  aspect-ratio: 389 / 485;
+  fill: currentColor;
+  overflow: visible;
+  /* The whole box answers the pointer, not only the painted parts. */
+  pointer-events: bounding-box;
+}
+
+.hub,
+.node {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* Each half of a connection grows from just inside its own node, on its arm's
+   axis — so a scale along that axis is the connection reaching out. */
+.in {
+  transform-box: view-box;
+  transform-origin: var(--hx) var(--hy);
+}
+
+.out {
+  transform-box: view-box;
+  transform-origin: var(--nx) var(--ny);
+}
+
+/* POINTS: the nodes alone. */
+.mark[data-form="points"] .in,
+.mark[data-form="points"] .out {
+  visibility: hidden;
+}
+
+/*
+ * THE ASSEMBLY, ON THE READER'S SCROLL.
+ *
+ * Every part has its own stretch of the range (fractions of it, --p0 → --p1):
+ * the hub registers, the four nodes register, then each connection reaches
+ * from both ends and meets, clockwise from the top node, a beat apart, and
+ * each node is drawn a little toward the hub as its connection closes, then
+ * relaxes. Scrolling back takes it apart the same way. The same phases run
+ * on a clock in `markMotion.ts`.
+ *
+ * Only where scroll timelines exist and motion is welcome; everywhere else
+ * these rules do not apply and the mark is simply whole.
+ */
+.hub {
+  --p0: 0;
+  --p1: 0.16;
+}
+
+.node {
+  --p0: calc(0.04 + 0.05 * var(--k));
+  --p1: calc(0.22 + 0.05 * var(--k));
+}
+
+.in,
+.out {
+  --p0: calc(0.24 + 0.09 * var(--k));
+  --p1: calc(0.52 + 0.09 * var(--k));
+}
+
+.sat {
+  --p0: calc(0.52 + 0.09 * var(--k));
+  --p1: calc(0.7 + 0.09 * var(--k));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    /* The footer: formed by the time it is a third of the way up the screen. */
+    .mark[data-assemble="view"] {
+      view-timeline: --neogen-mark block;
+    }
+
+    .mark[data-assemble="view"] :is(.hub, .node, .in, .out, .sat) {
+      animation-timeline: --neogen-mark;
+      animation-range: cover calc(var(--p0) * 38%) cover calc(var(--p1) * 38%);
+    }
+  }
+
+  /* The homepage header: the range the poster NEOGEN lands on (motion.css). */
+  @media (min-width: 48rem) {
+    @supports (animation-timeline: scroll()) {
+      :global(body:has([data-hero-condense]))
+        .mark[data-assemble="hero"]
+        :is(.hub, .node, .in, .out, .sat) {
+        animation-timeline: scroll(root);
+        animation-range: calc(14vh + var(--p0) * 26vh) calc(14vh + var(--p1) * 26vh);
+      }
+    }
+  }
+}
+
+/* The keyframes are attached wherever a timeline was. The `animation-name`
+   longhands keep the timeline and range set above (the shorthand would reset
+   them). */
+.mark :is(.hub, .node) {
+  animation-fill-mode: both;
+  animation-timing-function: cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.mark :is(.in, .out) {
+  animation-fill-mode: both;
+  animation-timing-function: cubic-bezier(0.45, 0, 0.2, 1);
+}
+
+.mark .sat {
+  animation-fill-mode: both;
+  animation-timing-function: ease-in-out;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .mark[data-assemble="view"] :is(.hub, .node) {
+      animation-name: mark-register;
+    }
+
+    .mark[data-assemble="view"] :is(.in, .out) {
+      animation-name: mark-reach;
+    }
+
+    .mark[data-assemble="view"] .sat {
+      animation-name: mark-tension;
+    }
+  }
+
+  @media (min-width: 48rem) {
+    @supports (animation-timeline: scroll()) {
+      :global(body:has([data-hero-condense])) .mark[data-assemble="hero"] :is(.hub, .node) {
+        animation-name: mark-register;
+      }
+
+      :global(body:has([data-hero-condense])) .mark[data-assemble="hero"] :is(.in, .out) {
+        animation-name: mark-reach;
+      }
+
+      :global(body:has([data-hero-condense])) .mark[data-assemble="hero"] .sat {
+        animation-name: mark-tension;
+      }
+    }
+  }
+}
+
+@keyframes mark-register {
+  from {
+    scale: 0;
+  }
+
+  to {
+    scale: 1;
+  }
+}
+
+@keyframes mark-reach {
+  from {
+    transform: rotate(var(--a)) scale(0.001, 0.7) rotate(calc(var(--a) * -1));
+  }
+
+  to {
+    transform: rotate(var(--a)) scale(1, 1) rotate(calc(var(--a) * -1));
+  }
+}
+
+@keyframes mark-tension {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+
+  45% {
+    translate: calc(var(--ux) * -9px) calc(var(--uy) * -9px);
+  }
+}

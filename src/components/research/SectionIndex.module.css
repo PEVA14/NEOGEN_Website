@@ -145,7 +145,7 @@
     inline-size: 2px;
     block-size: var(--h, 0);
     translate: 0 var(--y, 0);
-    background: var(--ink-primary);
+    background: var(--area-mark, var(--ink-primary));
     display: none;
   }
 

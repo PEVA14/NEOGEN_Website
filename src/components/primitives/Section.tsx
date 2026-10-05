@@ -55,6 +55,11 @@ interface SectionProps {
   /** Accessible name when the section has no visible heading. */
   "aria-label"?: string;
   "aria-labelledby"?: string;
+  /**
+   * A catalogue area as the section's context colour (`areas.css`): its
+   * `--area-*` roles become available to everything inside (color pass).
+   */
+  "data-area"?: string;
   className?: string;
 }
 

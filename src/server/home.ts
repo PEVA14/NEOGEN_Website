@@ -158,6 +158,18 @@ export interface HomeData {
   strengths: readonly string[];
   /** The three most recent cited references, as a bibliography preview. */
   recentReferences: readonly { title: string; publication: string | null; year: number | null }[];
+  /**
+   * The evidence counts as the sets they count, and the citations between
+   * them: each sourced profile (in catalogue order) with the references its
+   * profile cites (indices into `references`, which is the hub's reference
+   * index, newest first) and its areas (indices into `areaIds`). Nothing is
+   * computed beyond what the registries state.
+   */
+  evidence: {
+    profiles: readonly { name: string; refs: readonly number[]; areas: readonly number[] }[];
+    references: readonly { label: string }[];
+    areaIds: readonly DiscoveryAreaId[];
+  };
   links: {
     catalog: string;
     research: string;
@@ -360,6 +372,29 @@ export async function homeData(locale: Locale): Promise<HomeData> {
     areas,
     directory,
     strengths,
+    evidence: (() => {
+      const refAt = new Map(referenceIndex.map(({ reference }, i) => [reference.id, i]));
+      const areaIds = publicAreas().map((a) => a.id);
+      return {
+        profiles: published
+          .filter((p) => publicOverview(p.slug, locale))
+          .map((p) => ({
+            name: p.name,
+            refs: referencesForProduct(p.slug)
+              .map((r) => refAt.get(r.id))
+              .filter((i): i is number => i !== undefined),
+            areas: publicAreasFor(p.slug)
+              .map((a) => areaIds.indexOf(a.id))
+              .filter((i) => i >= 0),
+          })),
+        references: referenceIndex.map(({ reference }) => ({
+          label: [reference.authors[0]?.split(" ")[0], reference.year, reference.publication]
+            .filter(Boolean)
+            .join(" · "),
+        })),
+        areaIds,
+      };
+    })(),
     recentReferences: referenceIndex.slice(0, 3).map(({ reference }) => ({
       title: reference.title,
       publication: reference.publication,

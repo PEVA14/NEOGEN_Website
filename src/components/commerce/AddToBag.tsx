@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 
+import { NeogenMark } from "@/components/brand/NeogenMark";
 import { useIndicator } from "@/components/motion/useIndicator";
 import { ValueRoll } from "@/components/motion/ValueRoll";
 import { Mono } from "@/components/typography";
@@ -251,7 +252,7 @@ export function AddToBag({
         disabled={!canAdd}
         data-added={justAdded ? "true" : undefined}
       >
-        {soldOut ? copy.soldOut : justAdded ? copy.added : copy.add}
+        {soldOut ? copy.soldOut : justAdded ? <Added label={copy.added} /> : copy.add}
       </button>
 
       {!enabled ? (
@@ -281,10 +282,26 @@ export function AddToBag({
             disabled={!canAdd}
             data-added={justAdded ? "true" : undefined}
           >
-            {soldOut ? copy.soldOut : justAdded ? copy.added : copy.add}
+            {soldOut ? copy.soldOut : justAdded ? <Added label={copy.added} /> : copy.add}
           </button>
         </div>
       ) : null}
     </div>
+  );
+}
+
+/*
+ * THE CONFIRMATION FORMS THE MARK. When a presentation joins the bag, the
+ * word "Añadido" arrives with the NEOGEN mark forming beside it — the nodes,
+ * then the connections closing — once, caused by the click, inside the two
+ * seconds the confirmation already holds. Decorative: the word is the
+ * message, and the button's text is what a screen reader hears.
+ */
+function Added({ label }: { label: string }) {
+  return (
+    <span className={styles.added}>
+      <NeogenMark className={styles.addedMark} assemble="now" />
+      {label}
+    </span>
   );
 }

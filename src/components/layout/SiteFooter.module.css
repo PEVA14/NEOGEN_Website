@@ -31,24 +31,19 @@
 }
 
 /*
- * The brand mark, over the oversized wordmark.
+ * The brand mark, over the oversized wordmark — at the wordmark's own cap
+ * height, so the two read as one signature rather than an icon and a word.
  *
- * Same alpha-mask technique as the header (see `SiteHeader.module.css` for why)
- * — which is the whole point of it here: the footer remaps `--ink-primary` to
- * paper for its inverted surface, `currentColor` follows, and the black source
- * file comes out white with no second export.
+ * `components/brand/NeogenMark`, inked in `currentColor`: the footer remaps
+ * `--ink-primary` to paper for its inverted surface, and the mark follows.
  *
- * `align-self` because `.brand` is a column flex: stretched to the container's
- * width, the mark's `aspect-ratio` would lose to the cross-axis stretch and it
- * would render the full width of the footer.
+ * `align-self` because `.brand` is a column flex: stretched to the
+ * container's width, the mark would lose its proportion to the cross-axis
+ * stretch.
  */
 .mark {
   align-self: start;
-  block-size: clamp(2rem, 1.4rem + 2.4vw, 3rem);
-  aspect-ratio: 389 / 485;
-  background-color: currentColor;
-  -webkit-mask: url("/branding/neogen-mark.png") no-repeat center / contain;
-  mask: url("/branding/neogen-mark.png") no-repeat center / contain;
+  block-size: clamp(2.5rem, 1.2rem + 5.4vw, 6rem);
 }
 
 .wordmark {

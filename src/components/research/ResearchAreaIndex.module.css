@@ -154,3 +154,308 @@
 .tile:hover .enter {
   transform: translateX(4px);
 }
+
+/* --- An area opened in place ------------------------------------------------ */
+
+/* A tile is a button once enhanced: undo the button chrome. */
+button.tile {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+button.tile:hover {
+  background: var(--area-wash);
+}
+
+.cell[data-open] .tile {
+  /* Held open on the wash (hover only passes over it): the muted labels take
+     the secondary ink so they keep their contrast on the tint. */
+  --ink-muted: var(--ink-secondary);
+  background: var(--area-wash);
+}
+
+.chevron {
+  display: inline-block;
+  transition: rotate var(--motion-duration-base) var(--ease-settle);
+}
+
+.cell[data-open] .chevron {
+  rotate: 180deg;
+}
+
+.tile:hover .enter:has(.chevron) {
+  transform: none;
+}
+
+/* The roster: the full row, under the row of the tile that opened it. */
+.panel {
+  grid-column: 1 / -1;
+  position: relative;
+  background: var(--surface-base);
+  border-block-start: 2px solid var(--area-hue);
+}
+
+/* The notch under the open tile; it travels to another tile in the row. */
+.panel::before {
+  content: "";
+  position: absolute;
+  inset-block-start: -0.6rem;
+  inset-inline-start: var(--notch, 50%);
+  inline-size: 0.9rem;
+  block-size: 0.9rem;
+  background: var(--area-hue);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  translate: -50% 0;
+  transform-origin: 50% 100%;
+  transition: inset-inline-start var(--motion-duration-slow) var(--ease-settle);
+}
+
+/* Unfolds once, as the compendium's inline record does: rows, not height. */
+.roster {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 360ms var(--ease-settle);
+}
+
+@starting-style {
+  .roster {
+    grid-template-rows: 0fr;
+  }
+}
+
+.rosterInner {
+  min-block-size: 0;
+  overflow: hidden;
+}
+
+.rosterHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs) var(--space-lg);
+  padding: var(--space-md) var(--space-md) var(--space-sm);
+  border-block-end: 1px solid var(--border-subtle);
+}
+
+.rosterTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  margin: 0;
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-xl);
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.rosterIcon {
+  inline-size: 1.4rem;
+  block-size: 1.4rem;
+  color: var(--area-hue);
+}
+
+.rosterCount {
+  margin-inline-start: var(--space-2xs);
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3xs) var(--space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3xs);
+}
+
+.legendMark {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.legendMark span {
+  inline-size: 0.4rem;
+  block-size: 0.4rem;
+  border: 1px solid var(--border-strong);
+}
+
+.legendMark span[data-on="true"] {
+  background: var(--ink-primary);
+  border-color: var(--ink-primary);
+}
+
+.close {
+  margin-inline-start: auto;
+  min-block-size: 2.75rem;
+  padding-inline: var(--space-xs);
+  border: 1px solid var(--border-default);
+  background: transparent;
+  color: var(--ink-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.close:hover {
+  border-color: var(--border-strong);
+}
+
+/* The names, A to Z, in as many columns as the measure allows. A new area
+   swapped into an open roster fades in; it does not unfold again. */
+.names {
+  columns: 15rem 4;
+  column-gap: var(--space-lg);
+  margin: 0;
+  padding: var(--space-sm) var(--space-md);
+  list-style: none;
+}
+
+@starting-style {
+  .names {
+    opacity: 0;
+  }
+}
+
+.names {
+  transition: opacity var(--motion-duration-base) var(--ease-standard);
+}
+
+.names li {
+  break-inside: avoid;
+}
+
+.name {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  min-block-size: 2.25rem;
+  border-block-end: 1px solid var(--border-subtle);
+  color: var(--ink-primary);
+  font-size: var(--text-sm);
+  text-decoration: none;
+}
+
+.name:hover .nameText {
+  text-decoration: underline;
+  text-decoration-color: var(--area-hue);
+  text-underline-offset: 3px;
+}
+
+@media (pointer: coarse) {
+  .name {
+    min-block-size: 2.75rem;
+  }
+}
+
+.rosterActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs) var(--space-lg);
+  margin: 0;
+  padding: var(--space-xs) var(--space-md) var(--space-md);
+}
+
+.rosterAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  min-block-size: 2.75rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-primary);
+  text-decoration: underline;
+  text-decoration-color: var(--area-hue);
+  text-underline-offset: 4px;
+}
+
+.name:focus-visible,
+.close:focus-visible,
+.rosterAction:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .roster,
+  .names,
+  .chevron,
+  .panel::before {
+    transition: none;
+  }
+}
+
+/* A phone: the legend as a small two-column key under the title. */
+@media (max-width: 39.99rem) {
+  .rosterHead {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+  }
+  .legend {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .close {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+
+/* The roster's head on its area's wash — the field a record opens on. */
+.rosterHead {
+  background: var(--area-wash);
+}
+
+/* On a wash, muted labels take the secondary ink and the framing its area's
+   text colour, so both keep AA on the tint (Skin's is the palest). */
+.rosterHead,
+.cell[data-open] .tile {
+  --ink-muted: var(--ink-secondary);
+}
+
+.cell[data-open] .framing,
+button.tile:hover .framing {
+  color: var(--area-text);
+}
+
+.rosterCount {
+  white-space: nowrap;
+}
+
+/* A phone: the count drops under the name rather than under the close button. */
+@media (max-width: 39.99rem) {
+  .rosterTitle {
+    flex-wrap: wrap;
+    min-inline-size: 0;
+  }
+  .rosterCount {
+    flex-basis: 100%;
+    margin-inline-start: 0;
+  }
+}

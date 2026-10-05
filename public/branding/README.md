@@ -14,7 +14,10 @@ npm run brand          # scripts/prepare-brand.mjs
 | `neogen-mark.png`      | derived — the mark, trimmed to its ink        |
 | `neogen-logo.png`      | derived — the lockup, trimmed to its ink      |
 
-`src/app/icon.png` (the favicon) is derived from the mark by the same script.
+`src/app/icon.png` (the favicon) is derived from the mark by the same script,
+and `src/components/brand/markGeometry.ts` — the mark as measured parts (hub,
+nodes, connections) for the SVG `NeogenMark` — by `scripts/trace-mark.mjs`,
+which `npm run brand` also runs. See CONVENTIONS §19.
 
 ## Why the derived files exist
 
@@ -33,12 +36,15 @@ that goes quietly wrong the next time the artwork is re-exported.
 
 ## Where the artwork is used
 
-- `components/layout/SiteHeader` — the mark before the wordmark.
-- `components/layout/SiteFooter` — the mark over the oversized wordmark.
+- `components/brand/NeogenMark` — the traced geometry (not the PNG) as inline
+  SVG: the header, the footer, the add-to-bag confirmation, the record's
+  catalogue card, the empty bag and the 404s. `brand/MarkShape` draws the same
+  geometry on the `SpecimenPlate` label.
 - `components/experience/studio/label.ts` — the lockup printed on the label of
   every product that has no label artwork of its own. The three flagships do
   not use it: their labels are printed into their `.glb` in Blender, so putting
   the lockup on **their** vials is an export, not a code change.
+- The spec ribbon prints the lockup PNG.
 - `src/app/icon.png` — the favicon.
 
 ## Replacing the artwork

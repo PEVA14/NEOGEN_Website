@@ -262,7 +262,7 @@
 /* Arriving from a link — `/glosario#vida-media` — marks the term with the
    same heavy rule the section index uses for "you are here". */
 .term:target {
-  border-inline-start: 2px solid var(--ink-primary);
+  border-inline-start: 2px solid var(--area-mark, var(--ink-primary));
   padding-inline-start: var(--space-sm);
 }
 
@@ -367,4 +367,176 @@
 
 .route:hover {
   text-decoration-color: var(--ink-primary);
+}
+
+/* ---- motion pass 2: the glossary as part of the instrument ---------------- */
+
+.srOnly {
+  block-size: 1px;
+  clip-path: inset(50%);
+  inline-size: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+}
+
+/* The chosen category and view: one charcoal mark that travels to it
+   (`useIndicator`), the chip's own fill left to the mark once it is placed. */
+.chips,
+.view {
+  position: relative;
+}
+
+.mark {
+  background: var(--neogen-charcoal);
+  block-size: var(--h, 0);
+  inline-size: var(--w, 0);
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  pointer-events: none;
+  position: absolute;
+  transition:
+    translate var(--motion-duration-slow) var(--ease-settle),
+    inline-size var(--motion-duration-slow) var(--ease-settle);
+  translate: var(--x, 0) var(--y, 0);
+  visibility: hidden;
+}
+
+.mark[data-placed="true"]:not([data-empty]) {
+  visibility: visible;
+}
+
+.chip > span,
+.viewButton > span {
+  position: relative;
+}
+
+.chips:has(.mark[data-placed="true"]) .chip[aria-pressed="true"],
+.view:has(.mark[data-placed="true"]) .viewButton[aria-pressed="true"] {
+  background: transparent;
+  transition: color var(--motion-duration-fast) var(--ease-standard) var(--motion-duration-base);
+}
+
+/* Why a term matched: the query's own letters, underlined in place. */
+.match {
+  background: none;
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.18em;
+}
+
+.absent {
+  align-items: center;
+  color: color-mix(in oklab, var(--ink-muted) 45%, transparent);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  justify-content: center;
+  min-block-size: 2.75rem;
+  min-inline-size: 2rem;
+}
+
+/* A term arrived at registers: an ink rule drawn across its top. */
+.term {
+  position: relative;
+  scroll-margin-block-start: calc(var(--header-height) + var(--space-md));
+}
+
+.term:focus {
+  outline: none;
+}
+
+.term:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}
+
+.term::before {
+  /* In the colour of the record the reader came from, when they did. */
+  background: var(--area-mark, var(--ink-primary));
+  block-size: 2px;
+  content: "";
+  inset-block-start: 0;
+  inset-inline: 0;
+  position: absolute;
+  scale: 0 1;
+  transform-origin: 0 50%;
+}
+
+.term[data-arrived]::before {
+  animation: term-arrive 1.8s var(--ease-settle) both;
+}
+
+@keyframes term-arrive {
+  0% {
+    scale: 0 1;
+    opacity: 1;
+  }
+  30% {
+    scale: 1 1;
+    opacity: 1;
+  }
+  100% {
+    scale: 1 1;
+    opacity: 0;
+  }
+}
+
+/* The way back: a chip at the bottom of the screen. */
+.trail {
+  background: var(--neogen-charcoal);
+  color: var(--neogen-paper);
+  display: flex;
+  inset-block-end: max(var(--space-md), env(safe-area-inset-bottom));
+  inset-inline-start: var(--gutter);
+  max-inline-size: calc(100vw - 2 * var(--gutter));
+  position: fixed;
+  z-index: var(--z-sticky);
+}
+
+.trailBack,
+.trailClose {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  min-block-size: 2.75rem;
+  text-transform: uppercase;
+}
+
+.trailBack {
+  overflow: hidden;
+  padding-inline: var(--space-sm);
+  text-align: start;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trailClose {
+  border-inline-start: 1px solid color-mix(in oklab, var(--neogen-paper) 25%, transparent);
+  inline-size: 2.75rem;
+}
+
+.trailBack:focus-visible,
+.trailClose:focus-visible {
+  outline: var(--focus-ring-width) solid var(--neogen-paper);
+  outline-offset: -4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mark {
+    transition-duration: var(--motion-duration-fast);
+  }
+  .term[data-arrived]::before {
+    animation-duration: 1ms;
+  }
+}
+
+/* The way back to a record, marked in that record's area (color pass). */
+.trail[data-area] {
+  box-shadow: inset 3px 0 0 var(--area-hue);
 }

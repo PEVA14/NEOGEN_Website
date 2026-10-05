@@ -662,6 +662,20 @@ const en: Dictionary = {
       areas: "Research areas",
       action: "Go to NEOGEN Research",
       referencesAction: "View the references",
+      structure: {
+        hint: "Each mark is one of them. Point at one — or slide along its row — to see what it connects to.",
+        scrubProfiles: "Scan the profiles",
+        scrubReferences: "Scan the references",
+        scrubAreas: "Scan the areas",
+        refs: "{n} references",
+        refsOne: "1 reference",
+        areas: "{n} areas",
+        areasOne: "1 area",
+        cited: "Cited in {n} profiles",
+        citedOne: "Cited in 1 profile",
+        profiles: "{n} profiles",
+        profilesOne: "1 profile",
+      },
     },
 
     /**
@@ -884,8 +898,11 @@ const en: Dictionary = {
     related: {
       index: "05",
       label: "Products",
-      qualifier: "Catalogue",
-      title: "Related compounds",
+      qualifier: "Same catalogue area",
+      title: "In the catalogue",
+      lede: "Its area, A to Z, and the laboratory materials. Sharing an area does not imply similar effects, combination or substitution.",
+      current: "This compound",
+      count: "{n} products",
       action: "Full catalogue",
     },
   },
@@ -1048,6 +1065,14 @@ const en: Dictionary = {
         placeholder: "Compound, alias or presentation",
         submit: "Search",
       },
+      plate: {
+        label: "The archive, compound by compound",
+        record: "With a scientific record",
+        noRecord: "No record",
+        none: "No area",
+        summary:
+          "{n} compounds in {areas} catalogue areas, each under its first area; {records} have a scientific record.",
+      },
       stats: {
         label: "What the archive holds",
         compounds: "Compounds",
@@ -1125,6 +1150,10 @@ const en: Dictionary = {
            rather than "Entrar" / "Enter", which named no destination. */
         enter: "See in the catalogue",
         all: "See the whole catalogue",
+        open: "See its compounds",
+        close: "Close",
+        compendium: "Open in the compendium",
+        roster: "{area} compounds, A to Z",
       },
       lines: {
         index: "03",
@@ -1146,6 +1175,10 @@ const en: Dictionary = {
           openLine: "Open the line",
           hint: "Keyboard: Tab into the dots, arrows to move, Enter to pin.",
           dot: "{compound} in {line}",
+          scrub: "Scan the compounds",
+          scrubIdle: "No compound chosen",
+          touchHint: "Slide along the area bar to scan the compounds. Tap a line to see its own.",
+          clear: "Clear the selection",
         },
       },
       quality: {
@@ -1463,6 +1496,10 @@ const en: Dictionary = {
       more: "and {n} more",
       readMore: "Read the note",
       letters: "Jump to letter",
+      goTo: "Go to the term",
+      backTerm: "Back to {term}",
+      backRecord: "Back to the {name} record",
+      dismiss: "Close",
       destinations: {
         peptides: "What a peptide is",
         compendium: "Compendium",
@@ -1771,6 +1808,15 @@ const en: Dictionary = {
       reportId: "Report",
       view: "View document",
       external: "opens in a new tab",
+      inHand: {
+        label: "Under inspection",
+        choose: "Presentation to inspect",
+        documents: "Public documents",
+      },
+      guides: {
+        coa: "How to read a certificate of analysis",
+        model: "How documentation is bound",
+      },
       chain: {
         label: "How evidence resolves",
         steps: {

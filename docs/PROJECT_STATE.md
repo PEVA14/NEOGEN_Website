@@ -1,6 +1,25 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-10-04**: **the everyday motion baseline is prototyped —
+Last updated **2026-10-05**: **the NEOGEN mark brand pass is prototyped —
+the mark traced from the owner's artwork into one geometry, one component and
+a small motion vocabulary (points → connection → structure), placed with a
+brand-presence map — uncommitted, awaiting the owner's review; consolidation
+not started** (§8av). Before that, 2026-10-04: **Research colour completion is prototyped —
+the hub's first screen, its documentation model and references, and the
+colour rhythm through the whole Research journey — uncommitted, awaiting the
+owner's review; consolidation not started** (§8au). Before that, the same
+day: **the colour system + editorial pass is prototyped — area colour as navigation across Research, records, the
+glossary, the homepage evidence and the standard PDP — uncommitted, awaiting
+the owner's review; consolidation not started** (§8at). Before that, the same
+day: **the final surgical finishing pass is done —
+Semaglutide's quality record, its catalogue directory (related + materials),
+the Research Hub's area grid, profiling and the full walks — uncommitted,
+awaiting the owner's review; consolidation not started** (§8as). Before that,
+the same day: **everyday motion pass 2 (meso) is prototyped —
+the homepage's narrative, Semaglutide below the hero and Research as one
+instrument — uncommitted, awaiting the owner's review** (§8ar; the language is
+in `src/components/motion/README.md`). `motion` is now a dependency. Before
+that, the same day: **the everyday motion baseline is prototyped —
 homepage, Semaglutide and Research — committed as a checkpoint, not
 pushed, awaiting the owner's review** (§8aq; the language and its rejected concepts are in
 `src/components/motion/README.md`). The planned consolidation pass is paused
@@ -2558,6 +2577,311 @@ from the catalogue grid, the phone strip and by direct URL; reduced motion;
 GLOW's circle unchanged; at 4× CPU throttle on the phone there is no long task
 between the flight's start and the formation's end.
 
+## 8av. The NEOGEN mark — brand motion and presence (2026-10-05, PROTOTYPE)
+
+The owner asked for the mark to become a recurring motif — rediscovered, not
+stamped — with one signature behaviour and a small vocabulary, without
+redesigning the logo, pages or flagships, and with Research left scientifically
+unambiguous. Uncommitted, awaiting review; consolidation not started.
+
+**Source of truth.** There is no vector source (only black-on-alpha PNGs), so
+`scripts/trace-mark.mjs` measures the mark from the artwork: a hub (its own
+traced outline — not quite a circle), four nodes (true circles, ≈0.4px RMS),
+four connections cut at mid-gap into a hub half and a node half. The parts
+overlap the artwork's pixels 98.96%; the script refuses to write below 98.5%.
+`npm run brand` runs it. `components/brand/NeogenMark` is the one component
+(`MarkShape` the static twin for SVG drawings); CONVENTIONS §19 has the rules.
+
+**Signature.** Every page ends on the footer mark forming as it is scrolled in
+(view timeline, reversible): hub and nodes register, each connection reaches
+from both ends and meets, clockwise from the top node, each node drawn ~2%
+toward the hub as its connection closes, then relaxing. At the wordmark's cap
+height (up to 6rem). Explored and rejected: connections extruded from the hub
+(the squashed flares read as arrowheads — vectors), nodes gathered from far out
+(a "network" cliché), simultaneous meeting for large sizes (less physical than
+the chain), pointer-proximity lean (moved whenever the pointer did).
+
+**Placements.** Header: still; hover/focus (or the tap that navigates home)
+lets the connections go and reach again (~650ms); on the homepage, desktop,
+it forms over the poster's landing range while the word lands. Add-to-bag
+confirmation: the mark forms beside "Añadido" (commerce is off in this
+environment; verified with it on, locally). Compound record: the catalogue
+card ("En el catálogo" — NEOGEN's own product, not the literature) sets the
+mark before the name, as the label does; hovering it answers in the record's
+area colour, then ink. Empty bag and both 404s: the nodes without connections.
+`SpecimenPlate`'s label now draws the traced geometry instead of the PNG.
+
+**Deliberately none:** the Research hub, compendium, lines, glossary,
+references and notes (their dots and squares are data); the quality record
+(a seal would read as a certification); product images and cards (no
+watermark); flagship worlds (unchanged — world inheritance is a consolidation
+question). Catalogue: opportunities documented, nothing built.
+
+## 8au. Research colour completion (2026-10-04, PROTOTYPE)
+
+The owner approved the colour grammar (§8at) and asked to finish Research,
+where colour still disappeared below the area grid and on the first screen.
+
+- **First screen — the archive plate** (`research/ArchivePlate`). This
+  graphic shows every compound in the archive once, as one mark in the
+  colour of the catalogue area it is first filed in, filled where a sourced
+  record exists and hollow where none does (8 rows in area order, plus "Sin
+  área" for the two with none). Pointing names a mark; choosing it opens the
+  compendium filtered to its area with that record open. The marks are not
+  tab stops (85 would be a wall); the plate has a full accessible summary.
+  The share strip briefly under "85 Compuestos" (§8at) was removed: the
+  plate says it better, one screen higher.
+- **Research lines / Archive Map.** Unchanged: the line is never coloured
+  (no line belongs to an area in our data); its compounds take their area
+  colours only under the reticle. Neutral at rest, it is the relief after
+  the area grid.
+- **Documentation model** (`EvidenceChain variant="layers"`). Documentation
+  is not area navigation, so it takes no area colour: the four levels as
+  sheets laid one inside the next in the site's own materials — paper,
+  stone, chalk, then the document in ink with its registration marks. This
+  graphic shows how a quality document is bound: the compound holds its
+  presentations, a presentation its lots, a lot the document that examined
+  it. It states the rule, never that a document exists.
+- **Notes.** Left neutral on purpose: the quiet between the material model
+  and the references. No categories were invented for colour.
+- **References** (`CitationRail citedBy`). Each source on the hub names the
+  compounds that cite it, with their area marks; pointing at the source
+  wakes their names in their areas' colour. Nothing colours a journal, a
+  year or a source's strength.
+
+**Rhythm, top to bottom:** plate (colour) → readout (neutral) → area grid
+(strong) → lines and map (neutral at rest, colour under the reticle) →
+documentation (material, no area colour) → notes (neutral) → references
+(marks, colour on inspection).
+
+**Research-line pages (closing the loose end).** A line is a research
+subject, not a catalogue area, so a line is never coloured; its compounds
+bring theirs. The line index (`/investigacion/lineas`): each compound chip
+carries its area marks; pointing at a line (or tabbing into it) wakes its
+compounds' names in their own areas' text colour. A line page: each
+compound block carries its marks and area names in its area's text colour
+and takes an edge in its own colour while pointed at; its statements are
+tethered to their sources (`SourceTether`, as on records), the rule and
+marker in the citing compound's colour; each reference lists the compounds
+of this line that cite it (`CitationRail citedBy`). The tether's margin card
+leaves the "cited by" list to the source itself.
+
+**Standard PDP.** Compared with the flagships, Semaglutide still ran two
+screens of near-monochrome between the ribbon and the catalogue directory
+(profile, quality). One Level-2 moment was added where colour has context:
+the profile's head on the product's area wash — the same record whose full
+page opens on that wash, so the colour travels with "Registro científico
+completo". Still well below a flagship.
+
+**Arrival fix (owner: a plate square "ends up showing the footer").** Every
+arrival with an area (`compuestos?area=…&ficha=…` — the plate, the hub's
+area roster, a shared link) scrolled to where the row stood in the
+unfiltered list of 85, before the URL's filter was applied, and the list
+then collapsed under it. The compendium now scrolls once the filtered list
+is on screen with the record open, measuring the row's layout position.
+
+**GHK-Cu price fix (owner, mid-pass).** Changing the format overprinted the
+old and new price. GHK-Cu paints its price as metal clipped to the text, and
+the browser paints that through each glyph where it rests, ignoring the
+rolling digits' travel and windows. `ValueRoll` now marks itself
+`data-rolling` while it moves and tags its glyphs; for that half-second
+`ghk.module.css` moves the metal onto the glyphs, and the pointer-following
+sheen rejoins when the figure settles. RETA's and GLOW's prices are plain
+text and were unaffected.
+
+## 8at. Colour system + editorial visual language (2026-10-04, PROTOTYPE)
+
+The owner asked for richer colour rhythm — "still NEOGEN, but much richer" —
+learning from the storefront's "Compra por área" tiles and the worlds. The
+neutral foundation stays the canvas; colour punctures it.
+
+**The grammar.** The eight area colours already existed (`areas.css`); no
+second palette was made. What an area colour MEANS is now written down:
+navigational membership in a catalogue area, and nothing else — never an
+effect, mechanism, evidence strength, similarity, safety or biological
+relationship. A compound in two areas carries two marks in the catalogue's
+area order (never a blend); its first area is its context colour.
+
+| Level | What                                 | Where                                                                                   |
+| ----- | ------------------------------------ | --------------------------------------------------------------------------------------- |
+| 0     | neutral paper, stone, ink, hairlines | most of every page; all body text                                                       |
+| 1     | marks, rules, numerals, small labels | area marks, section numbers, the reading needle, a connection (tether, definition, dot) |
+| 2     | a local field on the area's wash     | a record's head, the open inline record's head, the Hub roster's head, the open tile    |
+| 3     | strong section composition           | (unchanged) the storefront's area tiles, the homepage area explorer, the area pages     |
+| 4     | world atmosphere                     | (unchanged) RETA, GLOW, GHK-Cu                                                          |
+
+**Roles added** (`areas.css`): `--area-mark` (the hue where a mark must
+reach 3:1 on paper or stone; Skin's amber is 2.3:1 and takes #a8782c) and
+`--area-text` (the dark seed, AA on paper, stone and the area's own wash;
+Skin's is deepened to #7a581c, 5.3:1 on its wash). `AreaMarks`
+(`ui/AreaMarks`) draws the registration squares or rules.
+
+**Colour and motion — colour focuses.** At rest the structure is ink; while
+something is inspected the connection takes colour, then returns to ink:
+the homepage evidence (a profile, its threads and references take its first
+area's colour; an area lends its colour to its profiles); the Archive Map
+(the reticle's row and column dots, a wash on the column band, the
+inspector's rule); a citation's tether, sentence rule, marker and source
+edge; a definition's underline and card rule. The record carries its colour
+across magnifications: compendium row → inline record (rule, frame edge,
+head wash, tabs, citations) → full record (head wash, area marks, section
+numbers, needle) → glossary (the arrival rule and the way-back chip).
+
+**Bug fixed on the way.** Following a record's inline definition to the
+glossary never offered the way back: a client navigation leaves
+`document.referrer` as it was. The record now notes its path
+(`sessionStorage`, 15 s); the glossary reads it, then the referrer.
+
+**Rejected.** The evidence profiles coloured by area at rest (a pastel
+rainbow strip; colour at rest belongs to the eight area marks only).
+
+**Accessibility.** axe clean at 1440 and 390 on the homepage, Hub (roster
+open), records, glossary, references, Semaglutide and an area page, except
+two findings that predate this pass: the breadcrumb `landmark-unique`, and
+the compendium's dimmed rows while a record is open (opacity 0.4 — 289
+nodes with no filter at all). Colour never carries meaning alone: area
+names stay in text beside every mark.
+
+## 8as. Final surgical finishing pass (2026-10-04, PROTOTYPE)
+
+The owner approved passes 1 and 2 directionally and asked for one finishing
+pass on the remaining quality cliffs — not a pass 3, no new language. Nothing
+approved was redesigned.
+
+**Standard PDP (Semaglutide).**
+
+- Quality / documentation (`quality/QualityRecord`, `PresentationInHand`):
+  no product has a public document (`DOCUMENTS` is empty), so the absence
+  is still stated once. Under it, the record now inspects the presentation
+  being bought: "En inspección · P-02 / 04", its strength and pack, and
+  "Documentos públicos 0" — the resolver's own count for exactly that
+  presentation. Choosing P-01…P-04 there chooses it in the buy box (its
+  radios are the single source of truth; the price and the bench follow).
+  It closes with the two pages that exist about documentation: the note
+  "Cómo leer un certificado de análisis" and the hub's evidence model.
+  Registration marks frame the file; arriving from the buy box's link they
+  close on it once (`:target`). No state, level or chain is drawn for
+  documents that do not exist.
+- Related products and materials (`product/CatalogueDirectory`): "related"
+  was the first three names alphabetically among products sharing an area,
+  set as three large cards, then the three solvents as three more. Now one
+  section, "En el catálogo": the product's area(s), A to Z, with this
+  product marked in its place, and the laboratory materials as their own
+  group. The lede says what sharing an area does not mean. It reuses the
+  homepage directory's lens (`DirectoryLens`, now with `[data-lens-column]`
+  and an opt-in `travel`): choosing a name sends the drawn vial in the lens
+  on to its product page, the catalogue's specimen flight. Flagships in the
+  list open on their own terms (no flight from the lens). Touch: tall rows,
+  no lens. Two products with no approved area keep the category fallback.
+  `relatedByArea` is no longer used by the page.
+- Section count: Semaglutide went from six numbered sections to five.
+
+**Research Hub area grid (`research/ResearchAreaIndex`).** A tile opens in
+place: the row parts and the area's roster unfolds under it — every
+compound filed there, A to Z, with the compendium's depth marks — and a
+name leads to the compendium filtered to the area with that record open
+(`?area=…&ficha=…`). A notch marks the open tile and travels within the
+row. Disclosure button, Escape returns to the tile; a link to the catalogue
+without script.
+
+**Homepage.** Walked at 1440 and 390; nothing added or removed. Noted for
+the owner: the gateway's Insignia door shows the three flagship vials
+immediately before Tres mundos shows them again.
+
+**Profiling.** Compendium at 4× CPU: React work is small; the cost per
+keystroke (5–6 tasks of 50–85 ms) is the layout flush and Motion's
+measurement of 85 rows — the approved reorganisation itself. Row
+containment and `content-visibility` were measured and did not help (the
+latter was worse). One avoidable cost was fixed: `ValueRoll` read the
+motion tokens per changing digit inside a layout effect (a forced style
+recalculation each); it now reads them from the root once. Twelve
+compendium → record → back cycles: DOM nodes and listeners flat, heap +1 MB.
+
+**Accessibility.** axe clean on Semaglutide (es/en), BPC-157, Bac. Water
+and the hub with a roster open, at 1440 and 390. Reduced motion: every new
+piece keeps its state and meaning; only the system's shortened interface
+feedback remains.
+
+## 8ar. Everyday motion pass 2: meso (2026-10-04, PROTOTYPE)
+
+**Brief (owner, 2026-10-04).** Pass 1 kept. Do not consolidate. Make moments
+that are met during ordinary browsing: a homepage motion narrative (the hero's
+exit, Tres mundos foretelling each world, the evidence counts), a standard
+PDP that stays NEOGEN below its hero, and — highest priority — Research as
+one continuous knowledge instrument ("one record, many magnifications"), with
+a physical compendium, a Quick Record that inspects without losing place,
+and a glossary that belongs to the same instrument. Motion may expose
+structure, never invent it. Install `motion` if it earns its place.
+
+**Built** (uncommitted; details and rejections in the motion README):
+the hero's poster NEOGEN lands as the word in "Explora NEOGEN"; the three
+world panels each answer with their world's behaviour (pointer, focus, or
+settling in the phone shelf); the evidence band draws its counts as their
+sets with the real citation and area links; the PDP profile gets inline
+definitions and opens out into the full record; the compendium opens records
+in place and reorganises when filtered (Motion layout), carries title and
+frame into the record (view transitions) and returns to them open on back;
+the glossary reorganises, opens "see also" in place, registers arrivals and
+offers the way back to a term or a record.
+
+**Owner fixes (2026-10-04, after review).**
+
+- Tres mundos: GLOW and GHK-Cu lagged the scroll and "took a second to load".
+  Causes found by profiling:
+  - the panels re-measured their box on every pointer move right after
+    writing to it (forced layouts);
+  - GLOW and GHK-Cu used filters and a blend mode on the photographs;
+  - the panels' images were lazy;
+  - the homepage's stage preparation (`SharedCanvas` warm-up) began after
+    a 200 ms scroll pause, i.e. as the reader stopped at Tres mundos.
+    Now:
+  - one read per hover and one write per frame;
+  - transform and opacity only;
+  - eager images;
+  - preparation waits for real stillness (`whenStill`: 1 s without scroll,
+    pointer or key);
+  - the hero handoff writes nothing once its word has landed.
+- The lag after Tres mundos was still there ("nothing changed"). It was the
+  GPU, not script: measured at 2× density, the scroll from Colección through
+  RETA to GLOW had 46 slow frames and an 81 ms stall; with 3D disabled, 3.
+  The RETA stage takes the shared canvas while Tres mundos is still being
+  read, and drew its glass every frame out of sight, at full rate (120 Hz on
+  the owner's display) and with a full-resolution refraction pass. Now
+  (`RetaCanvas`, `SharedCanvas`):
+  - the shared canvas draws off screen only until its stage is revealed;
+  - homepage stages on desktop draw at most 72 frames a second (every other
+    frame at 120/144 Hz); the product page's presenter is unchanged;
+  - the glass's refraction pass is half resolution on the homepage, as it
+    already was on phones (it refracts a smooth pool of light);
+  - shader diagnostics are off in production (they waited on the compiles
+    `Prewarm` moves to the background: ~100 ms per hand-over).
+    Same walk after: 3 slow frames and no long task, as with no 3D at all;
+    at 120 Hz in a real browser, 4 missed frames of 1,199.
+    Then extended to the product page's presenter at the owner's request
+    ("it looks good even at half-resolution"): every stage now draws at most
+    72 frames a second on desktop (30 on phones) with a half-resolution glass
+    pass, so any vial shown through `StageScene` gets the same budget.
+- The hero's "blue circle that glows and turns off" was the 3D backdrop
+  baked into the hero stand-in photograph (`hero-*-reta-v7.webp`, since
+  `5112849`). It is removed in `hero-*-reta-v7-clear.webp`, keeping only
+  the opaque vial.
+
+**Dependencies.** `motion@^13.5.1` (free package), used only by the
+compendium and the glossary. Motion+ was installed on 2026-10-04 and removed
+the same day (owner's call): matched against the site, none of its
+components earns a place under the motion rules (README, "Motion+ installed
+and removed"), and keeping it unused made every install depend on
+`MOTION_TOKEN`. `motion` stays on 13, the version Motion+ 3 needs, so adding
+it back later is `.npmrc` plus one dependency.
+
+**Verified.** Gates pass; axe clean on the changed pages at 1440 and 390
+except the research crumbs' `landmark-unique`, which predates both passes.
+At 4× CPU: the hero handoff and the glossary run without long tasks over
+70 ms; typing in the compendium costs 55–75 ms tasks and opening a record in
+place one 50–90 ms task (after moving the panel's unfold to CSS and
+memoising rows). Heap after six record round trips: 8.5 → 13.7 MB (fetched
+records and route cache), no stray handoff elements left.
+
 ## 8aq. The everyday motion baseline (2026-10-04, PROTOTYPE)
 
 **Brief (owner, 2026-10-04).** Outside the three flagship worlds NEOGEN still
@@ -2585,8 +2909,10 @@ consolidation pass. Stop for review.
   claim ↔ source instrument (`SourceTether`): a marker draws a leader to its
   reference, a reference marks the sentences citing it. Markers became links
   to the rail (`ref-01`…).
-- Research — the hub's lines section becomes the archive map on wide screens
-  (35 lines × 62 compounds; a dot only where a sourced sentence places a
+- Research — the hub's lines section becomes the archive map, on phones too
+  (owner, 2026-10-04: the area bar is a scrubber, a real range input, that
+  walks the compounds; the readout is pinned while the map is read; a line
+  opens in place to its compounds and their sentences) (35 lines × 62 compounds; a dot only where a sourced sentence places a
   compound in a line; the inspector quotes that sentence); the compound record
   gets the tether (source cards, the list being far below), glossary words
   marked at first use with their definitions in place (`TermLens`,

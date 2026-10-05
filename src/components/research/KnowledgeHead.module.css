@@ -118,3 +118,35 @@
 .aside {
   min-inline-size: 0;
 }
+
+/* A record's head, registered to its areas (color pass): the eyebrow reads in
+   the record's area, beside its marks, and the head closes on its colour. */
+.head[data-registered="true"] {
+  border-block-end: 2px solid var(--area-mark, var(--border-default));
+}
+
+.head[data-registered="true"] .eyebrow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2xs);
+  color: var(--area-text, var(--ink-primary));
+}
+
+/* A Level-2 field: the record's head on its area's wash, from the top of the
+   page to its closing rule and across the full width — the one place a
+   record is coloured as a ground. Its body stays paper. */
+.head[data-registered="true"] {
+  background: var(--area-wash);
+  box-shadow: 0 0 0 100vmax var(--area-wash);
+  clip-path: inset(calc(-1 * var(--section-pad-quiet)) -100vmax 0);
+}
+
+/* On the wash, muted labels take the secondary ink, or they fall under AA. */
+.head[data-registered="true"] {
+  --ink-muted: var(--ink-secondary);
+}
+
+/* The marks ride the first line of a wrapping eyebrow. */
+.head[data-registered="true"] .eyebrow > :first-child {
+  margin-block-start: 0.2em;
+}

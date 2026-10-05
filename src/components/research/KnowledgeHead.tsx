@@ -1,9 +1,12 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { ViewTransition, type ReactNode } from "react";
 
 import { Mono } from "@/components/typography";
+import { AreaMarks } from "@/components/ui/AreaMarks";
 
 import styles from "./KnowledgeHead.module.css";
+
+import type { DiscoveryAreaId } from "@/data/discovery";
 
 export interface Crumb {
   label: string;
@@ -31,6 +34,8 @@ export function KnowledgeHead({
   meta,
   aside,
   children,
+  transition,
+  areas,
 }: {
   crumbs: readonly Crumb[];
   crumbsLabel: string;
@@ -43,9 +48,30 @@ export function KnowledgeHead({
   /** Right-hand column on wide screens: a search, a legend. */
   aside?: ReactNode;
   children?: ReactNode;
+  /**
+   * A record's names (`recordTransition.ts`): the title and the head pair with
+   * the compendium row opened in place, so arriving from it reads as the same
+   * record seen closer.
+   */
+  transition?: { title: string; frame: string };
+  /**
+   * A record's catalogue areas (color pass): registered beside the eyebrow,
+   * and the head's closing rule takes the first — the record's context
+   * colour, which its index, numbers and connections then carry.
+   */
+  areas?: readonly DiscoveryAreaId[];
 }) {
-  return (
-    <header className={styles.head} data-has-aside={aside ? "true" : undefined}>
+  const heading = (
+    <h1 id={titleId} className={styles.title}>
+      {title}
+    </h1>
+  );
+  const head = (
+    <header
+      className={styles.head}
+      data-has-aside={aside ? "true" : undefined}
+      data-registered={areas && areas.length > 0 ? "true" : undefined}
+    >
       <div className={styles.main}>
         {crumbs.length > 0 ? (
           <nav aria-label={crumbsLabel} className={styles.crumbs}>
@@ -61,11 +87,16 @@ export function KnowledgeHead({
           </nav>
         ) : null}
         <Mono size="2xs" className={styles.eyebrow}>
+          {areas && areas.length > 0 ? <AreaMarks areas={areas} /> : null}
           {eyebrow}
         </Mono>
-        <h1 id={titleId} className={styles.title}>
-          {title}
-        </h1>
+        {transition ? (
+          <ViewTransition name={transition.title} share="vt-record-title" default="none">
+            {heading}
+          </ViewTransition>
+        ) : (
+          heading
+        )}
         {lede ? <p className={styles.lede}>{lede}</p> : null}
         {meta && meta.length > 0 ? (
           <ul className={styles.meta}>
@@ -80,5 +111,12 @@ export function KnowledgeHead({
       </div>
       {aside ? <div className={styles.aside}>{aside}</div> : null}
     </header>
+  );
+  return transition ? (
+    <ViewTransition name={transition.frame} share="vt-record-frame" default="none">
+      {head}
+    </ViewTransition>
+  ) : (
+    head
   );
 }

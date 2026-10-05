@@ -31,3 +31,27 @@ export function matchesText(haystack: string, query: string): boolean {
   if (!q) return true;
   return fold(haystack).includes(fold(q)) || stem(haystack).includes(stem(q));
 }
+
+/**
+ * Where `query` falls in `text`, compared folded (case and accents), as
+ * [start, end) in the ORIGINAL text — so a mark can sit on "Semaglutide"'s
+ * own letters when the reader typed "semaglut". Null when it does not fall
+ * there as a run (a stem-only match is not marked).
+ */
+export function foldIndex(text: string, query: string): [number, number] | null {
+  let folded = "";
+  const origin: number[] = [];
+  let offset = 0;
+  for (const ch of text) {
+    for (const f of fold(ch)) {
+      folded += f;
+      origin.push(offset);
+    }
+    offset += ch.length;
+  }
+  origin.push(text.length);
+  const needle = fold(query.trim());
+  if (needle.length === 0) return null;
+  const at = folded.indexOf(needle);
+  return at < 0 ? null : [origin[at], origin[at + needle.length]];
+}

@@ -1,0 +1,107 @@
+/*
+ * ONE RECORD, MANY MAGNIFICATIONS — compendium row (opened in place) → the
+ * record's own page, in native view-transition CSS. See recordTransition.ts.
+ *
+ *   the title   travels from the open row to the record's h1 and grows
+ *   the frame   the open row's frame opens out to the record's head: the box
+ *               itself is the thing that moves — an ink rule on top, as it
+ *               was round the row — while its contents swap inside it
+ *   the pages   the index steps back at once; the record's body unfolds down
+ *               from under its head, as if the frame kept opening
+ *
+ * Stacking, bottom to top: old page, new page, frame, title.
+ */
+
+::view-transition-group(.vt-record-out) {
+  z-index: 0;
+}
+
+::view-transition-old(.vt-record-out) {
+  animation: 200ms cubic-bezier(0.4, 0, 1, 1) both vt-record-fade-out;
+}
+
+::view-transition-group(.vt-record-in) {
+  z-index: 1;
+}
+
+::view-transition-new(.vt-record-in) {
+  animation: 520ms cubic-bezier(0.2, 0, 0.1, 1) 120ms both vt-record-unfold;
+}
+
+/* The frame is drawn: paper, a hairline and the ink rule, so its own shape
+   is what is seen moving from the row to the head. */
+::view-transition-group(.vt-record-frame) {
+  z-index: 2;
+  animation-duration: 560ms;
+  animation-timing-function: cubic-bezier(0.35, 0.05, 0.28, 0.95);
+  background: var(--surface-base);
+  border-block-start: 2px solid var(--ink-primary);
+  outline: 1px solid var(--border-default);
+}
+
+::view-transition-old(.vt-record-frame) {
+  animation: 180ms linear both vt-record-fade-out;
+}
+
+::view-transition-new(.vt-record-frame) {
+  animation: 320ms linear 260ms both vt-record-fade-in;
+}
+
+::view-transition-group(.vt-record-title) {
+  z-index: 3;
+  animation-duration: 560ms;
+  animation-timing-function: cubic-bezier(0.35, 0.05, 0.28, 0.95);
+}
+
+::view-transition-old(.vt-record-title),
+::view-transition-new(.vt-record-title) {
+  /* The name scales with its box rather than cross-stretching. */
+  height: 100%;
+  object-fit: contain;
+  object-position: left center;
+}
+
+/* One quick cross-fade at the start, then the new title alone travels and
+   grows: two titles of different set widths never overlap for long. */
+::view-transition-old(.vt-record-title) {
+  animation: 140ms linear both vt-record-fade-out;
+}
+
+::view-transition-new(.vt-record-title) {
+  animation: 140ms linear both vt-record-fade-in;
+}
+
+@keyframes vt-record-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-record-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-record-unfold {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(.vt-record-frame),
+  ::view-transition-group(.vt-record-title),
+  ::view-transition-old(.vt-record-out),
+  ::view-transition-new(.vt-record-in),
+  ::view-transition-old(.vt-record-frame),
+  ::view-transition-new(.vt-record-frame),
+  ::view-transition-old(.vt-record-title),
+  ::view-transition-new(.vt-record-title) {
+    animation-duration: 1ms;
+    animation-delay: 0ms;
+  }
+}

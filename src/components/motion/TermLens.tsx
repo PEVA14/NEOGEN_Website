@@ -29,11 +29,27 @@ import styles from "./TermLens.module.css";
  * definitions are on the page already (a hidden block, `data-def`), so
  * nothing loads. Reduced motion: the card appears without unfolding.
  */
-export function TermLens({ children, className }: { children: ReactNode; className?: string }) {
+export function TermLens({
+  children,
+  className,
+  onFollow,
+}: {
+  children: ReactNode;
+  className?: string;
+  /**
+   * Follows the card's link instead of navigating — the glossary uses it to
+   * go to a term on its own page, keeping the reader's way back.
+   */
+  onFollow?: (href: string, from: HTMLElement | null) => void;
+}) {
   const root = useRef<HTMLDivElement>(null);
   const card = useRef<HTMLDivElement>(null);
   const id = useId();
   const router = useRouter();
+  const follow = useRef(onFollow);
+  useEffect(() => {
+    follow.current = onFollow;
+  }, [onFollow]);
 
   useEffect(() => {
     const node = root.current;
@@ -117,8 +133,23 @@ export function TermLens({ children, className }: { children: ReactNode; classNa
         if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
         event.preventDefault();
         const href = link.getAttribute("href");
+        const from = current;
         hide();
-        if (href) router.push(href);
+        if (href && follow.current) follow.current(href, from);
+        else if (href) {
+          /* Say where the reader came from: a client navigation leaves
+             `document.referrer` as it was, so the glossary could not offer
+             the way back to this record (nor take its colour). */
+          try {
+            sessionStorage.setItem(
+              "neogen:from",
+              JSON.stringify({ href: window.location.pathname, at: Date.now() }),
+            );
+          } catch {
+            /* No storage: the glossary falls back to the referrer. */
+          }
+          router.push(href);
+        }
         return;
       }
       const term = termOf(event.target);

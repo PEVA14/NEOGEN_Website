@@ -3,6 +3,8 @@
 import Link from "next/link";
 import {
   useCallback,
+  useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -57,6 +59,14 @@ export interface ArchiveMapCopy {
   hint: string;
   /** Accessible name for a dot: "{compound} en {line}". */
   dot: string;
+  /** The scrubber's accessible name: "Recorrer los compuestos". */
+  scrub: string;
+  /** Its value before anything is chosen. */
+  scrubIdle: string;
+  /** Phone: how to operate it. */
+  touchHint: string;
+  /** Lets go of the chosen compound. */
+  clear: string;
   areas: Partial<Record<DiscoveryAreaId, string>>;
 }
 
@@ -78,9 +88,17 @@ type Focus = { row: number | null; col: number | null };
  * into the dots, arrows move between them (along a line, or to the nearest in
  * the next line), Enter pins, Escape lets go.
  *
- * Wide screens only. On a phone the lines stay the list they were, each with
- * a strip of its dots in the same order — the same structure, read rather
- * than operated (the page renders that list itself).
+ * THE SCRUBBER. The area bands across the top are also a slider (a real
+ * range input): drag along them — a finger on a phone, the pointer or the
+ * arrow keys anywhere — and the reticle walks the compounds column by
+ * column; the lines the one under it belongs to light up, the readout names
+ * it, and its record is a tap away.
+ *
+ * ON A PHONE the same map, re-set for a thumb: each line is its name over a
+ * full-width strip of its dots, the readout and the scrubber are pinned at
+ * the top of the map while it is read, and a line opens in place to list its
+ * compounds — each opening to the sentence behind its dot. Nothing needs a
+ * hover; nothing is smaller than its strip.
  */
 export function ArchiveMap({
   groups,
@@ -113,6 +131,11 @@ export function ArchiveMap({
 
   const [hover, setHover] = useState<Focus>({ row: null, col: null });
   const [pinned, setPinned] = useState<Focus | null>(null);
+  /* The scrubber's compound; a line opened in place, and a claim opened in it. */
+  const [scrub, setScrub] = useState<number | null>(null);
+  const [openRow, setOpenRow] = useState<number | null>(null);
+  const [openClaim, setOpenClaim] = useState<number | null>(null);
+  const uid = useId();
   const [cursor, setCursor] = useState<Focus>(() => ({
     row: 0,
     col: rows[0]?.members[0] ?? 0,
@@ -120,16 +143,32 @@ export function ArchiveMap({
   const cells = useRef<HTMLDivElement>(null);
   const dotRefs = useRef(new Map<string, HTMLButtonElement>());
 
-  const shown = pinned ?? hover;
+  const base = pinned ?? hover;
+  const shown: Focus = { row: base.row, col: base.col ?? scrub };
   const isMember = (row: number | null, col: number | null) =>
     row !== null && col !== null && rows[row]?.members.includes(col);
 
+  /* The grid's box, read once per hover (and after a scroll), not per move:
+     a read right after the reticle re-renders forces a layout every time. */
+  const gridBox = useRef<DOMRect | null>(null);
+  useEffect(() => {
+    const forget = () => {
+      gridBox.current = null;
+    };
+    window.addEventListener("scroll", forget, { passive: true });
+    window.addEventListener("resize", forget);
+    return () => {
+      window.removeEventListener("scroll", forget);
+      window.removeEventListener("resize", forget);
+    };
+  }, []);
   const onMove = useCallback(
     (event: PointerEvent<HTMLDivElement>) => {
       if (event.pointerType !== "mouse") return;
       const grid = cells.current;
       if (!grid) return;
-      const r = grid.getBoundingClientRect();
+      gridBox.current ??= grid.getBoundingClientRect();
+      const r = gridBox.current;
       const x = event.clientX - r.left;
       const col =
         x >= 0 && x <= r.width
@@ -191,6 +230,51 @@ export function ArchiveMap({
     (starts, g, i) => [...starts, i === 0 ? 0 : starts[i - 1] + groups[i - 1].lines.length],
     [],
   );
+  const scrubber = (variant: "wide" | "phone") => (
+    <div className={styles.scrubber} data-variant={variant}>
+      <div className={styles.bands} aria-hidden="true">
+        {bands.map((band) => (
+          <span
+            key={`${band.area}-${band.from}`}
+            className={styles.band}
+            data-area={band.area ?? undefined}
+            style={{ gridColumn: `${band.from + 1} / ${band.to + 2}` }}
+          />
+        ))}
+      </div>
+      <span
+        className={styles.scrubMark}
+        aria-hidden="true"
+        data-on={scrub !== null ? "true" : undefined}
+        style={{ ["--col" as string]: scrub ?? 0 }}
+      />
+      <input
+        type="range"
+        className={styles.range}
+        min={0}
+        max={compounds.length - 1}
+        step={1}
+        value={scrub ?? 0}
+        aria-label={copy.scrub}
+        aria-valuetext={
+          scrub !== null
+            ? `${compounds[scrub].name} · ${fill(copy.compoundCount, linesOf[scrub])}`
+            : copy.scrubIdle
+        }
+        onChange={(event) => setScrub(Number(event.target.value))}
+        onPointerDown={(event) => {
+          /* A press at the first position changes nothing, so choose it here. */
+          const r = event.currentTarget.getBoundingClientRect();
+          const col = Math.round(((event.clientX - r.left) / r.width) * (compounds.length - 1));
+          setScrub(Math.min(compounds.length - 1, Math.max(0, col)));
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") setScrub(null);
+        }}
+      />
+    </div>
+  );
+
   return (
     <div
       className={styles.map}
@@ -209,23 +293,13 @@ export function ArchiveMap({
           className={styles.colBand}
           aria-hidden="true"
           data-on={shown.col !== null ? "true" : undefined}
+          data-area={compound?.area ?? undefined}
           style={{ ["--col" as string]: shown.col ?? 0 }}
         />
 
-        <div className={styles.head} aria-hidden="true">
+        <div className={styles.head}>
           <span />
-          <div className={styles.bands}>
-            {bands.map((band) => (
-              <span
-                key={`${band.area}-${band.from}`}
-                className={styles.band}
-                data-area={band.area ?? undefined}
-                style={{ gridColumn: `${band.from + 1} / ${band.to + 2}` }}
-              >
-                <span className={styles.bandName}>{band.area ? copy.areas[band.area] : ""}</span>
-              </span>
-            ))}
-          </div>
+          {scrubber("wide")}
         </div>
 
         {groups.map((group, g) => (
@@ -234,17 +308,37 @@ export function ArchiveMap({
             <ul className={styles.rows}>
               {group.lines.map((l, j) => {
                 const row = firstRow[g] + j;
+                const open = openRow === row;
                 return (
                   <li
                     key={l.id}
                     className={styles.row}
                     data-row={row}
                     data-lit={shown.row === row ? "true" : undefined}
+                    data-holds={
+                      shown.col !== null && l.members.includes(shown.col) ? "true" : undefined
+                    }
+                    data-open={open ? "true" : undefined}
                   >
                     <Link href={l.href} className={styles.rowLabel}>
                       <span className={styles.rowName}>{l.label}</span>
                       <span className={styles.rowCount}>{l.members.length}</span>
                     </Link>
+                    {/* Phone: the line opens in place. */}
+                    <button
+                      type="button"
+                      className={styles.rowToggle}
+                      aria-expanded={open}
+                      aria-controls={`${uid}-line-${row}`}
+                      onClick={() => {
+                        setOpenRow(open ? null : row);
+                        setOpenClaim(null);
+                      }}
+                    >
+                      <span className={styles.rowName}>{l.label}</span>
+                      <span className={styles.rowCount}>{l.members.length}</span>
+                      <span className={styles.rowChevron} aria-hidden="true" />
+                    </button>
                     <div className={styles.cells} ref={row === 0 ? cells : undefined}>
                       {l.members.map((col) => {
                         const c = compounds[col];
@@ -279,6 +373,67 @@ export function ArchiveMap({
                         );
                       })}
                     </div>
+
+                    {/* Phone: the line's compounds, each opening to its sentence. */}
+                    <div
+                      id={`${uid}-line-${row}`}
+                      className={styles.panel}
+                      data-open={open ? "true" : undefined}
+                      inert={!open}
+                    >
+                      <div className={styles.panelInner}>
+                        <ul className={styles.members}>
+                          {l.members.map((col) => {
+                            const c = compounds[col];
+                            const claim = statements[`${l.id}|${c.slug}`];
+                            const shownClaim = open && openClaim === col;
+                            return (
+                              <li
+                                key={col}
+                                className={styles.member}
+                                data-match={shown.col === col ? "true" : undefined}
+                              >
+                                <button
+                                  type="button"
+                                  className={styles.memberToggle}
+                                  aria-expanded={shownClaim}
+                                  onClick={() => setOpenClaim(shownClaim ? null : col)}
+                                >
+                                  {/* Where this compound sits in the strip above. */}
+                                  <span
+                                    className={styles.memberTick}
+                                    aria-hidden="true"
+                                    style={{ ["--col" as string]: col }}
+                                  />
+                                  <span className={styles.memberName}>{c.name}</span>
+                                  {c.area ? (
+                                    <span className={styles.memberArea} data-area={c.area}>
+                                      {copy.areas[c.area]}
+                                    </span>
+                                  ) : null}
+                                </button>
+                                {shownClaim && claim ? (
+                                  <div className={styles.claim}>
+                                    <p className={styles.claimText}>{claim.text}</p>
+                                    <p className={styles.claimMeta}>
+                                      {claim.sources === 1
+                                        ? copy.source
+                                        : fill(copy.sources, claim.sources)}
+                                    </p>
+                                    <Link href={c.href} className={styles.claimLink}>
+                                      {copy.openRecord} <span aria-hidden="true">→</span>
+                                    </Link>
+                                  </div>
+                                ) : null}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                        <Link href={l.href} className={styles.claimLink}>
+                          {copy.openLine} <span aria-hidden="true">→</span>
+                        </Link>
+                      </div>
+                    </div>
                   </li>
                 );
               })}
@@ -287,61 +442,117 @@ export function ArchiveMap({
         ))}
       </div>
 
-      {/* The inspector: what is under the reticle, and the claim behind a dot. */}
-      <div className={styles.inspector} aria-live="polite">
-        <p className={styles.readout}>
-          {line ? <span className={styles.readoutLine}>{line.label}</span> : null}
-          {compound ? <span className={styles.readoutCompound}>{compound.name}</span> : null}
-          {compound?.area ? (
-            <span className={styles.readoutArea} data-area={compound.area}>
-              {copy.areas[compound.area]}
-            </span>
-          ) : null}
-        </p>
-
-        {statement && line && compound ? (
-          <div key={`${line.id}|${compound.slug}`} className={styles.claim}>
-            <p className={styles.claimText}>{statement.text}</p>
-            <p className={styles.claimMeta}>
-              {statement.sources === 1 ? copy.source : fill(copy.sources, statement.sources)}
-            </p>
-            <div className={styles.claimLinks}>
-              <Link href={compound.href} className={styles.claimLink}>
-                {copy.openRecord} <span aria-hidden="true">→</span>
-              </Link>
-              <Link href={line.href} className={styles.claimLink}>
-                {copy.openLine} <span aria-hidden="true">→</span>
-              </Link>
-            </div>
-          </div>
-        ) : (
-          <div className={styles.figures}>
-            <p className={styles.figure}>
-              <ValueRoll
-                value={String(
-                  line ? line.members.length : compound ? linesOf[shown.col ?? 0] : points,
-                ).padStart(2, "0")}
-                className={styles.figureValue}
-              />
-              <span className={styles.figureLabel}>
-                {line
-                  ? fill(copy.lineCount, line.members.length).replace(/^\d+\s*/, "")
-                  : compound
-                    ? fill(copy.compoundCount, linesOf[shown.col ?? 0]).replace(/^\d+\s*/, "")
-                    : copy.points}
+      {/* The inspector: what is under the reticle, and the claim behind a dot.
+          On a phone it is the pinned readout and the scrubber. */}
+      {/* The inspector takes the inspected compound's area (color pass). */}
+      <div className={styles.inspector} data-area={compound?.area ?? undefined}>
+        <div aria-live="polite" className={styles.wideReadout}>
+          <p className={styles.readout}>
+            {line ? <span className={styles.readoutLine}>{line.label}</span> : null}
+            {compound ? <span className={styles.readoutCompound}>{compound.name}</span> : null}
+            {compound?.area ? (
+              <span className={styles.readoutArea} data-area={compound.area}>
+                {copy.areas[compound.area]}
               </span>
-            </p>
-            {!line && !compound ? (
-              <>
-                <p className={styles.rest}>{copy.rest}</p>
-                <p className={styles.small}>
-                  {rows.length} {copy.lines} · {compounds.length} {copy.compounds}
-                </p>
-                <p className={styles.hint}>{copy.hint}</p>
-              </>
             ) : null}
-          </div>
-        )}
+          </p>
+
+          {statement && line && compound ? (
+            <div key={`${line.id}|${compound.slug}`} className={styles.claim}>
+              <p className={styles.claimText}>{statement.text}</p>
+              <p className={styles.claimMeta}>
+                {statement.sources === 1 ? copy.source : fill(copy.sources, statement.sources)}
+              </p>
+              <div className={styles.claimLinks}>
+                <Link href={compound.href} className={styles.claimLink}>
+                  {copy.openRecord} <span aria-hidden="true">→</span>
+                </Link>
+                <Link href={line.href} className={styles.claimLink}>
+                  {copy.openLine} <span aria-hidden="true">→</span>
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className={styles.figures}>
+              <p className={styles.figure}>
+                <ValueRoll
+                  value={String(
+                    line ? line.members.length : compound ? linesOf[shown.col ?? 0] : points,
+                  ).padStart(2, "0")}
+                  className={styles.figureValue}
+                />
+                <span className={styles.figureLabel}>
+                  {line
+                    ? fill(copy.lineCount, line.members.length).replace(/^\d+\s*/, "")
+                    : compound
+                      ? fill(copy.compoundCount, linesOf[shown.col ?? 0]).replace(/^\d+\s*/, "")
+                      : copy.points}
+                </span>
+              </p>
+              {compound && scrub !== null && !line ? (
+                <Link href={compound.href} className={styles.claimLink}>
+                  {copy.openRecord} <span aria-hidden="true">→</span>
+                </Link>
+              ) : null}
+              {!line && !compound ? (
+                <>
+                  <p className={styles.rest}>{copy.rest}</p>
+                  <p className={styles.small}>
+                    {rows.length} {copy.lines} · {compounds.length} {copy.compounds}
+                  </p>
+                  <p className={styles.hint}>{copy.hint}</p>
+                </>
+              ) : null}
+            </div>
+          )}
+        </div>
+
+        {/* Phone: one compact line of readout over the scrubber. */}
+        <div className={styles.phoneReadout}>
+          {scrub !== null ? (
+            <>
+              <p className={styles.phoneName}>
+                <span className={styles.readoutCompound}>{compounds[scrub].name}</span>
+                <button
+                  type="button"
+                  className={styles.clear}
+                  aria-label={copy.clear}
+                  onClick={() => setScrub(null)}
+                >
+                  ×
+                </button>
+              </p>
+              <p className={styles.phoneMeta}>
+                {compounds[scrub].area ? (
+                  <span
+                    className={styles.readoutArea}
+                    data-area={compounds[scrub].area ?? undefined}
+                  >
+                    {copy.areas[compounds[scrub].area as DiscoveryAreaId]}
+                  </span>
+                ) : null}
+                <span className={styles.phoneCount}>
+                  <ValueRoll value={String(linesOf[scrub]).padStart(2, "0")} />{" "}
+                  {fill(copy.compoundCount, linesOf[scrub]).replace(/^\d+\s*/, "")}
+                </span>
+                <Link href={compounds[scrub].href} className={styles.claimLink}>
+                  {copy.openRecord} <span aria-hidden="true">→</span>
+                </Link>
+              </p>
+            </>
+          ) : (
+            <>
+              <p className={styles.phoneName}>
+                <span className={styles.phoneFigure}>
+                  <ValueRoll value={String(points)} />
+                </span>{" "}
+                <span className={styles.figureLabel}>{copy.points}</span>
+              </p>
+              <p className={styles.hint}>{copy.touchHint}</p>
+            </>
+          )}
+          {scrubber("phone")}
+        </div>
       </div>
     </div>
   );

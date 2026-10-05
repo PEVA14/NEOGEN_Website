@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Container, Section } from "@/components/primitives";
+import { SourceTether } from "@/components/motion/SourceTether";
 import { CitationMarks, CitationRail, KnowledgeHead, RouteList } from "@/components/research";
+import { AreaMarks } from "@/components/ui/AreaMarks";
 import { routes } from "@/config/routes";
 import { lineIds, researchLine, researchLines } from "@/content/compendium";
 import { RESEARCH_FUNCTION_GROUPS } from "@/content/functions";
@@ -18,6 +20,7 @@ import styles from "./page.module.css";
 
 import type { Reference } from "@/content/references";
 import type { Metadata } from "next";
+import type { DiscoveryAreaId } from "@/data/discovery";
 
 /** A line exists only while at least one compound's sourced statement backs it. */
 export const dynamicParams = false;
@@ -91,6 +94,24 @@ export default async function LinePage({
     statements: statements.map((s) => ({ id: s.id, text: s.text, citations: cite(s.references) })),
   }));
 
+  /*
+   * The other end of each source: the compounds IN THIS LINE whose statements
+   * cite it, with their area marks (Research colour completion). The line
+   * itself has no area and takes no colour; its compounds bring theirs.
+   */
+  const citedBy: Record<string, { name: string; href: string; areas: DiscoveryAreaId[] }[]> = {};
+  for (const { product, statements } of line.compounds) {
+    for (const ref of statements.flatMap((s) => s.references)) {
+      const list = (citedBy[ref.id] ??= []);
+      if (list.some((c) => c.href === path(routes.compound(product.slug)))) continue;
+      list.push({
+        name: product.name,
+        href: path(routes.compound(product.slug)),
+        areas: publicAreasFor(product.slug).map((a) => a.id),
+      });
+    }
+  }
+
   const siblings = researchLines(locale).filter(
     (l) => l.fn.group === line.fn.group && l.fn.id !== line.fn.id && linkable.has(l.fn.id),
   );
@@ -115,55 +136,73 @@ export default async function LinePage({
           aside={<p className={styles.note}>{copy.line.note}</p>}
         />
 
-        <section aria-labelledby="line-compounds" className={styles.section}>
-          <h2 id="line-compounds" className={styles.sectionTitle}>
-            {copy.line.compounds}
-          </h2>
-          <ol className={styles.compounds}>
-            {compounds.map(({ product, statements }) => (
-              <li key={product.slug} className={styles.compound}>
-                <div className={styles.compoundHead}>
-                  <Link href={path(routes.compound(product.slug))} className={styles.name}>
-                    {product.name}
-                  </Link>
-                  <p className={styles.areas}>
-                    {publicAreasFor(product.slug)
-                      .map((a) => dict.discovery.areas[a.id].title)
-                      .join(" · ")}
-                  </p>
-                </div>
-                <div className={styles.why}>
-                  <p className={styles.whyLabel}>{copy.line.why}</p>
-                  {statements.map((s) => (
-                    <p key={s.id} className={styles.statement}>
-                      {s.text}{" "}
-                      <CitationMarks
-                        citations={s.citations}
-                        anchor={refAnchor}
-                        label={dict.knowledge.record.citation}
-                      />
+        {/* Claim ↔ source, as on a record: a citation draws to its source,
+            the source marks the statements citing it — in the colour of the
+            compound whose statement it is. */}
+        <SourceTether>
+          <section aria-labelledby="line-compounds" className={styles.section}>
+            <h2 id="line-compounds" className={styles.sectionTitle}>
+              {copy.line.compounds}
+            </h2>
+            <ol className={styles.compounds}>
+              {compounds.map(({ product, statements }) => (
+                /* Each compound carries its own first area as its context: its
+                 marks, its area names, the rule it takes when pointed at and
+                 the connections from its statements. Never the line's. */
+                <li
+                  key={product.slug}
+                  className={styles.compound}
+                  data-area={publicAreasFor(product.slug)[0]?.id}
+                >
+                  <div className={styles.compoundHead}>
+                    <Link href={path(routes.compound(product.slug))} className={styles.name}>
+                      {product.name}
+                    </Link>
+                    <p className={styles.areas}>
+                      <AreaMarks areas={publicAreasFor(product.slug).map((a) => a.id)} />
+                      {publicAreasFor(product.slug)
+                        .map((a) => dict.discovery.areas[a.id].title)
+                        .join(" · ")}
                     </p>
-                  ))}
-                  <div className={styles.actions}>
-                    <Link href={path(routes.compound(product.slug))} className={styles.action}>
-                      {copy.line.record} <span aria-hidden="true">→</span>
-                    </Link>
-                    <Link href={path(routes.product(product.slug))} className={styles.action}>
-                      {copy.line.product} <span aria-hidden="true">→</span>
-                    </Link>
                   </div>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </section>
+                  <div className={styles.why}>
+                    <p className={styles.whyLabel}>{copy.line.why}</p>
+                    {statements.map((s) => (
+                      <p key={s.id} className={styles.statement} data-cites={s.citations.join(" ")}>
+                        {s.text}{" "}
+                        <CitationMarks
+                          citations={s.citations}
+                          anchor={refAnchor}
+                          label={dict.knowledge.record.citation}
+                        />
+                      </p>
+                    ))}
+                    <div className={styles.actions}>
+                      <Link href={path(routes.compound(product.slug))} className={styles.action}>
+                        {copy.line.record} <span aria-hidden="true">→</span>
+                      </Link>
+                      <Link href={path(routes.product(product.slug))} className={styles.action}>
+                        {copy.line.product} <span aria-hidden="true">→</span>
+                      </Link>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
 
-        <section aria-labelledby="line-references" className={styles.section}>
-          <h2 id="line-references" className={styles.sectionTitle}>
-            {copy.line.references}
-          </h2>
-          <CitationRail references={references} copy={dict.citations} anchorPrefix="ref-" />
-        </section>
+          <section aria-labelledby="line-references" className={styles.section}>
+            <h2 id="line-references" className={styles.sectionTitle}>
+              {copy.line.references}
+            </h2>
+            <CitationRail
+              references={references}
+              copy={dict.citations}
+              anchorPrefix="ref-"
+              citedBy={{ label: dict.research.hub.references.citedBy, byReference: citedBy }}
+            />
+          </section>
+        </SourceTether>
 
         {siblings.length > 0 ? (
           <section aria-labelledby="line-siblings" className={styles.section}>

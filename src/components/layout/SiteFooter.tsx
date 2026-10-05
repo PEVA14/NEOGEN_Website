@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { NeogenMark } from "@/components/brand/NeogenMark";
 import { Container } from "@/components/primitives";
 import { Body, Mono } from "@/components/typography";
 import { features } from "@/config/features";
@@ -80,8 +81,14 @@ export function SiteFooter({ locale, dict }: SiteFooterProps) {
     <footer data-surface="dark" className={styles.footer}>
       <Container width="full">
         <div className={styles.brand}>
-          {/* Decorative: the wordmark below it is already the accessible name. */}
-          <span aria-hidden="true" className={styles.mark} />
+          {/*
+           * THE SIGNATURE. Every page ends on the mark forming: as the reader
+           * scrolls the footer in, the hub and the four nodes register, then
+           * the connections reach from both ends and close, clockwise from
+           * the top node. Scroll back and it comes apart. Decorative: the
+           * wordmark below it is already the accessible name.
+           */}
+          <NeogenMark className={styles.mark} assemble="view" respond />
           <span className={styles.wordmark}>{dict.meta.siteName}_</span>
           <Body size="lg" className={styles.tagline}>
             {dict.footer.tagline}

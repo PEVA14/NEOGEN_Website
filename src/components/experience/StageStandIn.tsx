@@ -74,7 +74,8 @@ export function StageStandIn({
    * at — the hero turned and moved along its arc — and fading it in over the
    * photograph showed two vials. Once the canvas has drawn here the photograph
    * stays away; a stage handed the canvas back draws at once, usually before
-   * it is in view (`SharedCanvas`: `pauseOffscreen` false).
+   * it is in view (`SharedCanvas` draws off screen until the stage is
+   * revealed, then only on screen).
    *
    * (A copy of the canvas's last frame stood in on returns for a day; read
    * back from WebGL, Safari drew it overexposed through the glass. Not kept.)

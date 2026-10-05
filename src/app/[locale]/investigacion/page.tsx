@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { CSSProperties } from "react";
 
 import { NoteIndex } from "@/components/editorial";
 import { SectionHeader } from "@/components/layout";
@@ -15,12 +14,13 @@ import {
 } from "@/components/research";
 import { Body, Mono } from "@/components/typography";
 import { TextLink } from "@/components/ui";
+import { ArchivePlate } from "@/components/research/ArchivePlate";
 import { routes } from "@/config/routes";
 import { compendiumStats, hasRecord, linesByGroup } from "@/content/compendium";
 import { publicArticles } from "@/content/editorial";
 import { RESEARCH_FUNCTION_GROUPS } from "@/content/functions";
 import { researchReferenceIndex, referencesForArea } from "@/content/research";
-import { publishedProducts } from "@/data/catalog";
+import { getProduct, publishedProducts } from "@/data/catalog";
 import {
   ArchiveMap,
   type ArchiveCompound,
@@ -33,11 +33,12 @@ import { getDictionary } from "@/i18n/getDictionary";
 import { localizePath } from "@/i18n/routing";
 import { alternates } from "@/lib/alternates";
 import { socialMetadata } from "@/lib/meta";
-import { count, fill, linkableLines } from "@/server/knowledge";
+import { count, fill, libraryEntries, linkableLines } from "@/server/knowledge";
 
 import styles from "./page.module.css";
 
 import type { Metadata } from "next";
+import type { DiscoveryAreaId } from "@/data/discovery";
 
 export async function generateMetadata({
   params,
@@ -88,6 +89,7 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
   const stats = compendiumStats();
 
   const areas = publicAreas();
+  const library = libraryEntries(locale, dict);
   const areaEntries = areas.map((area) => {
     const items = productsInArea(area.id);
     return {
@@ -100,6 +102,17 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
       compounds: items.length,
       references: referencesForArea(area.id).length,
       examples: items.slice(0, 3).map((p) => p.name),
+      compendiumHref: `${path(routes.compendium)}?area=${area.id}`,
+      /* The roster the tile opens into: the compendium's own rows for the
+         area, A to Z, each leading to its record opened in the compendium. */
+      roster: library
+        .filter((entry) => entry.areas.some((a) => a.id === area.id))
+        .map((entry) => ({
+          slug: entry.slug,
+          name: entry.name,
+          depth: entry.depth,
+          href: `${path(routes.compendium)}?area=${area.id}&ficha=${entry.slug}`,
+        })),
     };
   });
 
@@ -169,6 +182,36 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
      level with the notes beside it. */
   const referencePreview = referenceIndex.slice(0, 4);
 
+  /*
+   * THE ARCHIVE PLATE (Research colour completion): every compound once, in
+   * the catalogue's area order, under the first area it is filed in — the
+   * same entries and the same record facts the compendium lists.
+   */
+  const plateRows = [
+    ...areas.map((area) => ({
+      area: area.id as DiscoveryAreaId | null,
+      label: dict.discovery.areas[area.id].short,
+    })),
+    { area: null, label: hub.plate.none },
+  ]
+    .map((row) => ({
+      ...row,
+      compounds: library
+        .filter((entry) => (entry.areas[0]?.id ?? null) === row.area)
+        .map((entry) => ({
+          slug: entry.slug,
+          name: entry.name,
+          record: entry.recordHref !== null,
+          href: `${path(routes.compendium)}?${row.area ? `area=${row.area}&` : ""}ficha=${entry.slug}`,
+        })),
+    }))
+    .filter((row) => row.compounds.length > 0);
+  const plateSummary = fill(hub.plate.summary, {
+    n: library.length,
+    areas: areas.length,
+    records: library.filter((entry) => entry.recordHref !== null).length,
+  });
+
   const statList = [
     { label: hub.stats.compounds, n: stats.compounds, href: path(routes.compendium) },
     {
@@ -191,7 +234,6 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
 
   const paths = hub.paths;
   const counts = dict.knowledge.counts;
-  const maxLine = Math.max(1, ...lineGroups.flatMap((g) => g.lines.map((l) => l.compounds.length)));
   /* The flagships' records — the three compounds with a world of their own,
      a catalogue fact, not a ranking. Only those with a record are offered. */
   const flagships = publishedProducts.filter((p) => p.world !== null && hasRecord(p.slug));
@@ -348,7 +390,19 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
             title={hub.title}
             titleId="research-title"
             lede={hub.lede}
-            aside={searchForm("hub-search")}
+            aside={
+              <div className={styles.heroAside}>
+                <ArchivePlate
+                  rows={plateRows}
+                  copy={{
+                    label: hub.plate.label,
+                    legend: { record: hub.plate.record, none: hub.plate.noRecord },
+                    summary: plateSummary,
+                  }}
+                />
+                {searchForm("hub-search")}
+              </div>
+            }
           />
 
           <div className={styles.chooser}>
@@ -383,7 +437,10 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
                choose an area had no way through from here. */
             action={<TextLink href={path(routes.products)}>{hub.areas.all}</TextLink>}
           />
-          <ResearchAreaIndex entries={areaEntries} copy={hub.areas} />
+          <ResearchAreaIndex
+            entries={areaEntries}
+            copy={{ ...hub.areas, depth: dict.knowledge.compendium.depth }}
+          />
         </Container>
       </Section>
 
@@ -404,34 +461,6 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
               statements={mapStatements as ArchiveStatements}
               copy={{ ...hub.lines.map, areas: mapAreaNames }}
             />
-            {/* Phone and tablet: the lines as a list (the map is for a wide
-                screen and a pointer). */}
-            <div className={styles.lineGroups}>
-              {lineGroups.map(({ group, lines }) => (
-                <div key={group} className={styles.lineGroup}>
-                  <h3 className={styles.lineGroupTitle}>
-                    {RESEARCH_FUNCTION_GROUPS.find((g) => g.id === group)?.label[locale]}
-                  </h3>
-                  <ul className={styles.lineList}>
-                    {lines.map((line) => (
-                      <li key={line.fn.id}>
-                        <Link
-                          href={path(routes.line(line.fn.id))}
-                          className={styles.lineLink}
-                          style={{ "--share": line.compounds.length / maxLine } as CSSProperties}
-                        >
-                          <span className={styles.lineName}>{line.fn.label[locale]}</span>
-                          <span className={styles.lineCount}>{line.compounds.length}</span>
-                          {/* The number of compounds, drawn: a registry count
-                              against the largest line, never a rating. */}
-                          <span className={styles.lineBar} aria-hidden="true" />
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
           </Container>
         </Section>
       ) : null}
@@ -457,7 +486,7 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
               ) : undefined
             }
           />
-          <EvidenceChain copy={dict.quality.record.chain} />
+          <EvidenceChain copy={dict.quality.record.chain} variant="layers" />
         </Container>
       </Section>
 
@@ -511,6 +540,22 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
                   <CitationRail
                     references={referencePreview.map((e) => e.reference)}
                     copy={dict.citations}
+                    citedBy={{
+                      label: hub.references.citedBy,
+                      byReference: Object.fromEntries(
+                        referencePreview.map((e) => [
+                          e.reference.id,
+                          e.products.map((slug) => {
+                            const area = publicAreasFor(slug)[0]?.id;
+                            return {
+                              name: getProduct(slug)?.name ?? slug,
+                              href: `${path(routes.compendium)}?${area ? `area=${area}&` : ""}ficha=${slug}`,
+                              areas: publicAreasFor(slug).map((a) => a.id),
+                            };
+                          }),
+                        ]),
+                      ),
+                    }}
                   />
                   <div className="mt-(--space-lg) flex flex-wrap items-baseline gap-x-(--space-xl) gap-y-(--space-sm)">
                     <TextLink href={path(routes.researchReferences)}>

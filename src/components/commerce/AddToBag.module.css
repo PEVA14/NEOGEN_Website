@@ -282,6 +282,17 @@
   cursor: default;
 }
 
+/* The word, with the mark forming beside it (`Added` in AddToBag.tsx). */
+.added {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.addedMark {
+  block-size: 1.15em;
+}
+
 /* Confirmation in place. Two seconds, then back. */
 .add[data-added="true"] {
   background-color: var(--status-verified);

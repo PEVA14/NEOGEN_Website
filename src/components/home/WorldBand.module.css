@@ -370,3 +370,297 @@
     transition: none;
   }
 }
+
+/* --- Each world behaving like itself (WorldResponse) -------------------------
+ *
+ * The still in two layers inside a 4:5 frame, masked into the panel as the
+ * single still was. `data-engaged` (pointer, focus, or settling in the
+ * phone's shelf) wakes the panel's own physics; `--px`/`--py` (−1…1) carry the
+ * pointer. Reduced motion never engages.
+ *
+ * COMPOSITOR ONLY (owner, 2026-10-04: GLOW and GHK-Cu lagged the scroll).
+ * Every moving part is a layer that only changes `transform` or `opacity`:
+ * no filters on the photographs, no blend modes, no gradient re-drawn as the
+ * pointer moves. Darkening is an overlay, a shadow is a drawn ellipse, light
+ * is a fixed gradient that is moved, never re-painted.
+ */
+
+.frame {
+  position: relative;
+  display: block;
+  block-size: 100%;
+  max-block-size: 21rem;
+  aspect-ratio: 4 / 5;
+  mask-image: radial-gradient(62% 58% at 50% 54%, #000 62%, transparent 100%);
+  transition: transform 420ms var(--ease-settle);
+}
+
+.ground {
+  object-fit: cover;
+}
+
+.specimen {
+  position: absolute;
+  display: block;
+  transition: transform 420ms var(--ease-settle);
+}
+
+.cutout {
+  object-fit: contain;
+}
+
+.dim,
+.behind,
+.calib,
+.sheen,
+.shadow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.dim,
+.behind,
+.sheen,
+.shadow {
+  opacity: 0;
+}
+
+/* Layers that will move are layers from the start: no hitch on first touch. */
+.panel[data-world="glow"] :is(.dim, .behind),
+.panel[data-world="ghk-cu"] :is(.frame, .specimen, .sheen, .shadow) {
+  will-change: transform, opacity;
+}
+
+/* --- RETA: calibration ----------------------------------------------------- */
+
+.calib {
+  display: none;
+}
+
+.panel[data-world="reta"] .calib {
+  display: block;
+}
+
+/* Four registration brackets: at rest on the frame's corners, faint; engaged,
+   they close on the object's own silhouette and lock. */
+.calib > [data-c] {
+  position: absolute;
+  inline-size: 0.9rem;
+  block-size: 0.9rem;
+  border: 0 solid color-mix(in oklab, var(--world-light) 80%, transparent);
+  opacity: 0.35;
+  transition:
+    left 520ms var(--ease-settle),
+    right 520ms var(--ease-settle),
+    top 520ms var(--ease-settle),
+    bottom 520ms var(--ease-settle),
+    opacity 300ms linear;
+}
+
+.calib > [data-c="tl"] {
+  left: 14%;
+  top: 10%;
+  border-block-start-width: 1px;
+  border-inline-start-width: 1px;
+}
+
+.calib > [data-c="tr"] {
+  right: 14%;
+  top: 10%;
+  border-block-start-width: 1px;
+  border-inline-end-width: 1px;
+}
+
+.calib > [data-c="bl"] {
+  left: 14%;
+  bottom: 8%;
+  border-block-end-width: 1px;
+  border-inline-start-width: 1px;
+}
+
+.calib > [data-c="br"] {
+  right: 14%;
+  bottom: 8%;
+  border-block-end-width: 1px;
+  border-inline-end-width: 1px;
+}
+
+.panel[data-engaged] .calib > [data-c] {
+  opacity: 1;
+}
+
+.panel[data-engaged] .calib > [data-c="tl"],
+.panel[data-engaged] .calib > [data-c="bl"] {
+  left: calc(var(--ox) * 100% - 0.35rem);
+}
+
+.panel[data-engaged] .calib > [data-c="tr"],
+.panel[data-engaged] .calib > [data-c="br"] {
+  right: calc((1 - var(--ox) - var(--ow)) * 100% - 0.35rem);
+}
+
+.panel[data-engaged] .calib > [data-c="tl"],
+.panel[data-engaged] .calib > [data-c="tr"] {
+  top: calc(var(--oy) * 100% - 0.35rem);
+}
+
+.panel[data-engaged] .calib > [data-c="bl"],
+.panel[data-engaged] .calib > [data-c="br"] {
+  bottom: calc((1 - var(--oy) - var(--oh)) * 100% - 0.35rem);
+}
+
+/* One inspection line down the object, once the brackets have locked. */
+.scan {
+  position: absolute;
+  left: calc(var(--ox) * 100%);
+  inline-size: calc(var(--ow) * 100%);
+  top: calc(var(--oy) * 100%);
+  block-size: 1px;
+  background: color-mix(in oklab, var(--world-light) 85%, transparent);
+  opacity: 0;
+}
+
+.panel[data-engaged] .scan {
+  animation: reta-scan 1100ms var(--ease-standard) 380ms both;
+}
+
+@keyframes reta-scan {
+  0% {
+    opacity: 0;
+    top: calc(var(--oy) * 100%);
+  }
+  12% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    top: calc((var(--oy) + var(--oh)) * 100%);
+  }
+}
+
+/* --- GLOW: illumination ------------------------------------------------------ */
+
+/* The set dims (an overlay, not a filter on the photograph) while a light
+   comes up behind the object and leans toward the pointer (the light layer
+   is moved; its gradient is never re-drawn). */
+.panel[data-world="glow"] .dim {
+  background: rgb(0 0 0 / 0.3);
+  transition: opacity 360ms var(--ease-standard);
+}
+
+.panel[data-world="glow"] .behind {
+  inset: -10%;
+  background: radial-gradient(
+    34% 30% at 50% 46%,
+    color-mix(in oklab, var(--world-light) 70%, transparent),
+    color-mix(in oklab, var(--world-accent) 30%, transparent) 45%,
+    transparent 72%
+  );
+  transform: translateX(calc(var(--px, 0) * 8%)) scale(0.9);
+  transition:
+    opacity 380ms var(--ease-standard),
+    transform 420ms var(--ease-settle);
+}
+
+.panel[data-world="glow"][data-engaged] .dim,
+.panel[data-world="glow"][data-engaged] .behind {
+  opacity: 1;
+}
+
+.panel[data-world="glow"][data-engaged] .behind {
+  transform: translateX(calc(var(--px, 0) * 8%)) scale(1);
+}
+
+/* --- GHK-Cu: material -------------------------------------------------------- */
+
+/* The plate takes the pointer's weight: a few degrees of tilt (its own
+   perspective, no 3D context to keep), the vial shifting against it as an
+   object standing proud of a surface does, its shadow sliding the other way,
+   and copper light crossing the set behind it. */
+.panel[data-world="ghk-cu"][data-engaged] .frame {
+  transform: perspective(900px) rotateY(calc(var(--px, 0) * 9deg))
+    rotateX(calc(var(--py, 0) * -6deg));
+}
+
+.panel[data-world="ghk-cu"][data-engaged] .specimen {
+  transform: translate(calc(var(--px, 0) * 0.6rem), calc(var(--py, 0) * 0.3rem)) scale(1.02);
+}
+
+.panel[data-world="ghk-cu"] .shadow {
+  inset: auto 25% 10% 25%;
+  block-size: 8%;
+  background: radial-gradient(closest-side, rgb(0 0 0 / 0.5), transparent);
+  transform: translateX(calc(var(--px, 0) * -0.8rem));
+  transition:
+    opacity 300ms var(--ease-standard),
+    transform 420ms var(--ease-settle);
+}
+
+.panel[data-world="ghk-cu"] .sheen {
+  inset: 0 -40%;
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    color-mix(in oklab, var(--world-accent) 22%, transparent) 44%,
+    color-mix(in oklab, var(--world-light) 18%, transparent) 50%,
+    color-mix(in oklab, var(--world-accent) 22%, transparent) 56%,
+    transparent 70%
+  );
+  transform: translateX(calc(var(--px, 0) * 22%));
+  transition:
+    opacity 300ms var(--ease-standard),
+    transform 420ms var(--ease-settle);
+}
+
+.panel[data-world="ghk-cu"][data-engaged] .sheen,
+.panel[data-world="ghk-cu"][data-engaged] .shadow {
+  opacity: 1;
+}
+
+/* The sheen and shadow sit under the vial, never over the glass. */
+.panel[data-world="ghk-cu"] .specimen {
+  z-index: 1;
+}
+
+/* With no pointer (a phone's shelf), the sheen burnishes across once and
+   the plate settles from a little weight. */
+@media (hover: none), (pointer: coarse) {
+  .panel[data-world="ghk-cu"][data-engaged] .sheen {
+    animation: ghk-burnish 1100ms var(--ease-standard) both;
+  }
+  .panel[data-world="ghk-cu"][data-engaged] .frame {
+    animation: ghk-weight 800ms var(--ease-settle) both;
+  }
+}
+
+@keyframes ghk-burnish {
+  from {
+    transform: translateX(-30%);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(30%);
+    opacity: 0;
+  }
+}
+
+@keyframes ghk-weight {
+  from {
+    transform: perspective(900px) rotateY(-8deg) rotateX(3deg);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .frame,
+  .specimen,
+  .calib > [data-c] {
+    transition: none;
+  }
+}

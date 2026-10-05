@@ -1,5 +1,8 @@
 import Link from "next/link";
 
+import { EvidenceStructure, type EvidenceStructureCopy } from "./EvidenceStructure";
+
+import type { DiscoveryAreaId } from "@/data/discovery";
 import styles from "./ScienceBand.module.css";
 
 /**
@@ -18,6 +21,7 @@ export function ScienceBand({
   lede,
   stats,
   actions,
+  structure,
 }: {
   index: string;
   label: string;
@@ -25,6 +29,18 @@ export function ScienceBand({
   lede: string;
   stats: readonly { value: number; label: string }[];
   actions: readonly { href: string; label: string }[];
+  /**
+   * The counts as the sets they count (motion pass 2): every reference,
+   * profile and area as a mark, with the citations between them. Without it,
+   * the three figures alone.
+   */
+  structure?: {
+    labels: { profiles: string; references: string; areas: string };
+    profiles: readonly { name: string; refs: readonly number[]; areas: readonly number[] }[];
+    references: readonly { label: string }[];
+    areas: readonly { id: DiscoveryAreaId; label: string }[];
+    copy: EvidenceStructureCopy;
+  };
 }) {
   return (
     <section className={styles.band} aria-labelledby="science-title">
@@ -45,14 +61,18 @@ export function ScienceBand({
             ))}
           </div>
         </div>
-        <dl className={styles.stats}>
-          {stats.map((stat) => (
-            <div key={stat.label} className={styles.stat}>
-              <dt className={styles.statLabel}>{stat.label}</dt>
-              <dd className={styles.statValue}>{String(stat.value).padStart(2, "0")}</dd>
-            </div>
-          ))}
-        </dl>
+        {structure ? (
+          <EvidenceStructure {...structure} />
+        ) : (
+          <dl className={styles.stats}>
+            {stats.map((stat) => (
+              <div key={stat.label} className={styles.stat}>
+                <dt className={styles.statLabel}>{stat.label}</dt>
+                <dd className={styles.statValue}>{String(stat.value).padStart(2, "0")}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
       </div>
     </section>
   );

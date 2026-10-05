@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ViewTransition } from "react";
 
 import { SectionHeader } from "@/components/layout";
 import { Container, Section } from "@/components/primitives";
@@ -17,8 +19,10 @@ import {
 import { QualityRecord } from "@/components/quality";
 import { CitationMarks, CitationRail } from "@/components/research";
 import { SourceTether } from "@/components/motion/SourceTether";
+import { TermLens } from "@/components/motion/TermLens";
+import { RECORD_NAVIGATION, recordNames } from "@/components/research/recordTransition";
 import { Body, Mono } from "@/components/typography";
-import { ProductCard, TextLink } from "@/components/ui";
+import { TextLink } from "@/components/ui";
 import { PageTransition } from "@/components/vial-transition/PageTransition";
 import { BENCH } from "@/components/spec-ribbon/benches";
 import { RibbonBench } from "@/components/spec-ribbon/RibbonBench";
@@ -28,12 +32,13 @@ import { siteConfig } from "@/config/site";
 import { getWorld } from "@/config/worlds";
 import { commerceStill, galleryImages, productMedia, resolveStageStill } from "@/content/media";
 import { ProductBench, type BenchSpecimen } from "@/components/product/bench/ProductBench";
+import { CatalogueDirectory, type DirectoryGroup } from "@/components/product/CatalogueDirectory";
 import { blendConstituents } from "@/components/product/glow/composition";
 import { GlowConstituents } from "@/components/product/glow/GlowConstituents";
 import { GlowComposition } from "@/components/product/glow/GlowComposition";
 import { specimenFor } from "@/components/vial-transition/specimens";
 import { compoundRecord, hasRecord, lineIds } from "@/content/compendium";
-import { termsInText } from "@/content/glossary";
+import { termSpans, termsInText } from "@/content/glossary";
 import { publicOverview } from "@/content/overview";
 import { referencesForProduct } from "@/content/research";
 import { resolveEvidence } from "@/domain/quality";
@@ -46,13 +51,12 @@ import {
   publishedProducts,
 } from "@/data/catalog";
 import { formatPrice, getAvailability, getPrices } from "@/data/commerce";
-import { productsInArea, publicAreasFor, relatedByArea } from "@/data/discovery";
+import { productsInArea, publicAreasFor } from "@/data/discovery";
 import { isLocale, localeTags } from "@/i18n/config";
 import { getDictionary } from "@/i18n/getDictionary";
 import { localizePath } from "@/i18n/routing";
 import { alternates } from "@/lib/alternates";
 import { bagEnabled } from "@/payments";
-import { cardDetails, cardDetailsCopy } from "@/server/catalog";
 import { shopProducts } from "@/server/storefront";
 import { fillTemplate, presentationSummary, socialMetadata } from "@/lib/meta";
 
@@ -161,12 +165,23 @@ export default async function ProductPage({
   /* Approved areas — 83 of 85 products have at least one. */
   const areas = publicAreasFor(product.slug);
   const gallery = galleryImages(media);
+  /*
+   * THE PRODUCT'S AREA AS ITS RECORD'S CONTEXT COLOUR (color pass). A standard
+   * product's record — specification, profile, quality, catalogue — reads in
+   * its first area's colour, in small doses: the section numbers and rules,
+   * the reading connections (citations, definitions). "Coloured ink entering
+   * the laboratory", never a world: a flagship keeps its own palette.
+   */
+  const areaContext = world ? undefined : (areas[0]?.id ?? undefined);
 
   /* Trust and understanding, resolved on the server. */
   const evidence = resolveEvidence(product);
+  /* As the bench's rail and the price line print a presentation. */
   const presentationLabels = product.variants.map((v) => ({
     variantId: v.id,
-    label: `${formatStrength(v.strength)}${v.vials ? ` × ${v.vials}` : ""}`,
+    label: `${formatStrength(v.strength)}${
+      v.vials ? ` ${dict.products.card.pack.replace("{n}", String(v.vials))}` : ""
+    }`,
   }));
   const overview = publicOverview(product.slug, locale);
   const references = referencesForProduct(product.slug);
@@ -185,22 +200,22 @@ export default async function ProductPage({
   const commerce = await getPrices(variantIds);
   const availability = await getAvailability(variantIds);
   /*
-   * RELATED — discovery-area overlap first, supplier category as the fallback.
-   *
-   * Area overlap is the better recommendation because it is the axis a
-   * customer is actually shopping along: someone on a metabolic compound wants
-   * other metabolic compounds, not whatever else the supplier filed under
-   * "peptides". `relatedByArea` ranks by how many areas two products share, so
-   * a double overlap outranks a single one.
-   *
-   * It returns nothing while assignments are drafts, so the category behaviour
-   * that shipped before is still what renders today — and the switch happens
-   * per product, as each one's areas are approved, with no flag to flip.
+   * THE SPECIMEN IN ITS PLACE (finishing pass). "Related" was three picks —
+   * the first names alphabetically among the products sharing an area — set
+   * as three large cards. What actually relates them is the catalogue area,
+   * so the area itself is shown: every product filed in it, A to Z, this one
+   * marked where it falls. Each of a product's areas is a group (75 products
+   * have one, 8 have two). A product with no approved area (2 of 85) keeps
+   * the supplier-category fallback that shipped before, as a group of its own.
    */
-  const byArea = relatedByArea(product.slug, 3).filter(isPublishable);
-  const related =
-    byArea.length > 0
-      ? byArea
+  const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name, "es");
+  const areaPools = areas.map((area) => ({
+    area,
+    pool: [...productsInArea(area.id)].filter(isPublishable).sort(byName),
+  }));
+  const fallbackPool =
+    areas.length > 0
+      ? []
       : products
           .filter(
             (p) => p.category === product.category && p.slug !== product.slug && isPublishable(p),
@@ -211,25 +226,66 @@ export default async function ProductPage({
    * offering bacteriostatic water alongside bacteriostatic water is noise.
    */
   const materials =
-    product.category === "solvents" ? [] : productsInArea("materials").filter(isPublishable);
+    product.category === "solvents" || areas.some((area) => area.id === "materials")
+      ? []
+      : [...productsInArea("materials")].filter(isPublishable).sort(byName);
 
-  const relatedPriceMap = await getPrices(
-    [...related, ...materials].flatMap((p) => p.variants.map((v) => v.id)),
+  const directoryProducts = [
+    ...areaPools.flatMap((group) => group.pool),
+    ...fallbackPool,
+    ...materials,
+  ];
+  const directoryPrices = await getPrices(
+    directoryProducts.flatMap((p) => p.variants.map((v) => v.id)),
   );
-  const priceFor = (pool: readonly (typeof products)[number][]) => (slugId: string) => {
-    const p = pool.find((r) => r.slug === slugId);
-    const m = p?.variants
-      .map((v) => relatedPriceMap.get(v.id))
+  const lowestPrice = (item: (typeof products)[number]) => {
+    const m = item.variants
+      .map((v) => directoryPrices.get(v.id))
       .filter((x): x is NonNullable<typeof x> => Boolean(x))
       .sort((a, b) => a.amount - b.amount)[0];
     return m ? formatPrice(m, localeTags[locale]) : null;
   };
-  const relatedPrice = priceFor(related);
-  /* The same reveal the catalogue cards carry, so a related card behaves like every other card. */
-  const detailsCopy = cardDetailsCopy(dict);
-  const detailsFor = (item: (typeof related)[number]) =>
-    cardDetails(item, { locale, dict, prices: relatedPriceMap });
-  const materialPrice = priceFor(materials);
+  const entryFor = (item: (typeof products)[number]) => ({
+    slug: item.slug,
+    name: item.name,
+    range: presentationRange(item) ?? "",
+    price: lowestPrice(item),
+    href: path(routes.product(item.slug)),
+    world: item.world,
+    area: publicAreasFor(item.slug)[0]?.id ?? null,
+    current: item.slug === product.slug,
+  });
+  const directory: DirectoryGroup[] = [
+    ...areaPools.map(({ area, pool }) => ({
+      id: area.id,
+      area: area.id,
+      name: dict.discovery.areas[area.id].short,
+      href: path(routes.area(area.slug)),
+      entries: pool.map(entryFor),
+    })),
+    ...(fallbackPool.length > 0
+      ? [
+          {
+            id: "category",
+            area: null,
+            name: dict.products.catalog.categoryLabels[product.category],
+            href: path(routes.products),
+            entries: [entryFor(product), ...fallbackPool.map(entryFor)].sort(byName),
+          },
+        ]
+      : []),
+    ...(materials.length > 0
+      ? [
+          {
+            id: "materials",
+            area: "materials" as const,
+            name: dict.discovery.areas.materials.short,
+            href: path(routes.area("materiales")),
+            entries: materials.map(entryFor),
+          },
+        ]
+      : []),
+  ];
 
   /*
    * THE OTHER WORLDS. On a flagship page only, and never this product: the
@@ -255,8 +311,7 @@ export default async function ProductPage({
     ...(overview ? ["overview"] : ["research"]),
     "quality",
     ...(otherFlagships.length > 0 ? ["worlds"] : []),
-    ...(related.length > 0 ? ["related"] : []),
-    ...(materials.length > 0 ? ["materials"] : []),
+    ...(directory.length > 0 ? ["related"] : []),
   ];
   const sectionIndex = (id: string) => String(renderedSections.indexOf(id) + 2).padStart(2, "0");
   /*
@@ -305,12 +360,26 @@ export default async function ProductPage({
       )
     : [];
 
+  /* The profile's glossary words, marked at first use in its own sentences
+     and opened in place (`TermLens`), as the full record does. */
+  const seenTerms = new Set<string>();
+  const termed = (text: string) =>
+    termSpans(text, locale, seenTerms).map((span, i) =>
+      span.term ? (
+        <Link key={i} href={path(routes.glossaryTerm(span.term.id))} data-term={span.term.id}>
+          {span.text}
+        </Link>
+      ) : (
+        span.text
+      ),
+    );
+
   const routeGroups: readonly {
     label: string;
     /** Areas and lines are destinations and carry the arrow; a term is a
         definition lookup, so it is set quiet and without one. */
     quiet?: boolean;
-    items: readonly { key: string; href: string; text: string }[];
+    items: readonly { key: string; href: string; text: string; term?: string }[];
   }[] = [
     {
       label: pdp.research.routes,
@@ -335,6 +404,7 @@ export default async function ProductPage({
         key: term.id,
         href: path(routes.glossaryTerm(term.id)),
         text: term.term[locale],
+        term: term.id,
       })),
     },
   ].filter((group) => group.items.length > 0);
@@ -363,6 +433,7 @@ export default async function ProductPage({
                     href={item.href}
                     arrow={!group.quiet}
                     tone={group.quiet ? "muted" : "default"}
+                    term={item.term}
                   >
                     {item.text}
                   </TextLink>
@@ -577,6 +648,7 @@ export default async function ProductPage({
         mode="quiet"
         rhythm="record"
         aria-labelledby="spec-title"
+        data-area={areaContext}
         className={ground("specifications")}
       >
         <Container width="full">
@@ -721,75 +793,124 @@ export default async function ProductPage({
           mode="quiet"
           rhythm="record"
           aria-labelledby="overview-title"
+          data-area={areaContext}
           className={ground("overview")}
         >
           <Container width="full">
-            <SectionHeader
-              scale="record"
-              index={sectionIndex("overview")}
-              label={`${pdp.overview.label} // ${pdp.overview.qualifier}`}
-              title={pdp.overview.title}
-              id="overview-title"
-              lede={overview.summary ?? undefined}
-              action={
-                /* The profile here is the product page's cut of the record;
-                   the record is the whole of it, numbered and indexed. */
-                hasRecord(product.slug) ? (
-                  <TextLink href={path(routes.compound(product.slug))}>
-                    {pdp.research.record}
-                  </TextLink>
-                ) : (
-                  <TextLink href={path(routes.research)}>{pdp.research.hub}</TextLink>
-                )
+            {/*
+             * THE PROFILE'S HEAD ON ITS AREA'S WASH — the standard product
+             * page's one Level-2 colour moment (Research colour completion).
+             * It is the same record whose full page opens on the same wash,
+             * so the colour travels with "Registro científico completo".
+             * Full width, from the section's top to under the header.
+             */}
+            <div
+              className={
+                areaContext
+                  ? "bg-(--area-wash) pb-(--space-md) shadow-[0_0_0_100vmax_var(--area-wash)] [--ink-muted:var(--ink-secondary)] [clip-path:inset(calc(-1*var(--section-pad-record))_-100vmax_0)]"
+                  : undefined
               }
-            />
+            >
+              <SectionHeader
+                scale="record"
+                index={sectionIndex("overview")}
+                label={`${pdp.overview.label} // ${pdp.overview.qualifier}`}
+                title={pdp.overview.title}
+                id="overview-title"
+                lede={overview.summary ?? undefined}
+                action={
+                  /* The profile here is the product page's cut of the record;
+                   the record is the whole of it, numbered and indexed. */
+                  hasRecord(product.slug) ? (
+                    <TextLink
+                      href={path(routes.compound(product.slug))}
+                      transitionTypes={[RECORD_NAVIGATION]}
+                    >
+                      {pdp.research.record}
+                    </TextLink>
+                  ) : (
+                    <TextLink href={path(routes.research)}>{pdp.research.hub}</TextLink>
+                  )
+                }
+              />
+            </div>
             {/* Claim ↔ source: a marker draws its leader to the rail, a source
-                marks the sentences that cite it (`SourceTether`). */}
-            <SourceTether className="grid gap-(--space-xl) lg:grid-cols-12">
-              <div className="flex flex-col gap-(--space-lg) lg:col-span-7">
-                {(
-                  [
-                    [pdp.overview.researchContext, overview.researchContext],
-                    [pdp.overview.mechanism, overview.mechanismNotes],
-                  ] as const
-                ).map(([heading, statements]) =>
-                  statements.length > 0 ? (
-                    <div key={heading} className="flex flex-col gap-(--space-sm)">
-                      <Mono size="2xs" className="text-(--ink-muted) uppercase">
-                        {heading}
-                      </Mono>
-                      {statements.map((statement) => {
-                        const cites = statement.references.map((r) => citationIndex(r.id));
-                        return (
-                          <Body key={statement.id} data-cites={cites.join(" ")}>
-                            {statement.text}{" "}
-                            <CitationMarks
-                              citations={cites}
-                              anchor={refAnchor}
-                              label={dict.knowledge.record.citation}
-                            />
-                          </Body>
-                        );
-                      })}
-                    </div>
-                  ) : null,
-                )}
-                {overview.technicalNotes.length > 0 ? (
-                  <div className="flex flex-col gap-(--space-sm)">
-                    <Mono size="2xs" className="text-(--ink-muted) uppercase">
-                      {pdp.overview.technical}
-                    </Mono>
-                    {overview.technicalNotes.map((note) => (
-                      <Body key={note}>{note}</Body>
-                    ))}
+                marks the sentences that cite it (`SourceTether`). The profile
+                is the record's first magnification: "Registro científico
+                completo" opens this frame out into the record's own head. */}
+            <TermLens>
+              <ViewTransition
+                name={hasRecord(product.slug) ? recordNames(product.slug).frame : undefined}
+                share="vt-record-frame"
+                default="none"
+              >
+                <SourceTether className="grid gap-(--space-xl) lg:grid-cols-12">
+                  <div className="flex flex-col gap-(--space-lg) lg:col-span-7">
+                    {(
+                      [
+                        [pdp.overview.researchContext, overview.researchContext],
+                        [pdp.overview.mechanism, overview.mechanismNotes],
+                      ] as const
+                    ).map(([heading, statements]) =>
+                      statements.length > 0 ? (
+                        <div key={heading} className="flex flex-col gap-(--space-sm)">
+                          <Mono size="2xs" className="text-(--ink-muted) uppercase">
+                            {heading}
+                          </Mono>
+                          {statements.map((statement) => {
+                            const cites = statement.references.map((r) => citationIndex(r.id));
+                            return (
+                              <Body key={statement.id} data-cites={cites.join(" ")}>
+                                {termed(statement.text)}{" "}
+                                <CitationMarks
+                                  citations={cites}
+                                  anchor={refAnchor}
+                                  label={dict.knowledge.record.citation}
+                                />
+                              </Body>
+                            );
+                          })}
+                        </div>
+                      ) : null,
+                    )}
+                    {overview.technicalNotes.length > 0 ? (
+                      <div className="flex flex-col gap-(--space-sm)">
+                        <Mono size="2xs" className="text-(--ink-muted) uppercase">
+                          {pdp.overview.technical}
+                        </Mono>
+                        {overview.technicalNotes.map((note) => (
+                          <Body key={note}>{note}</Body>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
-                ) : null}
+                  <div className="lg:col-span-5">
+                    <CitationRail
+                      references={references}
+                      copy={dict.citations}
+                      anchorPrefix="ref-"
+                    />
+                    {areaRoutes}
+                  </div>
+                </SourceTether>
+              </ViewTransition>
+              {/* The definitions the profile's marked words lift (TermLens). */}
+              <div hidden>
+                {recordTerms.map((term) => (
+                  <div key={term.id} data-def={term.id}>
+                    <p data-def-kind="">{dict.knowledge.glossary.categories[term.category]}</p>
+                    <p data-def-term="">
+                      {term.term[locale]}
+                      {term.abbreviation ? ` · ${term.abbreviation}` : ""}
+                    </p>
+                    <p data-def-text="">{term.definition[locale]}</p>
+                    <a href={path(routes.glossaryTerm(term.id))} data-def-link="">
+                      {dict.knowledge.record.termOpen} <span aria-hidden="true">→</span>
+                    </a>
+                  </div>
+                ))}
               </div>
-              <div className="lg:col-span-5">
-                <CitationRail references={references} copy={dict.citations} anchorPrefix="ref-" />
-                {areaRoutes}
-              </div>
-            </SourceTether>
+            </TermLens>
           </Container>
         </Section>
       ) : null}
@@ -808,6 +929,7 @@ export default async function ProductPage({
           mode="quiet"
           rhythm="record"
           aria-labelledby="research-title"
+          data-area={areaContext}
           className={ground("research")}
         >
           <Container width="full">
@@ -837,6 +959,7 @@ export default async function ProductPage({
         mode="quiet"
         rhythm="record"
         aria-labelledby="quality-title"
+        data-area={areaContext}
         id="calidad"
         className={ground("quality")}
       >
@@ -853,6 +976,16 @@ export default async function ProductPage({
             evidence={evidence}
             copy={dict.quality.record}
             localeTag={localeTags[locale]}
+            guides={{
+              coa: {
+                label: dict.quality.record.guides.coa,
+                href: path(routes.article("como-leer-un-certificado-de-analisis")),
+              },
+              model: {
+                label: dict.quality.record.guides.model,
+                href: `${path(routes.research)}#calidad`,
+              },
+            }}
           />
         </Container>
       </Section>
@@ -901,12 +1034,14 @@ export default async function ProductPage({
         </Section>
       ) : null}
 
-      {/* RELATED, by discovery area. */}
-      {related.length > 0 ? (
+      {/* IN THE CATALOGUE — its area, A to Z, then the laboratory materials.
+          Listed, never paired with a procedure (see the dictionary note). */}
+      {directory.length > 0 ? (
         <Section
           mode="quiet"
           rhythm="record"
           aria-labelledby="related-title"
+          data-area={areaContext}
           className={ground("related")}
         >
           <Container width="full">
@@ -916,101 +1051,13 @@ export default async function ProductPage({
               label={`${pdp.related.label} // ${pdp.related.qualifier}`}
               title={pdp.related.title}
               id="related-title"
+              lede={pdp.related.lede}
               action={<TextLink href={path(routes.products)}>{pdp.related.action}</TextLink>}
             />
-            {/* One even row: a buyer compares these side by side, so the
-                cards share a baseline rather than staggering. A swiped shelf
-                on a phone. */}
-            <div className="-mx-(--gutter) flex snap-x snap-mandatory scroll-px-(--gutter) [scrollbar-width:none] gap-(--space-sm) overflow-x-auto px-(--gutter) md:mx-0 md:grid md:grid-cols-3 md:items-start md:gap-(--gutter) md:overflow-visible md:px-0">
-              {related.map((item) => (
-                <div key={item.id} className="flex shrink-0 basis-[64%] snap-start md:basis-auto">
-                  <ProductCard
-                    slug={item.slug}
-                    world={item.world}
-                    worldLabel={item.world ? dict.home.products.worldLabels[item.world] : undefined}
-                    areaId={publicAreasFor(item.slug)[0]?.id ?? null}
-                    eyebrow={
-                      publicAreasFor(item.slug)[0]
-                        ? dict.discovery.areas[publicAreasFor(item.slug)[0].id].title
-                        : dict.products.catalog.categoryLabels[item.category]
-                    }
-                    name={item.name}
-                    subtitle={item.subtitle}
-                    href={path(routes.product(item.slug))}
-                    price={relatedPrice(item.slug)}
-                    priceFrom={dict.products.catalog.from}
-                    presentationRange={presentationRange(item)}
-                    presentations={item.variants.length}
-                    ctaLabel={dict.home.products.cta}
-                    details={detailsFor(item)}
-                    detailsCopy={detailsCopy}
-                    /* The vial transition, as from the catalogue: a related
-                       product and a material never coincide (solvents share
-                       no area or category with a compound), so each product
-                       appears once on the page. */
-                    transition
-                  />
-                </div>
-              ))}
-            </div>
-          </Container>
-        </Section>
-      ) : null}
-
-      {/*
-       * COMPLEMENTARY MATERIALS — after related compounds: the lower-ticket
-       * adjacency closes the page rather than interrupting it.
-       *
-       * The solvents are the catalogue's only low-ticket items and its most
-       * natural adjacency, and they were reachable only by scrolling 85 cards
-       * or knowing to filter. Shown on every compound page and on none of the
-       * solvent pages themselves.
-       *
-       * Verb-free by design: this lists products, it does not suggest a
-       * procedure. See the dictionary note.
-       */}
-      {materials.length > 0 ? (
-        <Section
-          mode="quiet"
-          rhythm="record"
-          aria-labelledby="materials-title"
-          className={ground("materials")}
-        >
-          <Container width="full">
-            <SectionHeader
-              scale="record"
-              index={sectionIndex("materials")}
-              label={`${pdp.materials.label} // ${pdp.materials.qualifier}`}
-              title={pdp.materials.title}
-              id="materials-title"
-              action={
-                <TextLink href={path(routes.area("materiales"))}>{pdp.materials.action}</TextLink>
-              }
+            <CatalogueDirectory
+              groups={directory}
+              copy={{ current: pdp.related.current, count: pdp.related.count }}
             />
-            {/* A swiped shelf on a phone, as on the homepage: three full-width
-                cards stacked were the longest scroll on the page. */}
-            <div className="-mx-(--gutter) flex snap-x snap-mandatory scroll-px-(--gutter) [scrollbar-width:none] gap-(--space-sm) overflow-x-auto px-(--gutter) md:mx-0 md:grid md:grid-cols-3 md:items-start md:gap-(--gutter) md:overflow-visible md:px-0">
-              {materials.map((item) => (
-                <div key={item.id} className="flex shrink-0 basis-[64%] snap-start md:basis-auto">
-                  <ProductCard
-                    slug={item.slug}
-                    world={null}
-                    areaId="materials"
-                    eyebrow={dict.discovery.areas.materials.title}
-                    name={item.name}
-                    href={path(routes.product(item.slug))}
-                    price={materialPrice(item.slug)}
-                    priceFrom={dict.products.catalog.from}
-                    presentationRange={presentationRange(item)}
-                    presentations={item.variants.length}
-                    ctaLabel={dict.home.products.cta}
-                    details={detailsFor(item)}
-                    detailsCopy={detailsCopy}
-                    transition
-                  />
-                </div>
-              ))}
-            </div>
           </Container>
         </Section>
       ) : null}

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { NeogenMark } from "@/components/brand/NeogenMark";
 import { ResearchUseNotice } from "@/components/commerce";
 import { Container, Section } from "@/components/primitives";
 import {
@@ -12,6 +13,8 @@ import {
 } from "@/components/research";
 import { SourceTether } from "@/components/motion/SourceTether";
 import { TermLens } from "@/components/motion/TermLens";
+import { RecordPageTransition } from "@/components/research/RecordPageTransition";
+import { recordNames } from "@/components/research/recordTransition";
 import { routes } from "@/config/routes";
 import { compoundRecord, recordSlugs, relatedByLines } from "@/content/compendium";
 import { termSpans, termsInText } from "@/content/glossary";
@@ -25,6 +28,7 @@ import { socialMetadata } from "@/lib/meta";
 import { count, documentCount, fill, linkableLines, presentationLabels } from "@/server/knowledge";
 
 import doc from "@/components/research/KnowledgeDocument.module.css";
+import { AreaMarks } from "@/components/ui/AreaMarks";
 
 import styles from "./page.module.css";
 
@@ -195,341 +199,376 @@ export default async function CompoundRecordPage({
   );
 
   return (
-    <Section mode="quiet" aria-labelledby="record-title">
-      <Container width="full">
-        <KnowledgeHead
-          crumbs={[
-            { label: dict.knowledge.crumbs.research, href: path(routes.research) },
-            { label: dict.knowledge.crumbs.compendium, href: path(routes.compendium) },
-          ]}
-          crumbsLabel={dict.knowledge.crumbs.research}
-          eyebrow={[copy.label, ...areas.map((a) => dict.discovery.areas[a.id].title)].join(" // ")}
-          title={product.name}
-          titleId="record-title"
-          lede={record.summary ?? undefined}
-          meta={[
-            ...(product.subtitle ? [product.subtitle] : []),
-            count(statementCount, counts.statements, counts.statement),
-            count(record.references.length, counts.references, counts.reference),
-            ...(record.functions.length > 0
-              ? [count(record.functions.length, counts.lines, counts.line)]
-              : []),
-          ]}
-        />
+    <RecordPageTransition>
+      {/* The record's first area is its context colour (color pass): the head
+          closes on it, and its index, numbers and connections carry it — the
+          same colour its compendium row opened in. Membership, nothing else. */}
+      <Section mode="quiet" aria-labelledby="record-title" data-area={areas[0]?.id}>
+        <Container width="full">
+          <KnowledgeHead
+            crumbs={[
+              { label: dict.knowledge.crumbs.research, href: path(routes.research) },
+              { label: dict.knowledge.crumbs.compendium, href: path(routes.compendium) },
+            ]}
+            crumbsLabel={dict.knowledge.crumbs.research}
+            eyebrow={[copy.label, ...areas.map((a) => dict.discovery.areas[a.id].title)].join(
+              " // ",
+            )}
+            title={product.name}
+            titleId="record-title"
+            transition={recordNames(product.slug)}
+            areas={areas.map((a) => a.id)}
+            lede={record.summary ?? undefined}
+            meta={[
+              ...(product.subtitle ? [product.subtitle] : []),
+              count(statementCount, counts.statements, counts.statement),
+              count(record.references.length, counts.references, counts.reference),
+              ...(record.functions.length > 0
+                ? [count(record.functions.length, counts.lines, counts.line)]
+                : []),
+            ]}
+          />
 
-        <div className={doc.layout}>
-          <div className={doc.rail}>
-            <SectionIndex
-              items={sections.map(({ id, label, meta }) => ({ id, label, meta }))}
-              label={copy.index}
-              title={copy.index}
-            />
-          </div>
+          <div className={doc.layout}>
+            <div className={doc.rail}>
+              <SectionIndex
+                items={sections.map(({ id, label, meta }) => ({ id, label, meta }))}
+                label={copy.index}
+                title={copy.index}
+              />
+            </div>
 
-          <TermLens className={doc.document}>
-            <SourceTether>
-              {/* 01 — identity: what the catalogue itself states. */}
-              <section id="identidad" aria-labelledby="identidad-h" className={doc.section}>
-                {heading("identity", "identidad", copy.sections.identity)}
-                <table className={styles.identity}>
-                  <caption className={doc.srOnly}>{copy.identity.caption}</caption>
-                  <tbody>
-                    <tr>
-                      <th scope="row">{copy.identity.name}</th>
-                      <td>{product.name}</td>
-                    </tr>
-                    {product.subtitle ? (
+            <TermLens className={doc.document}>
+              <SourceTether>
+                {/* 01 — identity: what the catalogue itself states. */}
+                <section id="identidad" aria-labelledby="identidad-h" className={doc.section}>
+                  {heading("identity", "identidad", copy.sections.identity)}
+                  <table className={styles.identity}>
+                    <caption className={doc.srOnly}>{copy.identity.caption}</caption>
+                    <tbody>
                       <tr>
-                        <th scope="row">{copy.identity.alias}</th>
-                        <td>{product.subtitle}</td>
+                        <th scope="row">{copy.identity.name}</th>
+                        <td>{product.name}</td>
                       </tr>
-                    ) : null}
-                    <tr>
-                      <th scope="row">{copy.identity.type}</th>
-                      <td>{dict.productTypes[productType(product)]}</td>
-                    </tr>
-                    {product.composition ? (
+                      {product.subtitle ? (
+                        <tr>
+                          <th scope="row">{copy.identity.alias}</th>
+                          <td>{product.subtitle}</td>
+                        </tr>
+                      ) : null}
                       <tr>
-                        <th scope="row">{copy.identity.composition}</th>
-                        <td>{product.composition}</td>
+                        <th scope="row">{copy.identity.type}</th>
+                        <td>{dict.productTypes[productType(product)]}</td>
                       </tr>
-                    ) : null}
-                    {record.identity?.formula ? (
+                      {product.composition ? (
+                        <tr>
+                          <th scope="row">{copy.identity.composition}</th>
+                          <td>{product.composition}</td>
+                        </tr>
+                      ) : null}
+                      {record.identity?.formula ? (
+                        <tr>
+                          <th scope="row">{copy.identity.formula}</th>
+                          <td className={styles.mono}>{record.identity.formula}</td>
+                        </tr>
+                      ) : null}
+                      {record.identity?.molecularMass ? (
+                        <tr>
+                          <th scope="row">{copy.identity.mass}</th>
+                          <td className={styles.mono}>{record.identity.molecularMass} g/mol</td>
+                        </tr>
+                      ) : null}
+                      {record.identity?.sequence ? (
+                        <tr>
+                          <th scope="row">{copy.identity.sequence}</th>
+                          <td className={styles.mono}>{record.identity.sequence}</td>
+                        </tr>
+                      ) : null}
+                      {record.identity?.cas ? (
+                        <tr>
+                          <th scope="row">{copy.identity.cas}</th>
+                          <td className={styles.mono}>{record.identity.cas}</td>
+                        </tr>
+                      ) : null}
                       <tr>
-                        <th scope="row">{copy.identity.formula}</th>
-                        <td className={styles.mono}>{record.identity.formula}</td>
-                      </tr>
-                    ) : null}
-                    {record.identity?.molecularMass ? (
-                      <tr>
-                        <th scope="row">{copy.identity.mass}</th>
-                        <td className={styles.mono}>{record.identity.molecularMass} g/mol</td>
-                      </tr>
-                    ) : null}
-                    {record.identity?.sequence ? (
-                      <tr>
-                        <th scope="row">{copy.identity.sequence}</th>
-                        <td className={styles.mono}>{record.identity.sequence}</td>
-                      </tr>
-                    ) : null}
-                    {record.identity?.cas ? (
-                      <tr>
-                        <th scope="row">{copy.identity.cas}</th>
-                        <td className={styles.mono}>{record.identity.cas}</td>
-                      </tr>
-                    ) : null}
-                    <tr>
-                      <th scope="row">{copy.identity.presentations}</th>
-                      <td>
-                        {presentationLabels(product).map((label, i) => (
-                          <span key={label} className={styles.nowrap}>
-                            {i > 0 ? " · " : null}
-                            {label}
-                          </span>
-                        ))}
-                      </td>
-                    </tr>
-                    {areas.length > 0 ? (
-                      <tr>
-                        <th scope="row">{copy.identity.areas}</th>
+                        <th scope="row">{copy.identity.presentations}</th>
                         <td>
-                          {areas.map((area, i) => (
-                            <span key={area.id}>
+                          {presentationLabels(product).map((label, i) => (
+                            <span key={label} className={styles.nowrap}>
                               {i > 0 ? " · " : null}
-                              <Link href={path(routes.area(area.slug))} className={doc.inline}>
-                                {dict.discovery.areas[area.id].title}
-                              </Link>
+                              {label}
                             </span>
                           ))}
                         </td>
                       </tr>
-                    ) : null}
-                    {record.functions.length > 0 ? (
-                      <tr>
-                        <th scope="row">{copy.identity.lines}</th>
-                        <td>
-                          {record.functions.map((fn, i) => (
-                            <span key={fn.id}>
-                              {i > 0 ? " · " : null}
-                              {linkable.has(fn.id) ? (
-                                <Link href={path(routes.line(fn.id))} className={doc.inline}>
-                                  {fn.label[locale]}
+                      {areas.length > 0 ? (
+                        <tr>
+                          <th scope="row">{copy.identity.areas}</th>
+                          <td>
+                            {areas.map((area, i) => (
+                              <span key={area.id}>
+                                {i > 0 ? " · " : null}
+                                <AreaMarks areas={[area.id]} />{" "}
+                                <Link href={path(routes.area(area.slug))} className={doc.inline}>
+                                  {dict.discovery.areas[area.id].title}
                                 </Link>
-                              ) : (
-                                fn.label[locale]
-                              )}
-                            </span>
-                          ))}
-                        </td>
-                      </tr>
-                    ) : null}
-                    {record.identity ? (
-                      <tr>
-                        <th scope="row">{copy.identity.source}</th>
-                        <td>
-                          {record.identity.sourceUrl ? (
-                            <a
-                              href={record.identity.sourceUrl}
-                              className={doc.inline}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              {record.identity.sourceLabel} ↗
-                            </a>
-                          ) : (
-                            record.identity.sourceLabel
-                          )}
-                        </td>
-                      </tr>
-                    ) : null}
-                  </tbody>
-                </table>
-              </section>
-
-              {record.mechanism.length > 0 ? (
-                <section id="mecanismo" aria-labelledby="mecanismo-h" className={doc.section}>
-                  {heading("mechanism", "mecanismo", copy.sections.mechanism)}
-                  <p className={doc.lede}>{copy.ledes.mechanism}</p>
-                  {statements(record.mechanism)}
+                              </span>
+                            ))}
+                          </td>
+                        </tr>
+                      ) : null}
+                      {record.functions.length > 0 ? (
+                        <tr>
+                          <th scope="row">{copy.identity.lines}</th>
+                          <td>
+                            {record.functions.map((fn, i) => (
+                              <span key={fn.id}>
+                                {i > 0 ? " · " : null}
+                                {linkable.has(fn.id) ? (
+                                  <Link href={path(routes.line(fn.id))} className={doc.inline}>
+                                    {fn.label[locale]}
+                                  </Link>
+                                ) : (
+                                  fn.label[locale]
+                                )}
+                              </span>
+                            ))}
+                          </td>
+                        </tr>
+                      ) : null}
+                      {record.identity ? (
+                        <tr>
+                          <th scope="row">{copy.identity.source}</th>
+                          <td>
+                            {record.identity.sourceUrl ? (
+                              <a
+                                href={record.identity.sourceUrl}
+                                className={doc.inline}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                {record.identity.sourceLabel} ↗
+                              </a>
+                            ) : (
+                              record.identity.sourceLabel
+                            )}
+                          </td>
+                        </tr>
+                      ) : null}
+                    </tbody>
+                  </table>
                 </section>
-              ) : null}
 
-              {record.research.length > 0 ? (
+                {record.mechanism.length > 0 ? (
+                  <section id="mecanismo" aria-labelledby="mecanismo-h" className={doc.section}>
+                    {heading("mechanism", "mecanismo", copy.sections.mechanism)}
+                    <p className={doc.lede}>{copy.ledes.mechanism}</p>
+                    {statements(record.mechanism)}
+                  </section>
+                ) : null}
+
+                {record.research.length > 0 ? (
+                  <section
+                    id="investigacion"
+                    aria-labelledby="investigacion-h"
+                    className={doc.section}
+                  >
+                    {heading("research", "investigacion", copy.sections.research)}
+                    <p className={doc.lede}>{copy.ledes.research}</p>
+                    {statements(record.research)}
+                  </section>
+                ) : null}
+
+                {record.byArea.length > 0 ? (
+                  <section id="por-area" aria-labelledby="por-area-h" className={doc.section}>
+                    {heading("areas", "por-area", copy.sections.areas)}
+                    <p className={doc.lede}>{copy.ledes.areas}</p>
+                    <dl className={styles.byArea}>
+                      {record.byArea.map((entry) => (
+                        <div key={entry.statement.id}>
+                          <dt>
+                            <AreaMarks areas={[entry.area]} />{" "}
+                            {dict.discovery.areas[entry.area].title}
+                          </dt>
+                          <dd data-cites={entry.statement.citations.join(" ")}>
+                            {termed(entry.statement.text)}{" "}
+                            <CitationMarks
+                              citations={entry.statement.citations}
+                              anchor={refAnchor}
+                              label={copy.citation}
+                            />
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </section>
+                ) : null}
+
+                {record.notes.length > 0 ? (
+                  <section id="notas" aria-labelledby="notas-h" className={doc.section}>
+                    {heading("notes", "notas", copy.sections.notes)}
+                    <p className={doc.lede}>{copy.ledes.notes}</p>
+                    <div className={styles.notes}>
+                      {record.notes.map((note) => (
+                        <p key={note}>{note}</p>
+                      ))}
+                    </div>
+                  </section>
+                ) : null}
+
+                {record.references.length > 0 ? (
+                  <section id="referencias" aria-labelledby="referencias-h" className={doc.section}>
+                    {heading("references", "referencias", copy.sections.references)}
+                    <p className={doc.lede}>{copy.ledes.references}</p>
+                    <CitationRail
+                      references={record.references}
+                      copy={dict.citations}
+                      anchorPrefix="ref-"
+                    />
+                  </section>
+                ) : null}
+
                 <section
-                  id="investigacion"
-                  aria-labelledby="investigacion-h"
+                  id="documentacion"
+                  aria-labelledby="documentacion-h"
                   className={doc.section}
                 >
-                  {heading("research", "investigacion", copy.sections.research)}
-                  <p className={doc.lede}>{copy.ledes.research}</p>
-                  {statements(record.research)}
-                </section>
-              ) : null}
-
-              {record.byArea.length > 0 ? (
-                <section id="por-area" aria-labelledby="por-area-h" className={doc.section}>
-                  {heading("areas", "por-area", copy.sections.areas)}
-                  <p className={doc.lede}>{copy.ledes.areas}</p>
-                  <dl className={styles.byArea}>
-                    {record.byArea.map((entry) => (
-                      <div key={entry.statement.id}>
-                        <dt>{dict.discovery.areas[entry.area].title}</dt>
-                        <dd data-cites={entry.statement.citations.join(" ")}>
-                          {termed(entry.statement.text)}{" "}
-                          <CitationMarks
-                            citations={entry.statement.citations}
-                            anchor={refAnchor}
-                            label={copy.citation}
-                          />
-                        </dd>
-                      </div>
-                    ))}
-                  </dl>
-                </section>
-              ) : null}
-
-              {record.notes.length > 0 ? (
-                <section id="notas" aria-labelledby="notas-h" className={doc.section}>
-                  {heading("notes", "notas", copy.sections.notes)}
-                  <p className={doc.lede}>{copy.ledes.notes}</p>
-                  <div className={styles.notes}>
-                    {record.notes.map((note) => (
-                      <p key={note}>{note}</p>
-                    ))}
+                  {heading("documentation", "documentacion", copy.sections.documentation)}
+                  <div className={styles.split}>
+                    <p className={doc.body}>
+                      {documents === 0 ? dict.quality.record.emptyTitle : copy.documentation.body}
+                    </p>
+                    <div className={styles.splitAside}>
+                      {documents > 0 ? (
+                        <p className={doc.metaLine}>
+                          {count(documents, copy.documentation.count, copy.documentation.one)}
+                        </p>
+                      ) : null}
+                      <Link
+                        href={`${path(routes.product(product.slug))}#calidad`}
+                        className={doc.textLink}
+                      >
+                        {copy.documentation.link} <span aria-hidden="true">→</span>
+                      </Link>
+                    </div>
                   </div>
+                  {documents === 0 ? (
+                    <p className={doc.note}>{dict.quality.record.emptyBody}</p>
+                  ) : null}
                 </section>
-              ) : null}
 
-              {record.references.length > 0 ? (
-                <section id="referencias" aria-labelledby="referencias-h" className={doc.section}>
-                  {heading("references", "referencias", copy.sections.references)}
-                  <p className={doc.lede}>{copy.ledes.references}</p>
-                  <CitationRail
-                    references={record.references}
-                    copy={dict.citations}
-                    anchorPrefix="ref-"
-                  />
-                </section>
-              ) : null}
-
-              <section id="documentacion" aria-labelledby="documentacion-h" className={doc.section}>
-                {heading("documentation", "documentacion", copy.sections.documentation)}
-                <div className={styles.split}>
-                  <p className={doc.body}>
-                    {documents === 0 ? dict.quality.record.emptyTitle : copy.documentation.body}
-                  </p>
-                  <div className={styles.splitAside}>
-                    {documents > 0 ? (
-                      <p className={doc.metaLine}>
-                        {count(documents, copy.documentation.count, copy.documentation.one)}
+                <section id="catalogo" aria-labelledby="catalogo-h" className={doc.section}>
+                  {heading("product", "catalogo", copy.sections.product)}
+                  {/*
+                   * WHERE THE ARCHIVE MEETS NEOGEN. Everything above is the
+                   * literature's; this card is NEOGEN's own — the product it
+                   * sells — so it carries the mark, set before the name as the
+                   * label sets it. Pointing at the card lets the connections
+                   * go and reach again in the record's area colour, then ink.
+                   * Brand, not data: one mark, never beside a source.
+                   */}
+                  <div className={styles.productCard} data-mark-host="">
+                    <div className={styles.productMain}>
+                      <p className={styles.productName}>
+                        <NeogenMark className={styles.productMark} respond />
+                        {product.name}
                       </p>
-                    ) : null}
+                      <p className={doc.body}>{copy.product.body}</p>
+                      <ul className={styles.presentations}>
+                        {presentationLabels(product).map((label) => (
+                          <li key={label}>{label}</li>
+                        ))}
+                      </ul>
+                    </div>
                     <Link
-                      href={`${path(routes.product(product.slug))}#calidad`}
-                      className={doc.textLink}
+                      href={path(routes.product(product.slug))}
+                      className={styles.productAction}
                     >
-                      {copy.documentation.link} <span aria-hidden="true">→</span>
+                      {copy.product.link} <span aria-hidden="true">→</span>
                     </Link>
                   </div>
-                </div>
-                {documents === 0 ? (
-                  <p className={doc.note}>{dict.quality.record.emptyBody}</p>
-                ) : null}
-              </section>
+                  <ResearchUseNotice
+                    copy={dict.researchUse}
+                    href={path(routes.article("uso-exclusivo-en-investigacion"))}
+                    className={styles.notice}
+                  />
+                </section>
 
-              <section id="catalogo" aria-labelledby="catalogo-h" className={doc.section}>
-                {heading("product", "catalogo", copy.sections.product)}
-                <div className={styles.productCard}>
-                  <div className={styles.productMain}>
-                    <p className={styles.productName}>{product.name}</p>
-                    <p className={doc.body}>{copy.product.body}</p>
-                    <ul className={styles.presentations}>
-                      {presentationLabels(product).map((label) => (
-                        <li key={label}>{label}</li>
-                      ))}
-                    </ul>
+                <section id="relacionados" aria-labelledby="relacionados-h" className={doc.section}>
+                  {heading("related", "relacionados", copy.sections.related)}
+                  <div className={styles.related}>
+                    {related.length > 0 ? (
+                      <div className={styles.relatedGroup}>
+                        <h3 className={doc.groupTitle}>{copy.related.compounds}</h3>
+                        <p className={doc.note}>{copy.related.compoundsBody}</p>
+                        <ul className={styles.relatedList}>
+                          {related.map(({ product: other, shared }) => (
+                            <li key={other.slug}>
+                              <Link
+                                href={
+                                  withRecord.has(other.slug)
+                                    ? path(routes.compound(other.slug))
+                                    : path(routes.product(other.slug))
+                                }
+                                className={styles.relatedLink}
+                              >
+                                <span className={styles.relatedName}>{other.name}</span>
+                                <span className={styles.relatedMeta}>
+                                  {count(
+                                    shared.length,
+                                    copy.related.shared,
+                                    copy.related.sharedOne,
+                                  )}
+                                </span>
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+
+                    {terms.length > 0 ? (
+                      <div className={styles.relatedGroup}>
+                        <h3 className={doc.groupTitle}>{copy.related.terms}</h3>
+                        <p className={doc.note}>{copy.related.termsBody}</p>
+                        <ul className={doc.terms}>
+                          {terms.map((term) => (
+                            <li key={term.id}>
+                              <Link href={path(routes.glossaryTerm(term.id))} className={doc.term}>
+                                {term.term[locale]}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
                   </div>
-                  <Link href={path(routes.product(product.slug))} className={styles.productAction}>
-                    {copy.product.link} <span aria-hidden="true">→</span>
+
+                  <Link href={path(routes.compendium)} className={doc.textLink}>
+                    <span aria-hidden="true">←</span> {copy.related.back}
                   </Link>
-                </div>
-                <ResearchUseNotice
-                  copy={dict.researchUse}
-                  href={path(routes.article("uso-exclusivo-en-investigacion"))}
-                  className={styles.notice}
-                />
-              </section>
-
-              <section id="relacionados" aria-labelledby="relacionados-h" className={doc.section}>
-                {heading("related", "relacionados", copy.sections.related)}
-                <div className={styles.related}>
-                  {related.length > 0 ? (
-                    <div className={styles.relatedGroup}>
-                      <h3 className={doc.groupTitle}>{copy.related.compounds}</h3>
-                      <p className={doc.note}>{copy.related.compoundsBody}</p>
-                      <ul className={styles.relatedList}>
-                        {related.map(({ product: other, shared }) => (
-                          <li key={other.slug}>
-                            <Link
-                              href={
-                                withRecord.has(other.slug)
-                                  ? path(routes.compound(other.slug))
-                                  : path(routes.product(other.slug))
-                              }
-                              className={styles.relatedLink}
-                            >
-                              <span className={styles.relatedName}>{other.name}</span>
-                              <span className={styles.relatedMeta}>
-                                {count(shared.length, copy.related.shared, copy.related.sharedOne)}
-                              </span>
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ) : null}
-
-                  {terms.length > 0 ? (
-                    <div className={styles.relatedGroup}>
-                      <h3 className={doc.groupTitle}>{copy.related.terms}</h3>
-                      <p className={doc.note}>{copy.related.termsBody}</p>
-                      <ul className={doc.terms}>
-                        {terms.map((term) => (
-                          <li key={term.id}>
-                            <Link href={path(routes.glossaryTerm(term.id))} className={doc.term}>
-                              {term.term[locale]}
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ) : null}
-                </div>
-
-                <Link href={path(routes.compendium)} className={doc.textLink}>
-                  <span aria-hidden="true">←</span> {copy.related.back}
-                </Link>
-              </section>
-            </SourceTether>
-            {/* The definitions the marked words lift (TermLens). */}
-            <div hidden>
-              {terms.map((term) => (
-                <div key={term.id} data-def={term.id}>
-                  <p data-def-kind="">{dict.knowledge.glossary.categories[term.category]}</p>
-                  <p data-def-term="">
-                    {term.term[locale]}
-                    {term.abbreviation ? ` · ${term.abbreviation}` : ""}
-                  </p>
-                  <p data-def-text="">{term.definition[locale]}</p>
-                  <a href={path(routes.glossaryTerm(term.id))} data-def-link="">
-                    {copy.termOpen} <span aria-hidden="true">→</span>
-                  </a>
-                </div>
-              ))}
-            </div>
-          </TermLens>
-        </div>
-      </Container>
-    </Section>
+                </section>
+              </SourceTether>
+              {/* The definitions the marked words lift (TermLens). */}
+              <div hidden>
+                {terms.map((term) => (
+                  <div key={term.id} data-def={term.id}>
+                    <p data-def-kind="">{dict.knowledge.glossary.categories[term.category]}</p>
+                    <p data-def-term="">
+                      {term.term[locale]}
+                      {term.abbreviation ? ` · ${term.abbreviation}` : ""}
+                    </p>
+                    <p data-def-text="">{term.definition[locale]}</p>
+                    <a href={path(routes.glossaryTerm(term.id))} data-def-link="">
+                      {copy.termOpen} <span aria-hidden="true">→</span>
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </TermLens>
+          </div>
+        </Container>
+      </Section>
+    </RecordPageTransition>
   );
 }

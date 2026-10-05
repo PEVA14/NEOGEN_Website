@@ -8,7 +8,7 @@ Inline SVG or sprite assets.
   interactive parent an accessible name (see `VisuallyHidden`).
 
 The **brand mark is not an icon** and does not live here. It is the owner's
-artwork in `public/branding/`, applied as an alpha mask over `currentColor` —
-see CONVENTIONS §19. The favicon is generated from it into `src/app/icon.png`
+artwork in `public/branding/`, traced into `components/brand/markGeometry.ts`
+and drawn by `components/brand/NeogenMark` — see CONVENTIONS §19. The favicon is generated from it into `src/app/icon.png`
 by `npm run brand`; do not hand-draw a replacement, which is what `icon.svg`
 was before the real mark existed.

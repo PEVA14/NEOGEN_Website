@@ -1201,49 +1201,63 @@ node scripts/capture-studio.mjs <slug>...        # the studio still (dev server 
 
 The owner's artwork lives in `public/branding/`. Two files are theirs
 (`NEOGEN Branding.png`, the mark — the molecule; `NEOGEN Full Logo.png`, the
-lockup — mark + NEOGEN / PEPTIDES) and two are derived. Regenerate the derived
-ones with `npm run brand`; never edit them by hand.
+lockup — mark + NEOGEN / PEPTIDES) and the rest is derived. Regenerate the
+derived files with `npm run brand`; never edit them by hand.
 
-**Both sources are pure black on an alpha channel, and that is the design.**
-An all-black image with real alpha is a MASK, not a picture. So the site never
-places the mark as an `<img>`: it masks a block of `currentColor`.
+**There is no vector source, so the mark's geometry is MEASURED from the
+artwork.** `scripts/trace-mark.mjs` (run by `npm run brand`) traces the trimmed
+PNG's alpha channel, finds the five round parts from its distance transform,
+fits the four outer nodes as circles (≈0.4px RMS — they are true circles),
+keeps the hub's own traced outline (it is not quite a circle), and takes the
+four connections from the stretches of outline that lie on no node, each cut at
+the middle of its gap into a hub half and a node half. It then rasterises the
+parts together and compares them with the artwork: 98.96% pixel overlap (the
+rest is antialiasing); below 98.5% it refuses to write. Output:
+`src/components/brand/markGeometry.ts`. Nothing about the mark is drawn by
+hand, and the geometry is never edited — only regenerated.
 
-```css
-.mark {
-  block-size: 1.05em;
-  aspect-ratio: 389 / 485; /* the artwork's own trimmed box */
-  background-color: currentColor;
-  -webkit-mask: url("/branding/neogen-mark.png") no-repeat center / contain;
-  mask: url("/branding/neogen-mark.png") no-repeat center / contain;
-}
-```
+**One component draws it: `components/brand/NeogenMark`** (inline SVG,
+`fill: currentColor`, so it inks itself graphite on paper, paper on the footer
+and on whatever surface `HeaderSurfaceSync` flips the header to — what the alpha
+mask used to do). Drawings that are themselves SVG use `brand/MarkShape` (the
+same geometry, static, no wrapper). The caller sets the height; the width
+follows the artwork's box (389 × 485).
 
-One file then inks itself graphite on the light header, paper on the inverted
-footer, and paper again on whatever surface `HeaderSurfaceSync` flips the
-header to. An `<img>` would need a second, inverted export, and would still be
-the wrong one half the time.
+Its motion vocabulary is one idea — **points → connection → structure** — and
+every use is caused by the reader (CONVENTIONS' motion rules: nothing loops,
+breathes or plays on load):
 
-- **The derived files are trimmed to their ink** (`scripts/prepare-brand.mjs`),
-  so the file's box is the artwork's box and a caller only says how tall the
-  mark should be. The sources carry wide, uneven margins — the mark's ink is
-  389×485 inside a 447×531 sheet — and compensating for that at each call site
-  goes quietly wrong the next time the owner re-exports.
-- **The mark is decorative wherever the wordmark is beside it.** `aria-hidden`,
-  every time: the word NEOGEN is already the accessible name, and announcing
-  both reads as a stutter.
+| use               | what happens                                                                  | where                            |
+| ----------------- | ----------------------------------------------------------------------------- | -------------------------------- |
+| `form="points"`   | the nodes alone, unconnected — nothing here yet. Static.                      | empty bag, 404                   |
+| `assemble="hero"` | forms on the scroll range the poster NEOGEN lands on (desktop, homepage only) | header                           |
+| `assemble="view"` | forms as it is scrolled into view; reversible                                 | footer (the signature)           |
+| `assemble="now"`  | forms once, on mount — a completed action                                     | add-to-bag confirmation          |
+| `respond`         | on pointer/focus of its host, the connections let go and reach again          | header link, footer, record card |
+
+The assembly: the hub registers, the four nodes register, each connection
+reaches from BOTH ends and meets, clockwise from the top node, and each node
+is drawn ~2% toward the hub as its connection closes, then relaxes. On scroll
+it runs on CSS scroll/view timelines (`NeogenMark.module.css`); on a gesture,
+on native Web Animations (`markMotion.ts`). Inside `[data-area]`, `respond`
+answers in `--area-mark` and returns to ink; nowhere else is the mark coloured.
+
+- **The mark is decorative wherever the wordmark is beside it.** `aria-hidden`
+  by default; `label` only where it stands alone for the brand.
+- **Brand connections are never data.** The mark's nodes and connections mean
+  nothing. It is never placed where they could be read as compounds, sources,
+  research lines, mechanisms or relationships — so not in Research figures,
+  the archive, the lines, the glossary or references (whose own dots ARE
+  data), and never as a quality seal (it would read as a certification).
 - **Use the MARK at small sizes and the LOCKUP only where "PEPTIDES" survives.**
   The second word is the first thing to go. It holds on a rendered label at
   84px of a 2048² sheet; it does not hold in a 200-unit SVG plate or in the
   header, which take the mark alone.
-- **Where it is today:** the header (before the wordmark), the footer (over the
-  oversized wordmark), `src/app/icon.png` (the favicon — paper mark on
-  charcoal), the drawn label of every product without its own artwork
-  (`studio/label.ts`), and the drawn `SpecimenPlate`.
-- **An `<image>` inside SVG cannot take `currentColor`.** `SpecimenPlate` uses
-  the artwork's own black against `--vial-label-ink`, which is charcoal on both
-  of that component's surfaces. If a surface ever needs a different label ink,
-  that mark has to become a mask like the others.
+- **The PNGs remain where a raster is the right tool:** the favicon
+  (`src/app/icon.png`), and the drawn canvas label of every product without
+  its own artwork (`studio/label.ts`, the lockup and mark as images on a
+  2048² canvas). The spec ribbon prints the lockup PNG.
 - **Replacing the artwork:** drop the new export over the source file keeping
   its name, run `npm run brand`, commit what it writes. If a future export is
-  not black-on-alpha, the masking stops working and the mark renders as a solid
-  block — say so rather than working around it.
+  not black-on-alpha the trace fails loudly — say so rather than working
+  around it.

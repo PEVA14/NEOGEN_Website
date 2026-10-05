@@ -14,7 +14,7 @@ import {
   stageDpr,
   stageFrameloop,
 } from "./RetaCanvas";
-import { whenScrollQuiet } from "./scrollQuiet";
+import { whenStill } from "./scrollQuiet";
 import {
   markDrawn,
   markHostFailed,
@@ -87,18 +87,27 @@ export default function SharedCanvas({
     const idle = (window as { requestIdleCallback?: Window["requestIdleCallback"] })
       .requestIdleCallback;
     let cancelIdle = () => {};
-    const cancelQuiet = whenScrollQuiet(() => {
+    /* And not while the reader is pointing or scrolling at all (owner,
+       2026-10-04): a stage's preparation landing as the pointer crossed Tres
+       mundos made the cards stall and the next scroll lag. */
+    let cancelAgain = () => {};
+    /* Still when the idle moment comes, too — or wait for stillness again. */
+    const start = () => {
+      cancelAgain = whenStill(() => setWarming(next));
+    };
+    const cancelQuiet = whenStill(() => {
       if (!idle) {
-        const handle = window.setTimeout(() => setWarming(next), 500);
+        const handle = window.setTimeout(start, 500);
         cancelIdle = () => window.clearTimeout(handle);
         return;
       }
-      const handle = idle(() => setWarming(next), { timeout: 3000 });
+      const handle = idle(start, { timeout: 3000 });
       cancelIdle = () => window.cancelIdleCallback(handle);
     });
     return () => {
       cancelQuiet();
       cancelIdle();
+      cancelAgain();
     };
   }, [candidate]);
 
@@ -123,10 +132,13 @@ export default function SharedCanvas({
               compiled={compiled}
               onCompiled={() => setCompiledKey(key)}
               onFirstFrame={() => setFirstFrameKey(key)}
-              /* A stage holds this canvas only within its hand-over margin,
-                 so it draws whenever it does: a stage handed back is drawn
-                 before it is in view (it waited for its own box to be). */
-              pauseOffscreen={false}
+              /* Drawn wherever it is until it has been revealed — so a stage
+                 handed the canvas ahead of time, or handed it back, is ready
+                 before it is in view — and then only on screen (owner,
+                 2026-10-04: scrolling lagged after Tres mundos). RETA takes
+                 the canvas while Tres mundos is still being read, and drew
+                 its glass every frame out of sight the whole way down. */
+              pauseOffscreen={drawnStage === active.id}
             />
           </Suspense>
         ) : null}

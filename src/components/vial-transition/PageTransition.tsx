@@ -1,5 +1,9 @@
 import { ViewTransition, type ReactNode } from "react";
 
+import { RECORD_NAVIGATION } from "@/components/research/recordTransition";
+
+import "@/components/research/recordTransition.css";
+
 /** The transition type a card's link carries (`<Link transitionTypes>`). */
 export const SPECIMEN_NAVIGATION = "vt-specimen";
 
@@ -17,7 +21,13 @@ export function PageTransition({ children }: { children: ReactNode }) {
   return (
     <ViewTransition
       enter={{ [SPECIMEN_NAVIGATION]: "vt-page-in", default: "none" }}
-      exit={{ [SPECIMEN_NAVIGATION]: "vt-page-out", default: "none" }}
+      /* A product page's profile can also open into its full record
+         (`recordTransition.ts`): the page steps back as the record arrives. */
+      exit={{
+        [SPECIMEN_NAVIGATION]: "vt-page-out",
+        [RECORD_NAVIGATION]: "vt-record-out",
+        default: "none",
+      }}
       default="none"
     >
       {children}

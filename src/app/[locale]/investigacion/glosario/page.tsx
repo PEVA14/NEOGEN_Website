@@ -19,6 +19,7 @@ import { getDictionary } from "@/i18n/getDictionary";
 import { localizePath } from "@/i18n/routing";
 import { alternates } from "@/lib/alternates";
 import { socialMetadata } from "@/lib/meta";
+import { publicAreasFor } from "@/data/discovery";
 import { count, fill } from "@/server/knowledge";
 
 import type { Metadata } from "next";
@@ -168,7 +169,12 @@ export default async function GlossaryPage({ params }: { params: Promise<{ local
          to "where is this word used", and a note the wider one. */
       usedIn: [
         ...(used.get(term.id)?.records ?? [])
-          .map((slug) => ({ name: names.get(slug) ?? slug, href: path(routes.compound(slug)) }))
+          .map((slug) => ({
+            name: names.get(slug) ?? slug,
+            href: path(routes.compound(slug)),
+            /* Its catalogue areas, for its registration marks (color pass). */
+            areas: publicAreasFor(slug).map((a) => a.id),
+          }))
           .sort((a, b) => a.name.localeCompare(b.name, "es")),
         ...(used.get(term.id)?.notes ?? [])
           /* The note a term already offers as "read more" is not also listed
@@ -237,6 +243,10 @@ export default async function GlossaryPage({ params }: { params: Promise<{ local
               more: copy.more,
               readMore: copy.readMore,
               letters: copy.letters,
+              goTo: copy.goTo,
+              backTerm: copy.backTerm,
+              backRecord: copy.backRecord,
+              dismiss: copy.dismiss,
             }}
           />
         </div>

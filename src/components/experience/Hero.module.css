@@ -120,6 +120,14 @@
   }
 }
 
+/* On the homepage the poster no longer condenses into the header: it travels
+   down into the next section's title instead (`HeroHandoff`, which marks it
+   `data-handoff` and drives it by scroll). */
+.wordmark[data-handoff] {
+  animation: none;
+  will-change: transform;
+}
+
 @keyframes condense {
   to {
     transform: translateY(-18%) scale(0.22);

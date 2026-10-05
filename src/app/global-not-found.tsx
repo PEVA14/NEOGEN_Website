@@ -1,6 +1,8 @@
 import { IBM_Plex_Mono, Instrument_Sans } from "next/font/google";
 import Link from "next/link";
 
+import { NeogenMark } from "@/components/brand/NeogenMark";
+
 import en from "@/i18n/dictionaries/en";
 import es from "@/i18n/dictionaries/es";
 
@@ -51,8 +53,11 @@ export default function GlobalNotFound() {
         >
           <Link
             href="/es"
-            className="neogen-display w-fit text-xl tracking-(--tracking-tight) text-(--ink-primary) no-underline"
+            className="neogen-display inline-flex w-fit items-center gap-(--space-2xs) text-xl tracking-(--tracking-tight) text-(--ink-primary) no-underline"
           >
+            {/* Nothing connects here: the mark's nodes, without their
+                connections. Decorative — the word is the link's name. */}
+            <NeogenMark form="points" className="h-[1.05em]" />
             NEOGEN
           </Link>
           <div className="grid gap-(--space-sm) border-t border-(--border-strong) pt-(--space-md)">

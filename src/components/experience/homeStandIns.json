@@ -1,7 +1,7 @@
 {
   "hero": {
     "full": {
-      "src": "/images/home/hero-full-reta-v7.webp",
+      "src": "/images/home/hero-full-reta-v7-clear.webp",
       "width": 1378,
       "height": 1254,
       "anchorX": 0.19,
@@ -12,7 +12,7 @@
       "model": "/models/reta-v7.glb"
     },
     "compact": {
-      "src": "/images/home/hero-compact-reta-v7.webp",
+      "src": "/images/home/hero-compact-reta-v7-clear.webp",
       "width": 603,
       "height": 1215,
       "anchorX": 0.02,

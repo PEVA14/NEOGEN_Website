@@ -3,9 +3,11 @@ import { notFound } from "next/navigation";
 
 import { Container, Section } from "@/components/primitives";
 import { KnowledgeHead } from "@/components/research";
+import { AreaMarks } from "@/components/ui/AreaMarks";
 import { routes } from "@/config/routes";
 import { linesByGroup } from "@/content/compendium";
 import { RESEARCH_FUNCTION_GROUPS } from "@/content/functions";
+import { publicAreasFor } from "@/data/discovery";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/getDictionary";
 import { localizePath } from "@/i18n/routing";
@@ -127,10 +129,13 @@ export default async function LinesPage({ params }: { params: Promise<{ locale: 
                       <ul className={styles.compoundList}>
                         {line.compounds.map(({ product }) => (
                           <li key={product.slug}>
+                            {/* The compound's own area marks; the line has none. */}
                             <Link
                               href={path(routes.compound(product.slug))}
                               className={styles.compound}
+                              data-area={publicAreasFor(product.slug)[0]?.id}
                             >
+                              <AreaMarks areas={publicAreasFor(product.slug).map((a) => a.id)} />
                               {product.name}
                             </Link>
                           </li>

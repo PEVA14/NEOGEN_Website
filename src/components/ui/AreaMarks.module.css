@@ -1,0 +1,25 @@
+/* Area registration marks — see AreaMarks.tsx. */
+
+.marks {
+  display: inline-flex;
+  flex: none;
+  gap: 2px;
+  vertical-align: middle;
+}
+
+.mark {
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  background: var(--area-mark);
+}
+
+/* Short parallel rules: a record's edge, a header's registration. */
+.marks[data-variant="rule"] {
+  flex-direction: column;
+  gap: 2px;
+}
+
+.marks[data-variant="rule"] .mark {
+  inline-size: 1.5rem;
+  block-size: 3px;
+}

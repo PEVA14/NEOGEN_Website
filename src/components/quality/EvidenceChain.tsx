@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import { Mono } from "@/components/typography";
 
 import styles from "./EvidenceChain.module.css";
@@ -29,11 +31,18 @@ export interface EvidenceChainCopy {
 export function EvidenceChain({
   copy,
   resolvedTo = null,
+  variant = "chain",
 }: {
   copy: EvidenceChainCopy;
   resolvedTo?: EvidenceLevel | null;
+  /**
+   * `layers` (the Research hub, colour completion): the same four levels as
+   * sheets laid one inside the next — see `Layers`.
+   */
+  variant?: "chain" | "layers";
 }) {
   const order = ["product", "variant", "lot", "document"] as const;
+  if (variant === "layers") return <Layers copy={copy} order={order} />;
 
   return (
     <ol className={styles.chain} aria-label={copy.label}>
@@ -65,6 +74,51 @@ export function EvidenceChain({
           </li>
         );
       })}
+    </ol>
+  );
+}
+
+/**
+ * THE MODEL AS MATERIAL — documentation is not area navigation, so it takes
+ * no area colour. This graphic shows how a quality document is bound: the
+ * compound holds its presentations, a presentation its lots, a lot the
+ * document that examined it — each sheet laid inside the one it belongs to,
+ * each saying only what it examined. Paper, stone, chalk, then the document
+ * itself in ink: the site's own materials, layered, with the registration
+ * marks a document carries. It states the rule, never that a document exists.
+ */
+function Layers({
+  copy,
+  order,
+}: {
+  copy: EvidenceChainCopy;
+  order: readonly ("product" | "variant" | "lot" | "document")[];
+}) {
+  const sheet = (i: number): ReactNode => {
+    const step = order[i];
+    if (!step) return null;
+    return (
+      <li className={styles.sheet} data-level={step}>
+        {step === "document" ? (
+          <>
+            <span className={styles.registration} data-corner="tl" aria-hidden="true" />
+            <span className={styles.registration} data-corner="br" aria-hidden="true" />
+          </>
+        ) : null}
+        <div className={styles.sheetHead}>
+          <Mono size="2xs" className={styles.index}>
+            {String(i + 1).padStart(2, "0")}
+          </Mono>
+          <p className={styles.title}>{copy.steps[step].title}</p>
+          <p className={styles.rule}>{copy.steps[step].rule}</p>
+        </div>
+        {i + 1 < order.length ? <ol className={styles.inner}>{sheet(i + 1)}</ol> : null}
+      </li>
+    );
+  };
+  return (
+    <ol className={styles.layers} aria-label={copy.label}>
+      {sheet(0)}
     </ol>
   );
 }

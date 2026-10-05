@@ -1,6 +1,9 @@
+import Link from "next/link";
+
 import { Body, Mono } from "@/components/typography";
 
 import { EvidenceChain, type EvidenceChainCopy } from "./EvidenceChain";
+import { PresentationInHand, type PresentationInHandCopy } from "./PresentationInHand";
 import styles from "./QualityRecord.module.css";
 
 import type { DocumentType } from "@/content/documents";
@@ -32,6 +35,13 @@ export interface QualityRecordCopy {
   view: string;
   external: string;
   chain: EvidenceChainCopy;
+  inHand: PresentationInHandCopy;
+}
+
+/** Where a reader learns what a quality document is — pages that exist. */
+export interface QualityGuides {
+  coa: { label: string; href: string };
+  model: { label: string; href: string };
 }
 
 export interface QualityPresentation {
@@ -74,11 +84,13 @@ export function QualityRecord({
   evidence,
   copy,
   localeTag,
+  guides,
 }: {
   presentations: readonly QualityPresentation[];
   evidence: ProductEvidence;
   copy: QualityRecordCopy;
   localeTag: string;
+  guides?: QualityGuides;
 }) {
   const covered = evidence.presentations.filter((p) => p.records.length > 0).length;
   const labelFor = (variantId: string | null) =>
@@ -87,9 +99,27 @@ export function QualityRecord({
     iso ? new Intl.DateTimeFormat(localeTag, { dateStyle: "medium" }).format(new Date(iso)) : "—";
 
   if (!evidence.hasEvidence) {
+    /*
+     * THE FILE, INSPECTED AS IT IS (owner, finishing pass: "inspecting
+     * evidence associated with the specimen", never fabricated). The absence
+     * is stated once, as before. Under it, the presentation being bought is
+     * held up to the record — its code, strength and pack, and the count of
+     * public documents that name it, which is the resolver's own 0 — and the
+     * two pages that explain what such a document is and how NEOGEN binds it
+     * close the file. Registration marks frame it as the bench frames its
+     * specimen; arriving from the buy box's link, they close on it once.
+     */
+    const inHand = presentations.map((p) => ({
+      variantId: p.variantId,
+      label: p.label,
+      documents:
+        evidence.presentations.find((e) => e.variantId === p.variantId)?.records.length ?? 0,
+    }));
     return (
       <div className={styles.record} data-empty="true">
         <div className={styles.emptyPlate}>
+          <span className={styles.registration} data-corner="tl" aria-hidden="true" />
+          <span className={styles.registration} data-corner="br" aria-hidden="true" />
           <Mono size="2xs" className={styles.panelLabel}>
             {copy.panelLabel}
           </Mono>
@@ -97,6 +127,20 @@ export function QualityRecord({
           <Body tone="muted" className={styles.emptyBody}>
             {copy.emptyBody}
           </Body>
+          {inHand.length > 0 ? (
+            <PresentationInHand presentations={inHand} copy={copy.inHand} />
+          ) : null}
+          {guides ? (
+            <ul className={styles.guides}>
+              {[guides.coa, guides.model].map((guide) => (
+                <li key={guide.href}>
+                  <Link href={guide.href} className={styles.guide}>
+                    {guide.label} <span aria-hidden="true">→</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </div>
         {/* V1: no four-row chain of "no public document" under an empty
             record. The rule is stated once above; the model itself lives on

@@ -1,16 +1,35 @@
 "use client";
 
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  memo,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  ViewTransition,
+  type ReactNode,
+  type Ref,
+} from "react";
 
-import { fold, matchesText } from "@/lib/search";
+import { ValueRoll } from "@/components/motion/ValueRoll";
+import { AreaMarks } from "@/components/ui/AreaMarks";
+
+import { fold, foldIndex, matchesText } from "@/lib/search";
 import { useUrlSearch } from "@/lib/useUrlSearch";
 
 import { DepthMarks, type DepthMarksCopy, type RecordDepth } from "./DepthMarks";
 import { QUICK_VIEWS, QuickRecord, type QuickRecordCopy, type QuickView } from "./QuickRecord";
+import { RECORD_NAVIGATION, recordNames } from "./recordTransition";
 import styles from "./CompoundLibrary.module.css";
 
 import type { QuickRecordData } from "./quickRecordData";
+import type { DiscoveryAreaId } from "@/data/discovery";
 
 export interface LibraryEntry {
   slug: string;
@@ -18,7 +37,7 @@ export interface LibraryEntry {
   alias: string | null;
   composition: string | null;
   type: string;
-  areas: readonly { id: string; label: string }[];
+  areas: readonly { id: DiscoveryAreaId; label: string }[];
   lines: readonly { id: string; label: string; href: string }[];
   presentations: readonly string[];
   depth: RecordDepth | null;
@@ -135,12 +154,24 @@ function letterOf(name: string): string {
  * and how much of a record exists (`DepthMarks`). Filters narrow it; the
  * letters jump through it.
  *
- * THE QUICK VIEW. Opening a name shows its record in a sheet — the identity,
- * the first sourced statement verbatim, what the full record contains — with
- * previous/next through the CURRENT results, so a reader can walk a filtered
- * list without losing their place. It is a native `<dialog>`: focus is trapped
- * and restored, Escape closes it, and the page behind is inert. On a phone the
- * same element is a bottom sheet.
+ * ONE RECORD, MANY MAGNIFICATIONS (motion pass 2). A compound is one object
+ * seen closer and closer: a line in the index → the same line opened in
+ * place into its Quick Record → the full record. Opening a name does not
+ * open a window over the list; the row itself becomes the record — its name
+ * grows into the title, a frame forms round it, the rows below make room —
+ * and everything else stays where it was, a little quieter. Previous / next
+ * walk the CURRENT results in place. From there the full record is the same
+ * frame and title carried onto their own page (`recordTransition.ts`), and
+ * the browser's back returns to the index with the record still open.
+ *
+ * A disclosure, not a modal: the name is a button-like link with
+ * `aria-expanded`; Tab continues into the record; Escape closes it and
+ * returns focus to the name; arrows step when focus is in the record.
+ *
+ * THE INDEX REORGANISES, IT DOES NOT REPLACE ITSELF. Filtering and search are
+ * layout animations (Motion): rows that still match slide to their new places,
+ * rows that do not are lifted out, letters close up. Nothing implies a
+ * relationship — the order is A to Z, and it is the same order filtered.
  *
  * PROGRESSIVE. Each name is a real link to the record (or the product page,
  * for a compound with no record). Without JavaScript it navigates; with it, a
@@ -174,12 +205,18 @@ export function CompoundLibrary({
   const recordId = useId();
   const panelId = useId();
 
+  /*
+   * The list follows the controls a beat behind (`useDeferredValue`): the
+   * field always takes the keystroke at once, and the index reorganises as
+   * soon as it can — never the other way round.
+   */
+  const shown = useDeferredValue(filters);
   const results = useMemo(() => {
-    const q = filters.q.trim();
+    const q = shown.q.trim();
     return entries.filter((entry) => {
-      if (filters.area && !entry.areas.some((a) => a.id === filters.area)) return false;
-      if (filters.line && !entry.lines.some((l) => l.id === filters.line)) return false;
-      if (filters.record && !entry.recordHref) return false;
+      if (shown.area && !entry.areas.some((a) => a.id === shown.area)) return false;
+      if (shown.line && !entry.lines.some((l) => l.id === shown.line)) return false;
+      if (shown.record && !entry.recordHref) return false;
       if (!q) return true;
       return (
         matchesText(entry.name, q) ||
@@ -189,7 +226,7 @@ export function CompoundLibrary({
         entry.lines.some((l) => matchesText(l.label, q))
       );
     });
-  }, [entries, filters]);
+  }, [entries, shown]);
 
   const groups = useMemo(() => {
     const byLetter = new Map<string, LibraryEntry[]>();
@@ -205,12 +242,12 @@ export function CompoundLibrary({
   const narrowing = [filters.area, filters.line, filters.record ? "1" : ""].filter(Boolean).length;
   const filtered = narrowing > 0 || filters.q.trim() !== "";
 
-  /* ---- quick view ------------------------------------------------------ */
-  const dialogRef = useRef<HTMLDialogElement>(null);
+  /* ---- the inspected record ------------------------------------------- */
   const [openSlug, setOpenSlug] = useState<string | null>(null);
   const [view, setView] = useState<QuickView>("overview");
   const openIndex = openSlug ? results.findIndex((e) => e.slug === openSlug) : -1;
   const current = openIndex >= 0 ? results[openIndex] : null;
+  const reduced = useReducedMotion();
 
   /*
    * THE RECORD BODY IS FETCHED, NOT SHIPPED. The index carries only what its
@@ -261,8 +298,9 @@ export function CompoundLibrary({
 
   /*
    * DEEP LINKS. The open compound and view live in the URL (`?ficha=reta&
-   * vista=fuentes`) through `replaceState`, so a Quick Record can be linked
-   * and a reload reopens it — without adding history entries for every step.
+   * vista=fuentes`) through `replaceState`, so a Quick Record can be linked,
+   * a reload reopens it, and the back button from the full record returns to
+   * it open — without adding history entries for every step.
    */
   const writeUrl = (slug: string | null, v: QuickView) => {
     const params = new URLSearchParams(window.location.search);
@@ -282,71 +320,281 @@ export function CompoundLibrary({
     );
   };
 
+  /*
+   * Keeping the reader's place. Stepping to a neighbour closes one record and
+   * opens another; the new row is put back exactly where the old one was on
+   * screen, so the frame seems to stay put while its contents change.
+   */
+  const anchor = useRef<{ slug: string; top: number } | null>(null);
+  const rowOf = (slug: string) => document.getElementById(`row-${slug}`);
+  useLayoutEffect(() => {
+    const a = anchor.current;
+    if (!a || a.slug !== openSlug) return;
+    anchor.current = null;
+    const row = rowOf(a.slug);
+    if (row) window.scrollBy(0, row.getBoundingClientRect().top - a.top);
+  }, [openSlug]);
+
   const open = (slug: string, v: QuickView = view) => {
+    window.clearTimeout(closeTimer.current);
+    setClosingSlug(null);
     setOpenSlug(slug);
     setView(v);
     writeUrl(slug, v);
-    const dialog = dialogRef.current;
-    if (dialog && !dialog.open) dialog.showModal();
   };
-  const close = () => dialogRef.current?.close();
-  const step = useCallback(
-    (delta: number) => {
-      if (openIndex < 0 || results.length === 0) return;
-      const next = results[(openIndex + delta + results.length) % results.length];
-      setOpenSlug(next.slug);
-      writeUrl(next.slug, view);
-    },
-    [openIndex, results, view],
-  );
+  /* Closing folds the record shut first (CSS, 240 ms), then removes it. */
+  const [closingSlug, setClosingSlug] = useState<string | null>(null);
+  const closeTimer = useRef(0);
+  const close = useCallback((focus = true) => {
+    const fold = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setOpenSlug((slug) => {
+      if (slug && focus) {
+        requestAnimationFrame(() =>
+          document.getElementById(`compound-${slug}`)?.focus({ preventScroll: true }),
+        );
+      }
+      if (slug && fold) {
+        setClosingSlug(slug);
+        window.clearTimeout(closeTimer.current);
+        closeTimer.current = window.setTimeout(() => {
+          setClosingSlug(null);
+          setOpenSlug((now) => (now === slug ? null : now));
+        }, 240);
+        return slug;
+      }
+      return null;
+    });
+    writeUrl(null, "overview");
+  }, []);
+  const step = (delta: number) => {
+    if (openIndex < 0 || results.length === 0) return;
+    const next = results[(openIndex + delta + results.length) % results.length];
+    const now = current ? rowOf(current.slug) : null;
+    anchor.current = { slug: next.slug, top: now?.getBoundingClientRect().top ?? 0 };
+    setOpenSlug(next.slug);
+    writeUrl(next.slug, view);
+  };
   const changeView = (v: QuickView) => {
     setView(v);
     if (openSlug) writeUrl(openSlug, v);
   };
 
-  /* Open from the URL on arrival. */
-  const opened = useRef(false);
+  /* Open from the URL on arrival — a shared link, a reload, the back button
+     from the full record, or a square of the hub's archive plate or a name in
+     an area's roster — and bring that row into view. */
+  const arrived = useRef(false);
+  const arriving = useRef<string | null>(null);
   useEffect(() => {
-    if (opened.current) return;
+    if (arrived.current) return;
+    arrived.current = true;
     const params = new URLSearchParams(window.location.search);
     const slug = params.get("ficha");
     if (!slug || !entries.some((e) => e.slug === slug)) return;
-    /* After the first paint: the dialog must exist before `showModal`. The
-       guard is set when the open happens, not when it is scheduled: Strict
-       Mode cancels the first frame and re-runs the effect. */
-    const frame = requestAnimationFrame(() => {
-      opened.current = true;
-      open(slug, viewFromParam(params.get("vista")));
+    arriving.current = slug;
+    requestAnimationFrame(() => {
+      setOpenSlug(slug);
+      setView(viewFromParam(params.get("vista")));
     });
-    return () => cancelAnimationFrame(frame);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  /* Return focus to the name that opened the sheet — or, after stepping, to
-     the name now showing, so closing leaves the reader where they are. */
+  /*
+   * ...ONLY ONCE THE LIST IS THE ONE THE URL ASKS FOR (owner, 2026-10-04:
+   * clicking a square "you end up seeing the footer"). An arrival with an
+   * area (`?area=…&ficha=…`) first renders the whole index — the URL is read
+   * after hydration and the list follows a beat behind (`useDeferredValue`)
+   * — so the row was measured where it stood among 85 compounds, the page
+   * scrolled there, and the filtered list then collapsed under it to the
+   * footer. Now the scroll waits for the filtered list to be on screen with
+   * the record open, and measures the row's layout position, not its
+   * position mid-reorganisation (Motion moves rows with transforms).
+   */
   useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    const onClose = () => {
-      const slug = dialog.dataset.slug;
-      setOpenSlug(null);
-      writeUrl(null, "overview");
-      if (slug) document.getElementById(`compound-${slug}`)?.focus();
-    };
-    dialog.addEventListener("close", onClose);
-    return () => dialog.removeEventListener("close", onClose);
-  }, []);
+    const slug = arriving.current;
+    if (!slug || shown !== filters || openSlug !== slug) return;
+    if (!results.some((e) => e.slug === slug)) return;
+    const frame = requestAnimationFrame(() => {
+      const row = rowOf(slug);
+      if (!row) return;
+      arriving.current = null;
+      let top = 0;
+      for (let el: HTMLElement | null = row; el; el = el.offsetParent as HTMLElement | null) {
+        top += el.offsetTop;
+      }
+      const header = parseFloat(getComputedStyle(row).scrollMarginTop) || 96;
+      window.scrollTo({ top: Math.max(0, top - header) });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [shown, filters, openSlug, results]);
 
-  /* A filter change can remove the open compound from the results. */
-  useEffect(() => {
-    if (openSlug && openIndex === -1) dialogRef.current?.close();
-  }, [openSlug, openIndex]);
+  /* A filter that removes the open compound simply hides it (`current` is
+     null); clearing the filter brings the same record back open. */
 
   const fill = (template: string, values: Record<string, string | number>) =>
     template.replace(/\{(\w+)\}/g, (m, key: string) => (key in values ? String(values[key]) : m));
 
+  /* Where the query lands in a name, for marking it — the reader sees why. */
+  const q = shown.q.trim();
+
+  /* Every letter of the alphabet, present or not: where the results fall. */
+  const present = new Set(groups.map(([letter]) => letter));
+  const layoutTransition = reduced ? NO_MOTION : LAYOUT;
+
+  /* One stable toggle for every row, so a closed row never re-renders for
+     another row's sake. */
+  const latest = useRef({ open, close, openSlug, closingSlug });
+  useEffect(() => {
+    latest.current = { open, close, openSlug, closingSlug };
+  });
+  const toggle = useCallback((slug: string) => {
+    const l = latest.current;
+    if (l.openSlug === slug && l.closingSlug !== slug) l.close(false);
+    else l.open(slug);
+  }, []);
+
+  /* The record opened in place: its frame, head, Quick Record and actions. */
+  const inspectFor = (entry: LibraryEntry) => (
+    <ViewTransition name={recordNames(entry.slug).frame} share="vt-record-frame" default="none">
+      <div className={styles.inspectFrame}>
+        <header className={styles.inspectHead}>
+          <p className={styles.sheetEyebrow}>
+            <AreaMarks areas={entry.areas.map((a) => a.id)} />
+            {[entry.type, ...entry.areas.map((a) => a.label)].join(" · ")}
+          </p>
+          {entry.composition && !entry.alias ? (
+            <p className={styles.sheetAlias}>{entry.composition}</p>
+          ) : null}
+          {/* The evidence strip: how much sourced science exists. */}
+          <p className={styles.strip}>
+            {entry.depth ? (
+              <>
+                <span>
+                  {entry.depth.mechanism + entry.depth.research === 1
+                    ? copy.preview.claim
+                    : fill(copy.preview.claims, {
+                        n: entry.depth.mechanism + entry.depth.research,
+                      })}
+                </span>
+                <span>
+                  {entry.depth.references === 1
+                    ? copy.preview.source
+                    : fill(copy.preview.sources, { n: entry.depth.references })}
+                </span>
+                {record?.record?.span ? (
+                  <span>
+                    {record.record.span[0] === record.record.span[1]
+                      ? record.record.span[0]
+                      : `${record.record.span[0]}–${record.record.span[1]}`}
+                  </span>
+                ) : null}
+              </>
+            ) : (
+              <span>{copy.preview.noRecordShort}</span>
+            )}
+          </p>
+          <button
+            type="button"
+            className={styles.closeButton}
+            onClick={() => close()}
+            aria-label={copy.preview.close}
+          >
+            <span aria-hidden="true">×</span>
+          </button>
+        </header>
+
+        <div
+          className={styles.inspectBody}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              event.stopPropagation();
+              close();
+              return;
+            }
+            if (event.defaultPrevented) return;
+            const target = event.target as HTMLElement;
+            if (target.closest("[role=tablist], input, select, textarea")) return;
+            if (event.key === "ArrowRight") step(1);
+            if (event.key === "ArrowLeft") step(-1);
+          }}
+        >
+          <QuickRecord
+            key={entry.slug}
+            data={record}
+            status={status}
+            view={view}
+            onView={changeView}
+            studiedIn={{ areas: entry.areas, lines: entry.lines }}
+            onRetry={() => {
+              setFailed(null);
+              void fetchRecord(entry.slug);
+            }}
+            copy={copy.quick}
+          />
+        </div>
+
+        <footer
+          className={styles.sheetFoot}
+          data-record={entry.recordHref ? "true" : "false"}
+          data-stepper={results.length > 1 ? "true" : "false"}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") close();
+          }}
+        >
+          {entry.recordHref ? (
+            <Link
+              href={entry.recordHref}
+              className={`${styles.primary} ${styles.footRecord}`}
+              transitionTypes={[RECORD_NAVIGATION]}
+            >
+              {copy.preview.record}
+              <span aria-hidden="true">→</span>
+            </Link>
+          ) : null}
+          <Link
+            href={entry.productHref}
+            className={`${entry.recordHref ? styles.secondary : styles.primary} ${styles.footProduct}`}
+          >
+            <span>
+              {copy.preview.product}
+              {record?.product.from ? (
+                <span className={styles.from}>
+                  {fill(copy.preview.productFrom, { price: record.product.from })}
+                </span>
+              ) : null}
+            </span>
+            <span aria-hidden="true">→</span>
+          </Link>
+          {results.length > 1 ? (
+            <>
+              <button
+                type="button"
+                className={`${styles.stepButton} ${styles.footPrev}`}
+                onClick={() => step(-1)}
+                aria-label={copy.preview.previous}
+              >
+                <span aria-hidden="true">←</span>
+              </button>
+              <span className={styles.position}>
+                {fill(copy.preview.position, { i: openIndex + 1, n: results.length })}
+              </span>
+              <button
+                type="button"
+                className={`${styles.stepButton} ${styles.footNext}`}
+                onClick={() => step(1)}
+                aria-label={copy.preview.next}
+              >
+                <span aria-hidden="true">→</span>
+              </button>
+            </>
+          ) : null}
+        </footer>
+      </div>
+    </ViewTransition>
+  );
+
   return (
-    <div className={styles.library}>
+    /* Filtered to an area, the index takes that area as its context colour:
+       the count, the filter and the letters read in it (color pass). */
+    <div className={styles.library} data-area={filters.area || undefined}>
       {/* ---- controls ---------------------------------------------------- */}
       <div className={styles.controls}>
         <div className={styles.searchField}>
@@ -387,6 +635,7 @@ export function CompoundLibrary({
               value={filters.area}
               onChange={(event) => update({ area: event.target.value })}
               className={styles.select}
+              data-filter="area"
             >
               <option value="">{copy.controls.areaAll}</option>
               {areas.map((a) => (
@@ -439,18 +688,36 @@ export function CompoundLibrary({
       {/* ---- count and letters ------------------------------------------- */}
       <div className={styles.status}>
         <p className={styles.count} aria-live="polite">
-          {results.length === 1
-            ? copy.controls.result
-            : fill(copy.controls.results, { n: results.length })}
+          <span className={styles.srOnly}>
+            {results.length === 1
+              ? copy.controls.result
+              : fill(copy.controls.results, { n: results.length })}
+          </span>
+          {/* The figure rolls to the new count, in the direction it moved. */}
+          <span aria-hidden="true">
+            <ValueRoll value={String(results.length).padStart(2, "0")} />{" "}
+            {(results.length === 1 ? copy.controls.result : copy.controls.results)
+              .replace("{n}", "")
+              .replace(/^1\s*/, "")
+              .trim()}
+          </span>
         </p>
-        {groups.length > 1 ? (
+        {results.length > 0 ? (
           <nav aria-label={copy.controls.letters} className={styles.letters}>
             <ul>
-              {groups.map(([letter]) => (
-                <li key={letter}>
-                  <a href={`#letra-${letter === "#" ? "0" : letter.toLowerCase()}`}>{letter}</a>
-                </li>
-              ))}
+              {ALPHABET.map((letter) =>
+                present.has(letter) ? (
+                  <li key={letter}>
+                    <a href={`#letra-${letter === "#" ? "0" : letter.toLowerCase()}`}>{letter}</a>
+                  </li>
+                ) : (
+                  /* A letter with nothing filed under it now: kept in its
+                     place, so the alphabet itself shows where results fall. */
+                  <li key={letter} aria-hidden="true">
+                    <span className={styles.absent}>{letter}</span>
+                  </li>
+                ),
+              )}
             </ul>
           </nav>
         ) : null}
@@ -460,223 +727,192 @@ export function CompoundLibrary({
       {results.length === 0 ? (
         <p className={styles.empty}>{copy.controls.empty}</p>
       ) : (
-        <div className={styles.index}>
+        <div className={styles.index} data-inspecting={current ? "true" : undefined}>
           <div className={styles.head} aria-hidden="true">
             <span>{copy.columns.compound}</span>
             <span>{copy.columns.areas}</span>
             <span>{copy.columns.lines}</span>
             <span>{copy.columns.record}</span>
           </div>
-          {groups.map(([letter, items]) => (
-            <section
-              key={letter}
-              className={styles.group}
-              id={`letra-${letter === "#" ? "0" : letter.toLowerCase()}`}
-              aria-labelledby={`letra-${letter === "#" ? "0" : letter.toLowerCase()}-h`}
-            >
-              <h2
-                className={styles.letter}
-                id={`letra-${letter === "#" ? "0" : letter.toLowerCase()}-h`}
+          <AnimatePresence initial={false} mode="popLayout">
+            {groups.map(([letter, items]) => (
+              <motion.section
+                layout="position"
+                transition={layoutTransition}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0, transition: { duration: reduced ? 0 : 0.14 } }}
+                key={letter}
+                className={styles.group}
+                id={`letra-${letter === "#" ? "0" : letter.toLowerCase()}`}
+                aria-labelledby={`letra-${letter === "#" ? "0" : letter.toLowerCase()}-h`}
               >
-                {letter}
-              </h2>
-              <ul className={styles.rows}>
-                {items.map((entry) => (
-                  <li key={entry.slug} className={styles.row}>
-                    <Link
-                      id={`compound-${entry.slug}`}
-                      href={entry.recordHref ?? entry.productHref}
-                      className={styles.name}
-                      aria-haspopup="dialog"
-                      onClick={(event) => {
-                        if (
-                          event.metaKey ||
-                          event.ctrlKey ||
-                          event.shiftKey ||
-                          event.altKey ||
-                          event.button !== 0
-                        ) {
-                          return;
-                        }
-                        event.preventDefault();
-                        open(entry.slug);
-                      }}
-                    >
-                      <span className={styles.nameText}>{entry.name}</span>
-                      {entry.alias ? <span className={styles.alias}>{entry.alias}</span> : null}
-                    </Link>
-                    <span className={styles.cellAreas}>
-                      {entry.areas.map((a) => a.label).join(" · ") || "—"}
-                    </span>
-                    <span className={styles.cellLines}>
-                      {entry.lines.length === 0
-                        ? "—"
-                        : `${entry.lines
-                            .slice(0, 2)
-                            .map((l) => l.label)
-                            .join(
-                              " · ",
-                            )}${entry.lines.length > 2 ? ` +${entry.lines.length - 2}` : ""}`}
-                    </span>
-                    <span className={styles.cellRecord}>
-                      <DepthMarks depth={entry.depth} copy={copy.depth} />
-                      {entry.depth ? (
-                        <span className={styles.refs}>
-                          {fill(copy.depth.refs, { n: entry.depth.references })}
-                        </span>
-                      ) : null}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
+                <h2
+                  className={styles.letter}
+                  id={`letra-${letter === "#" ? "0" : letter.toLowerCase()}-h`}
+                >
+                  {letter}
+                </h2>
+                <ul className={styles.rows}>
+                  <AnimatePresence initial={false} mode="popLayout">
+                    {items.map((entry) => (
+                      <LibraryRow
+                        key={entry.slug}
+                        entry={entry}
+                        q={q}
+                        copy={copy}
+                        reduced={!!reduced}
+                        onToggle={toggle}
+                        inspect={current?.slug === entry.slug ? inspectFor(entry) : null}
+                        closing={closingSlug === entry.slug}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </ul>
+              </motion.section>
+            ))}
+          </AnimatePresence>
         </div>
       )}
-
-      {/* ---- quick record ------------------------------------------------ */}
-      <dialog
-        ref={dialogRef}
-        className={styles.dialog}
-        aria-label={current ? fill(copy.preview.dialog, { name: current.name }) : undefined}
-        data-slug={current?.slug}
-        onClick={(event) => {
-          /* A click on the backdrop lands on the dialog element itself. */
-          if (event.target === event.currentTarget) close();
-        }}
-        onKeyDown={(event) => {
-          /* Arrows step between compounds — unless something inside (the
-             tabs) already used them, or the reader is in a field. */
-          if (event.defaultPrevented) return;
-          const target = event.target as HTMLElement;
-          if (target.closest("[role=tablist], input, select, textarea")) return;
-          if (event.key === "ArrowRight") step(1);
-          if (event.key === "ArrowLeft") step(-1);
-        }}
-      >
-        {current ? (
-          <div className={styles.sheet}>
-            <header className={styles.sheetHead}>
-              <p className={styles.sheetEyebrow}>
-                {[current.type, ...current.areas.map((a) => a.label)].join(" · ")}
-              </p>
-              <h2 className={styles.sheetTitle}>{current.name}</h2>
-              {current.alias || current.composition ? (
-                <p className={styles.sheetAlias}>{current.alias ?? current.composition}</p>
-              ) : null}
-              {/* The evidence strip: how much sourced science exists, at a glance. */}
-              <p className={styles.strip}>
-                {current.depth ? (
-                  <>
-                    <span>
-                      {current.depth.mechanism + current.depth.research === 1
-                        ? copy.preview.claim
-                        : fill(copy.preview.claims, {
-                            n: current.depth.mechanism + current.depth.research,
-                          })}
-                    </span>
-                    <span>
-                      {current.depth.references === 1
-                        ? copy.preview.source
-                        : fill(copy.preview.sources, { n: current.depth.references })}
-                    </span>
-                    {record?.record?.span ? (
-                      <span>
-                        {record.record.span[0] === record.record.span[1]
-                          ? record.record.span[0]
-                          : `${record.record.span[0]}–${record.record.span[1]}`}
-                      </span>
-                    ) : null}
-                  </>
-                ) : (
-                  <span>{copy.preview.noRecordShort}</span>
-                )}
-              </p>
-              <button
-                type="button"
-                className={styles.closeButton}
-                onClick={close}
-                autoFocus
-                aria-label={copy.preview.close}
-              >
-                <span aria-hidden="true">×</span>
-              </button>
-            </header>
-
-            <div className={styles.sheetBody}>
-              <QuickRecord
-                key={current.slug}
-                data={record}
-                status={status}
-                view={view}
-                onView={changeView}
-                studiedIn={{ areas: current.areas, lines: current.lines }}
-                onRetry={() => {
-                  setFailed(null);
-                  void fetchRecord(current.slug);
-                }}
-                copy={copy.quick}
-              />
-            </div>
-
-            {/* One grid, two arrangements (see the stylesheet): on a phone the
-                record takes the full row and the product sits between the
-                arrows, so the actions cost two rows of the sheet, not four. */}
-            <footer
-              className={styles.sheetFoot}
-              data-record={current.recordHref ? "true" : "false"}
-              data-stepper={results.length > 1 ? "true" : "false"}
-            >
-              {current.recordHref ? (
-                <Link
-                  href={current.recordHref}
-                  className={`${styles.primary} ${styles.footRecord}`}
-                >
-                  {copy.preview.record}
-                  <span aria-hidden="true">→</span>
-                </Link>
-              ) : null}
-              <Link
-                href={current.productHref}
-                className={`${current.recordHref ? styles.secondary : styles.primary} ${styles.footProduct}`}
-              >
-                <span>
-                  {copy.preview.product}
-                  {record?.product.from ? (
-                    <span className={styles.from}>
-                      {fill(copy.preview.productFrom, { price: record.product.from })}
-                    </span>
-                  ) : null}
-                </span>
-                <span aria-hidden="true">→</span>
-              </Link>
-              {results.length > 1 ? (
-                <>
-                  <button
-                    type="button"
-                    className={`${styles.stepButton} ${styles.footPrev}`}
-                    onClick={() => step(-1)}
-                    aria-label={copy.preview.previous}
-                  >
-                    <span aria-hidden="true">←</span>
-                  </button>
-                  <span className={styles.position}>
-                    {fill(copy.preview.position, { i: openIndex + 1, n: results.length })}
-                  </span>
-                  <button
-                    type="button"
-                    className={`${styles.stepButton} ${styles.footNext}`}
-                    onClick={() => step(1)}
-                    aria-label={copy.preview.next}
-                  >
-                    <span aria-hidden="true">→</span>
-                  </button>
-                </>
-              ) : null}
-            </footer>
-          </div>
-        ) : null}
-      </dialog>
     </div>
   );
 }
+
+const ALPHABET = [..."ABCDEFGHIJKLMNOPQRSTUVWXYZ", "#"];
+
+/* Layout transitions: quick, settled, never in the reader's way. */
+const LAYOUT = { type: "spring" as const, stiffness: 420, damping: 42, mass: 0.9 };
+const NO_MOTION = { duration: 0 };
+const fillTemplate = (template: string, values: Record<string, string | number>) =>
+  template.replace(/\{(\w+)\}/g, (m, key: string) => (key in values ? String(values[key]) : m));
+
+/**
+ * One line of the index — memoised, so a keystroke or another row opening
+ * re-renders only the rows whose own state changed. `inspect` is the record
+ * opened in place, given only to the open row.
+ */
+const LibraryRow = memo(function LibraryRow({
+  entry,
+  q,
+  copy,
+  reduced,
+  onToggle,
+  inspect,
+  closing,
+  ref,
+}: {
+  entry: LibraryEntry;
+  q: string;
+  copy: LibraryCopy;
+  reduced: boolean;
+  onToggle: (slug: string) => void;
+  inspect: ReactNode | null;
+  /** The open record is folding shut (its last 240 ms). */
+  closing: boolean;
+  ref?: Ref<HTMLLIElement>;
+}) {
+  const isOpen = inspect !== null;
+  const panelId = `inspect-${entry.slug}`;
+  const transition = reduced ? NO_MOTION : LAYOUT;
+  const at = q ? foldIndex(entry.name, q) : null;
+  const name = at ? (
+    <>
+      {entry.name.slice(0, at[0])}
+      <mark className={styles.match}>{entry.name.slice(at[0], at[1])}</mark>
+      {entry.name.slice(at[1])}
+    </>
+  ) : (
+    entry.name
+  );
+  const title = (
+    <motion.span layout transition={transition} className={styles.nameText}>
+      {name}
+    </motion.span>
+  );
+  return (
+    <motion.li
+      ref={ref}
+      layout="position"
+      transition={transition}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0, transition: { duration: reduced ? 0 : 0.12 } }}
+      id={`row-${entry.slug}`}
+      className={styles.row}
+      /* Its first area is its context colour, carried into the record it
+         opens and on to the full record (one record, many magnifications). */
+      data-area={entry.areas[0]?.id}
+      data-open={isOpen ? "true" : undefined}
+    >
+      <Link
+        id={`compound-${entry.slug}`}
+        href={entry.recordHref ?? entry.productHref}
+        className={styles.name}
+        aria-expanded={isOpen}
+        aria-controls={panelId}
+        onClick={(event) => {
+          if (
+            event.metaKey ||
+            event.ctrlKey ||
+            event.shiftKey ||
+            event.altKey ||
+            event.button !== 0
+          )
+            return;
+          event.preventDefault();
+          onToggle(entry.slug);
+        }}
+      >
+        {/* The name IS the record's title: it grows when the row opens, and
+            travels on to the record. */}
+        {isOpen ? (
+          <ViewTransition
+            name={recordNames(entry.slug).title}
+            share="vt-record-title"
+            default="none"
+          >
+            {title}
+          </ViewTransition>
+        ) : (
+          title
+        )}
+        {entry.alias ? <span className={styles.alias}>{entry.alias}</span> : null}
+      </Link>
+      <span className={styles.cellAreas}>
+        <AreaMarks areas={entry.areas.map((a) => a.id)} />
+        <span>{entry.areas.map((a) => a.label).join(" · ") || "—"}</span>
+      </span>
+      <span className={styles.cellLines}>
+        {entry.lines.length === 0
+          ? "—"
+          : `${entry.lines
+              .slice(0, 2)
+              .map((l) => l.label)
+              .join(" · ")}${entry.lines.length > 2 ? ` +${entry.lines.length - 2}` : ""}`}
+      </span>
+      <span className={styles.cellRecord}>
+        <DepthMarks depth={entry.depth} copy={copy.depth} />
+        {entry.depth ? (
+          <span className={styles.refs}>
+            {fillTemplate(copy.depth.refs, { n: entry.depth.references })}
+          </span>
+        ) : null}
+      </span>
+
+      {/* ---- the record, opened in place ---------------------------------- */}
+      {/* The panel opens and closes in CSS (`@starting-style`, grid rows), so
+          the layout engine is not re-measuring the whole index every frame. */}
+      {isOpen ? (
+        <div
+          id={panelId}
+          role="region"
+          aria-label={fillTemplate(copy.preview.dialog, { name: entry.name })}
+          className={styles.inspect}
+          data-closing={closing ? "true" : undefined}
+        >
+          <div className={styles.inspectInner}>{inspect}</div>
+        </div>
+      ) : null}
+    </motion.li>
+  );
+});

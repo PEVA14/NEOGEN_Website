@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useTransition } from "react";
 
+import { NeogenMark } from "@/components/brand/NeogenMark";
 import { Mono } from "@/components/typography";
 import { SpecimenPlate } from "@/components/ui/SpecimenPlate";
 import { ORDER_LIMITS } from "@/data/commerce/limits";
@@ -124,7 +125,12 @@ export function BagLines({
     return (
       <div className={styles.emptyState}>
         <p className={styles.count}>
-          <span className={styles.countValue}>00</span>
+          {/* Nothing connected yet: the mark's nodes, without their
+              connections, beside the zero. Decorative. */}
+          <span className={styles.emptyReading}>
+            <span className={styles.countValue}>00</span>
+            <NeogenMark form="points" className={styles.emptyMark} />
+          </span>
           <Mono size="2xs" className={styles.countLabel}>
             {copy.countLabel}
           </Mono>

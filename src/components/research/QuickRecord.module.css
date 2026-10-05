@@ -602,3 +602,22 @@
   outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: var(--focus-ring-offset-width);
 }
+
+/* --- The record's area as its context colour (color pass) -----------------
+   Opened inside a compendium row, the record inherits the row's area: the
+   selected tab's rule, and a citation and its opened source — "these are
+   connected now" — take it. Body text stays ink. */
+
+.tab[aria-selected="true"] {
+  box-shadow: inset 0 2px 0 var(--area-mark, var(--ink-primary));
+}
+
+.cite[data-on="true"] {
+  border-block-end-color: var(--area-mark, var(--ink-primary));
+  color: var(--area-text, var(--ink-primary));
+  background: color-mix(in oklab, var(--area-wash, var(--surface-sunken)) 70%, transparent);
+}
+
+.inline {
+  border-inline-start-color: var(--area-mark, var(--ink-primary));
+}

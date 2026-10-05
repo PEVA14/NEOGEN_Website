@@ -32,9 +32,7 @@
   }
 }
 
-.emptyPlate {
-  border-inline-start: 2px solid var(--border-strong);
-}
+/* Framed by its registration marks (below) rather than a heavy rule. */
 
 /*
  * Full measure, statement beside its explanation (V1 PDP pass). A half-width
@@ -100,6 +98,251 @@
 
 .emptyBody {
   max-inline-size: 60ch;
+}
+
+/* --- the file, inspected (empty state) ------------------------------------ */
+
+.emptyPlate {
+  position: relative;
+}
+
+/* Registration marks, as the bench frames its specimen. */
+.registration {
+  position: absolute;
+  inline-size: 0.9rem;
+  block-size: 0.9rem;
+  border: 0 solid var(--ink-primary);
+  pointer-events: none;
+}
+
+.registration[data-corner="tl"] {
+  inset-block-start: -1px;
+  inset-inline-start: -1px;
+  border-block-start-width: 1px;
+  border-inline-start-width: 1px;
+}
+
+.registration[data-corner="br"] {
+  inset-block-end: -1px;
+  inset-inline-end: -1px;
+  border-block-end-width: 1px;
+  border-inline-end-width: 1px;
+}
+
+/* Arriving from the buy box's "quality and documentation" link (the section
+   is its target): the marks close on the file once. */
+:global(:target) .registration[data-corner="tl"] {
+  animation: quality-lock-tl 620ms var(--ease-settle) 420ms both;
+}
+
+:global(:target) .registration[data-corner="br"] {
+  animation: quality-lock-br 620ms var(--ease-settle) 420ms both;
+}
+
+@keyframes quality-lock-tl {
+  from {
+    translate: -0.75rem -0.75rem;
+    opacity: 0;
+  }
+}
+
+@keyframes quality-lock-br {
+  from {
+    translate: 0.75rem 0.75rem;
+    opacity: 0;
+  }
+}
+
+.inHand {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: var(--space-2xs) var(--space-xl);
+  margin-block-start: var(--space-sm);
+  padding-block-start: var(--space-sm);
+  border-block-start: 1px solid var(--border-default);
+}
+
+@media (min-width: 64rem) {
+  .inHand {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    align-items: center;
+  }
+  .inHandLabel {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .inHandFacts {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .codes {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    justify-self: start;
+  }
+}
+
+.inHandLabel {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.inHandCode {
+  color: var(--ink-primary);
+}
+
+.inHandFacts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2xs) var(--space-md);
+  margin: 0;
+}
+
+.inHandFacts dd {
+  margin: 0;
+}
+
+.inHandName {
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-lg);
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+/* A count, stated as the figure it is: "Documentos publicados  0". */
+.inHandCount {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2xs);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.inHandCount dd {
+  color: var(--ink-primary);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.codes {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3xs);
+  margin-block: var(--space-2xs) 0;
+}
+
+.code {
+  position: relative;
+  z-index: 1;
+  min-inline-size: 3.25rem;
+  min-block-size: 2.75rem;
+  padding-inline: var(--space-xs);
+  border: 1px solid var(--border-default);
+  background: transparent;
+  color: var(--ink-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: color var(--motion-duration-fast) var(--ease-standard);
+}
+
+.code:hover {
+  border-color: var(--border-strong);
+}
+
+.code[aria-pressed="true"] {
+  color: var(--ink-inverse);
+}
+
+.code:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* The one mark that travels to the presentation in hand (`useIndicator`). */
+.codeMark {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  inline-size: var(--w, 0);
+  block-size: var(--h, 0);
+  translate: var(--x, 0) var(--y, 0);
+  background: var(--surface-inverse);
+  pointer-events: none;
+  visibility: hidden;
+  transition:
+    translate var(--motion-duration-slow) var(--ease-settle),
+    inline-size var(--motion-duration-slow) var(--ease-settle);
+}
+
+.codeMark[data-placed="true"]:not([data-empty]) {
+  visibility: visible;
+}
+
+.guides {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs) var(--space-lg);
+  margin: var(--space-xs) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.guide {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  min-block-size: 2.75rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-primary);
+  text-decoration: underline;
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 4px;
+}
+
+.guide:hover {
+  text-decoration-color: currentColor;
+}
+
+.guide:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.srOnly {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :global(:target) .registration[data-corner] {
+    animation: none;
+  }
+  .codeMark {
+    transition: none;
+  }
 }
 
 /* --- ledger ------------------------------------------------------------ */

@@ -78,7 +78,11 @@
 }
 
 .areas {
-  color: var(--ink-muted);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2xs);
+  color: var(--area-text, var(--ink-muted));
   font-family: var(--font-mono);
   font-size: var(--text-2xs);
   letter-spacing: var(--tracking-label);
@@ -146,4 +150,45 @@
 .back:focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: var(--focus-ring-offset-width);
+}
+
+/*
+ * THE COMPOUNDS BRING THEIR COLOUR; THE LINE HAS NONE (Research colour
+ * completion). A line is a research subject, not a catalogue area, so its
+ * head and its structure stay ink. Each compound carries its own area marks
+ * and names; pointed at, or reached by keyboard, its block takes an edge in
+ * its area's colour, as a record opened in the compendium does, and lets it
+ * go. Membership only — never the line's, never a likeness between them.
+ */
+.compound {
+  position: relative;
+}
+
+.compound::before {
+  content: "";
+  position: absolute;
+  inset-block: var(--space-md);
+  inset-inline-start: calc(var(--space-sm) * -1);
+  inline-size: 2px;
+  background: var(--area-mark, var(--ink-primary));
+  scale: 1 0;
+  transform-origin: 50% 0;
+  transition: scale var(--motion-duration-base) var(--ease-settle);
+}
+
+.compound:hover::before,
+.compound:focus-within::before {
+  scale: 1 1;
+}
+
+@media (max-width: 39.99rem) {
+  .compound::before {
+    inset-inline-start: calc(var(--space-2xs) * -1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .compound::before {
+    transition: none;
+  }
 }

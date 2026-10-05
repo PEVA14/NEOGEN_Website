@@ -25,7 +25,7 @@
 
 .lensRoot :global([data-term]:hover),
 .lensRoot :global([data-term][data-open]) {
-  text-decoration-color: var(--ink-primary);
+  text-decoration-color: var(--area-mark, var(--ink-primary));
   text-decoration-style: solid;
 }
 
@@ -46,7 +46,7 @@
   padding: var(--space-sm) var(--space-sm) var(--space-sm);
   background: var(--surface-base);
   border: 1px solid var(--border-strong);
-  border-block-start: 2px solid var(--ink-primary);
+  border-block-start: 2px solid var(--area-mark, var(--ink-primary));
   pointer-events: none;
   opacity: 0;
   clip-path: inset(0 calc(100% - var(--origin, 0px) - 1px) 100% var(--origin, 0px));

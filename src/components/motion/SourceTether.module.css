@@ -24,7 +24,9 @@
 
 .leader path {
   fill: none;
-  stroke: var(--ink-primary);
+  /* The connection takes the record's area colour while it is shown (color
+     pass): "these are connected now" — never a grade of the source. */
+  stroke: var(--area-mark, var(--ink-primary));
   stroke-width: 1;
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
@@ -32,7 +34,7 @@
 }
 
 .foot {
-  fill: var(--ink-primary);
+  fill: var(--area-mark, var(--ink-primary));
   opacity: 0;
   transform: translate(calc(var(--x2, 0px) - 2.5px), calc(var(--y2, 0px) - 2.5px));
 }
@@ -60,7 +62,7 @@
   inset-block: 0.25em;
   inset-inline-start: calc(var(--space-sm) * -1);
   inline-size: 2px;
-  background: var(--ink-primary);
+  background: var(--area-mark, var(--ink-primary));
   scale: 1 0;
   transform-origin: 50% 0;
   transition: scale var(--motion-duration-base) var(--ease-out);
@@ -80,7 +82,7 @@
 
 /* Markers: the lit number inverts, the way a selected chip does. */
 .tether :global([data-cite][data-lit]) {
-  background: var(--surface-inverse);
+  background: var(--area-text, var(--surface-inverse));
   background-clip: content-box;
   color: var(--ink-inverse);
   text-decoration-color: transparent;
@@ -89,6 +91,11 @@
 /* Sources: the lit one stays, the others step back. */
 .tether :global([data-ref]) {
   transition: opacity var(--motion-duration-base) var(--ease-standard);
+}
+
+/* The lit source is marked in the connection's colour, on its edge. */
+.tether :global([data-ref][data-lit]) {
+  box-shadow: inset 2px 0 0 var(--area-mark, var(--ink-primary));
 }
 
 .tether[data-active] :global([data-ref]:not([data-lit])),
@@ -121,6 +128,7 @@
   gap: var(--space-3xs);
   padding: var(--space-sm);
   background: var(--surface-inverse);
+  border-block-start: 2px solid var(--area-hue, var(--surface-inverse));
   color: var(--ink-inverse);
   pointer-events: none;
   opacity: 0;
@@ -138,6 +146,11 @@
 .card :global(*) {
   margin: 0;
   color: inherit;
+}
+
+/* The card is the source; who cites it is said beside the source itself. */
+.card :global([data-cited-by]) {
+  display: none;
 }
 
 .card p {

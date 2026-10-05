@@ -1,0 +1,201 @@
+/*
+ * THE EVIDENCE AS THE SETS IT COUNTS — see EvidenceStructure.tsx.
+ *
+ * Three rows: references above, profiles between, areas below, so every
+ * thread runs from the middle row outward and none crosses a row. Each mark
+ * is a short ink rule; a lit one is full ink and taller; the one pointed at
+ * inverts its whole cell. Threads are hairlines drawn once (dash travel).
+ */
+
+.structure {
+  position: relative;
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.rows {
+  display: grid;
+  gap: var(--space-lg);
+  margin: 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "label value"
+    "strip strip";
+  align-items: end;
+  gap: var(--space-2xs) var(--space-sm);
+}
+
+.label {
+  grid-area: label;
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+/* The dd lays its two parts straight into the row's grid. */
+.cell {
+  display: contents;
+}
+
+.value {
+  grid-area: value;
+  margin: 0;
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-4xl);
+  line-height: 0.85;
+  letter-spacing: var(--tracking-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.strip {
+  grid-area: strip;
+  position: relative;
+  block-size: 1.75rem;
+  border-block-end: 1px solid var(--border-default);
+}
+
+.marks {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+  align-items: end;
+  pointer-events: none;
+}
+
+.mark {
+  justify-self: center;
+  inline-size: max(1px, min(3px, 40%));
+  block-size: 45%;
+  background: var(--ink-secondary);
+  opacity: 0.55;
+  transition:
+    opacity var(--motion-duration-fast) var(--ease-standard),
+    block-size var(--motion-duration-base) var(--ease-settle),
+    background-color var(--motion-duration-fast) var(--ease-standard);
+}
+
+/* While anything is pointed at, everything not joined to it steps back. */
+.structure[data-active] .mark {
+  opacity: 0.18;
+}
+
+/* COLOUR FOCUSES. A lit mark takes its own area's colour (a profile, an
+   area), or the connection's (a reference, inheriting the structure's
+   context); with no area to take, it is ink. */
+.structure[data-active] .mark[data-lit="true"] {
+  opacity: 1;
+  block-size: 100%;
+  background: var(--area-mark, var(--ink-primary));
+}
+
+/* The areas are the one row coloured at rest: each is its own swatch, as the
+   area is coloured everywhere else on the site. */
+.row[data-row="areas"] .mark {
+  inline-size: 0.6rem;
+  background: var(--area-mark);
+  opacity: 1;
+}
+
+.structure[data-active] .row[data-row="areas"] .mark:not([data-lit="true"]) {
+  opacity: 0.22;
+}
+
+/* A row is a slider: invisible, the full size of its strip. */
+.range {
+  position: absolute;
+  inset: -0.5rem 0;
+  inline-size: 100%;
+  block-size: calc(100% + 1rem);
+  margin: 0;
+  opacity: 0;
+  cursor: crosshair;
+  touch-action: pan-y;
+}
+
+.strip:has(.range:focus-visible) {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 4px;
+}
+
+.threads {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.thread {
+  fill: none;
+  stroke: var(--area-mark, var(--ink-primary));
+  stroke-width: 1;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  opacity: 0.85;
+  vector-effect: non-scaling-stroke;
+  animation: thread-draw var(--motion-duration-slow) var(--ease-out) forwards;
+}
+
+@keyframes thread-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.readout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2xs) var(--space-sm);
+  min-block-size: 2.75rem;
+  margin: 0;
+}
+
+.readoutName {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  font-weight: 600;
+  color: var(--ink-primary);
+}
+
+/* The registration marks of what is pointed at: one square per area. */
+.readoutMarks {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.readoutMarks span {
+  inline-size: 0.55rem;
+  block-size: 0.55rem;
+  background: var(--area-mark);
+}
+
+.readoutFacts,
+.hint {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thread {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .mark {
+    transition: none;
+  }
+}

@@ -14,6 +14,7 @@ import { isLocale, localeTags, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/getDictionary";
 import { localizePath } from "@/i18n/routing";
 import { alternates } from "@/lib/alternates";
+import { publicAreasFor } from "@/data/discovery";
 
 import type { Metadata } from "next";
 
@@ -179,6 +180,7 @@ async function ReferencesPage({ locale }: { locale: Locale }) {
       slug,
       name: getProduct(slug)?.name ?? slug,
       href: path(routes.product(slug)),
+      areas: publicAreasFor(slug).map((a) => a.id),
     })),
   }));
   const compounds = new Set(entries.flatMap((e) => e.products.map((p) => p.slug))).size;

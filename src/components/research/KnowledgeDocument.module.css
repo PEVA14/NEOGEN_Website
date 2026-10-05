@@ -81,7 +81,7 @@
 }
 
 .sectionNumber {
-  color: var(--ink-muted);
+  color: var(--area-text, var(--ink-muted));
   flex: none;
   font-family: var(--font-mono);
   font-size: var(--text-2xs);

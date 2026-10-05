@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { NeogenMark } from "@/components/brand/NeogenMark";
 import { Container, Section } from "@/components/primitives";
 import { Body, Heading } from "@/components/typography";
 import { defaultLocale } from "@/i18n/config";
@@ -19,6 +20,9 @@ export default async function NotFound() {
   return (
     <Section mode="quiet" aria-labelledby="notfound-title">
       <Container>
+        {/* Nothing connects here: the mark's nodes, without their
+            connections. Decorative. */}
+        <NeogenMark form="points" className="mb-(--space-md) h-12 text-(--ink-muted)" />
         <Heading level={1} id="notfound-title" size="3xl">
           {dict.error.notFoundTitle}
         </Heading>

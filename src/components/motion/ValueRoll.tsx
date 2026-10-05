@@ -44,7 +44,7 @@ export function ValueRoll({
 
   const chars = [...shown.value];
   return (
-    <span className={[styles.roll, className].filter(Boolean).join(" ")}>
+    <span className={[styles.roll, className].filter(Boolean).join(" ")} data-roll="">
       <span className={styles.text}>{shown.value}</span>
       <span className={styles.strips} aria-hidden="true" data-trend={shown.trend}>
         {chars.map((ch, i) => {
@@ -53,7 +53,7 @@ export function ValueRoll({
           const fromRight = chars.length - i;
           if (!/\d/.test(ch)) {
             return (
-              <span key={`s${fromRight}`} className={styles.sep}>
+              <span key={`s${fromRight}`} className={styles.sep} data-roll-glyph="">
                 {ch}
               </span>
             );
@@ -82,11 +82,11 @@ function Column({ digit, trend }: { digit: number; trend: 1 | -1 }) {
     at.current = digit;
     if (!node || from === digit) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const style = getComputedStyle(node);
-    const duration = ms(style.getPropertyValue("--motion-duration-slow")) * 1.6 || 540;
-    const easing = style.getPropertyValue("--ease-settle").trim() || "ease-out";
+    const { duration, easing } = settle();
+    rolling(node, duration);
     const leaving = document.createElement("span");
     leaving.className = styles.leaving;
+    leaving.setAttribute("data-roll-glyph", "");
     leaving.textContent = String(from);
     node.append(leaving);
     const now = node.firstElementChild as HTMLElement | null;
@@ -100,8 +100,53 @@ function Column({ digit, trend }: { digit: number; trend: 1 | -1 }) {
 
   return (
     <span ref={cell} className={styles.column}>
-      <span className={styles.figure}>{digit}</span>
+      <span className={styles.figure} data-roll-glyph="">
+        {digit}
+      </span>
     </span>
+  );
+}
+
+/*
+ * THE SITE'S TEMPO, READ ONCE (finishing pass, profiling). Each changing digit
+ * used to read the tokens off its own computed style inside a layout effect,
+ * right after React's DOM writes: one forced style recalculation per digit,
+ * which in the compendium's count landed on every keystroke. The tokens are
+ * the root's and do not change while the page lives, so they are read from
+ * the root the first time a figure moves and kept.
+ */
+let tempo: { duration: number; easing: string } | null = null;
+
+function settle(): { duration: number; easing: string } {
+  if (!tempo) {
+    const style = getComputedStyle(document.documentElement);
+    tempo = {
+      duration: ms(style.getPropertyValue("--motion-duration-slow")) * 1.6 || 540,
+      easing: style.getPropertyValue("--ease-settle").trim() || "ease-out",
+    };
+  }
+  return tempo;
+}
+
+/*
+ * WHILE A FIGURE ROLLS, SAY SO (GHK-Cu, owner, 2026-10-04: "when changing the
+ * format the price animation glitches"). A world may paint its price as metal
+ * clipped to the text (`background-clip: text` on the price). The browser
+ * paints that through each glyph where it RESTS, ignoring the columns' travel
+ * and their windows, so the old and new figures printed over each other for
+ * the whole roll. `data-rolling` on the figure lets such a world hand its
+ * material to the moving glyphs (`data-roll-glyph`) for as long as they move.
+ */
+const settling = new WeakMap<Element, number>();
+
+function rolling(node: Element, duration: number): void {
+  const root = node.closest("[data-roll]");
+  if (!root) return;
+  root.setAttribute("data-rolling", "");
+  window.clearTimeout(settling.get(root));
+  settling.set(
+    root,
+    window.setTimeout(() => root.removeAttribute("data-rolling"), duration + 60),
   );
 }
 

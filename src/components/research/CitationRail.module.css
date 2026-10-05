@@ -92,3 +92,52 @@
 .entry:target {
   box-shadow: inset 2px 0 0 var(--ink-primary);
 }
+
+/* The compounds that cite a source, with their area marks (Research colour
+   completion). Ink at rest; pointing at the source wakes their names in
+   their areas' colour — "these are connected" — and lets it go again. */
+.citedBy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3xs) var(--space-sm);
+  margin: var(--space-2xs) 0 0;
+}
+
+.citedByLabel {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.citer {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-block-size: 1.75rem;
+  color: var(--ink-primary);
+  font-size: var(--text-sm);
+  text-decoration: underline;
+  text-decoration-color: var(--border-default);
+  text-underline-offset: 3px;
+  transition:
+    color var(--motion-duration-fast) var(--ease-standard),
+    text-decoration-color var(--motion-duration-fast) var(--ease-standard);
+}
+
+.entry:hover .citer,
+.entry:focus-within .citer {
+  color: var(--area-text, var(--ink-primary));
+  text-decoration-color: var(--area-mark, currentColor);
+}
+
+.citer:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .citer {
+    transition: none;
+  }
+}

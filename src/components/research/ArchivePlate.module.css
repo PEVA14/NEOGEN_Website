@@ -1,0 +1,158 @@
+/*
+ * THE ARCHIVE, COMPOUND BY COMPOUND — see ArchivePlate.tsx.
+ *
+ * Eight rows like a specimen tray: the area's name in its text colour, its
+ * compounds as squares in its mark colour (filled: a record; hollow: none),
+ * its count in mono. Pointed at, the row of the mark comes forward and the
+ * others step back — colour focuses, then returns.
+ */
+
+.plate {
+  display: grid;
+  gap: var(--space-xs);
+  margin: 0;
+  padding: var(--space-sm) 0;
+  border-block: 1px solid var(--border-default);
+}
+
+.caption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2xs) var(--space-md);
+}
+
+.label,
+.legend,
+.rowLabel,
+.rowCount,
+.readoutMeta {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.label {
+  color: var(--ink-primary);
+}
+
+.legend {
+  display: inline-flex;
+  gap: var(--space-sm);
+  color: var(--ink-muted);
+}
+
+.key {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.keyFilled,
+.keyHollow {
+  inline-size: 0.55rem;
+  block-size: 0.55rem;
+  border: 1.5px solid var(--ink-secondary);
+}
+
+.keyFilled {
+  background: var(--ink-secondary);
+}
+
+.rows {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr) 1.75rem;
+  align-items: center;
+  gap: var(--space-xs);
+  transition: opacity var(--motion-duration-base) var(--ease-standard);
+}
+
+.rowLabel {
+  color: var(--area-text, var(--ink-secondary));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowCount {
+  color: var(--ink-muted);
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.marks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.mark {
+  inline-size: 0.7rem;
+  block-size: 0.7rem;
+  border: 1.5px solid var(--area-mark, var(--ink-muted));
+  cursor: pointer;
+  transition:
+    scale var(--motion-duration-fast) var(--ease-settle),
+    background-color var(--motion-duration-fast) var(--ease-standard);
+}
+
+.mark[data-record="true"] {
+  background: var(--area-mark, var(--ink-muted));
+}
+
+.mark[data-on="true"] {
+  scale: 1.45;
+  outline: 1px solid var(--ink-primary);
+  outline-offset: 1px;
+}
+
+/* Colour focuses: the row of the mark pointed at stays, the others recede. */
+.plate[data-active="true"] .row:not([data-lit="true"]) {
+  opacity: 0.32;
+}
+
+.readout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3xs) var(--space-sm);
+  min-block-size: 1.5rem;
+  margin: 0;
+}
+
+.readoutName {
+  font-weight: 600;
+  color: var(--ink-primary);
+}
+
+.readoutMeta {
+  color: var(--ink-muted);
+}
+
+@media (max-width: 39.99rem) {
+  .row {
+    grid-template-columns: 7rem minmax(0, 1fr) 1.5rem;
+    gap: var(--space-2xs);
+  }
+  .rowLabel {
+    letter-spacing: 0.04em;
+  }
+  .mark {
+    inline-size: 0.6rem;
+    block-size: 0.6rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row,
+  .mark {
+    transition: none;
+  }
+}

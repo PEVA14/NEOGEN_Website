@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { NeogenMark } from "@/components/brand/NeogenMark";
 import { BagIndicator } from "@/components/layout/BagIndicator";
 import { HeaderSurfaceSync } from "@/components/layout/HeaderSurfaceSync";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
@@ -47,9 +48,14 @@ export function SiteHeader({ locale, dict }: SiteHeaderProps) {
             className={`neogen-display text-xl tracking-(--tracking-tight) ${styles.wordmark}`}
             data-brand-mark=""
           >
-            {/* Decorative: the wordmark beside it is already the accessible name. */}
-            <span aria-hidden="true" className={styles.wordmarkMark} />
-            {dict.meta.siteName}
+            {/*
+             * Decorative: the wordmark beside it is already the accessible
+             * name. Still at rest; pointing at the link (or tabbing to it)
+             * lets its connections go and reach again. On the homepage it
+             * forms as the poster NEOGEN is scrolled into the page.
+             */}
+            <NeogenMark className={styles.wordmarkMark} assemble="hero" respond />
+            <span data-brand-word="">{dict.meta.siteName}</span>
           </Link>
 
           <nav aria-label={dict.a11y.mainNavigation} className={styles.nav}>

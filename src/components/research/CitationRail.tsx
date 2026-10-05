@@ -1,9 +1,13 @@
+import Link from "next/link";
+
 import { Mono } from "@/components/typography";
+import { AreaMarks } from "@/components/ui/AreaMarks";
 import { referenceHref } from "@/content/references";
 
 import styles from "./CitationRail.module.css";
 
 import type { Reference, SourceType } from "@/content/references";
+import type { DiscoveryAreaId } from "@/data/discovery";
 
 export interface CitationRailCopy {
   label: string;
@@ -33,6 +37,7 @@ export function CitationRail({
   copy,
   startAt = 1,
   anchorPrefix,
+  citedBy,
 }: {
   references: readonly Reference[];
   copy: CitationRailCopy;
@@ -42,6 +47,17 @@ export function CitationRail({
    * link to it. Only where the page actually cites by number.
    */
   anchorPrefix?: string;
+  /**
+   * The other end of each source (Research colour completion): the compounds
+   * whose profiles cite it, keyed by reference id, each with its area marks.
+   * Source → citing compound → area, all real; colour is membership only.
+   */
+  citedBy?: {
+    label: string;
+    byReference: Readonly<
+      Record<string, readonly { name: string; href: string; areas: readonly DiscoveryAreaId[] }[]>
+    >;
+  };
 }) {
   if (references.length === 0) return null;
 
@@ -94,6 +110,23 @@ export function CitationRail({
                   </a>
                 ) : null}
               </div>
+              {citedBy && (citedBy.byReference[ref.id]?.length ?? 0) > 0 ? (
+                <p className={styles.citedBy} data-cited-by="">
+                  <Mono size="2xs" className={styles.citedByLabel}>
+                    {citedBy.label}
+                  </Mono>
+                  {citedBy.byReference[ref.id]!.map((compound) => (
+                    <Link
+                      key={compound.href}
+                      href={compound.href}
+                      className={styles.citer}
+                      data-area={compound.areas[0]}
+                    >
+                      <AreaMarks areas={compound.areas} /> {compound.name}
+                    </Link>
+                  ))}
+                </p>
+              ) : null}
             </div>
           </li>
         );

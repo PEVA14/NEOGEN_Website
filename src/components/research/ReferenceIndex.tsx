@@ -6,11 +6,19 @@ import { referenceHref } from "@/content/references";
 import styles from "./ReferenceIndex.module.css";
 
 import type { Reference, SourceType } from "@/content/references";
+import { AreaMarks } from "@/components/ui/AreaMarks";
+import type { DiscoveryAreaId } from "@/data/discovery";
 
 export interface ReferenceIndexEntry {
   reference: Reference;
   /** The compounds whose public profile cites it. */
-  products: readonly { slug: string; name: string; href: string }[];
+  products: readonly {
+    slug: string;
+    name: string;
+    href: string;
+    /** Its catalogue areas, for its registration marks (color pass). */
+    areas?: readonly DiscoveryAreaId[];
+  }[];
 }
 
 export interface ReferenceIndexCopy {
@@ -128,6 +136,9 @@ export function ReferenceIndex({
                         {entry.products.map((product) => (
                           <li key={product.slug}>
                             <Link href={product.href} className={styles.compound}>
+                              {product.areas && product.areas.length > 0 ? (
+                                <AreaMarks areas={product.areas} />
+                              ) : null}{" "}
                               {product.name}
                             </Link>
                           </li>

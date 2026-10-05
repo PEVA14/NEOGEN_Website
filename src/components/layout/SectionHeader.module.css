@@ -76,3 +76,20 @@
   color: var(--ink-secondary);
   text-wrap: pretty;
 }
+
+/*
+ * IN AN AREA'S CONTEXT (color pass): a section inside `[data-area]` numbers
+ * itself in the area's text colour and its rule opens on a short length of
+ * the area's mark — the record's colour carried down the page in the places
+ * the reader navigates by, never in its prose.
+ */
+:global([data-area]) .index {
+  color: var(--area-text);
+}
+
+:global([data-area]) .rule {
+  background-image: linear-gradient(to right, var(--area-mark) 0 2.5rem, transparent 2.5rem);
+  block-size: 2px;
+  background-color: transparent;
+  box-shadow: inset 0 -1px 0 var(--border-default);
+}

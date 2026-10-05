@@ -393,71 +393,167 @@
   }
 }
 
-/* ---- the quick view ------------------------------------------------------ */
+/* ---- the record, opened in place -------------------------------------------
+ *
+ * ONE RECORD, MANY MAGNIFICATIONS. The row opens into its Quick Record where
+ * it stands: an ink rule forms on top of it, its name grows into the record's
+ * title, the record unfolds beneath (its height, by Motion) and the rows
+ * below make room. The rest of the index stays in view, a step back.
+ */
 
-.dialog {
-  background: var(--surface-base);
-  border: 0;
-  border-radius: 0;
-  box-shadow: var(--shadow-lg);
-  color: var(--ink-primary);
-  inset-block: auto 0;
-  inset-inline: 0;
-  margin: 0;
-  /* A fixed height, not a maximum: the record scrolls INSIDE the sheet, and
-     the tabs and the actions stay put. */
-  block-size: 92dvh;
-  max-block-size: 92dvh;
-  max-inline-size: 100%;
-  padding: 0;
-  inline-size: 100%;
+.srOnly {
+  block-size: 1px;
+  clip-path: inset(50%);
+  inline-size: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
 }
 
-.dialog::backdrop {
-  background: color-mix(in oklab, var(--neogen-charcoal) 42%, transparent);
+/* Why a row matched: the query's own letters, underlined in the name. */
+.match {
+  background: none;
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.18em;
 }
 
-.dialog[open] {
-  animation: sheet-rise var(--motion-duration-slow) var(--ease-out);
+/* A letter with nothing under it now stays in the alphabet, faint. */
+.absent {
+  align-items: center;
+  color: color-mix(in oklab, var(--ink-muted) 45%, transparent);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  justify-content: center;
+  min-block-size: 2.75rem;
+  min-inline-size: 2rem;
 }
 
-@keyframes sheet-rise {
-  from {
-    transform: translateY(1.5rem);
+.row {
+  position: relative;
+  scroll-margin-block-start: calc(var(--header-height) + var(--space-md));
+  transition: box-shadow var(--motion-duration-slow) var(--ease-settle);
+  box-shadow: inset 0 0 0 var(--ink-primary);
+}
+
+/* While a record is open, the rest of the index steps back, not away. (On
+   the row's contents: the row's own opacity belongs to the layout motion.) */
+.row > * {
+  transition: opacity var(--motion-duration-base) var(--ease-standard);
+}
+
+.index[data-inspecting] .row:not([data-open]) > * {
+  opacity: 0.4;
+}
+
+.index[data-inspecting] .row:not([data-open]):hover > *,
+.index[data-inspecting] .row:not([data-open]):focus-within > * {
+  opacity: 1;
+}
+
+.index[data-inspecting] .letter {
+  opacity: 0.4;
+  transition: opacity var(--motion-duration-base) var(--ease-standard);
+}
+
+.row[data-open] {
+  border-block-start-color: transparent;
+  box-shadow: inset 0 2px 0 var(--ink-primary);
+}
+
+.row[data-open] .nameText {
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  letter-spacing: var(--tracking-display);
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.nameText {
+  display: inline-block;
+  transform-origin: 0 50%;
+}
+
+.inspect {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition:
+    grid-template-rows 420ms var(--ease-settle),
+    opacity 180ms linear;
+}
+
+@starting-style {
+  .inspect {
+    grid-template-rows: 0fr;
     opacity: 0;
   }
 }
 
-@media (min-width: 64rem) {
-  .dialog {
-    block-size: 100dvh;
-    inset-block: 0;
-    inset-inline: auto 0;
-    max-block-size: 100dvh;
-    /* Wide enough to read a record, narrow enough that the index stays in
-       view beside it — a drawer, not a page in disguise. */
-    inline-size: min(44rem, 58vw);
-  }
+.inspect[data-closing="true"] {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition-duration: 240ms, 160ms;
+}
 
-  @keyframes sheet-rise {
-    from {
-      transform: translateX(1.5rem);
-      opacity: 0;
-    }
-  }
+.inspectInner {
+  min-block-size: 0;
+  overflow: hidden;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dialog[open] {
-    animation: none;
+  .inspect {
+    transition: none;
   }
 }
 
-.sheet {
+.inspectFrame {
+  background: var(--surface-base);
+  border: 1px solid var(--border-default);
+  border-block-start: 0;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  max-block-size: inherit;
-  block-size: 100%;
+  margin-block-end: var(--space-md);
+}
+
+.inspectHead {
+  border-block-end: 1px solid var(--border-default);
+  display: grid;
+  gap: var(--space-3xs);
+  padding: var(--space-sm) calc(var(--gutter) + 2.75rem) var(--space-sm) var(--gutter);
+  position: relative;
+}
+
+/* On a phone the record reads at its own length: no scroll inside a scroll. */
+.inspectBody {
+  display: grid;
+  grid-template-rows: auto auto;
+}
+
+.inspectBody > :global(*) {
+  min-block-size: 0;
+}
+
+@media (max-width: 63.999rem) {
+  .inspectBody :global([role="tabpanel"]) {
+    overflow: visible;
+  }
+}
+
+/* Wide: a window of a fixed height, the record scrolling inside it, so
+   opening one never throws the index a screen down. */
+@media (min-width: 64rem) {
+  .inspectBody {
+    block-size: min(34rem, 62vh);
+    grid-template-rows: auto minmax(0, 1fr);
+    overflow: hidden;
+  }
+
+  .row[data-open] .nameText {
+    font-size: var(--text-4xl);
+  }
 }
 
 .sheetHead {
@@ -557,6 +653,7 @@
  */
 .sheetFoot {
   background: var(--surface-base);
+  position: relative;
   border-block-start: 1px solid var(--border-default);
   display: grid;
   gap: var(--space-2xs);
@@ -696,4 +793,71 @@
 .secondary:focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: var(--focus-ring-offset-width);
+}
+
+/* --- Colour: area membership, and the area as context (color pass) ---------
+ *
+ * Every row carries its areas as registration marks beside their names (the
+ * names stay: colour is never the only carrier). A row opened in place takes
+ * its first area as its context colour — the rule it opens on, the frame's
+ * edge, the eyebrow — and the full record keeps it (`CompoundRecord`). With
+ * the index filtered to an area, the count, the filter and the letters read in
+ * that area. Membership only; never effect, evidence or similarity.
+ */
+
+.cellAreas {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+}
+
+.row[data-open] {
+  box-shadow: inset 0 2px 0 var(--area-mark, var(--ink-primary));
+}
+
+.row[data-open] .inspectFrame {
+  box-shadow: inset 3px 0 0 var(--area-mark, var(--ink-primary));
+}
+
+.row[data-open] .sheetEyebrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2xs);
+  color: var(--area-text, var(--ink-muted));
+}
+
+.library[data-area] .count {
+  color: var(--area-text);
+}
+
+.library[data-area] .count::before {
+  content: "";
+  display: inline-block;
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  margin-inline-end: var(--space-2xs);
+  background: var(--area-mark);
+}
+
+.library[data-area] .select[data-filter="area"] {
+  border-block-end: 2px solid var(--area-mark);
+}
+
+.library[data-area] .letters a {
+  color: var(--area-text);
+}
+
+/* The open record's head on its area's wash (the same field its full
+   record opens on); the filtered index's letters in the area. */
+.row[data-open] .inspectHead {
+  background: var(--area-wash);
+}
+
+.library[data-area] .letter {
+  color: var(--area-text);
+}
+
+.row[data-open] .inspectHead {
+  --ink-muted: var(--ink-secondary);
 }

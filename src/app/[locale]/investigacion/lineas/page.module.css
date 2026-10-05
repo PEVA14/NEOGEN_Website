@@ -184,6 +184,7 @@
 
 .compound {
   align-items: center;
+  gap: var(--space-2xs);
   border: 1px solid var(--border-default);
   color: var(--ink-primary);
   display: inline-flex;
@@ -193,8 +194,33 @@
   text-decoration: none;
 }
 
+/*
+ * A LINE IS NEVER COLOURED; ITS COMPOUNDS ARE (Research colour completion).
+ * Each chip carries its compound's area marks at rest. Pointing at a line —
+ * or reaching it by keyboard — wakes its compounds' names in their own areas'
+ * text colour, each its own, and lets them go: the line's members, said in
+ * colour, without a colour of the line's.
+ */
+.compound {
+  transition:
+    color var(--motion-duration-fast) var(--ease-standard),
+    border-color var(--motion-duration-fast) var(--ease-standard);
+}
+
+.line:hover .compound,
+.line:focus-within .compound {
+  color: var(--area-text, var(--ink-primary));
+  border-color: var(--area-line, var(--border-default));
+}
+
 .compound:hover {
-  border-color: var(--ink-primary);
+  border-color: var(--area-mark, var(--ink-primary));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .compound {
+    transition: none;
+  }
 }
 
 .jump a:focus-visible,

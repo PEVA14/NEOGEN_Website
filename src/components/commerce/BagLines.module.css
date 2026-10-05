@@ -43,6 +43,18 @@
 }
 
 .loading,
+/* The empty bag's zero, with the mark's unconnected nodes at its cap height. */
+.emptyReading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.emptyMark {
+  block-size: calc(var(--text-5xl) * 0.62);
+  color: var(--ink-muted);
+}
+
 .emptyState {
   display: grid;
   justify-items: start;

@@ -12,6 +12,10 @@ interface TextLinkProps {
   arrow?: boolean;
   tone?: Tone;
   className?: string;
+  /** A glossary term id: the link opens its definition in place (`TermLens`). */
+  term?: string;
+  /** View-transition types this navigation carries (`<Link transitionTypes>`). */
+  transitionTypes?: string[];
 }
 
 const toneClass: Record<Tone, string> = {
@@ -35,10 +39,14 @@ export function TextLink({
   arrow = true,
   tone = "default",
   className,
+  term,
+  transitionTypes,
 }: TextLinkProps) {
   return (
     <Link
       href={href}
+      data-term={term}
+      transitionTypes={transitionTypes}
       className={cn(
         /*
          * A 44px TARGET WITH A 24px FOOTPRINT.

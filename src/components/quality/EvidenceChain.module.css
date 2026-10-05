@@ -116,3 +116,98 @@
   position: absolute;
   white-space: nowrap;
 }
+
+/* --- Layers (the hub's documentation model, colour completion) -------------
+ *
+ * Four sheets, each inside the one it belongs to, in the site's own
+ * materials: the compound on paper, its presentation on stone, its lot on
+ * chalk, the document in ink — a second kind of colour, material rather than
+ * area, for a subject that is not area navigation. Each sheet's head sits on
+ * its left; the next sheet fills the rest, so the nesting reads at a glance.
+ */
+.layers,
+.inner {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sheet {
+  position: relative;
+  display: grid;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  border: 1px solid var(--border-default);
+  box-shadow: 0 1px 0 var(--border-subtle);
+}
+
+@media (min-width: 64rem) {
+  .sheet {
+    grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+    align-items: start;
+    column-gap: var(--space-lg);
+  }
+  .sheet[data-level="document"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.sheet[data-level="product"] {
+  background: var(--neogen-paper);
+}
+
+.sheet[data-level="variant"] {
+  background: var(--neogen-warm-stone);
+}
+
+.sheet[data-level="lot"] {
+  background: var(--neogen-chalk);
+}
+
+.sheet[data-level="document"] {
+  background: var(--neogen-charcoal);
+  border-color: var(--neogen-charcoal);
+  color: var(--neogen-paper);
+}
+
+.sheetHead {
+  display: grid;
+  gap: var(--space-3xs);
+  min-inline-size: 0;
+}
+
+.sheet[data-level="document"] .title,
+.sheet[data-level="document"] .rule {
+  color: var(--neogen-paper);
+}
+
+.sheet[data-level="document"] .index {
+  color: color-mix(in oklab, var(--neogen-paper) 70%, var(--neogen-charcoal));
+}
+
+/* The registration marks a document carries, on the inked sheet. */
+.registration {
+  position: absolute;
+  inline-size: 0.8rem;
+  block-size: 0.8rem;
+  border: 0 solid var(--neogen-paper);
+}
+
+.registration[data-corner="tl"] {
+  inset-block-start: 0.4rem;
+  inset-inline-start: 0.4rem;
+  border-block-start-width: 1px;
+  border-inline-start-width: 1px;
+}
+
+.registration[data-corner="br"] {
+  inset-block-end: 0.4rem;
+  inset-inline-end: 0.4rem;
+  border-block-end-width: 1px;
+  border-inline-end-width: 1px;
+}
+
+/* On chalk, muted labels take the secondary ink to keep AA. */
+.sheet[data-level="lot"] {
+  --ink-muted: var(--ink-secondary);
+}

@@ -12,6 +12,7 @@ import {
   type RetaExperienceCopy,
 } from "@/components/experience";
 import { AreaExplorer, ClosingShelf, HomeGateway, ScienceBand, WorldBand } from "@/components/home";
+import { HeroHandoff } from "@/components/home/HeroHandoff";
 import { StageHost } from "@/components/experience/StageHost";
 import { routes } from "@/config/routes";
 import { getWorld, type WorldId } from "@/config/worlds";
@@ -284,6 +285,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           travels to whichever is on screen (see `StageHost`). */}
       <StageHost />
       <Hero copy={heroCopy} />
+      {/* The poster's NEOGEN travels down into the gateway's title. */}
+      <HeroHandoff />
 
       <HomeGateway
         copy={home.gateway}
@@ -418,6 +421,20 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           { value: data.counts.references, label: home.science.references },
           { value: data.counts.areas, label: home.science.areas },
         ]}
+        structure={{
+          labels: {
+            profiles: home.science.profiles,
+            references: home.science.references,
+            areas: home.science.areas,
+          },
+          profiles: data.evidence.profiles,
+          references: data.evidence.references,
+          areas: data.evidence.areaIds.map((id) => ({
+            id,
+            label: dict.discovery.areas[id].short,
+          })),
+          copy: home.science.structure,
+        }}
         actions={[
           { href: data.links.research, label: home.science.action },
           ...(data.links.references
