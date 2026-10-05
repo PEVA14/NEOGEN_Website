@@ -11,6 +11,7 @@ import {
 } from "react";
 
 import { CanvasErrorBoundary } from "@/components/experience/CanvasErrorBoundary";
+import { REDUCED_MOTION_QUERY } from "@/lib/reducedMotion";
 
 import type { Bench } from "./benches";
 import { setOpacity } from "./ribbon";
@@ -242,7 +243,7 @@ function useRibbonAllowed(): { run: boolean; upright: boolean } {
   const [state, setState] = useState({ run: false, upright: false });
   useEffect(() => {
     const wide = window.matchMedia("(min-width: 64rem)");
-    const still = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const still = window.matchMedia(REDUCED_MOTION_QUERY);
     const webgl = (() => {
       try {
         return document.createElement("canvas").getContext("webgl2") !== null;

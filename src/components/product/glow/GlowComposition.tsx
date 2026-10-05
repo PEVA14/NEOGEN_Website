@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 
 import type { Constituent } from "./composition";
 import styles from "./GlowComposition.module.css";
+import { prefersReducedMotion } from "@/lib/reducedMotion";
 
 export interface CompositionPart extends Constituent {
   /** The catalogue product's own name ("GHK-Cu"), when the part is linked. */
@@ -52,7 +53,7 @@ export function GlowComposition({
   useEffect(() => {
     const node = section.current;
     if (!node) return;
-    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const still = prefersReducedMotion();
     const seen = new IntersectionObserver(
       ([entry]) => {
         if (!entry.isIntersecting) return;

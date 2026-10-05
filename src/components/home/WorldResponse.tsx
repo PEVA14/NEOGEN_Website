@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
+import { prefersReducedMotion } from "@/lib/reducedMotion";
 
 /**
  * TRES MUNDOS, EACH BEHAVING LIKE ITSELF — a foretaste, not the payoff.
@@ -32,7 +33,7 @@ export function WorldResponse({ children }: { children: ReactNode }) {
   useEffect(() => {
     const node = root.current;
     if (!node) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (prefersReducedMotion()) return;
     const fine = window.matchMedia("(hover: hover) and (pointer: fine)");
     const panels = [...node.querySelectorAll<HTMLElement>("[data-world-panel]")];
 

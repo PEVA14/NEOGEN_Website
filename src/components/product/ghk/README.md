@@ -1,6 +1,6 @@
 # GHK-Cu — matter that responds to its specimen (flagship idea #6)
 
-Prototype of 2026-10-03, GHK-Cu only, awaiting the owner's review.
+Built 2026-10-03, GHK-Cu only; permanent since 2026-10-05 (PROJECT_STATE §8aw).
 
 RETA's world is an instrument that calibrates round its specimen; GLOW's is
 lit by it. GHK-Cu's world is a **material**, and the material responds:

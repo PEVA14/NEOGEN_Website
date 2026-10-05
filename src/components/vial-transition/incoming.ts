@@ -14,6 +14,9 @@
  * destructive read comes back empty the second time (trap 2). A short time
  * window does the job a consume would.
  */
+
+import { prefersReducedMotion } from "@/lib/reducedMotion";
+
 const WINDOW_MS = 2500;
 
 /** Where the card's media stood on screen when it was clicked. */
@@ -35,7 +38,7 @@ let pending: {
 export function transitionWillPlay(): boolean {
   if (typeof document === "undefined") return false;
   if (!("startViewTransition" in document)) return false;
-  return !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  return !prefersReducedMotion();
 }
 
 /**

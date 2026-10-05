@@ -3,6 +3,14 @@
 import { useEffect, useRef, type CSSProperties } from "react";
 
 import { MARK_ARMS, MARK_BOX, MARK_HUB } from "./markGeometry";
+import {
+  ASSEMBLY,
+  EASE_REACH,
+  EASE_REGISTER,
+  EASE_TENSION,
+  TENSION,
+  type Phase,
+} from "./markPhases";
 import { assemble, reconnect } from "./markMotion";
 import styles from "./NeogenMark.module.css";
 
@@ -94,16 +102,23 @@ export function NeogenMark({
       data-form={form}
       data-assemble={assembly === "now" ? undefined : assembly}
       data-respond={respond ? "" : undefined}
+      style={
+        {
+          "--tension": `${TENSION}px`,
+          "--ease-register": EASE_REGISTER,
+          "--ease-reach": EASE_REACH,
+          "--ease-tension": EASE_TENSION,
+        } as CSSProperties
+      }
       focusable="false"
       {...(label ? { role: "img", "aria-label": label } : { "aria-hidden": true })}
     >
-      <path data-part="hub" className={styles.hub} d={MARK_HUB.d} />
+      <path data-part="hub" className={styles.hub} d={MARK_HUB.d} style={phase(ASSEMBLY.hub())} />
       {MARK_ARMS.map((arm, k) => (
         <g
           key={arm.angle}
           style={
             {
-              "--k": k,
               "--a": `${arm.angle}deg`,
               "--ux": Math.cos((arm.angle * Math.PI) / 180).toFixed(4),
               "--uy": Math.sin((arm.angle * Math.PI) / 180).toFixed(4),
@@ -114,15 +129,26 @@ export function NeogenMark({
             } as CSSProperties
           }
         >
-          <path data-part="in" className={styles.in} d={arm.inner} />
-          <g data-part="sat" className={styles.sat}>
-            <path data-part="out" className={styles.out} d={arm.outer} />
+          <path
+            data-part="in"
+            className={styles.in}
+            d={arm.inner}
+            style={phase(ASSEMBLY.reach(k))}
+          />
+          <g data-part="sat" className={styles.sat} style={phase(ASSEMBLY.tension(k))}>
+            <path
+              data-part="out"
+              className={styles.out}
+              d={arm.outer}
+              style={phase(ASSEMBLY.reach(k))}
+            />
             <circle
               data-part="node"
               className={styles.node}
               cx={arm.node.cx}
               cy={arm.node.cy}
               r={arm.node.r}
+              style={phase(ASSEMBLY.node(k))}
             />
           </g>
         </g>
@@ -130,3 +156,6 @@ export function NeogenMark({
     </svg>
   );
 }
+
+/** A part's stretch of the scroll-linked assembly (`markPhases.ts`). */
+const phase = ([start, end]: Phase) => ({ "--p0": start, "--p1": end }) as CSSProperties;

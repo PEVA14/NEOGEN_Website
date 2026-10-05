@@ -1,6 +1,6 @@
 # GLOW — the blend as light (flagship idea #5)
 
-Prototype of 2026-10-02, GLOW only, awaiting the owner's review.
+Built 2026-10-02, GLOW only; permanent since 2026-10-05 (PROJECT_STATE §8aw).
 
 RETA behaves like an instrument: calibrate → measure → inspect. GLOW's
 physical language is light: its specimen is the source of its world.

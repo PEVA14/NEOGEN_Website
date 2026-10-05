@@ -20,6 +20,7 @@ import {
 import { ValueRoll } from "@/components/motion/ValueRoll";
 import { AreaMarks } from "@/components/ui/AreaMarks";
 
+import { prefersReducedMotion } from "@/lib/reducedMotion";
 import { fold, foldIndex, matchesText } from "@/lib/search";
 import { useUrlSearch } from "@/lib/useUrlSearch";
 
@@ -346,7 +347,7 @@ export function CompoundLibrary({
   const [closingSlug, setClosingSlug] = useState<string | null>(null);
   const closeTimer = useRef(0);
   const close = useCallback((focus = true) => {
-    const fold = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const fold = !prefersReducedMotion();
     setOpenSlug((slug) => {
       if (slug && focus) {
         requestAnimationFrame(() =>

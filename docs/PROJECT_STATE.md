@@ -1,6 +1,10 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-10-05**: **the NEOGEN mark brand pass is prototyped —
+Last updated **2026-10-05**: **everything prototyped since 2026-10-01 is
+permanent** (owner: "integrate EVERYTHING into permanent features") — the
+flagship worlds (RETA #3 and #4, GLOW, GHK-Cu), the bench, the everyday motion
+system, the colour grammar, Research colour and the NEOGEN mark — and the
+consolidation pass is done (§8aw). Before that, the same day: **the NEOGEN mark brand pass was prototyped —
 the mark traced from the owner's artwork into one geometry, one component and
 a small motion vocabulary (points → connection → structure), placed with a
 brand-presence map — uncommitted, awaiting the owner's review; consolidation
@@ -158,8 +162,8 @@ Read order for a fresh session: `CLAUDE.md` → this file →
     It is still not propagated across the catalogue — but GLOW and GHK-Cu now
     have their own studio rigs (§8w), so every flagship can be photographed.
   - The owner moved on to other work. Ask before resuming product media.
-- **Homepage pass (§8s) is awaiting the owner's visual review.** Do not
-  propagate its direction to other pages until approved.
+- **Homepage pass (§8s) is permanent** (2026-10-05, §8aw), with everything
+  built on it since.
 - **Nothing else is approved to start.** The V1 audit ledger (§8p) lists open
   items. Ask before picking one up.
 - **Figma** (claude.ai connector, the owner's account): file
@@ -1529,7 +1533,7 @@ unchanged.
   "[LOT] [PRODUCT ID] [FORMAT]" placeholders. They are invisible at the front
   view; any turned view would show them.
 
-## 8s. Homepage pass: the store opening up (awaiting owner review)
+## 8s. Homepage pass: the store opening up (permanent since 2026-10-05)
 
 **Owner direction (2026-09-18).** Redesign the homepage in the /productos
 commerce language, and keep the giant black NEOGEN opening. The visitor
@@ -2520,10 +2524,10 @@ is set. In Safari a new page therefore painted at the old page's scroll
 position and glided up. `app/[locale]/layout.tsx` now sets the attribute;
 in-page anchors stay smooth. Verified in iOS 26.3 Safari (simulator).
 
-## 8ak. Flagship idea #3: the world comes out of the product (2026-10-01, PROTOTYPE)
+## 8ak. Flagship idea #3: the world comes out of the product (2026-10-01, permanent since 2026-10-05)
 
 **Status: approved directionally by the owner (2026-10-02: "I like the
-result. Preserve it"); RETA only, NOT committed.** Do not extend it to GLOW or
+result. Preserve it"); RETA only, NOT committed.** **Superseded: committed, and permanent since 2026-10-05 (§8aw).** Do not extend it to GLOW or
 GHK-Cu, or anywhere else, until the owner says.
 
 **The brief (owner, 2026-10-01), condensed.** #1 established that the
@@ -2577,12 +2581,62 @@ from the catalogue grid, the phone strip and by direct URL; reduced motion;
 GLOW's circle unchanged; at 4× CPU throttle on the phone there is no long task
 between the flight's start and the formation's end.
 
-## 8av. The NEOGEN mark — brand motion and presence (2026-10-05, PROTOTYPE)
+## 8aw. Everything made permanent, and the consolidation pass (2026-10-05)
+
+Owner: "Can you integrate EVERYTHING into permanent features". Every pass
+that was a prototype is now a permanent part of the site, with no flag or
+review state left on it:
+
+| §             | What                                                       | Was                               |
+| ------------- | ---------------------------------------------------------- | --------------------------------- |
+| 8s            | homepage: the store opening up                             | awaiting visual review            |
+| 8ak, 8al      | RETA: the world forms round its specimen; inspection frame | approved directionally / awaiting |
+| 8am           | the bench, every product without a world                   | approved                          |
+| 8an, 8ap      | GLOW: the blend as light; GHK-Cu: matter responds          | committed after review            |
+| 8aq, 8ar, 8as | the everyday motion system (micro, meso, finishing)        | prototype                         |
+| 8at, 8au      | colour as navigation; Research colour and line pages       | prototype                         |
+| 8av           | the NEOGEN mark                                            | prototype                         |
+
+The reviewed work was committed as it stood (`464b008`), then consolidated
+in a second commit. The rules each pass found are now written as rules:
+CONVENTIONS §4 (the everyday motion system), §4b (colour is navigation) and
+§19 (the brand mark); `motion/README.md` keeps the history, the vocabulary
+and what was rejected.
+
+**Consolidated** — where one thing was spelled in several places:
+
+- **Reduced motion, imperatively.** Eleven components spelled the media query
+  themselves; they now call `prefersReducedMotion()` (`lib/reducedMotion.ts`,
+  a plain module, importable from any client code). `useReducedMotion()`
+  is built on the same query.
+- **The directory lens** moved from `home/` to `motion/DirectoryLens`: it is
+  shared by the homepage directory and the product page's "En el catálogo".
+- **The mark's assembly** has one timing table (`brand/markPhases.ts`):
+  `NeogenMark` writes it onto the parts for the scroll-linked CSS, and
+  `markMotion.ts` runs it on a clock. Tension and easings too.
+
+**Deliberately not abstracted** (CLAUDE.md: avoid premature abstractions):
+
+- The Level-2 area field (wash + `--ink-muted` lifted to secondary) appears
+  five times, each tied to its own state (`[data-open]`, `[data-registered]`);
+  a shared class would trade five CSS selectors for five JSX conditionals.
+  The recipe is written down in CONVENTIONS §4b instead.
+- The registration corners differ in size and stroke per surface (a quality
+  file, a lens, a world frame) — shared language, not shared code.
+- The three flagship worlds stay three implementations (WebGL plate, light,
+  frame): their only common part is the arrival they already share.
+
+**Not changed by "permanent":** scientific content keeps its own review
+(§8i "Sourced compound profiles — awaiting owner review" is content, not a
+feature); product media keeps "ask before resuming" (§8r); Atlas stays V2 and
+frozen; commerce stays off until the regulatory review (§6).
+
+## 8av. The NEOGEN mark — brand motion and presence (2026-10-05, permanent since 2026-10-05)
 
 The owner asked for the mark to become a recurring motif — rediscovered, not
 stamped — with one signature behaviour and a small vocabulary, without
 redesigning the logo, pages or flagships, and with Research left scientifically
-unambiguous. Uncommitted, awaiting review; consolidation not started.
+unambiguous. Committed in `464b008`; permanent since 2026-10-05 (§8aw).
 
 **Source of truth.** There is no vector source (only black-on-alpha PNGs), so
 `scripts/trace-mark.mjs` measures the mark from the artwork: a hub (its own
@@ -2617,7 +2671,7 @@ references and notes (their dots and squares are data); the quality record
 watermark); flagship worlds (unchanged — world inheritance is a consolidation
 question). Catalogue: opportunities documented, nothing built.
 
-## 8au. Research colour completion (2026-10-04, PROTOTYPE)
+## 8au. Research colour completion (2026-10-04, permanent since 2026-10-05)
 
 The owner approved the colour grammar (§8at) and asked to finish Research,
 where colour still disappeared below the area grid and on the first screen.
@@ -2689,7 +2743,7 @@ rolling digits' travel and windows. `ValueRoll` now marks itself
 sheen rejoins when the figure settles. RETA's and GLOW's prices are plain
 text and were unaffected.
 
-## 8at. Colour system + editorial visual language (2026-10-04, PROTOTYPE)
+## 8at. Colour system + editorial visual language (2026-10-04, permanent since 2026-10-05)
 
 The owner asked for richer colour rhythm — "still NEOGEN, but much richer" —
 learning from the storefront's "Compra por área" tiles and the worlds. The
@@ -2742,7 +2796,7 @@ the compendium's dimmed rows while a record is open (opacity 0.4 — 289
 nodes with no filter at all). Colour never carries meaning alone: area
 names stay in text beside every mark.
 
-## 8as. Final surgical finishing pass (2026-10-04, PROTOTYPE)
+## 8as. Final surgical finishing pass (2026-10-04, permanent since 2026-10-05)
 
 The owner approved passes 1 and 2 directionally and asked for one finishing
 pass on the remaining quality cliffs — not a pass 3, no new language. Nothing
@@ -2802,7 +2856,7 @@ and the hub with a roster open, at 1440 and 390. Reduced motion: every new
 piece keeps its state and meaning; only the system's shortened interface
 feedback remains.
 
-## 8ar. Everyday motion pass 2: meso (2026-10-04, PROTOTYPE)
+## 8ar. Everyday motion pass 2: meso (2026-10-04, permanent since 2026-10-05)
 
 **Brief (owner, 2026-10-04).** Pass 1 kept. Do not consolidate. Make moments
 that are met during ordinary browsing: a homepage motion narrative (the hero's
@@ -2882,7 +2936,7 @@ place one 50–90 ms task (after moving the panel's unfold to CSS and
 memoising rows). Heap after six record round trips: 8.5 → 13.7 MB (fetched
 records and route cache), no stray handoff elements left.
 
-## 8aq. The everyday motion baseline (2026-10-04, PROTOTYPE)
+## 8aq. The everyday motion baseline (2026-10-04, permanent since 2026-10-05)
 
 **Brief (owner, 2026-10-04).** Outside the three flagship worlds NEOGEN still
 read as "a beautiful static website with occasional animation". Raise the
@@ -2926,9 +2980,9 @@ predates this pass (the glossary shows it too). No long tasks while operating
 the map or the lens at 4× CPU throttle. The hub's HTML grows by the map's
 sentences (~25 KB of text per locale, carried twice by the RSC payload).
 
-## 8ap. Flagship idea #6: GHK-Cu, matter responds to its specimen (2026-10-03, PROTOTYPE)
+## 8ap. Flagship idea #6: GHK-Cu, matter responds to its specimen (2026-10-03, permanent since 2026-10-05)
 
-**Status: prototype, GHK-Cu only, NOT committed, awaiting the owner's review.**
+**Status: prototype, GHK-Cu only, NOT committed, awaiting the owner's review.** **Superseded: committed, and permanent since 2026-10-05 (§8aw).**
 Mechanism, integrity rules, traps and rejected concepts:
 `components/product/ghk/README.md`. Do not start a post-flagship abstraction
 (owner: not yet).
@@ -3012,7 +3066,7 @@ one. Not tested in Safari or on a real phone GPU.
   rebuilds during the session. Refresh fixes it; on the real site it affects
   only tabs open across a deploy (skew protection on the host would remove it).
 
-## 8an. Flagship idea #5: GLOW, the blend as light (2026-10-02, PROTOTYPE)
+## 8an. Flagship idea #5: GLOW, the blend as light (2026-10-02, permanent since 2026-10-05)
 
 **Status: committed after the owner's review (2026-10-03); GLOW only.**
 Do not start GHK-Cu, and do not generalise RETA + GLOW into a flagship
@@ -3074,7 +3128,7 @@ now and then": one ~1.4 s sweep every 7 s, none under reduced motion. That
 sweep is GLOW's one permanent animation, which the #5 brief had refused; the
 owner asked for it. `CommercePanel` marks its name `data-product-name`.
 
-## 8am. The Living Laboratory baseline: the bench (2026-10-02, PROTOTYPE)
+## 8am. The Living Laboratory baseline: the bench (2026-10-02, permanent since 2026-10-05)
 
 **Status: approved and rolled out to every product without a world
 (2026-10-02, owner: "Yes"). The allowlist and `ProductPlate` are gone.** Commits `00b0d52` (the bench),
@@ -3164,9 +3218,9 @@ CONVENTIONS §11 records the bench's rules. Walked one product per area and per
 form (BPC157, Melanotan 1, MGF, Epithalon, PE-22-28, Sterile Water,
 L-carnitine, Cagrilintide, Dermorphin) at 1440 and 390.
 
-## 8al. Flagship idea #4: the specimen under inspection (2026-10-02, PROTOTYPE)
+## 8al. Flagship idea #4: the specimen under inspection (2026-10-02, permanent since 2026-10-05)
 
-**Status: prototype on RETA only, NOT committed, awaiting the owner's review.**
+**Status: prototype on RETA only, NOT committed, awaiting the owner's review.** **Superseded: committed, and permanent since 2026-10-05 (§8aw).**
 
 **The brief (owner, 2026-10-02), condensed.** After #1–#3 have settled into
 Quiet Mode, make the live RETA specimen feel genuinely inspectable — "an

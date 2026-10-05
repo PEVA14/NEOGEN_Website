@@ -1,9 +1,10 @@
-# NEOGEN's everyday motion — the baseline under the flagships (PROTOTYPE)
+# NEOGEN's everyday motion — the baseline under the flagships
 
-Creative prototype of 2026-10-04, awaiting the owner's review. Homepage, one
-standard product page (Semaglutide) and Research. **Not** rolled out across
-the catalogue and **not** consolidated: this folder holds the few pieces that
-are already shared, and each surface keeps its own.
+Built on 2026-10-04 on the homepage, one standard product page (Semaglutide)
+and Research, and permanent since 2026-10-05 (PROJECT_STATE §8aw). The rules
+are in CONVENTIONS §4; this file keeps how they were found, the vocabulary,
+the pieces and everything rejected. Product-page pieces are in the shared
+product template, so every product page has them.
 
 ## Principles found on the way
 
@@ -37,7 +38,7 @@ are already shared, and each surface keeps its own.
 | Meso (the "that's cool") | `SourceTether` — claim ↔ source                   | PDP profile, compound record                |
 |                          | `TermLens` — the word, defined where it is read   | compound record                             |
 |                          | the reading needle                                | record index (`SectionIndex`)               |
-|                          | the directory lens (`home/DirectoryLens`)         | homepage catalogue                          |
+|                          | the directory lens (`motion/DirectoryLens`)       | homepage catalogue, PDP "En el catálogo"    |
 |                          | the shelf moves the way the choice did            | homepage "Explora por área"                 |
 | Macro (rare)             | the archive map (`research/ArchiveMap`), scrubbed | Research hub, wide and phone                |
 |                          | the flight, the worlds (unchanged)                | catalogue → flagships                       |
@@ -123,7 +124,7 @@ these did.
 
 ---
 
-# Pass 2 — meso motion (2026-10-04, PROTOTYPE)
+# Pass 2 — meso motion (2026-10-04)
 
 Pass 1 raised the micro floor. Pass 2 is about moments met during ordinary
 browsing without hunting for them, and about the Research journey reading as
@@ -200,7 +201,7 @@ and `//api.motion.dev/npm/:_authToken=${MOTION_TOKEN}`, then
 
 ---
 
-# Finishing pass (2026-10-04, PROTOTYPE)
+# Finishing pass (2026-10-04)
 
 No new language: each piece reuses one already approved.
 

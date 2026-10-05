@@ -42,37 +42,18 @@
 /*
  * THE ASSEMBLY, ON THE READER'S SCROLL.
  *
- * Every part has its own stretch of the range (fractions of it, --p0 → --p1):
- * the hub registers, the four nodes register, then each connection reaches
- * from both ends and meets, clockwise from the top node, a beat apart, and
- * each node is drawn a little toward the hub as its connection closes, then
- * relaxes. Scrolling back takes it apart the same way. The same phases run
- * on a clock in `markMotion.ts`.
+ * Every part carries its own stretch of the range as `--p0` → `--p1`
+ * (fractions of it), and the svg carries the tension and the easings — all
+ * written by `NeogenMark` from `markPhases.ts`, the table the timed assembly
+ * (`markMotion.ts`) uses too. The hub registers, the four nodes register,
+ * then each connection reaches from both ends and meets, clockwise from the
+ * top node, a beat apart, and each node is drawn a little toward the hub as
+ * its connection closes, then relaxes. Scrolling back takes it apart the
+ * same way.
  *
  * Only where scroll timelines exist and motion is welcome; everywhere else
  * these rules do not apply and the mark is simply whole.
  */
-.hub {
-  --p0: 0;
-  --p1: 0.16;
-}
-
-.node {
-  --p0: calc(0.04 + 0.05 * var(--k));
-  --p1: calc(0.22 + 0.05 * var(--k));
-}
-
-.in,
-.out {
-  --p0: calc(0.24 + 0.09 * var(--k));
-  --p1: calc(0.52 + 0.09 * var(--k));
-}
-
-.sat {
-  --p0: calc(0.52 + 0.09 * var(--k));
-  --p1: calc(0.7 + 0.09 * var(--k));
-}
-
 @media (prefers-reduced-motion: no-preference) {
   @supports (animation-timeline: view()) {
     /* The footer: formed by the time it is a third of the way up the screen. */
@@ -104,17 +85,17 @@
    them). */
 .mark :is(.hub, .node) {
   animation-fill-mode: both;
-  animation-timing-function: cubic-bezier(0.2, 0.7, 0.3, 1);
+  animation-timing-function: var(--ease-register);
 }
 
 .mark :is(.in, .out) {
   animation-fill-mode: both;
-  animation-timing-function: cubic-bezier(0.45, 0, 0.2, 1);
+  animation-timing-function: var(--ease-reach);
 }
 
 .mark .sat {
   animation-fill-mode: both;
-  animation-timing-function: ease-in-out;
+  animation-timing-function: var(--ease-tension);
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -176,6 +157,6 @@
   }
 
   45% {
-    translate: calc(var(--ux) * -9px) calc(var(--uy) * -9px);
+    translate: calc(var(--ux) * var(--tension) * -1) calc(var(--uy) * var(--tension) * -1);
   }
 }

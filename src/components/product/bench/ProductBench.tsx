@@ -7,6 +7,7 @@ import { SpecimenPlate } from "@/components/ui/SpecimenPlate";
 import { names, type Specimen } from "@/components/vial-transition/specimens";
 import { scaleSizes } from "@/components/vial-transition/SpecimenLayers";
 import { PLATE_SIZES } from "@/content/media";
+import { prefersReducedMotion } from "@/lib/reducedMotion";
 
 import { useArrival } from "../arrival";
 import styles from "./ProductBench.module.css";
@@ -110,7 +111,7 @@ export function ProductBench({
     const node = stage.current;
     const vial = lean.current;
     if (!node || !vial) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (prefersReducedMotion()) return;
     const liquid = vial.querySelector<SVGGElement>('[data-part="liquid"]');
 
     let goal = 0;
@@ -183,7 +184,7 @@ export function ProductBench({
     if (shown.current === selected) return;
     shown.current = selected;
     const node = settle.current;
-    if (!node || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!node || prefersReducedMotion()) return;
     node.animate([{ translate: "0 -0.6%" }, { translate: "0 0" }], {
       duration: 520,
       // The system's settle (motion.css), read rather than copied.

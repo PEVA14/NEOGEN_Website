@@ -166,7 +166,7 @@ Priority (V1): **brand → exploration → products → experience → discovery
 trust → products.** The brand introduction hands over to the store; every
 Experience moment resolves into commerce; the page ends in the catalogue.
 
-Sequence (V1, homepage pass of 2026-09-18, awaiting owner review):
+Sequence (V1, homepage pass of 2026-09-18, permanent since 2026-10-05):
 
 1. **Hero:** the oversized NEOGEN poster and the RETA object. On scroll (from
    48rem, motion allowed) the poster mark condenses toward the header, and

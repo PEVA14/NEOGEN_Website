@@ -1,9 +1,9 @@
 import Link from "next/link";
 
+import { DirectoryLens } from "@/components/motion/DirectoryLens";
 import { Container } from "@/components/primitives";
 import { AreaIcon } from "@/components/ui";
 
-import { DirectoryLens } from "./DirectoryLens";
 import styles from "./ClosingShelf.module.css";
 
 import type { WorldId } from "@/config/worlds";

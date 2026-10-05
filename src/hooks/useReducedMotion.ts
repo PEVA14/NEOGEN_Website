@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 
-const QUERY = "(prefers-reduced-motion: reduce)";
+import { REDUCED_MOTION_QUERY as QUERY } from "@/lib/reducedMotion";
 
 function subscribe(onChange: () => void): () => void {
   const list = window.matchMedia(QUERY);

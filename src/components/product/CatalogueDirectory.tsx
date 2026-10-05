@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { DirectoryLens } from "@/components/home/DirectoryLens";
+import { DirectoryLens } from "@/components/motion/DirectoryLens";
 import { AreaIcon } from "@/components/ui/AreaIcon";
 import { SPECIMEN_NAVIGATION } from "@/components/vial-transition/PageTransition";
 

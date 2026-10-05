@@ -6,6 +6,7 @@ import { SpecimenPlate } from "@/components/ui/SpecimenPlate";
 import { arm, useArmed } from "@/components/vial-transition/armed";
 import { boxOf, markIncoming } from "@/components/vial-transition/incoming";
 import { names, specimenFor } from "@/components/vial-transition/specimens";
+import { REDUCED_MOTION_QUERY } from "@/lib/reducedMotion";
 
 import styles from "./DirectoryLens.module.css";
 
@@ -74,7 +75,7 @@ export function DirectoryLens({
     const box = lens.current;
     if (!node || !box) return;
     const fine = window.matchMedia("(hover: hover) and (pointer: fine)");
-    const still = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const still = window.matchMedia(REDUCED_MOTION_QUERY);
 
     const W = 168;
     const H = 210;

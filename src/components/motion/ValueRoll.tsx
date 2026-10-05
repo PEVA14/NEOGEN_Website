@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 
 import styles from "./ValueRoll.module.css";
+import { prefersReducedMotion } from "@/lib/reducedMotion";
 
 /**
  * A FIGURE THAT ROLLS TO ITS NEW VALUE — the everyday number transition.
@@ -81,7 +82,7 @@ function Column({ digit, trend }: { digit: number; trend: 1 | -1 }) {
     const from = at.current;
     at.current = digit;
     if (!node || from === digit) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (prefersReducedMotion()) return;
     const { duration, easing } = settle();
     rolling(node, duration);
     const leaving = document.createElement("span");

@@ -76,6 +76,67 @@ either ground (`SpecTable`).
   asked not to see it.
 - Nothing moves unless it communicates hierarchy, product character, state,
   progression or spatial relationship.
+- Imperative code reads the preference with `prefersReducedMotion()`
+  (`lib/reducedMotion.ts`) at the moment it would move; nobody spells the
+  media query again.
+
+### The everyday motion system (permanent since 2026-10-05)
+
+Under the flagships, the whole site runs on one small vocabulary; its pieces
+live in `src/components/motion/` (with the brand's in `components/brand/`),
+and `motion/README.md` keeps the reasoning, the history and every rejected
+concept. The rules:
+
+1. **Operated, not watched.** Every movement is caused by a pointer, a key, a
+   choice or the reader's own scroll position. Nothing plays on load, on a
+   timer or on scroll-in; nothing loops or breathes. The page at rest is
+   complete; nothing waits at `opacity: 0`.
+2. **A figure in transition never shows a value it does not hold**
+   (`ValueRoll`: old → new, in the direction it moved).
+3. **The choice travels** (`useIndicator`): one mark moves to what was chosen.
+4. **Motion exposes structure that exists, never invents it.** In Research
+   every connection drawn is one the content states (a citation, a glossary
+   match, a sourced line membership) — no distances, clusters or "similar".
+5. **One record, many magnifications; reorganise, never replace.** A compound
+   keeps its name and frame from index to inline record to full page; a
+   filtered list moves what stays and keeps its order.
+6. **One effect per target; one traveller per gesture.** Transforms, clips
+   and opacity only — content never reflows to animate.
+7. **Tiers.** Micro everywhere (`ValueRoll`, `useIndicator`, the lifting
+   vial); meso where a reader inspects (`SourceTether`, `TermLens`,
+   `DirectoryLens`, the reading needle, the compendium, the glossary); macro
+   stays rare (the archive map, the flight, the worlds).
+8. **3D has a budget**: a stage draws off screen only until revealed, at most
+   72 fps on desktop and 30 on phones, with a half-resolution glass pass.
+
+## 4b. Colour is navigation (permanent since 2026-10-05)
+
+The eight area colours (`styles/areas.css`, applied with `[data-area]`) mean
+one thing: **membership of a catalogue area**. Never an effect, mechanism,
+evidence strength, similarity, safety or biological relationship. A compound
+in two areas carries two marks in the catalogue's area order (never a blend);
+its first area is its context colour. A research line, a journal, a source or
+a document level is never given an area colour.
+
+| Level | What                                 | Where                                                       |
+| ----- | ------------------------------------ | ----------------------------------------------------------- |
+| 0     | paper, stone, ink, hairlines         | most of every page; all body text                           |
+| 1     | marks, rules, numerals, small labels | `AreaMarks`, section numbers, a tether, a definition's rule |
+| 2     | a local field on the area's wash     | a record's head, an open inline record, an open area tile   |
+| 3     | a strong section composition         | the storefront's area tiles, the homepage area explorer     |
+| 4     | a world atmosphere                   | RETA, GLOW, GHK-Cu only                                     |
+
+- **Roles.** `--area-mark` for marks (3:1 on paper or stone), `--area-text`
+  for text (AA on paper, stone and the area's own wash), `--area-wash` for
+  grounds. Never the raw hue for text.
+- **The Level-2 recipe.** `background: var(--area-wash)` and
+  `--ink-muted: var(--ink-secondary)` on the field, so muted labels keep AA on
+  the tint. Full width when it is a page's head:
+  `box-shadow: 0 0 0 100vmax var(--area-wash)` with a matching `clip-path`.
+- **Colour focuses, then returns.** At rest structure is ink; what is being
+  inspected takes its area's colour and gives it back when inspection ends.
+- **Colour is never the only carrier.** An area's name is in text beside its
+  mark, everywhere.
 
 ## 5. Responsive — CSS-first
 
@@ -260,12 +321,13 @@ in `npm run check`:
 
 Runtime dependencies, in full:
 
-| Package                       | Why                                                                                                                              |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `next`, `react`, `react-dom`  | The framework.                                                                                                                   |
-| `three`, `@react-three/fiber` | The 3D layer (§10).                                                                                                              |
-| `pg`                          | The Postgres order and draft stores (§12).                                                                                       |
-| `zod`, `@anthropic-ai/sdk`    | Atlas only — its schema layer and advisor engine. Frozen with Atlas (§17); checkout and payments validate by hand, not with zod. |
+| Package                       | Why                                                                                                                               |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `next`, `react`, `react-dom`  | The framework.                                                                                                                    |
+| `three`, `@react-three/fiber` | The 3D layer (§10).                                                                                                               |
+| `pg`                          | The Postgres order and draft stores (§12).                                                                                        |
+| `zod`, `@anthropic-ai/sdk`    | Atlas only — its schema layer and advisor engine. Frozen with Atlas (§17); checkout and payments validate by hand, not with zod.  |
+| `motion` (13)                 | Interruptible layout animation where a list reorganises: the compendium and the glossary only (§4). Everything else is CSS/WAAPI. |
 
 Build and asset tooling (devDependencies), none of which ships to the browser:
 
@@ -297,10 +359,9 @@ runtime, which this project does not want.
 
 Still deliberately **not** installed:
 
-| Package       | Why deferred                                                       |
-| ------------- | ------------------------------------------------------------------ |
-| `motion`      | The Hero and RETA choreography are pure CSS. Nothing needs JS yet. |
-| `server-only` | Would turn a server/client import mistake into a build error.      |
+| Package       | Why deferred                                                  |
+| ------------- | ------------------------------------------------------------- |
+| `server-only` | Would turn a server/client import mistake into a build error. |
 
 Not planned: GSAP, Lenis/smooth-scroll, a state library (React Context +
 `useReducer` is the default when commerce needs one), a component library, a

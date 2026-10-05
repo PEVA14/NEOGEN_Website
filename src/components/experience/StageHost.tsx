@@ -5,6 +5,7 @@ import { useEffect, useLayoutEffect, useState } from "react";
 
 import { whenScrollQuiet } from "./scrollQuiet";
 import { hasShown, setHostMounted, useActiveRequest, useDrawnStage } from "./stageHostStore";
+import { prefersReducedMotion } from "@/lib/reducedMotion";
 
 /* three.js arrives only with the canvas, never in the page's initial payload. */
 const SharedCanvas = dynamic(() => import("./SharedCanvas"), { ssr: false });
@@ -77,7 +78,7 @@ export function StageHost() {
     }
     /* The first arrival fades in over the stage's photograph; a return —
        usually drawn before it is in view — in a shorter fade from nothing. */
-    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const still = prefersReducedMotion();
     const fade = element.dataset.returning ? 250 : 450;
     element.style.transition = still ? "none" : `opacity ${fade}ms cubic-bezier(0.2, 0, 0, 1)`;
     element.style.opacity = "1";

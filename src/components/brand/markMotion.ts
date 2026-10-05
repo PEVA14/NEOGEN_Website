@@ -1,4 +1,15 @@
+import { prefersReducedMotion } from "@/lib/reducedMotion";
+
 import { MARK_ARMS } from "./markGeometry";
+import {
+  ASSEMBLY,
+  ASSEMBLY_MS,
+  EASE_REACH,
+  EASE_REGISTER,
+  EASE_TENSION,
+  TENSION,
+  type Phase,
+} from "./markPhases";
 
 /*
  * THE MARK'S TIMED MOVEMENTS — the two plays a gesture can cause.
@@ -10,9 +21,8 @@ import { MARK_ARMS } from "./markGeometry";
  *   reconnect  from the whole mark: the connections let go (each half
  *              withdraws into its own node), and reach again.
  *
- * Both are the same phases the scroll-linked assembly in NeogenMark.module.css
- * runs on a timeline instead of a clock; the numbers live in one place each
- * (PHASES there as ranges, here as milliseconds) and say the same thing.
+ * `assemble` is the same table (`markPhases.ts`) the scroll-linked assembly
+ * in NeogenMark.module.css runs on a timeline, here on a clock.
  *
  * Native Web Animations, no library: a handful of transforms on ten SVG
  * parts, each removed when it finishes, so the mark at rest is the artwork's
@@ -22,9 +32,6 @@ import { MARK_ARMS } from "./markGeometry";
  */
 
 const running = new WeakSet<SVGSVGElement>();
-
-/** How far a node is drawn toward the hub as its connection closes (units of the 485-unit box). */
-const TENSION = 9;
 
 type Part = "hub" | "node" | "in" | "out" | "sat";
 
@@ -40,10 +47,16 @@ function tension(angle: number): Keyframe[] {
   const uy = Math.sin((angle * Math.PI) / 180) * -TENSION;
   return [
     { translate: "0px 0px" },
-    { translate: `${ux}px ${uy}px`, offset: 0.45, easing: "cubic-bezier(.3,0,.3,1)" },
+    { translate: `${ux}px ${uy}px`, offset: 0.45 },
     { translate: "0px 0px" },
   ];
 }
+
+/** A phase on the clock: when it starts and how long it lasts. */
+const timed = ([start, end]: Phase) => ({
+  delay: start * ASSEMBLY_MS,
+  duration: (end - start) * ASSEMBLY_MS,
+});
 
 function finish(svg: SVGSVGElement, animations: Animation[]): void {
   running.add(svg);
@@ -52,7 +65,7 @@ function finish(svg: SVGSVGElement, animations: Animation[]): void {
 
 function allowed(svg: SVGSVGElement): boolean {
   if (running.has(svg)) return false;
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
+  if (prefersReducedMotion()) return false;
   /* A mark still being assembled by the page's scroll is not whole yet:
      reconnecting it would show connections between nodes that are not there. */
   const hub = svg.querySelector('[data-part="hub"]');
@@ -63,10 +76,11 @@ function allowed(svg: SVGSVGElement): boolean {
 export function assemble(svg: SVGSVGElement): void {
   if (!allowed(svg)) return;
   const register = [{ scale: 0 }, { scale: 1 }];
-  const settle = "cubic-bezier(.2,.7,.3,1)";
   const out: Animation[] = [];
   parts(svg, "hub").forEach((el) =>
-    out.push(el.animate(register, { duration: 170, easing: settle, fill: "backwards" })),
+    out.push(
+      el.animate(register, { ...timed(ASSEMBLY.hub()), easing: EASE_REGISTER, fill: "backwards" }),
+    ),
   );
   MARK_ARMS.forEach((arm, k) => {
     const node = parts(svg, "node")[k];
@@ -74,9 +88,8 @@ export function assemble(svg: SVGSVGElement): void {
     const sat = parts(svg, "sat")[k];
     out.push(
       node.animate(register, {
-        duration: 190,
-        delay: 50 + k * 45,
-        easing: settle,
+        ...timed(ASSEMBLY.node(k)),
+        easing: EASE_REGISTER,
         fill: "backwards",
       }),
     );
@@ -84,16 +97,13 @@ export function assemble(svg: SVGSVGElement): void {
       out.push(
         half.animate(
           [{ transform: axis(arm.angle, 0.001, 0.7) }, { transform: axis(arm.angle, 1, 1) }],
-          {
-            duration: 260,
-            delay: 230 + k * 80,
-            easing: "cubic-bezier(.45,0,.2,1)",
-            fill: "backwards",
-          },
+          { ...timed(ASSEMBLY.reach(k)), easing: EASE_REACH, fill: "backwards" },
         ),
       );
     }
-    out.push(sat.animate(tension(arm.angle), { duration: 240, delay: 490 + k * 80 }));
+    out.push(
+      sat.animate(tension(arm.angle), { ...timed(ASSEMBLY.tension(k)), easing: EASE_TENSION }),
+    );
   });
   finish(svg, out);
 }
@@ -119,7 +129,9 @@ export function reconnect(svg: SVGSVGElement): void {
         ),
       );
     }
-    out.push(sat.animate(tension(arm.angle), { duration: 220, delay: 430 + k * 40 }));
+    out.push(
+      sat.animate(tension(arm.angle), { duration: 220, delay: 430 + k * 40, easing: EASE_TENSION }),
+    );
   });
   /* Colour focuses, then returns: inside an area the mark answers in the
      area's mark colour and comes back to ink as it closes. */

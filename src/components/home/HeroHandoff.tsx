@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { prefersReducedMotion } from "@/lib/reducedMotion";
 
 /**
  * NEOGEN BECOMES THE PAGE — the hero's exit (motion pass 2).
@@ -23,7 +24,7 @@ import { useEffect } from "react";
  */
 export function HeroHandoff() {
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (prefersReducedMotion()) return;
     const poster = document.querySelector<HTMLElement>("[data-hero-condense]");
     const target = document.querySelector<HTMLElement>("[data-handoff-target]");
     const hero = poster?.closest("section");
