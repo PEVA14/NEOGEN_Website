@@ -4,6 +4,8 @@ import { MARK_ARMS } from "./markGeometry";
 import {
   ASSEMBLY,
   ASSEMBLY_MS,
+  CATCH,
+  REACH,
   EASE_REACH,
   EASE_REGISTER,
   EASE_TENSION,
@@ -107,7 +109,10 @@ export function assemble(
         half.animate(
           options.catching
             ? catchFrames(arm.angle)
-            : [{ transform: axis(arm.angle, 0.001, 0.7) }, { transform: axis(arm.angle, 1, 1) }],
+            : [
+                { transform: axis(arm.angle, REACH.thread, REACH.girth) },
+                { transform: axis(arm.angle, 1, 1) },
+              ],
           {
             ...timed(ASSEMBLY.reach(k)),
             easing: options.catching ? "linear" : EASE_REACH,
@@ -119,7 +124,8 @@ export function assemble(
     if (options.onContact) {
       const [, end] = ASSEMBLY.reach(k);
       const contactAt =
-        (end - (end - ASSEMBLY.reach(k)[0]) * (options.catching ? 0.22 : 0)) * ASSEMBLY_MS;
+        (end - (end - ASSEMBLY.reach(k)[0]) * (options.catching ? 1 - CATCH.contact : 0)) *
+        ASSEMBLY_MS;
       window.setTimeout(() => options.onContact?.(k), contactAt);
     }
     out.push(
@@ -138,9 +144,16 @@ export function assemble(
  */
 function catchFrames(angle: number): Keyframe[] {
   return [
-    { transform: axis(angle, 0.001, 0.7), easing: "cubic-bezier(.45,0,.3,1)" },
-    { transform: axis(angle, 1, 0.38), offset: 0.78, easing: "cubic-bezier(.2,.7,.3,1)" },
-    { transform: axis(angle, 1, 1.07), offset: 0.9, easing: "ease-in-out" },
+    {
+      transform: axis(angle, REACH.thread, REACH.girth),
+      easing: "cubic-bezier(.45,0,.3,1)",
+    },
+    {
+      transform: axis(angle, 1, CATCH.thin),
+      offset: CATCH.contact,
+      easing: "cubic-bezier(.2,.7,.3,1)",
+    },
+    { transform: axis(angle, 1, CATCH.over), offset: CATCH.settle, easing: "ease-in-out" },
     { transform: axis(angle, 1, 1) },
   ];
 }
@@ -152,7 +165,7 @@ export function reconnect(svg: SVGSVGElement): void {
     const halves = [parts(svg, "in")[k], parts(svg, "out")[k]];
     const sat = parts(svg, "sat")[k];
     const whole = axis(arm.angle, 1, 1);
-    const apart = axis(arm.angle, 0.001, 0.7);
+    const apart = axis(arm.angle, REACH.thread, REACH.girth);
     for (const half of halves) {
       out.push(
         half.animate(

@@ -37,6 +37,19 @@ export const GATHER = {
   tension: (k: number): Phase => [0, 0.82 + 0.06 * k],
 } as const;
 
+/*
+ * THE REACH AND THE CATCH — the connection's shapes, written once (V1
+ * consolidation). A connection before it reaches has no length and 70% of its
+ * width (`REACH`); one that CATCHES (the gathering) reaches as a thread that
+ * thins to `thin` of its width, touches at `contact` of its stretch, widens a
+ * little past (`over`) by `settle`, and comes to rest. `NeogenMark` writes the
+ * scales as custom properties for the CSS keyframes (`mark-reach`,
+ * `mark-reach-catch`, whose 78% / 90% stops are `contact` / `settle`);
+ * `markMotion.ts` reads them directly.
+ */
+export const REACH = { thread: 0.001, girth: 0.7 } as const;
+export const CATCH = { contact: 0.78, settle: 0.9, thin: 0.38, over: 1.07 } as const;
+
 /** How far out a node starts when gathering, as a share of its arm's length. */
 export const SPREAD = 0.8;
 

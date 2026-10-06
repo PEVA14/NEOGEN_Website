@@ -5,7 +5,9 @@ import { useEffect, useRef, type CSSProperties } from "react";
 import { MARK_ARMS, MARK_BOX, MARK_HUB } from "./markGeometry";
 import {
   ASSEMBLY,
+  CATCH,
   GATHER,
+  REACH,
   SPREAD,
   EASE_REACH,
   EASE_REGISTER,
@@ -125,6 +127,10 @@ export function NeogenMark({
           "--ease-reach": EASE_REACH,
           "--ease-tension": EASE_TENSION,
           "--spread-default": SPREAD,
+          "--reach-thread": REACH.thread,
+          "--reach-girth": REACH.girth,
+          "--catch-thin": CATCH.thin,
+          "--catch-over": CATCH.over,
         } as CSSProperties
       }
       focusable="false"

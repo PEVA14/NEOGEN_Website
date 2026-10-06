@@ -411,26 +411,6 @@
   block-size: min(70%, 30rem);
 }
 
-.silhouetteCap {
-  fill: var(--ink-muted);
-}
-
-.silhouetteNeck {
-  fill: var(--ink-muted);
-  opacity: 0.7;
-}
-
-.silhouetteBody {
-  fill: none;
-  stroke: var(--ink-secondary);
-  stroke-width: 2;
-}
-
-.silhouetteLabel {
-  fill: var(--accent);
-  opacity: 0.25;
-}
-
 .fallbackLabel {
   color: var(--ink-muted);
   letter-spacing: var(--tracking-label);

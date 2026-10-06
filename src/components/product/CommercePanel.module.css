@@ -76,12 +76,6 @@
   text-wrap: balance;
 }
 
-.sku {
-  color: var(--ink-muted);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-}
-
 .descriptor {
   margin: var(--space-2xs) 0 0;
   color: var(--ink-secondary);
@@ -94,176 +88,6 @@
   inline-size: 100%;
   background-color: var(--border-subtle);
   margin-block: var(--space-sm);
-}
-
-/* --- Variants ------------------------------------------------------------- */
-
-.variants {
-  border: 0;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2xs);
-}
-
-.variantLegend {
-  padding: 0;
-  color: var(--ink-muted);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-}
-
-.variantOptions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2xs);
-}
-
-/* Zero radius, 1px border, charcoal when selected — the reference control. */
-.variant {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-inline-size: 7rem;
-  min-block-size: 2.75rem;
-  padding-inline: var(--space-sm);
-  border: 1px solid var(--border-default);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  cursor: pointer;
-  transition:
-    background-color var(--motion-duration-fast) var(--ease-standard),
-    color var(--motion-duration-fast) var(--ease-standard);
-}
-
-.variant input {
-  position: absolute;
-  opacity: 0;
-  inset: 0;
-  cursor: pointer;
-}
-
-.variant:has(input:checked) {
-  background-color: var(--surface-inverse);
-  color: var(--ink-inverse);
-  border-color: var(--surface-inverse);
-}
-
-.variant:has(input:focus-visible) {
-  outline: var(--focus-ring-width) solid var(--focus-ring);
-  outline-offset: var(--focus-ring-offset-width);
-}
-
-/* --- Purchase row --------------------------------------------------------- */
-
-.purchase {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--space-md);
-  margin-block-start: var(--space-md);
-}
-
-.quantity {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2xs);
-}
-
-.fieldLabel {
-  color: var(--ink-muted);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-}
-
-/*
- * Presentational only — it carries no state because there is no cart to hold a
- * quantity for. It shows the architecture without pretending to work.
- */
-.stepper {
-  display: inline-flex;
-  align-items: stretch;
-  border: 1px solid var(--border-default);
-  color: var(--ink-muted);
-}
-
-.step,
-.count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-inline-size: 2.75rem;
-  min-block-size: 2.75rem;
-  font-size: var(--text-sm);
-}
-
-.count {
-  border-inline: 1px solid var(--border-default);
-  color: var(--ink-primary);
-}
-
-.priceValue {
-  font-family: var(--font-display);
-  font-stretch: var(--font-stretch-display);
-  font-weight: 700;
-  font-size: var(--text-3xl);
-  line-height: 1;
-  letter-spacing: var(--tracking-tight);
-  color: var(--ink-primary);
-  text-transform: uppercase;
-}
-
-/* --- Action --------------------------------------------------------------- */
-
-.addToBag {
-  inline-size: 100%;
-  min-block-size: 3.5rem;
-  margin-block-start: var(--space-md);
-  /* Transparent rather than absent, so the disabled state can show a border
-     without the control changing size. */
-  border: 1px solid transparent;
-  background-color: var(--surface-inverse);
-  color: var(--ink-inverse);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  letter-spacing: var(--tracking-wide);
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: opacity var(--motion-duration-base) var(--ease-standard);
-}
-
-.addToBag:hover:not(:disabled) {
-  opacity: 0.9;
-}
-
-/*
- * Visibly inert, on purpose. There is no cart and no price; a control that
- * looked live and did nothing would be a fake integration.
- */
-.addToBag:disabled {
-  /*
-   * UNFILLED, NOT DIMMED.
-   *
-   * A greyed-out fill has to be mixed against the surface, and the panel now
-   * renders on two different surfaces — the mix that reads as "inert" on paper
-   * reads as "broken" on the dark environment, and its label lands on whichever
-   * side of the contrast line the mix happens to fall. An outlined control is
-   * unambiguous in both, and uses a token pair that is already designed for
-   * every surface it can appear on.
-   */
-  background-color: transparent;
-  border-color: var(--border-default);
-  color: var(--ink-muted);
-  cursor: not-allowed;
-}
-
-.pending {
-  color: var(--ink-muted);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
 }
 
 /*
@@ -293,17 +117,6 @@
   .name {
     font-size: var(--text-3xl);
   }
-
-  .purchase {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: var(--space-sm);
-  }
-
-  .variant {
-    min-inline-size: 6rem;
-    flex: 1 1 auto;
-  }
 }
 
 /* --- Subtitle ------------------------------------------------------------- */
@@ -317,33 +130,6 @@
   color: var(--ink-muted);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-}
-
-/* --- Availability --------------------------------------------------------- */
-
-/*
- * Stock state. Neutral by default and NEVER a positive green: the design
- * system's verified token is forbidden from dressing unverified data, and
- * availability here is one person's read of a supplier situation.
- *
- * `unavailable` is the only state that changes anything visually, and it dims
- * rather than alarms — a format we cannot get right now is a fact, not an
- * error.
- */
-.availability {
-  color: var(--ink-secondary);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-}
-
-.availability[data-availability="unavailable"] {
-  color: var(--ink-muted);
-}
-
-/* The same dimming on the format chip itself, so the selector and the line
-   under the price agree without the reader having to compare them. */
-.variant[data-availability="unavailable"] {
-  opacity: 0.55;
 }
 
 /* --- Commerce slot -------------------------------------------------------

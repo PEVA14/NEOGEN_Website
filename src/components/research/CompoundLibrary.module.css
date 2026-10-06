@@ -556,14 +556,6 @@
   }
 }
 
-.sheetHead {
-  border-block-end: 1px solid var(--border-default);
-  display: grid;
-  gap: var(--space-3xs);
-  padding: var(--space-md) calc(var(--gutter) + 2.75rem) var(--space-md) var(--gutter);
-  position: relative;
-}
-
 .sheetEyebrow,
 .sheetAlias,
 .position {
@@ -578,18 +570,6 @@
 .sheetAlias,
 .position {
   color: var(--ink-muted);
-}
-
-.sheetTitle {
-  font-family: var(--font-display);
-  font-size: var(--text-3xl);
-  font-stretch: var(--font-stretch-display);
-  font-weight: 700;
-  letter-spacing: var(--tracking-display);
-  line-height: 1;
-  margin: 0;
-  overflow-wrap: anywhere;
-  text-transform: uppercase;
 }
 
 .closeButton {
@@ -610,14 +590,6 @@
 
 .closeButton:hover {
   border-color: var(--border-strong);
-}
-
-/* Tabs on top, the panel scrolling beneath them (see QuickRecord). */
-.sheetBody {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  min-block-size: 0;
-  overflow: hidden;
 }
 
 /* The evidence strip under the name: how much sourced science exists. */

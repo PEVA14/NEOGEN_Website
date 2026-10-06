@@ -1,6 +1,10 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-10-06**: **Research reorganised — simple on the surface,
+Last updated **2026-10-06**: **NEOGEN V1 UX/UI — consolidated and FROZEN**
+(§8bb): the approved experience unchanged, its rules written as one contract
+(CONVENTIONS §20), dead code removed, two offscreen loops paused, landmarks
+fixed, every gate and journey re-verified. Commerce has not started. Before
+that, the same day: **Research reorganised — simple on the surface,
 deep on demand — permanent** (owner: "Love it, commit everything, permanent
 feature") (§8ba): compound-centred hub (search first, three intentions,
 Profundizar), Research-local navigation, hierarchical breadcrumbs, the
@@ -2602,6 +2606,99 @@ Evaluated on a production build in headless Chrome, at 1440×900 and 390×844,
 from the catalogue grid, the phone strip and by direct URL; reduced motion;
 GLOW's circle unchanged; at 4× CPU throttle on the phone there is no long task
 between the flight's start and the formation's end.
+
+## 8bb. V1 consolidation and freeze (2026-10-06)
+
+Owner: "The major NEOGEN V1 UX/UI phase is now considered feature-complete…
+turn the approved experimental work into a coherent, maintainable,
+documented V1 system." Not a design pass: no new interaction, page, feature,
+scientific change or commerce work. **The UX/UI system is frozen for V1**;
+the contract is CONVENTIONS §20.
+
+**State at the start.** `main` clean at `5665f0b`. Two agent worktrees from
+other sessions: `claude/cranky-maxwell-602b0c` (the hero scroll-cue fix this
+pass needed — cherry-picked as `4d9f257`, authored PEVA14) and
+`claude/blissful-euclid-52fe46` (a streamed-load layout-shift fix in
+`[locale]/loading.tsx` + a PROJECT_STATE note) — **left unmerged for the
+owner**: unrelated to this pass and not reviewed here.
+
+**Consolidated.**
+
+- The mark's connection shapes have one source: `REACH` and `CATCH` in
+  `markPhases.ts`, written by `NeogenMark` as custom properties for the CSS
+  keyframes and read directly by `markMotion.ts` (were literal in both).
+- Retired components deleted (recorded as unused since the homepage passes):
+  `ui/AreaBoard`, `CatalogIndex`, `CompoundRail`, `DiscoveryGrid`,
+  `EditorialSpread`, `home/NeogenHub`, `HubMark`, `server/hub.ts`. Dead CSS:
+  the commerce controls left in `CommercePanel.module.css` after they moved
+  into `AddToBag`, the RETA silhouette's SVG parts, the old dialog quick
+  view's `sheet*` rules, `ProductStage`'s `captionLabel`. Kept on purpose:
+  `CatalogTicker` (parked, documented), `content/certifications.ts` (the empty
+  guardrail registry `check:content` validates), Atlas and checkout code
+  (frozen).
+- ESLint and Prettier ignore `.claude/**` (agent worktrees with their own
+  builds made `npm run check` report 39,526 problems from other checkouts);
+  the owner's Atlas questionnaire is in `.prettierignore`, so `npm run
+format` can never rewrite it.
+- Documentation: CONVENTIONS §20 (Living Laboratory, motion hierarchy,
+  experience tiers, capability model, colour, brand, technology ownership,
+  performance, scientific visual and content contracts, Research IA,
+  input/reduced motion, shared vs surface-specific); §4 names the loops that
+  are allowed; §15's stale `AreaBoard` paragraph replaced; §19 Living Ink
+  gains the scale rules and exactly where it runs.
+
+**Narrow fixes (measured on a production build, 1440×900).**
+
+- **Hero scroll cue** (pre-existing): paused off screen. At the page foot the
+  homepage's idle cost had been the cue's loop (45–49 ms/s measured by the
+  fixing session); after it, no animation runs off screen on the homepage.
+- **GLOW's sheen** (found here, same class): its infinite loop on the gold
+  name ran at the page foot — 60 style recalcs/s, ~36 ms/s. `ProductStage`
+  now marks `data-offstage`; the sheen pauses there: 4.7 recalcs/s, 0
+  running animations off screen.
+- **Landmarks**: the research-use notice and a guide's set-apart note were
+  `<aside>`s nested inside sections (axe
+  `landmark-complementary-is-top-level`); now `role="note"`. axe: 0
+  violations on 19 pages × 2 sizes.
+- **Contextual return across a language switch**: the anchor kept the
+  original language's URL; the way back now follows the current language.
+
+**Measured (production).** Idle main-thread cost with the page's top off
+screen: 20–40 ms/s at every page's foot — the footer's Living Ink (10 Hz
+clock, writes only when an edge moves ⅓ px) and, on flagships, the 3D frame
+loop waking without rendering; with a stage in view, the WebGL vial
+(~90–140 ms/s, its budget). After the footer's contact ripples settle (~3 s),
+Living Ink schedules no animation frames. JS heap after six rounds of
+client navigation through home → catalogue → PDP → Research → record:
+10.2 → 10.5 MB (stable). Internal links: 416 unique in 419 built pages, 0
+broken. The two studio routes (`/estudio/marca`, `/estudio/[slug]`) 404 in
+production and leave no page.
+
+**Verified journeys** (desktop and phone, production): home → catalogue →
+standard PDP → Resumen científico → full record → area (stays in Research)
+→ Vista rápida → record → line → "← Volver a" → record → "Ver en el catálogo";
+home → RETA, GLOW, GHK-Cu; Research beginner and advanced paths; direct
+entry (record, line, references, area-filtered compounds, glossary term);
+keyboard; touch; reduced motion; back/forward restoring filters; language
+switch; the cart (inspected only); the footer mark whole at the page's end.
+
+**Known V1 debt** (none blocks the freeze):
+
+- The hub's guides and references have been stacked since `464b008` removed
+  their two-column grid; that stacked hub is what was reviewed and approved,
+  so it was not changed (the page comment still says "side by side").
+- Unused dictionary copy of retired components; classes applied without
+  rules in a few components; pre-existing dead CSS in Atlas and checkout
+  (frozen, untouched).
+- ~60 literal durations in authored choreography (worlds, symbol gestures)
+  beside 224 token uses: deliberate, not a uniformity target.
+- `.mcp.json` and `spec-ribbon/README.md` fail a whole-repo `prettier
+--check` (pre-existing, not touched).
+- The footer's Living Ink costs ~10–25 ms/s at every page's foot, by design.
+- Living Ink's continuous rest runs on three macro fields (footer drift,
+  "Explora por área", the `/productos` masthead) — all owner-approved.
+- The header's "Péptidos" item remains beside the single beginner door.
+- The catalogue-wide `/productos` grid rollout is a separate future phase.
 
 ## 8ba. Research architecture — simple on the surface, deep on demand (2026-10-05, PERMANENT)
 

@@ -174,9 +174,12 @@
   }
 }
 
+/* The shapes are `markPhases.ts`'s `REACH` and `CATCH`, written on the svg by
+   `NeogenMark` — the same numbers `markMotion.ts` animates with. */
 @keyframes mark-reach {
   from {
-    transform: rotate(var(--a)) scale(0.001, 0.7) rotate(calc(var(--a) * -1));
+    transform: rotate(var(--a)) scale(var(--reach-thread), var(--reach-girth))
+      rotate(calc(var(--a) * -1));
   }
 
   to {
@@ -222,17 +225,20 @@
    stretches, touches, then widens a little past its width and settles. */
 @keyframes mark-reach-catch {
   0% {
-    transform: rotate(var(--a)) scale(0.001, 0.7) rotate(calc(var(--a) * -1));
+    transform: rotate(var(--a)) scale(var(--reach-thread), var(--reach-girth))
+      rotate(calc(var(--a) * -1));
     animation-timing-function: cubic-bezier(0.45, 0, 0.3, 1);
   }
 
+  /* CATCH.contact */
   78% {
-    transform: rotate(var(--a)) scale(1, 0.38) rotate(calc(var(--a) * -1));
+    transform: rotate(var(--a)) scale(1, var(--catch-thin)) rotate(calc(var(--a) * -1));
     animation-timing-function: cubic-bezier(0.2, 0.7, 0.3, 1);
   }
 
+  /* CATCH.settle */
   90% {
-    transform: rotate(var(--a)) scale(1, 1.07) rotate(calc(var(--a) * -1));
+    transform: rotate(var(--a)) scale(1, var(--catch-over)) rotate(calc(var(--a) * -1));
     animation-timing-function: ease-in-out;
   }
 

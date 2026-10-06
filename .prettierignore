@@ -1,6 +1,8 @@
 .next/
 out/
 node_modules/
+# Agent worktrees and local tooling — other branches' checkouts, not this tree.
+.claude/
 package-lock.json
 public/models/
 
@@ -8,3 +10,6 @@ public/models/
 docs/NEOGEN_DESIGN_BIBLE.md
 docs/NEOGEN_MVP_SCOPE.md
 CLAUDE.md
+
+# The Atlas questionnaire is the owner's, deliberately unformatted: never rewrite it.
+src/content/atlas/questionnaire.ts

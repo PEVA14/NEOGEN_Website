@@ -90,7 +90,10 @@ concept. The rules:
 1. **Operated, not watched.** Every movement is caused by a pointer, a key, a
    choice or the reader's own scroll position. Nothing plays on load, on a
    timer or on scroll-in; nothing loops or breathes. The page at rest is
-   complete; nothing waits at `opacity: 0`.
+   complete; nothing waits at `opacity: 0`. **The named exceptions** (§20.2):
+   Living Ink's rest on three macro fields (§19), a flagship's own light
+   (GLOW's sheen), the hero's scroll cue and a loading pulse — each paused
+   off screen, none under reduced motion except the loading pulse (state).
 2. **A figure in transition never shows a value it does not hold**
    (`ValueRoll`: old → new, in the direction it moved).
 3. **The choice travels** (`useIndicator`): one mark moves to what was chosen.
@@ -906,11 +909,11 @@ sidebar can be hidden from the results toolbar — the results take its column
 and the active filters stay applied and visible as chips. That choice is view
 state for the visit, not part of the URL.
 
-**The catalogue entrance** is a compact area index (`components/ui/AreaBoard`):
-one slim hairline compartment per public area — a small swatch in the area's
-ink, the name at reading size, the compound count in mono, and a 2px gauge of
-`count / largest area` (a fact, never popularity). Hover washes the compartment
-in its area tone and brings in an arrow. **The search** is a single hairline
+**The catalogue entrance** is the area shelf ("Compra por área",
+`AreaShelf` in `components/catalog/Storefront.tsx`): one tile per public area —
+its symbol, the name, the compound count and a vial capped in the area's hue
+(`AreaCap`). The earlier compact index (`AreaBoard`) was retired and deleted
+in the V1 freeze. **The search** is a single hairline
 field: icon, query at reading size, a clear control, a `/` keycap hint, and a
 visual echo of the result count (the toolbar count stays the announced one);
 focus turns the hairline into a 2px ink rule. `/` focuses it from anywhere,
@@ -1450,6 +1453,17 @@ depicts nothing and is never described as anything scientific.
 - **Micro marks never take it** — the header, confirmations and every small
   mark stay stable geometry. `/estudio/marca` is its dev-only lab (a 404 in
   production).
+- **Scale rules.** MICRO: canonical stable geometry, always. MESO: stable by
+  default; may answer when an interaction gives it a cause. MACRO: eligible
+  for the surface-tension assembly (thread → contact → the neck widens → a
+  ripple → equilibrium; `CATCH` in `markPhases.ts`). CONTINUOUS LIVING REST:
+  extremely selective — never propagated further without the owner.
+- **Exactly where it runs (owner-approved, 2026-10-05).** The footer
+  signature (gathering, then a faint drift, pointer, contacts), the homepage's
+  "Explora por área" field and the `/productos` masthead (both
+  `READABLE_INK`: faint drift + episodes + pointer). Nowhere else.
+- **It is surface-tension-inspired brand motion**, never described as a
+  literal fluid, ferrofluid or anything scientific.
 
 - **The mark is decorative wherever the wordmark is beside it.** `aria-hidden`
   by default; `label` only where it stands alone for the brand.
@@ -1470,3 +1484,200 @@ depicts nothing and is never described as anything scientific.
   its name, run `npm run brand`, commit what it writes. If a future export is
   not black-on-alpha the trace fails loudly — say so rather than working
   around it.
+
+## 20. The V1 system contract (frozen 2026-10-06)
+
+The UX/UI system is frozen for V1 (PROJECT_STATE §8bb). This section is the
+contract a future change is checked against; the detail stays in the sections
+it points to. Consolidation changes implementation, never the approved
+experience.
+
+### 20.1 The Living Laboratory
+
+**A laboratory that reacts to the user** (Design Bible). The principles every
+surface already follows:
+
+- continuity > replacement · transformation > entrance animation
+- response > autoplay · physical causality > decoration
+- **Quiet → Impact → Quiet** · operated, not watched
+- one object, many magnifications · the specimen persists
+- the interface reacts to the product
+- motion may REVEAL real structure; it never invents scientific meaning
+
+**Quiet Mode** — navigation, catalogue, specs, documentation, Research
+reading, commerce, forms. **Experience Mode** — the hero, the three worlds,
+3D, the macro brand fields, flagship transitions (§2).
+
+### 20.2 Motion hierarchy
+
+| tier  | what it is                                       | examples (shared pieces in `components/motion`, `components/brand`)                                               |
+| ----- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| MICRO | continuous, local polish and immediate response  | `ValueRoll`, `useIndicator`, the lifting vial, area-symbol gestures (`styles/area-symbols.css`), header `respond` |
+| MESO  | authored moments of delight in ordinary browsing | `SourceTether`, `TermLens`, `DirectoryLens`, the reading needle, record magnification, the explorer shelf         |
+| MACRO | rare spectacle and major transitions             | the three worlds, the specimen flight, the Archive Map, the footer gathering, Living Ink's macro fields           |
+
+**What may loop** (the only exceptions to "nothing loops", §4): Living Ink's
+rest on its three macro fields, GLOW's sheen, the hero's scroll cue, a
+loading pulse. Every one pauses off screen (`IntersectionObserver` →
+`data-offscreen` / `data-offstage` / the ink's own observer) and none runs
+under reduced motion except the loading pulse, which is state.
+
+### 20.3 Experience tiers
+
+| tier     | who (today)                                                                       | what it gets                                                                                                                                                                                                           |
+| -------- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| STANDARD | every product (81 without a world)                                                | the bench (drawn specimen, authored arrival), the area's environmental presence and badge, `ValueRoll` price/pack, Resumen científico where a record exists, the Research transition, the directory lens, area context |
+| ENHANCED | a standard product with richer assets — today Semaglutide (layered studio render) | the same template with the split render: the specimen flies card → bench and is magnified on the bench (`specimenFor`)                                                                                                 |
+| FLAGSHIP | RETA, GLOW, GHK-Cu (`config/worlds.ts`)                                           | a bespoke world, with its own art direction                                                                                                                                                                            |
+
+The flagship verbs are **art direction, not presets**: RETA calibrates /
+measures / inspects; GLOW illuminates / separates / reveals / recombines;
+GHK-Cu is material / physicality / depth. Never turned into a variant prop.
+A product moves tier by GAINING the asset, never by a flag.
+
+### 20.4 Product capability model
+
+The interface adapts to what a product actually has. Each capability has one
+source of truth; its absence renders nothing — never a placeholder claim, an
+empty spectacle or invented science.
+
+| capability                   | source of truth                                        | when absent                                                    |
+| ---------------------------- | ------------------------------------------------------ | -------------------------------------------------------------- |
+| studio specimen (layered)    | `specimenFor(slug)` (`vial-transition/specimens.json`) | the drawn vial (`SpecimenPlate`) — STANDARD                    |
+| photographs / isolated image | `productMedia(slug)` (`content/media`)                 | the drawn product object                                       |
+| 3D model                     | `productMedia(slug).model`                             | the poster or the drawn object (`VialFallback`)                |
+| flagship world               | `product.world` → `config/worlds.ts`                   | the bench                                                      |
+| presentations / strengths    | `product.variants`                                     | — (every published product has ≥1)                             |
+| prices / availability        | the commerce layer                                     | "Sin precio"; the bag stays honest                             |
+| sourced scientific profile   | `publicOverview(slug, locale)`                         | no Resumen científico; Research routes only                    |
+| scientific record            | `hasRecord` / `compoundRecord` (`content/compendium`)  | the PDP shows its whole profile; Research links the quick view |
+| references                   | `referencesForProduct` / the record                    | no rail                                                        |
+| glossary terms               | `termsInText` over the published text                  | no terms                                                       |
+| research lines               | the record's sourced function tags (`linkableLines`)   | no lines                                                       |
+| public documents / quality   | `resolveEvidence(product)` (`domain/quality`)          | the honest empty state; no status without a document           |
+| area membership              | `publicAreasFor(slug)`                                 | no area colour, no badge (2 products)                          |
+| related navigation           | `productsInArea`, `relatedByLines`                     | the section does not render                                    |
+
+### 20.5 Colour semantics
+
+§4b and `styles/areas.css`. Black/cream is the canvas. **Area colour means
+catalogue/Research navigation membership — nothing else**: never mechanism,
+effect, similarity, evidence strength, safety, efficacy or a scientific
+relationship. Intensity: **L0** neutral · **L1** marks, numerals, rules ·
+**L2** a local tinted field · **L3** a strong section composition · **L4** a
+flagship world. A multi-area compound shows discrete marks in catalogue
+order, never a blend; its first area may be its context colour.
+
+### 20.6 Brand system
+
+§19. Canonical traced geometry from the owner's artwork
+(`scripts/trace-mark.mjs` → `markGeometry.ts`, `markOutline.ts`; refuses to
+write below 98.5% overlap, currently 99.13%). Parts: hub, four nodes
+(satellites), four connections each in two halves. Fragments are choices of
+arms and the hub. Micro (header, confirmations, empty states), meso (the
+record's catalogue card, `respond`), macro (`MarkField` compositions, the
+footer signature). States: static whole, `form="points"`, assembly (hero /
+view / now / gather), `respond`. One timing source: `markPhases.ts`
+(`ASSEMBLY`, `GATHER`, `REACH`, `CATCH`, the easings) for both the CSS
+keyframes and the Web Animations. **The mark is architecture, not wallpaper,
+and never data**: never where its nodes could read as compounds, sources,
+lines, mechanisms, similarity, evidence or safety.
+
+### 20.7 Technology ownership
+
+| technology              | owns                                                                                                                           |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| CSS                     | local interface transitions, scroll/view timelines (mark assembly, world moments), area-symbol gestures, loops that must pause |
+| Motion (`motion/react`) | layout transitions and state choreography: the compendium's reorganisation, the explorer, card reveals                         |
+| Web Animations (WAAPI)  | short imperative plays on SVG parts: the mark's assembly/reconnect (`markMotion.ts`)                                           |
+| native View Transitions | cross-route continuity: the specimen flight, record magnification, the world opening                                           |
+| R3F / three             | real spatial 3D only: the vial stages                                                                                          |
+| imperative rAF / timers | Living Ink (two clocks), measured scroll work where CSS cannot express it                                                      |
+
+Working implementations are not migrated between technologies for
+consistency; responsibility is what stays consistent.
+
+### 20.8 Performance rules
+
+- **3D budget**: a stage renders off screen only until revealed; ≤72 fps
+  desktop, ≤30 phone; half-resolution glass pass; Three/R3F loads late (the
+  poster first); off screen the frame loop wakes but returns before
+  rendering.
+- **Off screen = paused**: every loop (§20.2). Hidden tab: rAF and timers
+  stop (Living Ink also listens to `visibilitychange`).
+- **Living Ink**: a 10 Hz rest clock (20 Hz with episodes), written only when
+  an edge moved ⅓ px on screen; every frame only while disturbed or the
+  pointer is near; nothing off screen, hidden or under reduced motion.
+- **Fine pointer** gates hover-only delight (`@media (hover: hover)`); touch
+  gets the tap equivalents.
+- **Motion** layout measurement only where a list reorganises; memoised rows;
+  `useDeferredValue` for filtering. **`whenStill`** (`experience/scrollQuiet.ts`):
+  deferred 3D work waits until scrolling has settled. The frame budget is
+  `FrameBudget` in `RetaCanvas.tsx` (`DESKTOP_FPS` 72, `PHONE_FPS` 30).
+- Measured on the V1 freeze build: §8bb in PROJECT_STATE.
+
+### 20.9 Scientific visual contract
+
+Visual properties imply meaning — colour, position, distance, grouping,
+connection, motion, size, intensity, direction. So **only encode scientific
+meaning where the content supports it**:
+
+- area colour = navigation membership only;
+- a research line = a sourced statement placing a compound in it;
+- a source tether = a real claim → source citation;
+- depth marks = which sections a record has;
+- brand geometry and Living Ink = decorative identity, never data.
+
+No distances, clusters, strengths, "similar" or "related because" that the
+content does not state. Never invent science.
+
+### 20.10 Scientific content contract
+
+§8 and `check:content`. A scientific statement needs a public reference; no
+dose, administration, protocol, cycle, frequency, reconstitution
+instructions or individualised recommendation renders (forbidden vocabulary
+blocks it in both locales). Profiles under owner review stay unpublished;
+material identity is never inferred from literature.
+
+### 20.11 Research IA contract
+
+§17d "Research architecture". Compound-centred: search · browse · start from
+zero · go deeper; the golden path Research → search or area → Vista rápida →
+Registro científico → depth; the compound as anchor; advanced tools one
+intentional step away; Research ↔ catalogue through "Ver en el catálogo"
+only; the PDP's Resumen científico vs the full record. **The anchor is
+progressive enhancement**: per tab (`sessionStorage`), cleared by the
+Research overview, follows the current language, never required — refresh,
+direct entry, copied URLs and back/forward all keep their canonical trail.
+
+### 20.12 Input, responsive and reduced-motion contract
+
+- Desktop, phone, fine pointer, touch, keyboard, resize and direct entry all
+  operate the whole interface; **pointer-only delight is never required**
+  to understand or operate anything (hover gestures have focus and tap
+  equivalents; menus are native `<details>`).
+- Back/forward restore canonical state from the URL (filters, quick view,
+  views); nothing navigational lives only in memory.
+- Reduced motion: tier 1 kept and shortened, tier 2 collapsed to its end
+  state, decorative motion removed, Living Ink canonical and still, the mark
+  whole; never content, hierarchy, identity, navigation or commerce.
+
+### 20.13 Shared primitives vs surface-specific art direction
+
+**Shared** (reuse them): `ValueRoll`, `useIndicator`, `SourceTether`,
+`TermLens`, `DirectoryLens`, `SectionIndex`, `KnowledgeHead` /
+`Breadcrumbs`, `ResearchNav` + `anchorStore`, `PhoneCollapse`, `DepthMarks`,
+`AreaMarks` / `AreaSignet` / `AreaTag` / `AreaScope` / `AreaBadge`,
+`area-symbols.css` (`data-symbol-host`), `NeogenMark` / `MarkShape` /
+`MarkField` / `markPhases` / `markMotion`, `LivingInk` / `LivingLayer` /
+`READABLE_INK`, the specimen flight (`vial-transition`), the record
+transition, `useVialStage`, `whenStill` and `FrameBudget`.
+
+**Surface-specific — never genericised**: the RETA, GLOW and GHK-Cu worlds,
+the hero handoff, Tres Mundos, the Evidence composition, the Archive Map and
+Archive Plate, the bench compositions, the spec ribbon, the homepage
+directory, the Quality Record's content rules, the Research masthead, the
+record head, the homepage area field and the footer signature. Each
+`MarkField` placement keeps its own `--hub-x / --hub-y / --mark-h /
+--mark-tone` in its own stylesheet (§19's table): the variable contract is
+the shared system; the compositions stay different on purpose.

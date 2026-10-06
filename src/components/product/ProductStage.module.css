@@ -229,7 +229,6 @@
   border-block-start: 1px solid var(--border-subtle);
 }
 
-.captionLabel,
 .viewerHint {
   color: var(--ink-muted);
   letter-spacing: var(--tracking-label);
