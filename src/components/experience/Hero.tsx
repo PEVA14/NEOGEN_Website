@@ -5,6 +5,7 @@ import { getWorld } from "@/config/worlds";
 import { mediaForWorld } from "@/content";
 
 import { HeroStage } from "./HeroStage";
+import { ScrollCueLine } from "./ScrollCueLine";
 import styles from "./Hero.module.css";
 
 export interface HeroCopy {
@@ -116,7 +117,7 @@ export function Hero({ copy }: { copy: HeroCopy }) {
             </div>
 
             <div className={styles.scrollCue}>
-              <span className={styles.scrollCueLine} data-motion="decorative" aria-hidden="true" />
+              <ScrollCueLine className={styles.scrollCueLine} />
               <Mono size="2xs" className={styles.metaItem}>
                 {copy.scrollCue}
               </Mono>

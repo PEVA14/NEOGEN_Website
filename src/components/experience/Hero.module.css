@@ -272,6 +272,13 @@
   .scrollCueLine {
     animation: draw var(--cinematic-duration-xl) var(--ease-standard) infinite;
   }
+
+  /* Out of view the loop is paused, not removed: an infinite animation costs
+     the main thread every frame wherever the reader is, and scrolling back
+     resumes it mid-stroke rather than restarting (`ScrollCueLine`). */
+  .scrollCueLine[data-offscreen] {
+    animation-play-state: paused;
+  }
 }
 
 @keyframes draw {
