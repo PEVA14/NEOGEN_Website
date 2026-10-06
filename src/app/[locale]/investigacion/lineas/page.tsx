@@ -72,8 +72,12 @@ export default async function LinesPage({ params }: { params: Promise<{ locale: 
     <Section mode="quiet" aria-labelledby="lines-title">
       <Container width="full">
         <KnowledgeHead
-          crumbs={[{ label: dict.knowledge.crumbs.research, href: path(routes.research) }]}
-          crumbsLabel={dict.knowledge.crumbs.research}
+          crumbs={[
+            { label: dict.knowledge.crumbs.research, href: path(routes.research) },
+            { label: dict.knowledge.crumbs.deeper, href: `${path(routes.research)}#profundizar` },
+          ]}
+          current={copy.title}
+          crumbsLabel={dict.knowledge.crumbs.trail}
           eyebrow={`${copy.label} // ${copy.qualifier}`}
           title={copy.title}
           titleId="lines-title"

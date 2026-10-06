@@ -1254,6 +1254,60 @@ record.
 where the header is two rows). Anything sticky or anchored under the header
 must read it.
 
+### Research architecture: simple on the surface, deep on demand (2026-10-05)
+
+**Research is compound-centred, not architecture-centred.** A reader never
+needs the words Compendium, Archive Map, Research Lines or References to find
+and read a compound. The golden path: **Research → search or area → Vista
+rápida → Registro científico → depth inside the record.**
+
+| layer         | what                                                                                                                           | where                                                                         |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| surface       | what Research is (one sentence), **search**, three intentions — Explorar por área · Empezar desde cero · Profundizar           | the hub's first screen, before any instrument                                 |
+| compound      | Vista rápida (inline), Registro científico                                                                                     | `CompoundLibrary`, `/compuestos/<slug>`                                       |
+| in the record | definitions in place (`TermLens`), sources tied to claims (`SourceTether`), lines, related compounds, "Ver en el catálogo"     | the record                                                                    |
+| deep          | Líneas de investigación, Mapa: compuestos por línea, Referencias, Glosario, Cómo se documenta la calidad, Manejo, Guías breves | "Profundizar" (hub section `#profundizar`, nav menu) — one step from anywhere |
+
+- **Research-local navigation** (`ResearchNav`, in `investigacion/layout.tsx`):
+  Inicio · Compuestos · Empezar aquí · Profundizar ▾ · search; on a phone
+  "Investigación / <section> ▾" and a search button. Not sticky. `<details>`
+  menus (work without script). The hub hides its search (the page's own is
+  first). The site header marks the section you are in (`NavLink`,
+  `aria-current`, weight and underline — never colour).
+- **Breadcrumbs are hierarchical and end on the page** (`Breadcrumbs`,
+  `aria-current="page"`): Investigación › Compuestos › Semaglutide;
+  Investigación › Profundizar › Líneas de investigación › <line>. They support
+  the navigation; they never carry orientation alone.
+- **Every page stands on its own.** Each Research page answers where am I
+  (nav + trail), what is this (title + lede, or `purpose` on a record or a
+  line), what can I do and where next — without the hub.
+- **The compound is the anchor** (`anchorStore`, `ResearchAnchor`): a record
+  remembers itself per tab; lines, glossary, references, guides, handling and
+  Start here offer "← Volver a <compuesto>"; the hub clears it. Progressive
+  enhancement only — no URL parameter, and every page has its canonical way
+  back without it. The record's sticky index carries the compound's name.
+- **Research stays in Research.** Areas inside Research browse the compounds
+  index (`?area=`); the ONE commerce transition is **"Ver en el catálogo"**,
+  set apart (an outlined action), to that compound's own product. Research
+  never links an area to the shop silently.
+- **Product page ↔ record.** The PDP carries a **Resumen científico**: where a
+  record exists, the first two research-context statements and the first
+  mechanism statement, each with its own sources (renumbered within the
+  summary), how many of the record's statements it shows, the record's
+  totals, and **"Leer el registro científico completo"**. Without a record,
+  the PDP shows every statement. The record is the authoritative destination.
+- **One beginner door: Empezar aquí.** "Péptidos, explicados" is its step 1
+  (a journey line at the top), and the "¿Qué es un péptido?" guide points to
+  the path.
+- **Navigation words vs scientific words.** Navigation: Compuestos (the page
+  keeps "Compendio de compuestos"), Guías breves, Profundizar, Mapa:
+  compuestos por línea, Cómo se documenta la calidad, Vista rápida. Scientific
+  terms are untouched.
+- **Phone.** Search before instruments (the Archive Plate follows the
+  intentions); the map folds behind "Ver el mapa" (`PhoneCollapse`); the
+  compendium's legend folds under its search; References jump by year. Sticky
+  UI is the site header and, on a record, its index — nothing more.
+
 ## 18. Commands
 
 ```bash

@@ -29,8 +29,12 @@ export interface ResearchAreaEntry {
   /** The research framing, in mono beneath it. */
   title: string;
   body: string;
-  /** The catalogue's view of the area. */
+  /** Without script, the tile's own link: the area in the compounds index
+      (Research stays in Research — architecture pass). */
   href: string;
+  /** The catalogue's view of the area — the roster's labelled way into
+      commerce ("Ver en el catálogo"). */
+  catalogHref: string;
   /** The compendium, filtered to this area. */
   compendiumHref: string;
   compounds: number;
@@ -280,7 +284,7 @@ export function ResearchAreaIndex({
                       <Link href={openEntry.compendiumHref} className={styles.rosterAction}>
                         {copy.compendium} <span aria-hidden="true">→</span>
                       </Link>
-                      <Link href={openEntry.href} className={styles.rosterAction}>
+                      <Link href={openEntry.catalogHref} className={styles.rosterAction}>
                         {copy.enter} <span aria-hidden="true">→</span>
                       </Link>
                     </p>

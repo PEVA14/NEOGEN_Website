@@ -4,6 +4,7 @@ import { NeogenMark } from "@/components/brand/NeogenMark";
 import { BagIndicator } from "@/components/layout/BagIndicator";
 import { HeaderSurfaceSync } from "@/components/layout/HeaderSurfaceSync";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
+import { NavLink } from "@/components/layout/NavLink";
 import { Container } from "@/components/primitives";
 import { primaryNav, routes } from "@/config/routes";
 import type { Locale } from "@/i18n/config";
@@ -62,9 +63,9 @@ export function SiteHeader({ locale, dict }: SiteHeaderProps) {
             <ul className={styles.navList}>
               {primaryNav.map((item) => (
                 <li key={item.key}>
-                  <Link href={localizePath(item.href, locale)} className={styles.navLink}>
+                  <NavLink href={localizePath(item.href, locale)} className={styles.navLink}>
                     {dict.nav[item.key]}
-                  </Link>
+                  </NavLink>
                 </li>
               ))}
             </ul>

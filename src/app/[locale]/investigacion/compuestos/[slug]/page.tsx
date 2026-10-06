@@ -14,6 +14,7 @@ import {
 import { SourceTether } from "@/components/motion/SourceTether";
 import { TermLens } from "@/components/motion/TermLens";
 import { RecordPageTransition } from "@/components/research/RecordPageTransition";
+import { ResearchAnchor } from "@/components/research/ResearchAnchor";
 import { recordNames } from "@/components/research/recordTransition";
 import { routes } from "@/config/routes";
 import { compoundRecord, recordSlugs, relatedByLines } from "@/content/compendium";
@@ -200,6 +201,15 @@ export default async function CompoundRecordPage({
 
   return (
     <RecordPageTransition>
+      {/* This compound becomes the reader's anchor: a line, a term or a
+          source opened from here offers the way back to it. */}
+      <ResearchAnchor
+        anchor={{
+          slug: product.slug,
+          name: product.name,
+          href: path(routes.compound(product.slug)),
+        }}
+      />
       {/* The record's first area is its context colour (color pass): the head
           closes on it, and its index, numbers and connections carry it — the
           same colour its compendium row opened in. Membership, nothing else. */}
@@ -210,7 +220,9 @@ export default async function CompoundRecordPage({
               { label: dict.knowledge.crumbs.research, href: path(routes.research) },
               { label: dict.knowledge.crumbs.compendium, href: path(routes.compendium) },
             ]}
-            crumbsLabel={dict.knowledge.crumbs.research}
+            current={product.name}
+            purpose={copy.purpose}
+            crumbsLabel={dict.knowledge.crumbs.trail}
             eyebrow={[copy.label, ...areas.map((a) => dict.discovery.areas[a.id].title)].join(
               " // ",
             )}
@@ -218,14 +230,15 @@ export default async function CompoundRecordPage({
             titleId="record-title"
             transition={recordNames(product.slug)}
             areas={areas.map((a) => a.id)}
+            /* An area inside Research browses the scientific archive (the
+               compounds index, filtered); the one way into commerce is this
+               compound in the catalogue, set apart (architecture pass). */
             areaLinks={areas.map((a) => ({
               id: a.id,
-              label: dict.discovery.scope.productsOf.replace(
-                "{area}",
-                dict.discovery.areas[a.id].short,
-              ),
-              href: path(routes.area(a.slug)),
+              label: dict.discovery.areas[a.id].title,
+              href: `${path(routes.compendium)}?area=${a.id}`,
             }))}
+            catalog={{ href: path(routes.product(product.slug)), label: copy.product.link }}
             lede={record.summary ?? undefined}
             meta={[
               ...(product.subtitle ? [product.subtitle] : []),
@@ -243,6 +256,7 @@ export default async function CompoundRecordPage({
                 items={sections.map(({ id, label, meta }) => ({ id, label, meta }))}
                 label={copy.index}
                 title={copy.index}
+                subject={{ name: product.name, area: areas[0]?.id ?? null }}
               />
             </div>
 
@@ -542,7 +556,13 @@ export default async function CompoundRecordPage({
                         <ul className={doc.terms}>
                           {terms.map((term) => (
                             <li key={term.id}>
-                              <Link href={path(routes.glossaryTerm(term.id))} className={doc.term}>
+                              {/* Opens in place, like the marked words in the
+                                  text (TermLens); the glossary is its link. */}
+                              <Link
+                                href={path(routes.glossaryTerm(term.id))}
+                                className={doc.term}
+                                data-term={term.id}
+                              >
                                 {term.term[locale]}
                               </Link>
                             </li>

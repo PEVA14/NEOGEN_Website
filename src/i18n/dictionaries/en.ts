@@ -377,7 +377,7 @@ const en: Dictionary = {
   nav: {
     home: "Home",
     products: "Products",
-    research: "NEOGEN Research",
+    research: "Research",
     peptides: "Peptides",
     faq: "FAQ",
     atlas: "Atlas",
@@ -837,7 +837,7 @@ const en: Dictionary = {
       terms: "Glossary terms",
       continueReading: "Continue reading",
       hub: "NEOGEN Research index",
-      record: "Full scientific record",
+      record: "Read the full scientific record",
     },
     quality: {
       label: "Quality",
@@ -845,9 +845,12 @@ const en: Dictionary = {
       title: "Quality and documentation",
     },
     overview: {
-      label: "Profile",
-      qualifier: "Sourced context",
-      title: "Compound profile",
+      label: "Scientific summary",
+      qualifier: "Sourced",
+      title: "Scientific summary",
+      depth: "{shown} of {total} sourced statements",
+      full: "The scientific record holds {statements}, {references} and {lines}.",
+      read: "Read the full scientific record",
       researchContext: "Research context",
       areas: "Areas of investigation",
       mechanism: "Mechanism and pathways",
@@ -1041,6 +1044,31 @@ const en: Dictionary = {
 
   research: {
     title: "NEOGEN Research",
+    /** Research-local navigation (architecture pass, 2026-10-05). */
+    nav: {
+      label: "Research",
+      menu: "Research sections",
+      home: "Overview",
+      compounds: "Compounds",
+      start: "Start here",
+      deeper: "Go deeper",
+      search: "Find a compound",
+      searchPlaceholder: "Name, alias or presentation",
+      submit: "Search",
+      back: "Back to {name}",
+      items: {
+        lines: {
+          title: "Research lines",
+          body: "Receptors, pathways and processes the literature studies",
+        },
+        map: { title: "Map: compounds by line", body: "Every statement, in its line" },
+        references: { title: "References", body: "Every source, by year" },
+        glossary: { title: "Glossary", body: "The records' terms, defined" },
+        quality: { title: "How quality is documented", body: "Documents by presentation and lot" },
+        handling: { title: "Laboratory handling", body: "Receipt, logging and stability" },
+        guides: { title: "Short guides", body: "Vocabulary and documentation, without jargon" },
+      },
+    },
     articleTitle: "Article",
     /* The reference index page: /investigacion/referencias */
     references: {
@@ -1053,16 +1081,17 @@ const en: Dictionary = {
       compoundsLabel: "Compounds citing",
       citedBy: "Cited by",
       backToHub: "Back to NEOGEN Research",
+      years: "Jump to year",
     },
     hub: {
       index: "01",
       label: "Research",
       qualifier: "Scientific archive",
       title: "NEOGEN Research",
-      lede: "The catalogue's scientific archive: what each compound is, what the published literature has studied, from which sources and within which limits. Every statement cites its source; what has no source does not appear.",
+      lede: "What the published literature describes about each compound in the catalogue, statement by statement and always with its source.",
       search: {
-        label: "Search the compendium",
-        placeholder: "Compound, alias or presentation",
+        label: "Find a compound",
+        placeholder: "Name, alias or presentation",
         submit: "Search",
       },
       plate: {
@@ -1086,82 +1115,102 @@ const en: Dictionary = {
         label: "Routes",
         qualifier: "Three ways in",
         title: "Where to begin",
-        chooser: "Choose your way in",
+        chooser: "Other ways in",
         begin: {
-          question: "I'm new to this",
+          question: "Start from zero",
           label: "If this is your first time",
-          body: "What a peptide is, how the archive is organised and how a record is read.",
+          body: "What a peptide is, how this archive is organised and how a record is read.",
           start: {
             title: "Start here",
-            body: "Five steps, from zero to reading a record.",
-            meta: "5 steps",
+            body: "The whole path: five steps, from zero to reading a record.",
+            meta: "5 steps · the starting point",
           },
           peptides: {
             title: "What a peptide is",
-            body: "The definition, with a diagram.",
-            meta: "Diagram and comparison",
+            body: "The path's first step, with a diagram.",
+            meta: "Step 1",
           },
           glossary: { title: "Glossary", body: "{n} terms, with the records that use them." },
         },
         explore: {
-          question: "I'm looking for a compound",
-          label: "If you are looking for a compound",
+          question: "Explore by area",
+          label: "If you have no name",
           flagships: "Records of the flagship compounds",
           areasMeta: "{n} areas",
-          body: "The whole compendium, by name, area or research line.",
+          body: "No name in mind? The compounds of each field of study.",
           compendium: {
-            title: "Compendium",
-            body: "{n} compounds, {records} with a scientific record.",
+            title: "All compounds",
+            body: "{n} compounds from A to Z, {records} with a scientific record.",
           },
           lines: {
             title: "Research lines",
             body: "{n} receptors, pathways and processes studied.",
           },
-          areas: { title: "Areas", body: "The catalogue's sections by field of study." },
+          areas: {
+            title: "The areas",
+            body: "Each field of study, with its compounds from A to Z.",
+          },
         },
         evaluate: {
-          question: "I want to see the evidence",
-          label: "If you are weighing the evidence",
+          question: "Go deeper",
+          label: "If you want to go further",
+          mapMeta: "{n} statements",
+          map: {
+            title: "Map: compounds by line",
+            body: "Every sourced statement, placed in its research line.",
+          },
           referencesMeta: "{n} sources",
           qualityMeta: "4 levels",
           handlingMeta: "Laboratory reference",
-          notesMeta: "{n} notes",
-          body: "Where each statement comes from and how quality is documented.",
+          notesMeta: "{n} guides",
+          body: "Research lines, sources, documentation and handling: the archive's tools.",
           references: { title: "References", body: "{n} sources, each with a DOI or PMID." },
           quality: {
-            title: "Documentation model",
+            title: "How quality is documented",
             body: "How a document attaches to a presentation or a lot.",
           },
           handling: {
             title: "Laboratory handling",
             body: "Stability, receipt and storage of lyophilised materials.",
           },
-          notes: { title: "Notes", body: "Short reads on vocabulary and documentation." },
+          notes: {
+            title: "Short guides",
+            body: "Short reads on vocabulary, documentation and handling.",
+          },
         },
+      },
+      deeper: {
+        index: "03",
+        label: "Go deeper",
+        qualifier: "The archive's tools",
+        title: "Go deeper",
+        lede: "What the literature studies, where each statement comes from and how quality is documented. All one step from any record.",
       },
       areas: {
         index: "02",
         label: "Areas",
-        qualifier: "By area of study",
-        title: "Research areas",
+        qualifier: "By field of study",
+        title: "Explore by area",
         compounds: "Compounds",
         references: "References",
         /* The tiles lead to the catalogue's area views, so the mark says so
            rather than "Entrar" / "Enter", which named no destination. */
         enter: "See in the catalogue",
-        all: "See the whole catalogue",
+        all: "All compounds",
+        featured: "Featured records",
         open: "See its compounds",
         close: "Close",
-        compendium: "Open in the compendium",
+        compendium: "Open in Compounds",
         roster: "{area} compounds, A to Z",
       },
       lines: {
-        index: "03",
-        label: "Lines",
-        qualifier: "What is studied",
-        title: "Research lines",
+        index: "04",
+        label: "Map",
+        qualifier: "Compounds by line",
+        title: "Map: compounds by line",
+        show: "Show the map",
         lede: "Receptors, pathways and processes studied by the literature the records cite. A compound appears in a line only if a sourced statement in its record supports it.",
-        all: "All lines",
+        all: "All research lines",
         map: {
           rest: "Each dot is a sourced statement that places a compound in a line. Point at one to read it.",
           lines: "lines",
@@ -1182,7 +1231,7 @@ const en: Dictionary = {
         },
       },
       quality: {
-        index: "04",
+        index: "05",
         label: "Quality",
         qualifier: "Evidence model",
         title: "How quality is documented",
@@ -1190,15 +1239,15 @@ const en: Dictionary = {
         explorer: "Explore documentation",
       },
       notes: {
-        index: "05",
-        label: "Notes",
-        qualifier: "Reading",
-        title: "NEOGEN notes",
+        index: "06",
+        label: "Guides",
+        qualifier: "Short reading",
+        title: "Short guides",
         lede: "Vocabulary, documentation and handling, explained without jargon. Short reading to understand what is being bought.",
-        all: "All notes",
+        all: "All guides",
       },
       references: {
-        index: "06",
+        index: "07",
         label: "References",
         qualifier: "Sources",
         title: "References",
@@ -1214,9 +1263,13 @@ const en: Dictionary = {
 
   knowledge: {
     crumbs: {
+      trail: "Breadcrumb",
       research: "Research",
-      compendium: "Compendium",
-      lines: "Lines",
+      compendium: "Compounds",
+      lines: "Research lines",
+      deeper: "Go deeper",
+      references: "References",
+      guides: "Short guides",
     },
     counts: {
       compounds: "{n} compounds",
@@ -1292,7 +1345,7 @@ const en: Dictionary = {
         source: "1 source",
         contents: "In the record",
         record: "Open scientific record",
-        product: "View in the catalogue",
+        product: "See in the catalogue",
         noRecord:
           "This compound has no scientific record: no sourced statement about it has been published. Its product page carries its identity and presentations.",
         documentation: "Documentation",
@@ -1382,6 +1435,8 @@ const en: Dictionary = {
 
     record: {
       label: "Scientific record",
+      purpose:
+        "What the published literature describes about this compound, with its sources. It is not a guide to use.",
       index: "In this record",
       jump: "Jump to section",
       sections: {
@@ -1428,7 +1483,7 @@ const en: Dictionary = {
       },
       product: {
         body: "This record describes the compound NEOGEN sells in these presentations.",
-        link: "View product",
+        link: "See in the catalogue",
       },
       related: {
         compounds: "Compounds in the same lines",
@@ -1439,7 +1494,7 @@ const en: Dictionary = {
         terms: "Terms in this record",
         termsBody: "Words from this record defined in the glossary.",
         lines: "This record's lines",
-        back: "Back to the compendium",
+        back: "All compounds",
       },
     },
 
@@ -1454,10 +1509,12 @@ const en: Dictionary = {
       },
       open: "View line",
       line: {
+        purpose:
+          "A research line gathers the compounds whose record cites studies of this receptor, pathway or process.",
         back: "All lines",
         why: "Why it is here",
         record: "Scientific record",
-        product: "View in the catalogue",
+        product: "See in the catalogue",
         references: "References for this line",
         others: "Other lines in the group",
         compounds: "Compounds studied in this line",
@@ -1639,7 +1696,7 @@ const en: Dictionary = {
         index: "02",
         label: "Organisation",
         title: "How it is organised",
-        body: "Five levels, from the general to the specific. Each is a different way in, and each leads to the next.",
+        body: "One compound is enough to begin: search for it, or explore by area; open its quick view and go on to its scientific record. Behind that are five levels, from the general to the specific, and each leads to the next.",
         levels: {
           areas: { title: "Areas", body: "The catalogue's sections by field of study." },
           lines: {
@@ -1699,7 +1756,7 @@ const en: Dictionary = {
         index: "05",
         label: "Next",
         title: "Where to go now",
-        compendium: { title: "Look up a compound", body: "The whole compendium, with quick view." },
+        compendium: { title: "Look up a compound", body: "All compounds, with quick view." },
         lines: {
           title: "Explore by what is studied",
           body: "The research lines and their compounds.",
@@ -2460,6 +2517,11 @@ const en: Dictionary = {
   peptides: {
     eyebrow: "NEOGEN guide",
     title: "Peptides, explained",
+    journey: {
+      label: "Start here · Step 1 of 5",
+      back: "The whole path",
+      next: "Next: how the archive is organised",
+    },
     lede: "What they are, why they are studied, and the condition they are sold under. No promises, no jargon, no hedging.",
     sections: {
       what: {
@@ -2558,9 +2620,9 @@ const en: Dictionary = {
       },
     },
     notes: {
-      title: "Notes",
+      title: "Short guides",
       lede: "Four short reads on vocabulary, documentation and handling.",
-      action: "All notes",
+      action: "All guides",
     },
     continue: {
       title: "Continue in NEOGEN Research",
@@ -2576,9 +2638,9 @@ const en: Dictionary = {
 
   editorial: {
     eyebrow: "NEOGEN Research",
-    title: "Notes",
+    title: "Short guides",
     lede: "Vocabulary, documentation and the handling of laboratory materials. What can be explained honestly, explained.",
-    index: "All notes",
+    index: "All guides",
     topics: {
       vocabulary: "Vocabulary",
       documentation: "Documentation",
@@ -2804,15 +2866,15 @@ const en: Dictionary = {
       help: "Help",
     },
     links: {
-      compendium: "Compendium",
+      compendium: "Compounds",
       lines: "Research lines",
       glossary: "Glossary",
       start: "Start here",
       handling: "Laboratory handling",
       allCompounds: "All compounds",
-      documentation: "Documentation",
+      documentation: "How quality is documented",
       peptides: "What is a peptide",
-      notes: "Notes",
+      notes: "Short guides",
       faq: "Frequently asked questions",
     },
   },

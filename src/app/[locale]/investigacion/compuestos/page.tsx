@@ -63,6 +63,29 @@ export default async function CompendiumPage({ params }: { params: Promise<{ loc
   const entries = libraryEntries(locale, dict);
   const stats = compendiumStats();
 
+  /* How to read the index's depth marks: beside the title on a wide screen;
+     on a phone, folded under the search (architecture pass — the search
+     comes before the legend). */
+  const legend = (
+    <div className={styles.legend}>
+      <p className={styles.legendLabel}>{copy.legend.label}</p>
+      <ol className={styles.legendMarks}>
+        {(["mechanism", "research", "notes", "references"] as const).map((key, i) => (
+          <li key={key}>
+            <span className={styles.legendMark} data-position={i} aria-hidden="true">
+              {[0, 1, 2, 3].map((n) => (
+                <span key={n} data-on={n === i ? "true" : undefined} />
+              ))}
+            </span>
+            {copy.depth[key]}
+          </li>
+        ))}
+      </ol>
+      <p className={styles.legendNote}>{copy.legend.depth}</p>
+      <p className={styles.legendNote}>{copy.legend.none}</p>
+    </div>
+  );
+
   return (
     <RecordPageTransition>
       <div>
@@ -70,7 +93,8 @@ export default async function CompendiumPage({ params }: { params: Promise<{ loc
           <Container width="full">
             <KnowledgeHead
               crumbs={[{ label: dict.knowledge.crumbs.research, href: path(routes.research) }]}
-              crumbsLabel={dict.knowledge.crumbs.research}
+              current={dict.knowledge.crumbs.compendium}
+              crumbsLabel={dict.knowledge.crumbs.trail}
               eyebrow={`${copy.label} // ${copy.qualifier}`}
               title={copy.title}
               titleId="compendium-title"
@@ -80,29 +104,12 @@ export default async function CompendiumPage({ params }: { params: Promise<{ loc
                 `${stats.records} ${hub.stats.records.toLowerCase()}`,
                 count(stats.references, counts.references, counts.reference),
               ]}
-              aside={
-                <div className={styles.legend}>
-                  <p className={styles.legendLabel}>{copy.legend.label}</p>
-                  <ol className={styles.legendMarks}>
-                    {(["mechanism", "research", "notes", "references"] as const).map((key, i) => (
-                      <li key={key}>
-                        <span className={styles.legendMark} data-position={i} aria-hidden="true">
-                          {[0, 1, 2, 3].map((n) => (
-                            <span key={n} data-on={n === i ? "true" : undefined} />
-                          ))}
-                        </span>
-                        {copy.depth[key]}
-                      </li>
-                    ))}
-                  </ol>
-                  <p className={styles.legendNote}>{copy.legend.depth}</p>
-                  <p className={styles.legendNote}>{copy.legend.none}</p>
-                </div>
-              }
+              aside={<div className={styles.legendWide}>{legend}</div>}
             />
 
             <div className={styles.library}>
               <CompoundLibrary
+                legend={{ label: copy.legend.label, body: legend }}
                 entries={entries}
                 areaScopes={Object.fromEntries(
                   publicAreas().map((area) => [
@@ -116,7 +123,7 @@ export default async function CompendiumPage({ params }: { params: Promise<{ loc
                       links: [
                         {
                           href: path(routes.area(area.slug)),
-                          label: dict.discovery.scope.toProducts,
+                          label: dict.knowledge.record.product.link,
                         },
                       ],
                     },

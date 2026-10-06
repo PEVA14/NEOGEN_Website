@@ -1,6 +1,11 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-10-05**: **the Areas are sub-identities — permanent**
+Last updated **2026-10-06**: **Research reorganised — simple on the surface,
+deep on demand — permanent** (owner: "Love it, commit everything, permanent
+feature") (§8ba): compound-centred hub (search first, three intentions,
+Profundizar), Research-local navigation, hierarchical breadcrumbs, the
+compound as anchor, Resumen científico on product pages, one beginner door;
+no depth removed. Before that, 2026-10-05: **the Areas are sub-identities — permanent**
 (owner: "Love it, commit everything, permanent feature") (§8az): each area's
 existing symbol and colour as one system (signet, tag, scope, badge) across
 the explorer, the catalogue and its filters, store cards, the area pages,
@@ -2597,6 +2602,39 @@ Evaluated on a production build in headless Chrome, at 1440×900 and 390×844,
 from the catalogue grid, the phone strip and by direct URL; reduced motion;
 GLOW's circle unchanged; at 4× CPU throttle on the phone there is no long task
 between the flight's start and the formation's end.
+
+## 8ba. Research architecture — simple on the surface, deep on demand (2026-10-05, PERMANENT)
+
+Owner: Research is visually excellent and deep, but too easy for a new user
+to get lost; organise, don't delete. An audit (four users: beginner, knows a
+compound, explorer, advanced) found flat hub hierarchy (six sections, ~114
+links, an expert chart before the search on a phone), the same compound in
+four shapes (quick view, record, the PDP's full profile, hub rosters), no
+persistent Research context, navigation words that required knowing the
+architecture, three beginner doors, and Research links that silently became
+commerce. The architecture was approved with amendments (PDP keeps a sourced
+summary; contextual return is an enhancement, never URL-only).
+
+Implemented as recorded in CONVENTIONS §17d ("Research architecture"):
+hub reordered (title + one sentence + search, then Explorar por área /
+Empezar desde cero / Profundizar, plate after the intentions on a phone;
+areas with featured records; a "Profundizar" index; map, quality, guides and
+references below), `ResearchNav` on every Research page, header active state,
+hierarchical breadcrumbs ending on the page, `purpose` lines for direct entry
+(record, line), the compound anchor with "← Volver a <compuesto>", the
+record's sticky index naming the compound, record terms opening in place,
+Research area links staying in Research, one "Ver en el catálogo", the PDP's
+Resumen científico, Peptides as step 1 of Empezar aquí, References with a
+breadcrumb, a shared head and year jumps, the compendium legend under the
+search on a phone, the map folded on a phone. Vocabulary: Compuestos, Guías
+breves, Profundizar, Mapa: compuestos por línea, Cómo se documenta la
+calidad, Vista rápida; EN header "Research".
+
+Verified with the four journeys (desktop and phone), direct entry (record,
+line, references, area-filtered compounds, glossary term), keyboard, touch
+and reduced motion; axe clean apart from a pre-existing
+`landmark-complementary-is-top-level` on the Peptides page and guides (the
+research-use notice and a guide's set-apart note), not touched here.
 
 ## 8az. The Areas as sub-identities (2026-10-05, PERMANENT)
 

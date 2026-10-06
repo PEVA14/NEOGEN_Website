@@ -883,7 +883,7 @@ const es = {
       terms: "Términos del glosario",
       continueReading: "Continuar leyendo",
       hub: "Índice de NEOGEN Research",
-      record: "Registro científico completo",
+      record: "Leer el registro científico completo",
     },
     quality: {
       label: "Calidad",
@@ -891,9 +891,13 @@ const es = {
       title: "Calidad y documentación",
     },
     overview: {
-      label: "Perfil",
-      qualifier: "Contexto con fuentes",
-      title: "Perfil del compuesto",
+      label: "Resumen científico",
+      qualifier: "Con fuentes",
+      title: "Resumen científico",
+      /* Lo que este resumen muestra del registro, y el camino a todo. */
+      depth: "{shown} de {total} afirmaciones con fuente",
+      full: "El registro científico reúne {statements}, {references} y {lines}.",
+      read: "Leer el registro científico completo",
       researchContext: "Contexto de investigación",
       areas: "Áreas de investigación",
       mechanism: "Mecanismo y vías",
@@ -1134,6 +1138,41 @@ const es = {
 
   research: {
     title: "NEOGEN Research",
+    /**
+     * LA NAVEGACIÓN LOCAL DE INVESTIGACIÓN (pase de arquitectura, 2026-10-05):
+     * dónde estoy dentro de Investigación y a dónde puedo ir, en cada página,
+     * sin pasar por la portada. Palabras de navegación, no de ciencia: el
+     * término científico sigue en el título de cada página.
+     */
+    nav: {
+      label: "Investigación",
+      menu: "Secciones de Investigación",
+      home: "Inicio",
+      compounds: "Compuestos",
+      start: "Empezar aquí",
+      deeper: "Profundizar",
+      search: "Buscar un compuesto",
+      searchPlaceholder: "Nombre, alias o presentación",
+      submit: "Buscar",
+      /* El compuesto que se estaba investigando: la vuelta a él desde una
+         línea, un término o una fuente. */
+      back: "Volver a {name}",
+      items: {
+        lines: {
+          title: "Líneas de investigación",
+          body: "Receptores, vías y procesos que estudia la literatura",
+        },
+        map: { title: "Mapa: compuestos por línea", body: "Cada afirmación, en su línea" },
+        references: { title: "Referencias", body: "Todas las fuentes, por año" },
+        glossary: { title: "Glosario", body: "Los términos de los registros, definidos" },
+        quality: {
+          title: "Cómo se documenta la calidad",
+          body: "Documentos por presentación y lote",
+        },
+        handling: { title: "Manejo en laboratorio", body: "Recepción, registro y estabilidad" },
+        guides: { title: "Guías breves", body: "Vocabulario y documentación, sin jerga" },
+      },
+    },
     articleTitle: "Artículo",
     /* The reference index page: /investigacion/referencias */
     references: {
@@ -1146,6 +1185,7 @@ const es = {
       compoundsLabel: "Compuestos que citan",
       citedBy: "Citada por",
       backToHub: "Volver a NEOGEN Research",
+      years: "Ir al año",
     },
     /*
      * THE KNOWLEDGE HUB. An entry point with hierarchy, not a grid of links:
@@ -1158,10 +1198,10 @@ const es = {
       label: "Investigación",
       qualifier: "Archivo científico",
       title: "NEOGEN Research",
-      lede: "El archivo científico del catálogo: qué es cada compuesto, qué ha estudiado la literatura publicada, con qué fuentes y bajo qué límites. Cada afirmación cita su fuente; lo que no tiene fuente no aparece.",
+      lede: "Lo que la literatura publicada describe de cada compuesto del catálogo, afirmación por afirmación y siempre con su fuente.",
       search: {
-        label: "Buscar en el compendio",
-        placeholder: "Compuesto, alias o presentación",
+        label: "Buscar un compuesto",
+        placeholder: "Nombre, alias o presentación",
         submit: "Buscar",
       },
       /* The archive plate on the hub's first screen (Research colour
@@ -1188,83 +1228,106 @@ const es = {
         label: "Rutas",
         qualifier: "Tres maneras de entrar",
         title: "Por dónde empezar",
-        chooser: "Elige por dónde entrar",
+        chooser: "Otras maneras de entrar",
         begin: {
-          question: "Soy nuevo en esto",
+          question: "Empezar desde cero",
           label: "Si es tu primera vez",
-          body: "Qué es un péptido, cómo está organizado el archivo y cómo se lee un registro.",
+          body: "Qué es un péptido, cómo está organizado este archivo y cómo se lee un registro.",
           start: {
             title: "Empezar aquí",
-            body: "Cinco pasos, de cero a leer un registro.",
-            meta: "5 pasos",
+            body: "El recorrido completo: cinco pasos, de cero a leer un registro.",
+            meta: "5 pasos · el punto de partida",
           },
           peptides: {
             title: "Qué es un péptido",
-            body: "La definición, con un esquema.",
-            meta: "Esquema y comparación",
+            body: "El primer paso del recorrido, con un esquema.",
+            meta: "Paso 1",
           },
           glossary: { title: "Glosario", body: "{n} términos, con los registros que los usan." },
         },
         explore: {
-          question: "Busco un compuesto",
-          label: "Si buscas un compuesto",
+          question: "Explorar por área",
+          label: "Si no sabes el nombre",
           flagships: "Registros de los compuestos insignia",
           areasMeta: "{n} áreas",
-          body: "El compendio completo, por nombre, área o línea de investigación.",
+          body: "Si no tienes un nombre: los compuestos de cada campo de estudio.",
           compendium: {
-            title: "Compendio",
-            body: "{n} compuestos, {records} con registro científico.",
+            title: "Todos los compuestos",
+            body: "{n} compuestos de la A a la Z, {records} con registro científico.",
           },
           lines: {
             title: "Líneas de investigación",
             body: "{n} receptores, vías y procesos estudiados.",
           },
-          areas: { title: "Áreas", body: "Las secciones del catálogo por campo de estudio." },
+          areas: {
+            title: "Las áreas",
+            body: "Cada campo de estudio, con sus compuestos de la A a la Z.",
+          },
         },
         evaluate: {
-          question: "Quiero ver la evidencia",
-          label: "Si evalúas la evidencia",
+          question: "Profundizar",
+          label: "Si quieres ir más allá",
+          mapMeta: "{n} afirmaciones",
+          map: {
+            title: "Mapa: compuestos por línea",
+            body: "Cada afirmación con fuente, situada en su línea de investigación.",
+          },
           referencesMeta: "{n} fuentes",
           qualityMeta: "4 niveles",
           handlingMeta: "Referencia de laboratorio",
-          notesMeta: "{n} notas",
-          body: "De dónde sale cada afirmación y cómo se documenta la calidad.",
+          notesMeta: "{n} guías",
+          body: "Líneas de investigación, fuentes, documentación y manejo: las herramientas del archivo.",
           references: { title: "Referencias", body: "{n} fuentes, cada una con DOI o PMID." },
           quality: {
-            title: "Modelo de documentación",
+            title: "Cómo se documenta la calidad",
             body: "Cómo se vincula un documento a una presentación o a un lote.",
           },
           handling: {
             title: "Manejo en laboratorio",
             body: "Estabilidad, recepción y almacenamiento de liofilizados.",
           },
-          notes: { title: "Notas", body: "Lecturas breves sobre vocabulario y documentación." },
+          notes: {
+            title: "Guías breves",
+            body: "Lecturas cortas sobre vocabulario, documentación y manejo.",
+          },
         },
+      },
+      deeper: {
+        index: "03",
+        label: "Profundizar",
+        qualifier: "Las herramientas del archivo",
+        title: "Profundizar",
+        lede: "Qué estudia la literatura, de dónde sale cada afirmación y cómo se documenta la calidad. Todo a un paso de cada registro.",
       },
       areas: {
         index: "02",
         label: "Áreas",
-        qualifier: "Por área de estudio",
-        title: "Áreas de investigación",
+        qualifier: "Por campo de estudio",
+        title: "Explorar por área",
         compounds: "Compuestos",
         references: "Referencias",
         /* The tiles lead to the catalogue's area views, so the mark says so
            rather than "Entrar" / "Enter", which named no destination. */
         enter: "Ver en el catálogo",
-        all: "Ver el catálogo completo",
+        all: "Todos los compuestos",
+        /* The flagships' records, under the areas: a way into a record for a
+           reader who has no name yet. */
+        featured: "Registros destacados",
         /* An area opens in place into its compounds (finishing pass). */
         open: "Ver sus compuestos",
         close: "Cerrar",
-        compendium: "Abrir en el compendio",
+        compendium: "Abrir en Compuestos",
         roster: "Compuestos de {area}, de la A a la Z",
       },
       lines: {
-        index: "03",
-        label: "Líneas",
-        qualifier: "Qué se estudia",
-        title: "Líneas de investigación",
+        index: "04",
+        label: "Mapa",
+        qualifier: "Compuestos por línea",
+        title: "Mapa: compuestos por línea",
+        /* Collapsed on a phone; the map is a wide instrument. */
+        show: "Ver el mapa",
         lede: "Receptores, vías y procesos que estudia la literatura citada en los registros. Un compuesto aparece en una línea sólo si una afirmación con fuente de su registro lo sustenta.",
-        all: "Todas las líneas",
+        all: "Todas las líneas de investigación",
         map: {
           rest: "Cada punto es una afirmación con fuente que sitúa a un compuesto en una línea. Pasa el cursor para leerla.",
           lines: "líneas",
@@ -1286,7 +1349,7 @@ const es = {
         },
       },
       quality: {
-        index: "04",
+        index: "05",
         label: "Calidad",
         qualifier: "Modelo de evidencia",
         title: "Cómo se documenta la calidad",
@@ -1294,15 +1357,15 @@ const es = {
         explorer: "Explorar documentación",
       },
       notes: {
-        index: "05",
-        label: "Notas",
-        qualifier: "Lectura",
-        title: "Notas de NEOGEN",
+        index: "06",
+        label: "Guías",
+        qualifier: "Lectura breve",
+        title: "Guías breves",
         lede: "Vocabulario, documentación y manejo, explicados sin jerga. Lectura breve para entender qué es lo que se está comprando.",
-        all: "Todas las notas",
+        all: "Todas las guías",
       },
       references: {
-        index: "06",
+        index: "07",
         label: "Referencias",
         qualifier: "Fuentes",
         title: "Referencias",
@@ -1326,9 +1389,14 @@ const es = {
    */
   knowledge: {
     crumbs: {
+      /* The breadcrumb trail's own name, distinct from every other nav. */
+      trail: "Ruta",
       research: "Investigación",
-      compendium: "Compendio",
-      lines: "Líneas",
+      compendium: "Compuestos",
+      lines: "Líneas de investigación",
+      deeper: "Profundizar",
+      references: "Referencias",
+      guides: "Guías breves",
     },
     counts: {
       compounds: "{n} compuestos",
@@ -1347,7 +1415,7 @@ const es = {
       label: "Compendio",
       qualifier: "Índice de compuestos",
       title: "Compendio de compuestos",
-      lede: "Todos los compuestos del catálogo en un solo índice. Abre cualquiera para ver su ficha rápida; los que tienen registro científico llevan al registro completo, con sus afirmaciones y sus fuentes numeradas.",
+      lede: "Todos los compuestos del catálogo en un solo índice. Abre cualquiera para ver su vista rápida; los que tienen registro científico llevan al registro completo, con sus afirmaciones y sus fuentes numeradas.",
       legend: {
         label: "Cómo leer el índice",
         depth:
@@ -1386,7 +1454,7 @@ const es = {
       },
       preview: {
         open: "Vista rápida",
-        dialog: "Ficha rápida de {name}",
+        dialog: "Vista rápida de {name}",
         close: "Cerrar",
         previous: "Anterior",
         next: "Siguiente",
@@ -1494,6 +1562,9 @@ const es = {
 
     record: {
       label: "Registro científico",
+      /* Qué es esta página, para quien llega directo (pase de arquitectura). */
+      purpose:
+        "Lo que la literatura publicada describe de este compuesto, con sus fuentes. No es una guía de uso.",
       index: "En este registro",
       jump: "Ir a la sección",
       sections: {
@@ -1542,7 +1613,7 @@ const es = {
       },
       product: {
         body: "Este registro describe el compuesto que NEOGEN vende en estas presentaciones.",
-        link: "Ver producto",
+        link: "Ver en el catálogo",
       },
       related: {
         compounds: "Compuestos en las mismas líneas",
@@ -1553,7 +1624,7 @@ const es = {
         terms: "Términos en este registro",
         termsBody: "Palabras de este registro definidas en el glosario.",
         lines: "Líneas de este registro",
-        back: "Volver al compendio",
+        back: "Todos los compuestos",
       },
     },
 
@@ -1568,6 +1639,8 @@ const es = {
       },
       open: "Ver la línea",
       line: {
+        purpose:
+          "Una línea de investigación reúne los compuestos cuyo registro cita estudios sobre este receptor, vía o proceso.",
         back: "Todas las líneas",
         why: "Por qué figura aquí",
         record: "Registro científico",
@@ -1750,7 +1823,7 @@ const es = {
         index: "02",
         label: "Organización",
         title: "Cómo está organizado",
-        body: "Cinco niveles, de lo general a lo concreto. Cada uno es una forma distinta de entrar, y cada uno lleva al siguiente.",
+        body: "Para empezar basta un compuesto: búscalo, o explóralo por área; ábrelo en vista rápida y sigue a su registro científico. Detrás hay cinco niveles, de lo general a lo concreto, y cada uno lleva al siguiente.",
         levels: {
           areas: { title: "Áreas", body: "Secciones del catálogo por campo de estudio." },
           lines: {
@@ -1812,7 +1885,7 @@ const es = {
         title: "A dónde ir ahora",
         compendium: {
           title: "Buscar un compuesto",
-          body: "El compendio completo, con vista rápida.",
+          body: "Todos los compuestos, con vista rápida.",
         },
         lines: {
           title: "Explorar por lo que se estudia",
@@ -2662,6 +2735,13 @@ const es = {
   peptides: {
     eyebrow: "Guía NEOGEN",
     title: "Péptidos, explicados",
+    /* Esta página es el primer paso de «Empezar aquí»: una sola puerta de
+       entrada para quien empieza de cero. */
+    journey: {
+      label: "Empezar aquí · Paso 1 de 5",
+      back: "El recorrido completo",
+      next: "Siguiente: cómo está organizado el archivo",
+    },
     lede: "Qué son, por qué se estudian y bajo qué condición se venden. Sin promesas, sin jerga y sin rodeos.",
     sections: {
       what: {
@@ -2760,9 +2840,9 @@ const es = {
       },
     },
     notes: {
-      title: "Notas",
+      title: "Guías breves",
       lede: "Cuatro lecturas breves sobre vocabulario, documentación y manejo.",
-      action: "Todas las notas",
+      action: "Todas las guías",
     },
     continue: {
       title: "Seguir en NEOGEN Research",
@@ -2784,9 +2864,9 @@ const es = {
    */
   editorial: {
     eyebrow: "NEOGEN Research",
-    title: "Notas",
+    title: "Guías breves",
     lede: "Vocabulario, documentación y manejo de materiales de laboratorio. Lo que se puede explicar con honestidad, explicado.",
-    index: "Todas las notas",
+    index: "Todas las guías",
     topics: {
       vocabulary: "Vocabulario",
       documentation: "Documentación",
@@ -3059,15 +3139,15 @@ const es = {
       help: "Ayuda",
     },
     links: {
-      compendium: "Compendio",
+      compendium: "Compuestos",
       lines: "Líneas de investigación",
       glossary: "Glosario",
       start: "Empezar aquí",
       handling: "Manejo en laboratorio",
       allCompounds: "Todos los compuestos",
-      documentation: "Documentación",
+      documentation: "Cómo se documenta la calidad",
       peptides: "Qué es un péptido",
-      notes: "Notas",
+      notes: "Guías breves",
       faq: "Preguntas frecuentes",
     },
   },

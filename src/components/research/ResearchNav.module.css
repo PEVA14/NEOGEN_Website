@@ -1,0 +1,335 @@
+/*
+ * RESEARCH'S OWN NAVIGATION — see ResearchNav.tsx.
+ *
+ * Local orientation, not a second header: one row at the record index's own
+ * scale (mono 2xs, uppercase, tracked), on the page's paper, a hairline below.
+ * Not sticky — the site header already is, and a record adds its own index.
+ */
+
+.nav {
+  position: relative;
+  z-index: var(--z-content);
+  border-block-end: 1px solid var(--border-subtle);
+  background: var(--surface-base);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  inline-size: 100%;
+  max-inline-size: var(--container-max);
+  min-block-size: 2.75rem;
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.links {
+  display: none;
+  align-items: center;
+  gap: var(--space-lg);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  min-block-size: 2.75rem;
+  color: var(--ink-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 6px;
+  white-space: nowrap;
+  cursor: pointer;
+  list-style: none;
+  transition:
+    color var(--motion-duration-fast) var(--ease-standard),
+    text-decoration-color var(--motion-duration-fast) var(--ease-standard);
+}
+
+.link::-webkit-details-marker {
+  display: none;
+}
+
+.link:hover {
+  color: var(--ink-primary);
+  text-decoration-color: var(--border-strong);
+}
+
+/* Where the reader is: full ink and a held underline — weight, not colour. */
+.link[aria-current] {
+  color: var(--ink-primary);
+  text-decoration-color: currentColor;
+}
+
+.link:focus-visible,
+.searchToggle:focus-visible,
+.back:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.caret {
+  inline-size: 0.4em;
+  block-size: 0.4em;
+  border-inline-end: 1px solid currentColor;
+  border-block-end: 1px solid currentColor;
+  rotate: 45deg;
+  translate: 0 -0.15em;
+  transition: rotate var(--motion-duration-fast) var(--ease-standard);
+}
+
+.menu[open] > summary .caret {
+  rotate: 225deg;
+  translate: 0 0.1em;
+}
+
+/* --- Menus ------------------------------------------------------------------ */
+
+.menu {
+  position: relative;
+}
+
+.menu > summary {
+  list-style: none;
+}
+
+.menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.panel {
+  position: absolute;
+  inset-block-start: calc(100% + 1px);
+  inset-inline-start: 0;
+  z-index: var(--z-drawer);
+  inline-size: max-content;
+  max-inline-size: min(26rem, calc(100vw - 2 * var(--gutter)));
+  padding: var(--space-2xs) 0;
+  border: 1px solid var(--border-default);
+  background: var(--surface-base);
+}
+
+.items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: grid;
+  gap: 0.15rem;
+  padding: var(--space-2xs) var(--space-sm);
+  color: var(--ink-primary);
+  text-decoration: none;
+}
+
+.item:hover,
+.item:focus-visible {
+  background: var(--surface-raised);
+}
+
+.item:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.item[aria-current] .itemTitle {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.itemTitle {
+  font-size: var(--text-sm);
+}
+
+.itemBody {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.panelLabel {
+  margin: var(--space-2xs) var(--space-sm) 0;
+  padding-block-start: var(--space-2xs);
+  border-block-start: 1px solid var(--border-subtle);
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+/* --- The way back to the compound ------------------------------------------- */
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  min-block-size: 2.75rem;
+  min-inline-size: 0;
+  overflow: hidden;
+  color: var(--ink-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 6px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.back:hover {
+  text-decoration-color: currentColor;
+}
+
+/* --- Search ------------------------------------------------------------------- */
+
+.searchWide {
+  display: none;
+  margin-inline-start: auto;
+}
+
+.search {
+  display: flex;
+  align-items: stretch;
+}
+
+.searchInput {
+  inline-size: 15rem;
+  min-block-size: 2.25rem;
+  padding-inline: var(--space-xs);
+  border: 1px solid var(--border-default);
+  border-inline-end: 0;
+  background: var(--surface-base);
+  color: var(--ink-primary);
+  font: inherit;
+  font-size: var(--text-sm);
+}
+
+.searchInput:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.searchSubmit {
+  padding-inline: var(--space-sm);
+  border: 1px solid var(--neogen-charcoal);
+  background: var(--neogen-charcoal);
+  color: var(--neogen-paper);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.searchSubmit:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.searchNarrow {
+  margin-inline-start: auto;
+}
+
+.searchToggle {
+  display: grid;
+  place-items: center;
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  color: var(--ink-primary);
+  cursor: pointer;
+}
+
+.searchToggle svg {
+  inline-size: 1.125rem;
+  block-size: 1.125rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.searchPanel {
+  inset-inline: auto 0;
+  padding: var(--space-xs);
+}
+
+.searchPanel .search {
+  inline-size: calc(100vw - 2 * var(--gutter) - 2 * var(--space-xs) - 2px);
+}
+
+.searchPanel .searchInput {
+  flex: 1;
+  inline-size: auto;
+  min-block-size: 2.75rem;
+}
+
+.compactCurrent {
+  color: var(--ink-muted);
+}
+
+/* A phone: the way back is a line of its own under the row, never squeezed
+   into it. */
+@media (max-width: 47.999rem) {
+  .row {
+    flex-wrap: wrap;
+    column-gap: var(--space-xs);
+  }
+
+  .back {
+    order: 3;
+    flex-basis: 100%;
+    min-block-size: 2.5rem;
+    border-block-start: 1px solid var(--border-subtle);
+  }
+}
+
+.srOnly {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* --- Wide: the four places and an inline search ------------------------------ */
+
+@media (min-width: 48rem) {
+  .links {
+    display: flex;
+  }
+
+  .compact,
+  .searchNarrow {
+    display: none;
+  }
+
+  .searchWide {
+    display: block;
+  }
+
+  .back {
+    margin-inline-start: var(--space-md);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .link,
+  .caret {
+    transition: none;
+  }
+}

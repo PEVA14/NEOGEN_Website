@@ -82,3 +82,11 @@
   margin: 0;
   text-transform: uppercase;
 }
+
+/* The legend beside the title on a wide screen only; on a phone it folds
+   under the search (`CompoundLibrary`'s disclosure). */
+@media (max-width: 47.999rem) {
+  .legendWide {
+    display: none;
+  }
+}

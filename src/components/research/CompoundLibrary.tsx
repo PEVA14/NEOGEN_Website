@@ -189,6 +189,7 @@ export function CompoundLibrary({
   copy,
   endpoint,
   areaScopes,
+  legend,
 }: {
   entries: readonly LibraryEntry[];
   areas: readonly { id: string; label: string }[];
@@ -202,6 +203,8 @@ export function CompoundLibrary({
    * its products.
    */
   areaScopes?: Record<string, { name: string; detail: string; links: readonly AreaScopeLink[] }>;
+  /** How to read the depth marks — folded under the search on a phone. */
+  legend?: { label: string; body: ReactNode };
 }) {
   const [search, setSearch] = useUrlSearch();
   const filters = useMemo(() => parse(search), [search]);
@@ -693,6 +696,13 @@ export function CompoundLibrary({
           ) : null}
         </div>
       </div>
+
+      {legend ? (
+        <details className={styles.legendDisclosure}>
+          <summary>{legend.label}</summary>
+          {legend.body}
+        </details>
+      ) : null}
 
       {/* ---- the area, arriving ------------------------------------------- */}
       {filters.area && areaScopes?.[filters.area] ? (

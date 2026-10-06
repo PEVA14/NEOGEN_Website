@@ -16,6 +16,50 @@
   z-index: var(--z-sticky);
 }
 
+/* The compound the document is about, kept in view (Research architecture
+   pass). Phone: the strip's fixed first cell; wide: above the index. */
+.index[data-subject] {
+  display: flex;
+  align-items: stretch;
+}
+
+.index[data-subject] .list {
+  flex: 1;
+  min-inline-size: 0;
+  padding-inline-start: var(--space-sm);
+}
+
+.subject {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 0.45em;
+  max-inline-size: 42%;
+  margin: 0;
+  padding-inline: var(--gutter) var(--space-sm);
+  border-inline-end: 1px solid var(--border-default);
+  color: var(--ink-primary);
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.subjectName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.subjectIcon {
+  flex: none;
+  inline-size: 1.15em;
+  block-size: 1.15em;
+  color: var(--area-mark, currentColor);
+}
+
 .title {
   block-size: 1px;
   clip-path: inset(50%);
@@ -90,6 +134,26 @@
     border: 0;
     inset-block-start: calc(var(--header-height) + var(--space-lg));
     margin-inline: 0;
+  }
+
+  .index[data-subject] {
+    display: block;
+  }
+
+  .index[data-subject] .list {
+    padding-inline-start: 0;
+  }
+
+  .subject {
+    max-inline-size: none;
+    margin-block-end: var(--space-sm);
+    padding: 0;
+    border: 0;
+    font-size: var(--text-lg);
+  }
+
+  .subjectName {
+    white-space: normal;
   }
 
   .title {

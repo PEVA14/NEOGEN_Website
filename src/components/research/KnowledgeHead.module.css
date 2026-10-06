@@ -68,6 +68,25 @@
   text-underline-offset: 4px;
 }
 
+/* The page itself, closing the trail: full ink, not a link. */
+.crumb[data-current] {
+  color: var(--ink-primary);
+}
+
+.crumb[data-current]:hover {
+  text-decoration: none;
+}
+
+/* What this page is, for a reader who arrived here first. */
+.purpose {
+  color: var(--ink-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  margin: var(--space-xs) 0 0;
+  max-inline-size: 42rem;
+  text-wrap: pretty;
+}
+
 .eyebrow {
   color: var(--ink-primary);
   letter-spacing: var(--tracking-label);
@@ -123,12 +142,44 @@
 .areaLinks {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--space-xs) var(--space-lg);
   list-style: none;
   margin: var(--space-md) 0 0;
   padding: 0;
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
+}
+
+/* The commerce transition, set apart from the research links: charcoal, a
+   hairline before it, the catalogue's own action style. */
+.catalog {
+  padding-inline-start: var(--space-lg);
+  border-inline-start: 1px solid var(--border-default);
+}
+
+.catalogLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  min-block-size: 2.75rem;
+  padding-inline: var(--space-sm);
+  border: 1px solid var(--ink-primary);
+  color: var(--ink-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-decoration: none;
+}
+
+.catalogLink:hover {
+  background: var(--ink-primary);
+  color: var(--surface-base);
+}
+
+.catalogLink:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
 }
 
 /* A record's head, registered to its areas (color pass): the eyebrow reads in

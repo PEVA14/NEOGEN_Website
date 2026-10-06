@@ -16,6 +16,45 @@ export interface Crumb {
 }
 
 /**
+ * THE TRAIL — where this page sits in Research, ending on the page itself
+ * (`aria-current`, not a link). Exported for pages with a head of their own
+ * (a guide). It supports the Research navigation; it does not replace it.
+ */
+export function Breadcrumbs({
+  crumbs,
+  label,
+  current,
+  className,
+}: {
+  crumbs: readonly Crumb[];
+  label: string;
+  current?: string;
+  className?: string;
+}) {
+  if (crumbs.length === 0) return null;
+  return (
+    <nav aria-label={label} className={[styles.crumbs, className].filter(Boolean).join(" ")}>
+      <ol>
+        {crumbs.map((crumb) => (
+          <li key={crumb.href}>
+            <Link href={crumb.href} className={styles.crumb}>
+              {crumb.label}
+            </Link>
+          </li>
+        ))}
+        {current ? (
+          <li>
+            <span className={styles.crumb} aria-current="page" data-current="">
+              {current}
+            </span>
+          </li>
+        ) : null}
+      </ol>
+    </nav>
+  );
+}
+
+/**
  * THE HEAD OF A RESEARCH PAGE — where the reader is, what this is, and what
  * it holds.
  *
@@ -39,6 +78,9 @@ export function KnowledgeHead({
   transition,
   areas,
   areaLinks,
+  current,
+  purpose,
+  catalog,
 }: {
   crumbs: readonly Crumb[];
   crumbsLabel: string;
@@ -69,6 +111,22 @@ export function KnowledgeHead({
    * catalogue in one step.
    */
   areaLinks?: readonly { id: DiscoveryAreaId; label: string; href: string }[];
+  /**
+   * The page itself, as the breadcrumb's last step (Research architecture
+   * pass): "Investigación / Compuestos / Semaglutide", the current one
+   * marked `aria-current` and not a link.
+   */
+  current?: string;
+  /**
+   * What this page is, in one sentence, for a reader who arrives here first
+   * — from a search engine, a shared link — without the overview.
+   */
+  purpose?: string;
+  /**
+   * The one commerce transition from Research: this compound in the
+   * catalogue ("Ver en el catálogo"), set apart from the research links.
+   */
+  catalog?: { href: string; label: string };
 }) {
   const heading = (
     <h1 id={titleId} className={styles.title}>
@@ -88,19 +146,7 @@ export function KnowledgeHead({
        */}
       {areas && areas.length > 0 ? <MarkField name="record" className={styles.field} /> : null}
       <div className={styles.main}>
-        {crumbs.length > 0 ? (
-          <nav aria-label={crumbsLabel} className={styles.crumbs}>
-            <ol>
-              {crumbs.map((crumb) => (
-                <li key={crumb.href}>
-                  <Link href={crumb.href} className={styles.crumb}>
-                    {crumb.label}
-                  </Link>
-                </li>
-              ))}
-            </ol>
-          </nav>
-        ) : null}
+        <Breadcrumbs crumbs={crumbs} label={crumbsLabel} current={current} />
         <Mono size="2xs" className={styles.eyebrow}>
           {areas && areas.length > 0 ? <AreaMarks areas={areas} /> : null}
           {eyebrow}
@@ -112,6 +158,7 @@ export function KnowledgeHead({
         ) : (
           heading
         )}
+        {purpose ? <p className={styles.purpose}>{purpose}</p> : null}
         {lede ? <p className={styles.lede}>{lede}</p> : null}
         {meta && meta.length > 0 ? (
           <ul className={styles.meta}>
@@ -122,9 +169,9 @@ export function KnowledgeHead({
             ))}
           </ul>
         ) : null}
-        {areaLinks && areaLinks.length > 0 ? (
+        {(areaLinks && areaLinks.length > 0) || catalog ? (
           <ul className={styles.areaLinks}>
-            {areaLinks.map((area) => (
+            {areaLinks?.map((area) => (
               <li key={area.id}>
                 <Mono size="2xs">
                   <AreaTag id={area.id} href={area.href} plate>
@@ -133,6 +180,13 @@ export function KnowledgeHead({
                 </Mono>
               </li>
             ))}
+            {catalog ? (
+              <li className={styles.catalog}>
+                <Link href={catalog.href} className={styles.catalogLink}>
+                  {catalog.label} <span aria-hidden="true">→</span>
+                </Link>
+              </li>
+            ) : null}
           </ul>
         ) : null}
         {children}

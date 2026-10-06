@@ -127,3 +127,22 @@
   gap: 0 var(--space-xl);
   justify-self: start;
 }
+
+/* The beginner's one door, named where this guide is its short form. */
+.journey {
+  margin: calc(-1 * var(--space-md)) 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.journey a {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 2.75rem;
+  color: var(--ink-primary);
+  text-decoration: underline;
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 6px;
+}

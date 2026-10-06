@@ -118,8 +118,12 @@ export default async function HandlingPage({ params }: { params: Promise<{ local
     <Section mode="quiet" aria-labelledby="handling-title">
       <Container width="full">
         <KnowledgeHead
-          crumbs={[{ label: dict.knowledge.crumbs.research, href: path(routes.research) }]}
-          crumbsLabel={dict.knowledge.crumbs.research}
+          crumbs={[
+            { label: dict.knowledge.crumbs.research, href: path(routes.research) },
+            { label: dict.knowledge.crumbs.deeper, href: `${path(routes.research)}#profundizar` },
+          ]}
+          current={copy.title}
+          crumbsLabel={dict.knowledge.crumbs.trail}
           eyebrow={`${copy.label} // ${copy.qualifier}`}
           title={copy.title}
           titleId="handling-title"

@@ -2,8 +2,8 @@ import { notFound } from "next/navigation";
 
 import { ResearchUseNotice } from "@/components/commerce";
 import { NoteIndex } from "@/components/editorial";
-import { SectionHeader } from "@/components/layout";
 import { Container, Section } from "@/components/primitives";
+import { KnowledgeHead } from "@/components/research";
 import { TextLink } from "@/components/ui";
 import { routes } from "@/config/routes";
 import { publicArticles } from "@/content/editorial";
@@ -63,14 +63,17 @@ export default async function NotesIndexPage({ params }: { params: Promise<{ loc
   return (
     <Section mode="quiet" aria-labelledby="notes-title">
       <Container width="full">
-        <SectionHeader
-          index="01"
-          label={copy.eyebrow}
+        <KnowledgeHead
+          crumbs={[
+            { label: dict.knowledge.crumbs.research, href: path(routes.research) },
+            { label: dict.knowledge.crumbs.deeper, href: `${path(routes.research)}#profundizar` },
+          ]}
+          current={copy.title}
+          crumbsLabel={dict.knowledge.crumbs.trail}
+          eyebrow={copy.eyebrow}
           title={copy.title}
+          titleId="notes-title"
           lede={copy.lede}
-          id="notes-title"
-          as="h1"
-          action={<TextLink href={path(routes.research)}>{dict.nav.research}</TextLink>}
         />
 
         <div className={styles.index}>

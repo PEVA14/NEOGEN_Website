@@ -15,6 +15,45 @@
 .year {
   display: flex;
   flex-direction: column;
+  scroll-margin-block-start: calc(var(--header-height) + var(--space-md));
+}
+
+/* The years, as a row of jumps above the list (architecture pass). */
+.jump ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.jumpLink {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5em;
+  min-block-size: 2.75rem;
+  align-items: center;
+  padding-inline: var(--space-sm);
+  border: 1px solid var(--border-default);
+  color: var(--ink-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-decoration: none;
+}
+
+.jumpLink:hover {
+  border-color: var(--ink-primary);
+}
+
+.jumpLink:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.jumpCount {
+  color: var(--ink-muted);
 }
 
 .yearLabel {

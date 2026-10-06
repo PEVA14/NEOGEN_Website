@@ -15,6 +15,9 @@ import {
 } from "@/components/research";
 import { Body, Mono } from "@/components/typography";
 import { TextLink } from "@/components/ui";
+import { AreaTag } from "@/components/ui/AreaSignet";
+import { PhoneCollapse } from "@/components/research/PhoneCollapse";
+import { ResearchAnchor } from "@/components/research/ResearchAnchor";
 import { ArchivePlate } from "@/components/research/ArchivePlate";
 import { routes } from "@/config/routes";
 import { compendiumStats, hasRecord, linesByGroup } from "@/content/compendium";
@@ -61,19 +64,21 @@ export async function generateMetadata({
 /**
  * NEOGEN RESEARCH — the entry point to the knowledge system.
  *
- * WHAT CHANGED. The hub was an index page: areas, a searchable compound
- * register, the quality model, notes and references, one after another. The
- * register has become the COMPENDIUM (its own page, with filters and a quick
- * view), and the hub now does the job an entry point should: it tells a
- * reader what the archive holds and where to begin, by who they are.
+ * SIMPLE ON THE SURFACE, DEEP ON DEMAND (architecture pass, 2026-10-05).
+ * Research is compound-centred, not architecture-centred: within seconds a
+ * first-time reader knows what this is, can search a compound, can browse
+ * without a name, has a beginner path, and sees that there is a deeper layer
+ * — without first scrolling through an expert visualisation.
  *
- *   01  FRONT DOOR — title, a search, the three-way chooser (first time /
- *                    looking for a compound / weighing the evidence) whose
- *                    panel opens that path's doors, and the counts readout
- *   02  AREAS      — the eight places as tiles in their own materials
- *   03  LINES      — what the literature studies, each with a count bar
- *   04  QUALITY    — the rule evidence follows, drawn as a chain
- *   05  NOTES  +  06  SOURCES — side by side
+ *   01  FRONT DOOR — title, one sentence, the SEARCH; then three intentions
+ *                    (explore by area / start from zero / go deeper), whose
+ *                    panel opens that path's doors; the archive plate beside
+ *                    the title on a wide screen and after the intentions on a
+ *                    phone; the counts readout
+ *   02  EXPLORE BY AREA — the eight places, and the featured records
+ *   03  GO DEEPER  — the archive's tools, one step away:
+ *         04 the map of compounds by line · 05 how quality is documented ·
+ *         06 short guides + 07 references, side by side
  *
  * Every count is derived; every link goes to a page that exists — the
  * reference index and the documentation explorer are linked only while they
@@ -99,7 +104,10 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
       short: dict.discovery.areas[area.id].short,
       title: dict.discovery.areas[area.id].title,
       body: dict.discovery.areas[area.id].body,
-      href: path(routes.area(area.slug)),
+      /* Research stays in Research: an area browses the compounds index; the
+         catalogue is the roster's one labelled way into commerce. */
+      href: `${path(routes.compendium)}?area=${area.id}`,
+      catalogHref: path(routes.area(area.slug)),
       compounds: items.length,
       references: referencesForArea(area.id).length,
       examples: items.slice(0, 3).map((p) => p.name),
@@ -139,9 +147,10 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
         slug: product.slug,
         name: product.name,
         area,
+        /* Inside Research: the record, or the quick view where there is none. */
         href: hasRecord(product.slug)
           ? path(routes.compound(product.slug))
-          : path(routes.product(product.slug)),
+          : `${path(routes.compendium)}?ficha=${product.slug}`,
       };
     })
     .sort((a, b) => {
@@ -262,118 +271,138 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
     </form>
   );
 
-  const pathEntries: PathEntry[] = [
+  /* THE THREE INTENTIONS beside the search (which is direct lookup, so no
+     door repeats it): browse without a name, start from zero, go deeper. */
+  const exploreEntry: PathEntry = {
+    id: "explore",
+    letter: "A",
+    question: paths.explore.question,
+    body: paths.explore.body,
+    doors: [
+      {
+        href: "#areas-title",
+        title: paths.explore.areas.title,
+        body: paths.explore.areas.body,
+        meta: fill(paths.explore.areasMeta, { n: areas.length }),
+      },
+      {
+        href: path(routes.compendium),
+        title: paths.explore.compendium.title,
+        body: fill(paths.explore.compendium.body, { n: stats.compounds, records: stats.records }),
+        meta: count(stats.compounds, counts.compounds, counts.compound),
+      },
+    ],
+    extra: (
+      <div className={styles.explore}>
+        <ul className={styles.areaChips}>
+          {areas.map((area) => (
+            <li key={area.id}>
+              <AreaTag id={area.id} href={`${path(routes.compendium)}?area=${area.id}`}>
+                {dict.discovery.areas[area.id].short}
+              </AreaTag>
+            </li>
+          ))}
+        </ul>
+        {flagships.length > 0 ? (
+          <div className={styles.flagships}>
+            <p className={styles.flagshipsLabel}>{paths.explore.flagships}</p>
+            <ul>
+              {flagships.map((p) => (
+                <li key={p.slug}>
+                  <Link href={path(routes.compound(p.slug))} className={styles.flagship}>
+                    {p.name} <span aria-hidden="true">→</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </div>
+    ),
+  };
+  const beginEntry: PathEntry = {
+    id: "begin",
+    letter: "B",
+    question: paths.begin.question,
+    body: paths.begin.body,
+    doors: [
+      {
+        href: path(routes.start),
+        title: paths.begin.start.title,
+        body: paths.begin.start.body,
+        meta: paths.begin.start.meta,
+      },
+      {
+        href: path(routes.peptides),
+        title: paths.begin.peptides.title,
+        body: paths.begin.peptides.body,
+        meta: paths.begin.peptides.meta,
+      },
+      {
+        href: path(routes.glossary),
+        title: paths.begin.glossary.title,
+        body: fill(paths.begin.glossary.body, { n: stats.terms }),
+        meta: count(stats.terms, counts.terms, counts.term),
+      },
+    ],
+  };
+  const mapPoints = Object.keys(mapStatements).length;
+  /* The deeper layer, the same list the hub's "Profundizar" section and the
+     Research navigation offer. */
+  const deeperDoors = [
     {
-      id: "begin",
-      letter: "A",
-      question: paths.begin.question,
-      body: paths.begin.body,
-      doors: [
-        {
-          href: path(routes.start),
-          title: paths.begin.start.title,
-          body: paths.begin.start.body,
-          meta: paths.begin.start.meta,
-        },
-        {
-          href: path(routes.peptides),
-          title: paths.begin.peptides.title,
-          body: paths.begin.peptides.body,
-          meta: paths.begin.peptides.meta,
-        },
-        {
-          href: path(routes.glossary),
-          title: paths.begin.glossary.title,
-          body: fill(paths.begin.glossary.body, { n: stats.terms }),
-          meta: count(stats.terms, counts.terms, counts.term),
-        },
-      ],
+      href: path(routes.lines),
+      title: paths.explore.lines.title,
+      body: fill(paths.explore.lines.body, { n: stats.lines }),
+      meta: count(stats.lines, counts.lines, counts.line),
     },
     {
-      id: "explore",
-      letter: "B",
-      question: paths.explore.question,
-      body: paths.explore.body,
-      doors: [
-        {
-          href: path(routes.compendium),
-          title: paths.explore.compendium.title,
-          body: fill(paths.explore.compendium.body, { n: stats.compounds, records: stats.records }),
-          meta: count(stats.compounds, counts.compounds, counts.compound),
-        },
-        {
-          href: path(routes.lines),
-          title: paths.explore.lines.title,
-          body: fill(paths.explore.lines.body, { n: stats.lines }),
-          meta: count(stats.lines, counts.lines, counts.line),
-        },
-        {
-          href: "#areas-title",
-          title: paths.explore.areas.title,
-          body: paths.explore.areas.body,
-          meta: fill(paths.explore.areasMeta, { n: areas.length }),
-        },
-      ],
-      extra: (
-        <div className={styles.explore}>
-          {flagships.length > 0 ? (
-            <div className={styles.flagships}>
-              <p className={styles.flagshipsLabel}>{paths.explore.flagships}</p>
-              <ul>
-                {flagships.map((p) => (
-                  <li key={p.slug}>
-                    <Link href={path(routes.compound(p.slug))} className={styles.flagship}>
-                      {p.name} <span aria-hidden="true">→</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-        </div>
-      ),
+      href: "#mapa",
+      title: paths.evaluate.map.title,
+      body: paths.evaluate.map.body,
+      meta: fill(paths.evaluate.mapMeta, { n: mapPoints }),
+    },
+    ...(referenceIndex.length > 0
+      ? [
+          {
+            href: path(routes.researchReferences),
+            title: paths.evaluate.references.title,
+            body: fill(paths.evaluate.references.body, { n: referenceIndex.length }),
+            meta: fill(paths.evaluate.referencesMeta, { n: referenceIndex.length }),
+          },
+        ]
+      : []),
+    {
+      href: "#calidad",
+      title: paths.evaluate.quality.title,
+      body: paths.evaluate.quality.body,
+      meta: paths.evaluate.qualityMeta,
     },
     {
-      id: "evaluate",
-      letter: "C",
-      question: paths.evaluate.question,
-      body: paths.evaluate.body,
-      doors: [
-        ...(referenceIndex.length > 0
-          ? [
-              {
-                href: path(routes.researchReferences),
-                title: paths.evaluate.references.title,
-                body: fill(paths.evaluate.references.body, { n: referenceIndex.length }),
-                meta: fill(paths.evaluate.referencesMeta, { n: referenceIndex.length }),
-              },
-            ]
-          : []),
-        {
-          href: "#calidad",
-          title: paths.evaluate.quality.title,
-          body: paths.evaluate.quality.body,
-          meta: paths.evaluate.qualityMeta,
-        },
-        {
-          href: path(routes.handling),
-          title: paths.evaluate.handling.title,
-          body: paths.evaluate.handling.body,
-          meta: paths.evaluate.handlingMeta,
-        },
-        ...(notes.length > 0
-          ? [
-              {
-                href: path(routes.articles),
-                title: paths.evaluate.notes.title,
-                body: paths.evaluate.notes.body,
-                meta: fill(paths.evaluate.notesMeta, { n: notes.length }),
-              },
-            ]
-          : []),
-      ],
+      href: path(routes.handling),
+      title: paths.evaluate.handling.title,
+      body: paths.evaluate.handling.body,
+      meta: paths.evaluate.handlingMeta,
     },
+    ...(notes.length > 0
+      ? [
+          {
+            href: path(routes.articles),
+            title: paths.evaluate.notes.title,
+            body: paths.evaluate.notes.body,
+            meta: fill(paths.evaluate.notesMeta, { n: notes.length }),
+          },
+        ]
+      : []),
   ];
+  const deeperEntry: PathEntry = {
+    id: "evaluate",
+    letter: "C",
+    question: paths.evaluate.question,
+    body: paths.evaluate.body,
+    doors: deeperDoors,
+  };
+  const pathEntries: PathEntry[] = [exploreEntry, beginEntry, deeperEntry];
 
   return (
     <>
@@ -382,6 +411,9 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
        * what they want, and the three-way choice for everyone else; the
        * archive's counts close the section as a readout.
        */}
+      {/* The overview is the top of Research: arriving here is starting
+          again, so the compound being investigated is let go. */}
+      <ResearchAnchor anchor={null} />
       <Section mode="quiet" aria-labelledby="research-title" className={styles.hero}>
         {/*
          * NEOGEN RESEARCH, set inside the mark. The BRAND layer only: one mark,
@@ -391,30 +423,40 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
          */}
         <MarkField name="research" className={styles.heroField} />
         <Container width="full">
-          <KnowledgeHead
-            crumbs={[]}
-            crumbsLabel={hub.label}
-            eyebrow={`${hub.label} // ${hub.qualifier}`}
-            title={hub.title}
-            titleId="research-title"
-            lede={hub.lede}
-            aside={
-              <div className={styles.heroAside}>
-                <ArchivePlate
-                  rows={plateRows}
-                  copy={{
-                    label: hub.plate.label,
-                    legend: { record: hub.plate.record, none: hub.plate.noRecord },
-                    summary: plateSummary,
-                  }}
-                />
-                {searchForm("hub-search")}
-              </div>
-            }
-          />
+          {/*
+           * ORIENTATION BEFORE INSTRUMENTS. Title, one sentence and the
+           * search lead; the three intentions follow; the archive plate
+           * stands beside the title on a wide screen and AFTER the
+           * intentions on a phone — never between a reader and the search.
+           */}
+          <div className={styles.front}>
+            <div className={styles.frontHead}>
+              <KnowledgeHead
+                crumbs={[]}
+                crumbsLabel={hub.label}
+                eyebrow={`${hub.label} // ${hub.qualifier}`}
+                title={hub.title}
+                titleId="research-title"
+                lede={hub.lede}
+              >
+                <div className={styles.frontSearch}>{searchForm("hub-search")}</div>
+              </KnowledgeHead>
+            </div>
 
-          <div className={styles.chooser}>
-            <PathPicker paths={pathEntries} label={paths.chooser} />
+            <div className={styles.chooser}>
+              <PathPicker paths={pathEntries} label={paths.chooser} initial="explore" />
+            </div>
+
+            <div className={styles.frontPlate}>
+              <ArchivePlate
+                rows={plateRows}
+                copy={{
+                  label: hub.plate.label,
+                  legend: { record: hub.plate.record, none: hub.plate.noRecord },
+                  summary: plateSummary,
+                }}
+              />
+            </div>
           </div>
 
           <div className={styles.readout}>
@@ -440,20 +482,69 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
             label={`${hub.areas.label} // ${hub.areas.qualifier}`}
             title={hub.areas.title}
             id="areas-title"
-            /* The one route from the hub to the whole catalogue. The tiles
-               below lead to an area's products; a reader who does not want to
-               choose an area had no way through from here. */
-            action={<TextLink href={path(routes.products)}>{hub.areas.all}</TextLink>}
+            /* Every compound, A to Z, without choosing an area — inside
+               Research (architecture pass). */
+            action={<TextLink href={path(routes.compendium)}>{hub.areas.all}</TextLink>}
           />
           <ResearchAreaIndex
             entries={areaEntries}
             copy={{ ...hub.areas, depth: dict.knowledge.compendium.depth }}
           />
+          {/* A way into a record for a reader with no name yet. */}
+          {flagships.length > 0 ? (
+            <div className={`${styles.flagships} ${styles.featured}`}>
+              <p className={styles.flagshipsLabel}>{hub.areas.featured}</p>
+              <ul>
+                {flagships.map((p) => (
+                  <li key={p.slug}>
+                    <Link href={path(routes.compound(p.slug))} className={styles.flagship}>
+                      {p.name} <span aria-hidden="true">→</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </Container>
+      </Section>
+
+      {/*
+       * 03 — GO DEEPER. The archive's tools, all one intentional step away and
+       * none competing with finding a compound: an index of them first, then
+       * the map, the quality model, the guides and the references.
+       */}
+      <Section mode="quiet" aria-labelledby="deeper-title" id="profundizar">
+        <Container width="full">
+          <SectionHeader
+            index={hub.deeper.index}
+            label={`${hub.deeper.label} // ${hub.deeper.qualifier}`}
+            title={hub.deeper.title}
+            lede={hub.deeper.lede}
+            id="deeper-title"
+          />
+          <ul className={styles.tools}>
+            {deeperDoors.map((door) => (
+              <li key={door.href}>
+                <Link href={door.href} className={styles.tool}>
+                  <span className={styles.toolMeta}>{door.meta}</span>
+                  <span className={styles.toolTitle}>
+                    {door.title} <span aria-hidden="true">→</span>
+                  </span>
+                  <span className={styles.toolBody}>{door.body}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
         </Container>
       </Section>
 
       {lineGroups.length > 0 ? (
-        <Section mode="quiet" aria-labelledby="hub-lines-title">
+        <Section
+          mode="quiet"
+          aria-labelledby="hub-lines-title"
+          id="mapa"
+          className="bg-(--surface-raised)"
+        >
           <Container width="full">
             <SectionHeader
               index={hub.lines.index}
@@ -463,22 +554,19 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
               id="hub-lines-title"
               action={<TextLink href={path(routes.lines)}>{hub.lines.all}</TextLink>}
             />
-            <ArchiveMap
-              groups={mapGroups}
-              compounds={mapCompounds}
-              statements={mapStatements as ArchiveStatements}
-              copy={{ ...hub.lines.map, areas: mapAreaNames }}
-            />
+            <PhoneCollapse summary={hub.lines.show}>
+              <ArchiveMap
+                groups={mapGroups}
+                compounds={mapCompounds}
+                statements={mapStatements as ArchiveStatements}
+                copy={{ ...hub.lines.map, areas: mapAreaNames }}
+              />
+            </PhoneCollapse>
           </Container>
         </Section>
       ) : null}
 
-      <Section
-        mode="quiet"
-        aria-labelledby="quality-model-title"
-        id="calidad"
-        className="bg-(--surface-raised)"
-      >
+      <Section mode="quiet" aria-labelledby="quality-model-title" id="calidad">
         <Container width="full">
           <SectionHeader
             index={hub.quality.index}
@@ -500,7 +588,11 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
 
       {/* 05 + 06 — the reading and the sources, side by side: both are
           things to read, held to the same evidence rules. */}
-      <Section mode="quiet" aria-label={`${hub.notes.title} · ${hub.references.title}`}>
+      <Section
+        mode="quiet"
+        aria-label={`${hub.notes.title} · ${hub.references.title}`}
+        className="bg-(--surface-raised)"
+      >
         <Container width="full">
           <div className={styles.reading}>
             {notes.length > 0 ? (

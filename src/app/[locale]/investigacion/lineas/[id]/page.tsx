@@ -122,9 +122,12 @@ export default async function LinePage({
         <KnowledgeHead
           crumbs={[
             { label: dict.knowledge.crumbs.research, href: path(routes.research) },
+            { label: dict.knowledge.crumbs.deeper, href: `${path(routes.research)}#profundizar` },
             { label: dict.knowledge.crumbs.lines, href: path(routes.lines) },
           ]}
-          crumbsLabel={dict.knowledge.crumbs.research}
+          current={line.fn.label[locale]}
+          purpose={copy.line.purpose}
+          crumbsLabel={dict.knowledge.crumbs.trail}
           eyebrow={`${copy.label} // ${group?.label[locale] ?? ""}`}
           title={line.fn.label[locale]}
           titleId="line-title"

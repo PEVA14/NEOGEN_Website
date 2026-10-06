@@ -879,3 +879,37 @@
     translate: 0 -0.5rem;
   }
 }
+
+/* The index's legend, folded under the search on a phone (architecture pass:
+   the search comes first). A wide screen shows it beside the title. */
+.legendDisclosure {
+  margin-block-end: var(--space-md);
+  border-block: 1px solid var(--border-subtle);
+}
+
+.legendDisclosure > summary {
+  display: flex;
+  align-items: center;
+  min-block-size: 2.75rem;
+  color: var(--ink-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.legendDisclosure > summary:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.legendDisclosure[open] > summary {
+  color: var(--ink-primary);
+}
+
+@media (min-width: 48rem) {
+  .legendDisclosure {
+    display: none;
+  }
+}

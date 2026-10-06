@@ -2,7 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { AreaIcon } from "@/components/ui/AreaIcon";
 import styles from "./SectionIndex.module.css";
+
+import type { DiscoveryAreaId } from "@/data/discovery";
 
 export interface SectionIndexItem {
   id: string;
@@ -35,12 +38,19 @@ export function SectionIndex({
   items,
   label,
   title,
+  subject,
 }: {
   items: readonly SectionIndexItem[];
   /** Accessible name of the navigation landmark. */
   label: string;
   /** Visible mono heading, shown on wide screens. */
   title: string;
+  /**
+   * What the document is ABOUT — a record's compound (Research architecture
+   * pass: "I am still investigating Semaglutide"). Kept in the sticky strip
+   * on a phone and above the index beside the text, with its area's symbol.
+   */
+  subject?: { name: string; area?: DiscoveryAreaId | null };
 }) {
   const [active, setActive] = useState<string | null>(items[0]?.id ?? null);
   const stripRef = useRef<HTMLOListElement>(null);
@@ -131,7 +141,13 @@ export function SectionIndex({
   }, [active]);
 
   return (
-    <nav aria-label={label} className={styles.index}>
+    <nav aria-label={label} className={styles.index} data-subject={subject ? "" : undefined}>
+      {subject ? (
+        <p className={styles.subject} data-area={subject.area ?? undefined}>
+          {subject.area ? <AreaIcon id={subject.area} className={styles.subjectIcon} /> : null}
+          <span className={styles.subjectName}>{subject.name}</span>
+        </p>
+      ) : null}
       <p className={styles.title}>{title}</p>
       <span ref={needleRef} className={styles.needle} aria-hidden="true" />
       <ol className={styles.list} ref={stripRef}>

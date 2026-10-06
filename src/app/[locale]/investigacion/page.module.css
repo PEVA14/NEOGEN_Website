@@ -1,10 +1,11 @@
 /*
  * THE RESEARCH HUB.
  *
- * 01 is the front door: the title with a search beside it, the three-way
- * chooser, and the archive's counts as a readout band. Then the areas as
- * tiles, the lines with count bars, the quality chain, and the reading and
- * the sources side by side.
+ * 01 is the front door: the title, one sentence and the search; the three
+ * intentions; the archive plate (beside the title when wide, after the
+ * intentions on a phone); the counts as a readout band. Then the areas, the
+ * "Profundizar" index, the map, the quality chain, and the guides and the
+ * sources side by side.
  */
 
 .hero {
@@ -30,8 +31,47 @@
   }
 }
 
+/* ORIENTATION BEFORE INSTRUMENTS: head (with the search), intentions, plate.
+   Wide: the plate stands beside the head, the intentions span below. */
+.front {
+  display: grid;
+  gap: var(--space-xl);
+  grid-template-areas:
+    "head"
+    "chooser"
+    "plate";
+}
+
+.frontHead {
+  grid-area: head;
+  min-inline-size: 0;
+}
+
 .chooser {
-  margin-block-start: var(--space-xl);
+  grid-area: chooser;
+  min-inline-size: 0;
+}
+
+.frontPlate {
+  grid-area: plate;
+  min-inline-size: 0;
+}
+
+@media (min-width: 64rem) {
+  .front {
+    align-items: end;
+    column-gap: var(--space-2xl);
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    grid-template-areas:
+      "head plate"
+      "chooser chooser";
+  }
+}
+
+/* The search is the first thing to do here: full measure under the lede. */
+.frontSearch {
+  margin-block-start: var(--space-lg);
+  max-inline-size: 36rem;
 }
 
 /* ---- search (hero aside) -------------------------------------------------- */
@@ -86,10 +126,33 @@
   background: var(--neogen-graphite);
 }
 
-/* ---- the compound panel's extra: the flagship records ------------------- */
+/* ---- the explore panel's extra: the areas, the flagship records --------- */
 
 .explore {
   display: grid;
+  gap: var(--space-md);
+}
+
+.areaChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs) var(--space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.areaChips a {
+  min-block-size: 2.75rem;
+}
+
+/* The featured records, under the areas. */
+.featured {
+  margin-block-start: var(--space-lg);
 }
 
 .flagships {
@@ -205,8 +268,73 @@
   text-decoration-color: var(--ink-primary);
 }
 
-/* The hero's right column: the archive plate, then the search. */
-.heroAside {
+/* ---- 03 go deeper: the archive's tools, one step away -------------------- */
+
+.tools {
   display: grid;
-  gap: var(--space-md);
+  gap: 0;
+  grid-template-columns: minmax(0, 1fr);
+  margin: var(--space-lg) 0 0;
+  padding: 0;
+  list-style: none;
+  border-block-start: 1px solid var(--border-default);
+}
+
+@media (min-width: 40rem) {
+  .tools {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 64rem) {
+  .tools {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.tools > li {
+  border-block-end: 1px solid var(--border-default);
+}
+
+.tool {
+  display: grid;
+  gap: var(--space-3xs);
+  block-size: 100%;
+  padding: var(--space-sm) var(--space-sm) var(--space-md) 0;
+  color: var(--ink-primary);
+  text-decoration: none;
+}
+
+.toolMeta {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.toolTitle {
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-xl);
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+
+.toolBody {
+  color: var(--ink-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+}
+
+.tool:hover .toolTitle {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.tool:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
 }

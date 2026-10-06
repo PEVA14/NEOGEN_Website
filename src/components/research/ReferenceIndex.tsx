@@ -31,6 +31,9 @@ export interface ReferenceIndexCopy {
   citedBy: string;
   /** Announced on the list, e.g. "74 references". */
   listLabel: string;
+  /** The year jump list's name — "Ir al año" (architecture pass: a long
+      bibliography on a phone is crossed by year, not by scrolling). */
+  years?: string;
 }
 
 /**
@@ -71,11 +74,27 @@ export function ReferenceIndex({
     [],
   );
 
+  const anchor = (year: number | null) => `ano-${year ?? "sin-fecha"}`;
+
   return (
     <div className={styles.index}>
+      {copy.years && groups.length > 2 ? (
+        <nav aria-label={copy.years} className={styles.jump}>
+          <ul>
+            {groups.map(({ year, rows }) => (
+              <li key={year ?? "undated"}>
+                <a href={`#${anchor(year)}`} className={styles.jumpLink}>
+                  {year ?? "—"}
+                  <span className={styles.jumpCount}>{rows.length}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      ) : null}
       {groups.map(({ year, startAt, rows }) => {
         return (
-          <section key={year ?? "undated"} className={styles.year}>
+          <section key={year ?? "undated"} id={anchor(year)} className={styles.year}>
             <Mono size="2xs" className={styles.yearLabel}>
               {year ?? "—"}
               <span className={styles.yearCount}>{String(rows.length).padStart(2, "0")}</span>

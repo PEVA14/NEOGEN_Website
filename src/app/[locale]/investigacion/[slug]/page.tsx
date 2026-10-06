@@ -3,10 +3,10 @@ import { notFound } from "next/navigation";
 import { SectionHeader } from "@/components/layout";
 import { Container, Section } from "@/components/primitives";
 import { DocumentExplorer, EvidenceChain } from "@/components/quality";
-import { ReferenceIndex } from "@/components/research";
-import { Body, Mono } from "@/components/typography";
-import { TextLink } from "@/components/ui";
+import { KnowledgeHead, ReferenceIndex } from "@/components/research";
+import { Mono } from "@/components/typography";
 import { routes } from "@/config/routes";
+import { hasRecord } from "@/content/compendium";
 import { researchReferenceIndex } from "@/content/research";
 import { formatStrength, getProduct, publishedProducts } from "@/data/catalog";
 import { publicEvidenceIndex } from "@/domain/quality";
@@ -179,7 +179,11 @@ async function ReferencesPage({ locale }: { locale: Locale }) {
     products: entry.products.map((slug) => ({
       slug,
       name: getProduct(slug)?.name ?? slug,
-      href: path(routes.product(slug)),
+      /* Research stays in Research: a citing compound opens its record, or
+         its quick view where it has none (architecture pass). */
+      href: hasRecord(slug)
+        ? path(routes.compound(slug))
+        : `${path(routes.compendium)}?ficha=${slug}`,
       areas: publicAreasFor(slug).map((a) => a.id),
     })),
   }));
@@ -188,39 +192,25 @@ async function ReferencesPage({ locale }: { locale: Locale }) {
   return (
     <Section mode="quiet" aria-labelledby="references-title">
       <Container width="full">
-        <SectionHeader
-          index={copy.index}
-          label={`${copy.label} // ${copy.qualifier}`}
+        {/* The same head every Research page opens with: where this is in
+            Research, what it is, how much is here (architecture pass). */}
+        <KnowledgeHead
+          crumbs={[
+            { label: dict.knowledge.crumbs.research, href: path(routes.research) },
+            { label: dict.knowledge.crumbs.deeper, href: `${path(routes.research)}#profundizar` },
+          ]}
+          current={dict.knowledge.crumbs.references}
+          crumbsLabel={dict.knowledge.crumbs.trail}
+          eyebrow={`${copy.label} // ${copy.qualifier}`}
           title={copy.title}
-          id="references-title"
+          titleId="references-title"
           lede={copy.lede}
-          as="h1"
-          action={<TextLink href={path(routes.research)}>{copy.backToHub}</TextLink>}
+          meta={[
+            `${copy.countLabel} ${String(entries.length).padStart(2, "0")}`,
+            `${copy.compoundsLabel} ${String(compounds).padStart(2, "0")}`,
+          ]}
         />
-        {/* A description list needs dt/dd pairs, not bare divs: axe caught
-            exactly that here at 375px. */}
-        <dl className="mb-(--space-2xl) flex flex-wrap gap-x-(--space-2xl) gap-y-(--space-sm)">
-          <div>
-            <dt>
-              <Mono size="2xs" className="block text-(--ink-muted) uppercase">
-                {copy.countLabel}
-              </Mono>
-            </dt>
-            <dd className="m-0">
-              <Body>{String(entries.length).padStart(2, "0")}</Body>
-            </dd>
-          </div>
-          <div>
-            <dt>
-              <Mono size="2xs" className="block text-(--ink-muted) uppercase">
-                {copy.compoundsLabel}
-              </Mono>
-            </dt>
-            <dd className="m-0">
-              <Body>{String(compounds).padStart(2, "0")}</Body>
-            </dd>
-          </div>
-        </dl>
+        <div className="mt-(--space-xl)" />
         <ReferenceIndex
           entries={entries}
           copy={{
@@ -232,6 +222,7 @@ async function ReferencesPage({ locale }: { locale: Locale }) {
             etAl: dict.citations.etAl,
             citedBy: copy.citedBy,
             listLabel: copy.title,
+            years: copy.years,
           }}
         />
       </Container>

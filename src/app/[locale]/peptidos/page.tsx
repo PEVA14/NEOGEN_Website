@@ -95,6 +95,21 @@ export default async function PeptidesPage({ params }: { params: Promise<{ local
       {/* 01–02 — what a peptide is, and why they are studied. */}
       <Section mode="quiet" aria-labelledby="peptides-title">
         <Container width="full">
+          {/*
+           * THE BEGINNER'S ONE DOOR (Research architecture pass). This page is
+           * the first step of «Empezar aquí»; it says so, and leads back to
+           * the path and on to its next step, so a newcomer is never choosing
+           * between three starting points.
+           */}
+          <nav aria-label={copy.journey.label} className={styles.journey}>
+            <span className={styles.journeyLabel}>{copy.journey.label}</span>
+            <Link href={path(routes.start)} className={styles.journeyLink}>
+              <span aria-hidden="true">←</span> {copy.journey.back}
+            </Link>
+            <Link href={`${path(routes.start)}#organizacion`} className={styles.journeyLink}>
+              {copy.journey.next} <span aria-hidden="true">→</span>
+            </Link>
+          </nav>
           <SectionHeader
             index={s.what.index}
             label={copy.eyebrow}

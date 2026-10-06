@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ResearchUseNotice } from "@/components/commerce";
 import { ArticleBody, NoteIndex } from "@/components/editorial";
 import { Container, Section } from "@/components/primitives";
+import { Breadcrumbs } from "@/components/research";
 import { Body, Mono } from "@/components/typography";
 import { TextLink } from "@/components/ui";
 import { routes } from "@/config/routes";
@@ -129,6 +130,28 @@ export default async function NotePage({
       <Section mode="quiet" aria-labelledby="note-title">
         <Container width="full">
           <article className={styles.note}>
+            <Breadcrumbs
+              crumbs={[
+                { label: dict.knowledge.crumbs.research, href: path(routes.research) },
+                {
+                  label: dict.knowledge.crumbs.deeper,
+                  href: `${path(routes.research)}#profundizar`,
+                },
+                { label: dict.knowledge.crumbs.guides, href: path(routes.articles) },
+              ]}
+              current={article.title[locale]}
+              label={dict.knowledge.crumbs.trail}
+            />
+            {/* The beginner's one door: this guide is the short form of
+                «Empezar aquí»'s first step, so it says so and leads there. */}
+            {article.slug === "que-es-un-peptido" ? (
+              <p className={styles.journey}>
+                <Link href={path(routes.start)}>
+                  {dict.peptides.journey.label} · {dict.peptides.journey.back}{" "}
+                  <span aria-hidden="true">→</span>
+                </Link>
+              </p>
+            ) : null}
             <header className={styles.head}>
               <div className={styles.meta}>
                 <Mono size="2xs" className={styles.topic}>

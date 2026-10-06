@@ -61,6 +61,7 @@ import { alternates } from "@/lib/alternates";
 import { bagEnabled } from "@/payments";
 import { shopProducts } from "@/server/storefront";
 import { fillTemplate, presentationSummary, socialMetadata } from "@/lib/meta";
+import { count, fill } from "@/server/knowledge";
 
 import type { Metadata } from "next";
 
@@ -186,7 +187,31 @@ export default async function ProductPage({
     }`,
   }));
   const overview = publicOverview(product.slug, locale);
-  const references = referencesForProduct(product.slug);
+  /*
+   * THE SCIENTIFIC SUMMARY (Research architecture pass, 2026-10-05). The
+   * product page answers "what is this product, and what is its scientific
+   * context?"; the scientific record answers "what does the literature say?".
+   * So where a record exists, the page shows a CUT of it — the first two
+   * research-context statements and the first mechanism statement, each with
+   * its own sources, unchanged — and says how much more the record holds.
+   * Without a record there is nothing deeper to defer to: everything shows.
+   */
+  const record = compoundRecord(product.slug, locale);
+  const summary = overview
+    ? {
+        researchContext: record ? overview.researchContext.slice(0, 2) : overview.researchContext,
+        mechanismNotes: record ? overview.mechanismNotes.slice(0, 1) : overview.mechanismNotes,
+      }
+    : null;
+  const summaryStatements = summary ? [...summary.researchContext, ...summary.mechanismNotes] : [];
+  const overviewTotal = overview
+    ? overview.researchContext.length + overview.mechanismNotes.length
+    : 0;
+  /* Only the sources the shown statements cite, numbered in this summary. */
+  const citedHere = new Set(summaryStatements.flatMap((st) => st.references.map((r) => r.id)));
+  const references = referencesForProduct(product.slug).filter(
+    (r) => !overview || citedHere.has(r.id),
+  );
   const citationIndex = (id: string) => references.findIndex((r) => r.id === id) + 1;
   /** `ref-01` — the profile's rail entry a citation marker points at. */
   const refAnchor = (n: number) => `ref-${String(n).padStart(2, "0")}`;
@@ -338,9 +363,8 @@ export default async function ProductPage({
    * Nothing is invented: the lines are the record's own function tags (only
    * the ones with a page), and the terms are the glossary's matches against
    * the record's own published sentences. A product with no record gets its
-   * areas alone, as before.
+   * areas alone, as before. (`record` is resolved above, with the summary.)
    */
-  const record = compoundRecord(product.slug, locale);
   const linkableLines = new Set(lineIds());
   const recordLines = (record?.functions ?? []).filter((fn) => linkableLines.has(fn.id));
   /*
@@ -354,8 +378,7 @@ export default async function ProductPage({
     ? termsInText(
         [
           overview.summary ?? "",
-          ...overview.researchContext.map((statement) => statement.text),
-          ...overview.mechanismNotes.map((statement) => statement.text),
+          ...summaryStatements.map((statement) => statement.text),
           ...overview.technicalNotes,
         ].join(" "),
         locale,
@@ -884,8 +907,8 @@ export default async function ProductPage({
                   <div className="flex flex-col gap-(--space-lg) lg:col-span-7">
                     {(
                       [
-                        [pdp.overview.researchContext, overview.researchContext],
-                        [pdp.overview.mechanism, overview.mechanismNotes],
+                        [pdp.overview.researchContext, summary?.researchContext ?? []],
+                        [pdp.overview.mechanism, summary?.mechanismNotes ?? []],
                       ] as const
                     ).map(([heading, statements]) =>
                       statements.length > 0 ? (
@@ -917,6 +940,46 @@ export default async function ProductPage({
                         {overview.technicalNotes.map((note) => (
                           <Body key={note}>{note}</Body>
                         ))}
+                      </div>
+                    ) : null}
+                    {/* How much of the record this is, and the way to all of
+                        it — the authoritative destination. */}
+                    {record ? (
+                      <div className="flex flex-col items-start gap-(--space-sm) border-t border-(--border-default) pt-(--space-md)">
+                        <Mono size="2xs" className="text-(--ink-muted) uppercase">
+                          {fill(pdp.overview.depth, {
+                            shown: summaryStatements.length,
+                            total: overviewTotal,
+                          })}
+                        </Mono>
+                        <Body tone="muted">
+                          {fill(pdp.overview.full, {
+                            statements: count(
+                              record.mechanism.length +
+                                record.research.length +
+                                record.byArea.length,
+                              dict.knowledge.counts.statements,
+                              dict.knowledge.counts.statement,
+                            ),
+                            references: count(
+                              record.references.length,
+                              dict.knowledge.counts.references,
+                              dict.knowledge.counts.reference,
+                            ),
+                            lines: count(
+                              record.functions.length,
+                              dict.knowledge.counts.lines,
+                              dict.knowledge.counts.line,
+                            ),
+                          })}
+                        </Body>
+                        <Link
+                          href={path(routes.compound(product.slug))}
+                          transitionTypes={[RECORD_NAVIGATION]}
+                          className="inline-flex min-h-11 items-center gap-(--space-2xs) bg-(--neogen-charcoal) px-(--space-md) font-mono text-(length:--text-2xs) tracking-(--tracking-label) text-(--neogen-paper) uppercase no-underline"
+                        >
+                          {pdp.overview.read} <span aria-hidden="true">→</span>
+                        </Link>
                       </div>
                     ) : null}
                   </div>

@@ -134,7 +134,8 @@ export default async function StartPage({ params }: { params: Promise<{ locale: 
       <Container width="full">
         <KnowledgeHead
           crumbs={[{ label: dict.knowledge.crumbs.research, href: path(routes.research) }]}
-          crumbsLabel={dict.knowledge.crumbs.research}
+          current={copy.title}
+          crumbsLabel={dict.knowledge.crumbs.trail}
           eyebrow={`${copy.label} // ${copy.qualifier}`}
           title={copy.title}
           titleId="start-title"

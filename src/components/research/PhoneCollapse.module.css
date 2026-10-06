@@ -1,0 +1,51 @@
+/* A wide instrument, folded on a phone — see PhoneCollapse.tsx. */
+
+.summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-block-size: 2.75rem;
+  padding-inline: var(--space-sm);
+  border: 1px solid var(--border-default);
+  color: var(--ink-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  cursor: pointer;
+  list-style: none;
+}
+
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+.summary:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.caret {
+  inline-size: 0.45em;
+  block-size: 0.45em;
+  border-inline-end: 1px solid currentColor;
+  border-block-end: 1px solid currentColor;
+  rotate: 45deg;
+  translate: 0 -0.15em;
+}
+
+.collapse[open] > .summary {
+  margin-block-end: var(--space-md);
+}
+
+.collapse[open] > .summary .caret {
+  rotate: 225deg;
+  translate: 0 0.1em;
+}
+
+/* A wide screen has room for the instrument: no fold, no summary. */
+@media (min-width: 48rem) {
+  .summary {
+    display: none;
+  }
+}
