@@ -71,7 +71,9 @@ export function ArticleBody({
 
           case "note":
             return (
-              <aside key={block.id} className={styles.note}>
+              /* A set-apart statement inside the guide: a note, not a page
+                 landmark (V1 freeze). */
+              <div key={block.id} role="note" className={styles.note}>
                 <Mono size="2xs" className={styles.noteMark} aria-hidden="true">
                   {/* Braced: a bare `//` in JSX children parses as a comment. */}
                   {"//"}
@@ -79,7 +81,7 @@ export function ArticleBody({
                 <Body size="sm" className={styles.noteText}>
                   {block.text[locale]}
                 </Body>
-              </aside>
+              </div>
             );
         }
       })}

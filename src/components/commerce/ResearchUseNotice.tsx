@@ -51,7 +51,10 @@ export function ResearchUseNotice({
 }) {
   if (variant === "panel") {
     return (
-      <aside className={[styles.panel, className].filter(Boolean).join(" ")}>
+      /* A note, not a landmark: it sits inside a page's own sections, and a
+         nested `<aside>` is a complementary landmark that is not top level
+         (axe, V1 freeze). Same box, same look. */
+      <div role="note" className={[styles.panel, className].filter(Boolean).join(" ")}>
         <Mono size="2xs" className={styles.label}>
           {copy.label}
         </Mono>
@@ -63,7 +66,7 @@ export function ResearchUseNotice({
             <Mono size="2xs">{copy.readMore}</Mono>
           </Link>
         ) : null}
-      </aside>
+      </div>
     );
   }
 

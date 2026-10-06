@@ -96,7 +96,13 @@ export function ResearchNav({
 
   const raw = useSyncExternalStore(subscribeAnchor, anchorSnapshot, () => null);
   const anchor = parseAnchor(raw);
-  const showBack = anchor !== null && anchor.href !== pathname && returnPaths.some(under);
+  /* The anchor was written in the language the record was read in; the way
+     back follows the language the reader is in now (a language switch keeps
+     the tab, and the record exists at the same path in both). */
+  const backHref = anchor
+    ? anchor.href.replace(/^\/[^/]+/, `/${pathname.split("/")[1] ?? ""}`)
+    : null;
+  const showBack = backHref !== null && backHref !== pathname && returnPaths.some(under);
 
   /* Menus close on navigation, on a click outside them and on Escape. */
   const root = useRef<HTMLElement>(null);
@@ -187,7 +193,7 @@ export function ResearchNav({
               {copy.start}
             </Link>
           </li>
-          <li className={styles.menuItem}>
+          <li>
             <details className={styles.menu}>
               <summary className={styles.link} aria-current={current("deeper")}>
                 {copy.deeper}
@@ -228,8 +234,8 @@ export function ResearchNav({
           </div>
         </details>
 
-        {showBack && anchor ? (
-          <Link href={anchor.href} className={styles.back}>
+        {showBack && anchor && backHref ? (
+          <Link href={backHref} className={styles.back}>
             <span aria-hidden="true">←</span> {copy.back.replace("{name}", anchor.name)}
           </Link>
         ) : null}

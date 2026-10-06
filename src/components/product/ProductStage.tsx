@@ -145,6 +145,22 @@ export function ProductStage({
 }: ProductStageProps) {
   const stage = useRef<HTMLDivElement>(null);
   const panel = useRef<HTMLDivElement>(null);
+  /*
+   * OFF STAGE (V1 freeze). A world's looping light — GLOW's sheen across its
+   * gold name — means something only while it can be seen, but an infinite
+   * CSS animation keeps the browser recalculating style every frame wherever
+   * the reader is (measured: 60 recalcs/s at the page's foot). The stage
+   * marks itself `data-offstage` once it leaves the viewport and the world's
+   * CSS pauses its loop there; scrolling back resumes it mid-pass.
+   */
+  const [offstage, setOffstage] = useState(false);
+  useEffect(() => {
+    const node = stage.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(([entry]) => setOffstage(!entry.isIntersecting));
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
 
   const { tier, reducedMotion, palette, canRender3D } = useVialStage(stage, {
     modelPath,
@@ -317,6 +333,7 @@ export function ProductStage({
       data-glow-exposing={glowing && glow.exposing ? "" : undefined}
       data-burnish={burnishing ? burnish.arrival : undefined}
       data-burnish-forming={burnishing && burnish.forming ? "" : undefined}
+      data-offstage={offstage ? "" : undefined}
     >
       {/* The environment. Full-bleed, with the world's atmospheric wash —
           which, in a world that forms, is a light of its own (`.light`). */}

@@ -506,3 +506,11 @@
   text-decoration-color: var(--world-light);
   text-shadow: 0 0 0.8em color-mix(in oklab, var(--world-light) 48%, transparent);
 }
+
+/* Off stage, the sheen's loop is paused, not removed: it costs the browser
+   every frame wherever the reader is, and scrolling back resumes it
+   (`ProductStage`'s `data-offstage`, V1 freeze). */
+:global([data-glow-arrival][data-offstage]) :global([data-product-name]),
+:global([data-glow-arrival][data-offstage]) :global([data-stage-wordmark]) {
+  animation-play-state: paused;
+}
