@@ -73,8 +73,17 @@ function allowed(svg: SVGSVGElement): boolean {
   return scale === "none" || scale === "1";
 }
 
-export function assemble(svg: SVGSVGElement): void {
-  if (!allowed(svg)) return;
+/**
+ * `onContact(k)`: called the moment arm k's two halves meet (Living Ink
+ * hands the contact to the material there). `catching`: the halves
+ * reach as a thin thread and widen only once they touch — surface tension
+ * catching — rather than arriving at full width.
+ */
+export function assemble(
+  svg: SVGSVGElement,
+  options: { catching?: boolean; onContact?: (k: number) => void } = {},
+): Promise<void> {
+  if (!allowed(svg)) return Promise.resolve();
   const register = [{ scale: 0 }, { scale: 1 }];
   const out: Animation[] = [];
   parts(svg, "hub").forEach((el) =>
@@ -96,16 +105,44 @@ export function assemble(svg: SVGSVGElement): void {
     for (const half of halves) {
       out.push(
         half.animate(
-          [{ transform: axis(arm.angle, 0.001, 0.7) }, { transform: axis(arm.angle, 1, 1) }],
-          { ...timed(ASSEMBLY.reach(k)), easing: EASE_REACH, fill: "backwards" },
+          options.catching
+            ? catchFrames(arm.angle)
+            : [{ transform: axis(arm.angle, 0.001, 0.7) }, { transform: axis(arm.angle, 1, 1) }],
+          {
+            ...timed(ASSEMBLY.reach(k)),
+            easing: options.catching ? "linear" : EASE_REACH,
+            fill: "backwards",
+          },
         ),
       );
+    }
+    if (options.onContact) {
+      const [, end] = ASSEMBLY.reach(k);
+      const contactAt =
+        (end - (end - ASSEMBLY.reach(k)[0]) * (options.catching ? 0.22 : 0)) * ASSEMBLY_MS;
+      window.setTimeout(() => options.onContact?.(k), contactAt);
     }
     out.push(
       sat.animate(tension(arm.angle), { ...timed(ASSEMBLY.tension(k)), easing: EASE_TENSION }),
     );
   });
   finish(svg, out);
+  return Promise.allSettled(out.map((a) => a.finished)).then(() => undefined);
+}
+
+/**
+ * A connection that CATCHES: it reaches as a thread (thinning as it
+ * stretches), touches, and only then widens — a little past its width, and
+ * back. The same frames the scroll-linked gathering uses
+ * (`mark-reach-catch`, NeogenMark.module.css).
+ */
+function catchFrames(angle: number): Keyframe[] {
+  return [
+    { transform: axis(angle, 0.001, 0.7), easing: "cubic-bezier(.45,0,.3,1)" },
+    { transform: axis(angle, 1, 0.38), offset: 0.78, easing: "cubic-bezier(.2,.7,.3,1)" },
+    { transform: axis(angle, 1, 1.07), offset: 0.9, easing: "ease-in-out" },
+    { transform: axis(angle, 1, 1) },
+  ];
 }
 
 export function reconnect(svg: SVGSVGElement): void {

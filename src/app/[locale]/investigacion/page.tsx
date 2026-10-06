@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { MarkField } from "@/components/brand/MarkField";
 import { NoteIndex } from "@/components/editorial";
 import { SectionHeader } from "@/components/layout";
 import { Container, Section } from "@/components/primitives";
@@ -382,6 +383,13 @@ export default async function ResearchPage({ params }: { params: Promise<{ local
        * archive's counts close the section as a readout.
        */}
       <Section mode="quiet" aria-labelledby="research-title" className={styles.hero}>
+        {/*
+         * NEOGEN RESEARCH, set inside the mark. The BRAND layer only: one mark,
+         * far larger than any figure, cropped by the page's edge, in the
+         * paper's own stone, behind the title — and kept out of the column
+         * where the archive plate (data) sits.
+         */}
+        <MarkField name="research" className={styles.heroField} />
         <Container width="full">
           <KnowledgeHead
             crumbs={[]}

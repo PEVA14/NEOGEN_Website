@@ -1,6 +1,14 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-10-05**: **everything prototyped since 2026-10-01 is
+Last updated **2026-10-05**: **Living Ink and the mark at macro scale are
+permanent** (owner: "Love it, commit everything, permanent feature") — the
+footer signature and the homepage's "Explora por área" field are the mark as
+a slow living material: a readable living rest of slow local episodes, a
+continuous lean toward the pointer, and disturbances that ripple and settle
+(§8ay); six architectural compositions and a page-scale signature at every
+footer, on a re-traced vector that holds at a metre tall (§8ax); and the
+phone buy dock rendered at the body (§8ax). Before that, the same day:
+**everything prototyped since 2026-10-01 is
 permanent** (owner: "integrate EVERYTHING into permanent features") — the
 flagship worlds (RETA #3 and #4, GLOW, GHK-Cu), the bench, the everyday motion
 system, the colour grammar, Research colour and the NEOGEN mark — and the
@@ -2580,6 +2588,116 @@ Evaluated on a production build in headless Chrome, at 1440×900 and 390×844,
 from the catalogue grid, the phone strip and by direct URL; reduced motion;
 GLOW's circle unchanged; at 4× CPU throttle on the phone there is no long task
 between the flight's start and the formation's end.
+
+## 8ay. Living Ink — the mark as a material (2026-10-05, PERMANENT)
+
+Owner's experiment: can the large marks feel made of a slow, viscous living
+material — "why does that logo feel alive?", never "they put a liquid
+animation on it"? Prototyped ONLY on the footer signature, the homepage's
+"Explora por área" field and a dev-only lab (`/es/estudio/marca`, a 404 in
+production). Micro marks stay stable geometry. Made permanent the same day,
+after two review rounds (below), committed with §8ax; rules in CONVENTIONS
+§19.
+
+**Technique (chosen):** the outline itself (`markOutline.ts`, the traced
+points, now also written by `trace-mark.mjs`), each point moved along its
+normal by authored signals from the mark's own structure — node volume
+redistributing (the hub answers the nodes), each neck's tension, an
+occasional swell migrating along one arm, and disturbances (a touch, an area
+change, a connection closing) that send a ripple round the surface and make
+the node catch and settle (`brand/livingInk.ts`, `LivingLayer`). Signals are
+three sines each, periods 17s–2min, random phases: irregular, no visible
+loop. The scroll-linked gathering now CATCHES: each connection reaches as a
+thread and widens only on contact; at the page's end the material takes over
+from the parts and the four contacts ripple through it.
+
+**Rejected:** feTurbulence + feDisplacementMap (ragged, crinkled edge — reads
+as a filter); the metaball "goo" filter (real merging, but generic capsule
+necks unlike the mark's own flares, and a full-area blur every frame).
+
+**Measured** (production build, 1440×900): the footer mark (1180px tall)
+drifts at most ~5px from its starting outline over 20s (mean ~2.4px). Cost
+with the material alone: ~10ms of main thread per second (≈2 path writes a
+second at rest — written only when the edge has moved a third of a pixel),
+nothing off screen, hidden or under reduced motion (canonical outline).
+Found on the way and NOT caused by this: the hero's looping scroll cue keeps
+the homepage producing frames everywhere (~70–90ms/s at the page's bottom).
+
+**Review round 1 — a READABLE living rest** (owner: "I cannot perceive it
+moving", then, after a first stronger pass, "I genuinely can't see it move
+when staying still"). The drift alone moves the edge ~0.1px/s in every
+direction at once and cancels itself out: below what the eye reads as motion.
+The "Explora por área" field (only) adds EPISODES (`InkOptions.episodes`):
+one region at a time changes slowly and coherently, then settles — a node
+swells while the hub gives, or the hub swells while the nodes give; a neck
+gains or loses tension; a bulge travels hub → connection → node. At most two
+at once, on different regions, 2.5–4.5s apart (so parts move out of step);
+rise 3.5–5s, hold ~1s, fall 5–7s; one in four ~35% stronger. Amplitudes
+(artwork units, ~2px each at this field's 60rem): swell 6, tension 4,
+migrate 5 — edge speeds of 2–6px/s, 6–16px of change in any 5s window (the
+first pass, ~1px/s, was invisible). The slow clock runs at 20Hz where there
+are episodes. No breathing, no rhythm, no waves. The footer keeps the drift
+alone. Also found: the dev server on :3110 had been stopped by the app, so the
+first round was judged against nothing.
+
+**Review round 2 — clean edges** (owner: "it gets cut off and has some sharp
+edges"). (1) A swelling top or left node passed the artwork's own box and was
+clipped into a straight line: the living svg now draws outside its box
+(`overflow: visible`); only the section crops. (2) Where a fragment omits
+arms, the hub was closed by an SVG arc whose join made a corner (18° per 2
+units at rest, 29° in motion): the arc is now points laid round the hub, from
+the hub circle's own points, in the same curve chain — no join. (3) Episode
+displacements had small steps at neck↔node junctions; they are matched and
+softened along the outline ([1 4 6 4 1], twice). The sharpest bend is now
+the artwork's own (~7° at rest, ≤11° moving).
+
+**Review round 3 — the pointer** (owner: "it seems to just react suddenly and
+then ignore it for a second and just loop through that, make it more smooth
+and continuous"). The pointer used to fire one ripple, then a 1.6s cooldown.
+It is now a PRESENCE (`LivingInk.point`): the surface nearest the pointer
+leans toward it (Gaussian, 55 units, `disturb` × 1.5 at full presence —
+about the old ripple's peak, ~5px at 35px away), following a viscous lag
+(τ 0.3s), easing in over ~0.5s and letting go over ~1s after it leaves. Every
+frame while near, written only when moved; ≤0.4px between frames in a sweep.
+Touch keeps a single ripple on a tap (following a finger would fight the
+scroll); an area change keeps its single catch at the hub. This applies to
+the footer's material too.
+
+## 8ax. The NEOGEN mark at macro scale (2026-10-05, PERMANENT)
+
+Owner, after reviewing §8av on the site: "technically good, but visually far
+too conservative — I barely notice the branding." Keep the micro pass; add
+the missing MESO and MACRO scales so an ordinary journey (homepage →
+catalogue → Semaglutide → Research → record) visibly contains the brand,
+static as well as moving. Made permanent and committed with §8ay, together
+with the phone-dock fix (the buy dock is rendered at the body through a
+portal after hydration, so no stacking context on a product page can trap it
+under the profile text).
+
+**The vector, re-traced.** At 1600px the first trace showed the export's
+pixel grid as a ripple and a step where each connection met its fitted
+circle. `trace-mark.mjs` now smooths the outline by about a pixel, draws
+every piece as curves from one shared chain (pieces share end points and
+tangents), and draws no node as a circle (each is its own traced outline).
+99.13% pixel overlap with the artwork (was 98.96%). No geometry was redrawn.
+
+**The compositions** (`brand/MarkField`; table and rules in CONVENTIONS
+§19): the footer on every page (the signature: the whole mark behind the
+footer, whose nodes travel in from beyond it as the page ends — whole exactly
+at the last pixel of scroll); the catalogue masthead (the three flagships sit
+on the mark: hub behind the middle card, nodes around them); the homepage's
+"Explora por área" (hub and two nodes in the chosen area's colour, the
+products in front); a product's profile head (hub + left node); the Research
+hub masthead (the whole mark in stone behind "NEOGEN RESEARCH", kept clear of
+the archive plate — on a phone it moves to the top corner); a record's head
+(the whole mark in the area's colour beside the title).
+
+**Rejected on the way:** marks cropped past legibility (the first catalogue
+and Research crops read as blobs); the catalogue mark behind the intro text
+(a watermark); a fragment in the explorer at 15% (lost in the section's own
+hue glow); the whole mark in the profile head (too short a field — the two-
+node fragment fits it); the bench behind the vial (watermarking the
+specimen).
 
 ## 8aw. Everything made permanent, and the consolidation pass (2026-10-05)
 

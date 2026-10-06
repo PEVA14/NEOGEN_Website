@@ -14,7 +14,7 @@ export function MarkShape() {
         <g key={arm.angle}>
           <path d={arm.inner} />
           <path d={arm.outer} />
-          <circle cx={arm.node.cx} cy={arm.node.cy} r={arm.node.r} />
+          <path d={arm.node.d} />
         </g>
       ))}
     </>

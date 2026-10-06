@@ -9,6 +9,25 @@
 
 .hero {
   padding-block-end: var(--space-2xl);
+  isolation: isolate;
+}
+
+/* The mark NEOGEN Research is set inside (`brand/MarkField`). */
+.heroField {
+  --hub-x: 22rem;
+  --hub-y: 15rem;
+  --mark-h: 40rem;
+  --mark-tone: color-mix(in oklab, var(--ink-primary) 5%, var(--surface-base));
+}
+
+/* On a phone the plate (data) follows the lede: the mark stays in the top
+   corner, above the title, and ends before the plate begins. */
+@media (max-width: 63.999rem) {
+  .heroField {
+    --hub-x: calc(100% - 3rem);
+    --hub-y: 3.5rem;
+    --mark-h: 22rem;
+  }
 }
 
 .chooser {

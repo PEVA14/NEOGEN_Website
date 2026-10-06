@@ -45,8 +45,32 @@
 
 .masthead {
   position: relative;
+  isolation: isolate;
   padding-block: var(--space-xl) var(--space-xl);
   overflow-x: clip;
+}
+
+/*
+ * The mark the catalogue opens inside (`brand/MarkField`): its hub behind
+ * the middle flagship, so the three cards sit ON the mark — its top node
+ * above them, its left node in the gutter beside the search, its two lower
+ * nodes under them, and the connections passing behind the cards.
+ */
+.mastheadField {
+  --hub-x: calc(50% + min(23.6vw, 21.25rem));
+  --hub-y: 25rem;
+  --mark-h: 47.5rem;
+  --mark-tone: color-mix(in oklab, var(--neogen-paper) 14%, var(--neogen-charcoal));
+}
+
+/* On a phone the flagships follow the introduction: the mark rises behind
+   the title from the right edge instead. */
+@media (max-width: 63.999rem) {
+  .mastheadField {
+    --hub-x: calc(100% - 2rem);
+    --hub-y: 9rem;
+    --mark-h: 26rem;
+  }
 }
 
 .mastheadGrid {

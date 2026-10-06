@@ -5,6 +5,8 @@ import { useEffect, useRef, type CSSProperties } from "react";
 import { MARK_ARMS, MARK_BOX, MARK_HUB } from "./markGeometry";
 import {
   ASSEMBLY,
+  GATHER,
+  SPREAD,
   EASE_REACH,
   EASE_REGISTER,
   EASE_TENSION,
@@ -20,8 +22,9 @@ import styles from "./NeogenMark.module.css";
  * The owner's mark, as the parts `scripts/trace-mark.mjs` measured from the
  * artwork: a hub, four nodes, and four connections, each cut at the middle of
  * its gap into a half that belongs to the hub and a half that belongs to the
- * node. At rest the parts are exactly the artwork (98.96% pixel overlap; the
- * rest is antialiasing), inked in `currentColor` like the mask it replaces.
+ * node. At rest the parts are exactly the artwork (99.1% pixel overlap; the
+ * rest is antialiasing) at any size from the header to a metre tall, inked
+ * in `currentColor` like the mask it replaces.
  *
  * Its vocabulary is one idea — POINTS → CONNECTION → STRUCTURE — said a few
  * ways, every one of them caused by the reader:
@@ -34,6 +37,14 @@ import styles from "./NeogenMark.module.css";
  *   assemble="view"   the footer: the mark forms as the reader scrolls it
  *                     into view. Scrubbed, reversible, never on a clock.
  *   assemble="now"    once, on mount: a completed action (added to the bag).
+ *   assemble="gather" architectural scale: the nodes start far out along
+ *                     their arms and the reader's scroll draws them in
+ *                     before the connections reach (`GATHER`). The caller
+ *                     sets the timeline and range (`--mark-timeline`,
+ *                     `--mark-range`, `--mark-span`) to its own section.
+ *   arms, hub         a FRAGMENT: only these arms (clockwise from the top,
+ *                     0–3), with or without the hub. The pieces are the
+ *                     mark's own; a fragment is a crop by construction.
  *   respond           pointing at (or keyboard-focusing) its host — the
  *                     link or button it sits in, or the mark itself — lets
  *                     the connections go and reach again. Inside an area the
@@ -52,14 +63,19 @@ export function NeogenMark({
   form = "whole",
   assemble: assembly,
   respond = false,
+  arms = ALL_ARMS,
+  hub = true,
   label,
 }: {
   className?: string;
   form?: "whole" | "points";
-  assemble?: "hero" | "view" | "now";
+  assemble?: "hero" | "view" | "now" | "gather";
   respond?: boolean;
+  arms?: readonly number[];
+  hub?: boolean;
   label?: string;
 }) {
+  const table = assembly === "gather" ? GATHER : ASSEMBLY;
   const ref = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
@@ -108,54 +124,60 @@ export function NeogenMark({
           "--ease-register": EASE_REGISTER,
           "--ease-reach": EASE_REACH,
           "--ease-tension": EASE_TENSION,
+          "--spread-default": SPREAD,
         } as CSSProperties
       }
       focusable="false"
       {...(label ? { role: "img", "aria-label": label } : { "aria-hidden": true })}
     >
-      <path data-part="hub" className={styles.hub} d={MARK_HUB.d} style={phase(ASSEMBLY.hub())} />
-      {MARK_ARMS.map((arm, k) => (
-        <g
-          key={arm.angle}
-          style={
-            {
-              "--a": `${arm.angle}deg`,
-              "--ux": Math.cos((arm.angle * Math.PI) / 180).toFixed(4),
-              "--uy": Math.sin((arm.angle * Math.PI) / 180).toFixed(4),
-              "--hx": `${arm.hubOrigin[0]}px`,
-              "--hy": `${arm.hubOrigin[1]}px`,
-              "--nx": `${arm.nodeOrigin[0]}px`,
-              "--ny": `${arm.nodeOrigin[1]}px`,
-            } as CSSProperties
-          }
-        >
-          <path
-            data-part="in"
-            className={styles.in}
-            d={arm.inner}
-            style={phase(ASSEMBLY.reach(k))}
-          />
-          <g data-part="sat" className={styles.sat} style={phase(ASSEMBLY.tension(k))}>
+      {hub ? (
+        <path data-part="hub" className={styles.hub} d={MARK_HUB.d} style={phase(table.hub())} />
+      ) : null}
+      {MARK_ARMS.map((arm, k) =>
+        arms.includes(k) ? (
+          <g
+            key={arm.angle}
+            style={
+              {
+                "--a": `${arm.angle}deg`,
+                "--ux": Math.cos((arm.angle * Math.PI) / 180).toFixed(4),
+                "--uy": Math.sin((arm.angle * Math.PI) / 180).toFixed(4),
+                "--hx": `${arm.hubOrigin[0]}px`,
+                "--hy": `${arm.hubOrigin[1]}px`,
+                "--nx": `${arm.nodeOrigin[0]}px`,
+                "--ny": `${arm.nodeOrigin[1]}px`,
+                "--dist": `${Math.hypot(arm.node.cx - MARK_HUB.cx, arm.node.cy - MARK_HUB.cy).toFixed(1)}px`,
+              } as CSSProperties
+            }
+          >
             <path
-              data-part="out"
-              className={styles.out}
-              d={arm.outer}
-              style={phase(ASSEMBLY.reach(k))}
+              data-part="in"
+              className={styles.in}
+              d={arm.inner}
+              style={phase(table.reach(k))}
             />
-            <circle
-              data-part="node"
-              className={styles.node}
-              cx={arm.node.cx}
-              cy={arm.node.cy}
-              r={arm.node.r}
-              style={phase(ASSEMBLY.node(k))}
-            />
+            <g data-part="sat" className={styles.sat} style={phase(table.tension(k))}>
+              <path
+                data-part="out"
+                className={styles.out}
+                d={arm.outer}
+                style={phase(table.reach(k))}
+              />
+              <path
+                data-part="node"
+                className={styles.node}
+                d={arm.node.d}
+                style={phase(table.node(k))}
+              />
+            </g>
           </g>
-        </g>
-      ))}
+        ) : null,
+      )}
     </svg>
   );
 }
+
+const ALL_ARMS = [0, 1, 2, 3] as const;
 
 /** A part's stretch of the scroll-linked assembly (`markPhases.ts`). */
 const phase = ([start, end]: Phase) => ({ "--p0": start, "--p1": end }) as CSSProperties;

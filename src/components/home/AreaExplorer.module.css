@@ -15,6 +15,24 @@
   overflow-x: clip;
 }
 
+/* The mark the section's atmosphere carries (`brand/MarkField`): the hub
+   and its top and left nodes, behind the area's heading, the products in
+   front of it — in the chosen area's colour, so it changes with the tab. */
+.field {
+  --hub-x: calc(100% - 10rem);
+  --hub-y: 30rem;
+  --mark-h: 60rem;
+  --mark-tone: color-mix(in oklab, var(--area-mark) 26%, var(--area-wash));
+}
+
+@media (max-width: 47.999rem) {
+  .field {
+    --hub-x: calc(100% - 3rem);
+    --hub-y: 16rem;
+    --mark-h: 34rem;
+  }
+}
+
 /* The hue, pooled — the atmosphere that makes this area this area. */
 .explorer::before {
   content: "";

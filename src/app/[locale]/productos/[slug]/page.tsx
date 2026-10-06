@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ViewTransition } from "react";
 
+import { MarkField } from "@/components/brand/MarkField";
 import { SectionHeader } from "@/components/layout";
 import { Container, Section } from "@/components/primitives";
 import { TrackOnce } from "@/analytics/TrackOnce";
@@ -807,10 +808,20 @@ export default async function ProductPage({
             <div
               className={
                 areaContext
-                  ? "bg-(--area-wash) pb-(--space-md) shadow-[0_0_0_100vmax_var(--area-wash)] [--ink-muted:var(--ink-secondary)] [clip-path:inset(calc(-1*var(--section-pad-record))_-100vmax_0)]"
+                  ? "relative isolate bg-(--area-wash) pb-(--space-md) shadow-[0_0_0_100vmax_var(--area-wash)] [--ink-muted:var(--ink-secondary)] [clip-path:inset(calc(-1*var(--section-pad-record))_-100vmax_0)]"
                   : undefined
               }
             >
+              {/* The record's mark, in the same field the full record opens
+                  on — here as a fragment (the hub and its left node), since
+                  the profile is that record's cut. */}
+              {areaContext ? (
+                <MarkField
+                  name="profile"
+                  arms={[3]}
+                  className="[inset-inline:calc(50%-50vw)] [inset-block:calc(-1*var(--section-pad-record))_0] [--hub-x:calc(100%-18rem)] [--hub-y:46%] [--mark-h:40rem] [--mark-tone:color-mix(in_oklab,var(--area-mark)_18%,var(--area-wash))] max-md:[--hub-x:calc(100%-5rem)] max-md:[--mark-h:26rem]"
+                />
+              ) : null}
               <SectionHeader
                 scale="record"
                 index={sectionIndex("overview")}

@@ -1267,13 +1267,14 @@ derived files with `npm run brand`; never edit them by hand.
 
 **There is no vector source, so the mark's geometry is MEASURED from the
 artwork.** `scripts/trace-mark.mjs` (run by `npm run brand`) traces the trimmed
-PNG's alpha channel, finds the five round parts from its distance transform,
-fits the four outer nodes as circles (≈0.4px RMS — they are true circles),
-keeps the hub's own traced outline (it is not quite a circle), and takes the
-four connections from the stretches of outline that lie on no node, each cut at
-the middle of its gap into a hub half and a node half. It then rasterises the
-parts together and compares them with the artwork: 98.96% pixel overlap (the
-rest is antialiasing); below 98.5% it refuses to write. Output:
+PNG's alpha channel, smooths the outline by about a pixel (the export's pixel
+grid showed as a ripple at 800px), finds the five round parts from its distance
+transform and fits their circles — to know where each connection leaves and
+meets them, not to draw them — then cuts the one outline into pieces (hub,
+nodes, each connection's two halves) that share their ends and tangents, as
+smooth curves. It rasterises the pieces together and compares them with the
+artwork: 99.1% pixel overlap (the rest is antialiasing); below 98.5% it
+refuses to write. It holds at a metre tall with no step at any join. Output:
 `src/components/brand/markGeometry.ts`. Nothing about the mark is drawn by
 hand, and the geometry is never edited — only regenerated.
 
@@ -1302,6 +1303,69 @@ is drawn ~2% toward the hub as its connection closes, then relaxes. On scroll
 it runs on CSS scroll/view timelines (`NeogenMark.module.css`); on a gesture,
 on native Web Animations (`markMotion.ts`). Inside `[data-area]`, `respond`
 answers in `--area-mark` and returns to ink; nowhere else is the mark coloured.
+
+### The mark at architectural scale (`brand/MarkField`)
+
+Micro (the header, the footer signature over the wordmark, a confirmation)
+is not presence. The mark also works at the scale of a section: a field
+behind a section's content, placed by its HUB (`--hub-x`, `--hub-y`), sized by
+height (`--mark-h`), cropped by the section's own edges, in one opaque low-
+contrast tone (`--mark-tone`; a mix, never an alpha — the parts overlap). A
+fragment is a choice of arms (`arms`, clockwise from the top) and the hub.
+
+| where                        | composition                                                          | tone                    |
+| ---------------------------- | -------------------------------------------------------------------- | ----------------------- |
+| every footer (the signature) | the whole mark, 64rem+, right of the wordmark; gathers on scroll     | paper 9% into charcoal  |
+| `/productos` masthead        | the hub behind the middle flagship; nodes around the three cards     | paper 14% into charcoal |
+| homepage "Explora por área"  | hub + top and left nodes behind the heading, products in front       | area mark 26% into wash |
+| a product's profile head     | hub + left node, cropped by the field's lower edge                   | area mark 18% into wash |
+| Research hub masthead        | the whole mark behind "NEOGEN RESEARCH", away from the archive plate | ink 5% into paper       |
+| a scientific record's head   | the whole mark to the right of the title, cropped top and bottom     | area mark 16% into wash |
+
+- **Legible, or not at all.** A composition keeps the hub and at least two
+  nodes recognisable; a crop that leaves only blobs was rejected.
+- **Brand layer, never data layer.** Only in mastheads, heads, fields and the
+  footer — never in or beside a figure, the archive plate, the map, lines,
+  citations or references. Far larger and fainter than any figure, never
+  clickable (`pointer-events: none`), `aria-hidden`.
+- **It moves only at the footer and in "Explora por área"** (the footer:
+  `assemble="gather"`, the nodes travel in from beyond the footer along their
+  own arms, whole exactly when the page ends, then Living Ink; the explorer:
+  Living Ink). Every other field is static: the identity must survive a
+  screenshot. Reduced motion: every field is whole and still.
+
+### Living Ink (`brand/livingInk.ts`, `LivingLayer`; MarkField's `ink`)
+
+The mark at macro scale as a slow, viscous material: the traced outline
+(`markOutline.ts`, written by `trace-mark.mjs`), each point moved along its
+normal by AUTHORED signals from the mark's own structure, redrawn as the same
+smooth curves. One path; never a filter, never noise. Brand material only: it
+depicts nothing and is never described as anything scientific.
+
+| layer       | what                                                                                         | where                       |
+| ----------- | -------------------------------------------------------------------------------------------- | --------------------------- |
+| drift       | node volume redistributing (the hub answers), neck tension, a rare migrating swell; 17s–2min | footer, explorer (`rest`)   |
+| episodes    | one region at a time swells / tenses / carries a bulge, then settles; 2 at most, out of step | explorer only (`episodes`)  |
+| pointer     | the nearest surface leans toward the pointer, follows with a lag, lets go slowly             | both (`disturb`), mouse/pen |
+| disturbance | a ripple round the surface from a tap, an area change or a connection closing; then settles  | both (`disturb`)            |
+
+- **Readable, not restless.** A living rest that nobody can see is not a
+  living rest: the explorer's episodes move an edge 2–6px a second at desktop
+  size. But never breathing (the whole mark at once), pulsing, rhythm, waves,
+  jelly or a fast move.
+- **The pointer is a presence, not a trigger.** No cooldowns, no ripple per
+  move; it eases in and out.
+- **Clean edges.** The material draws outside the artwork's box (the section
+  crops); a fragment's omitted arms close as points round the hub in the same
+  curve chain; displacements are softened along the outline. No corner
+  sharper than the artwork's own.
+- **Cost:** computed 10Hz (20Hz with episodes) and written only when the edge
+  moved ⅓px on screen; every frame only while disturbed or the pointer is
+  near. Nothing off screen, in a hidden tab or under reduced motion (the
+  canonical outline).
+- **Micro marks never take it** — the header, confirmations and every small
+  mark stay stable geometry. `/estudio/marca` is its dev-only lab (a 404 in
+  production).
 
 - **The mark is decorative wherever the wordmark is beside it.** `aria-hidden`
   by default; `label` only where it stands alone for the brand.

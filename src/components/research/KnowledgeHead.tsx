@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ViewTransition, type ReactNode } from "react";
 
+import { MarkField } from "@/components/brand/MarkField";
 import { Mono } from "@/components/typography";
 import { AreaMarks } from "@/components/ui/AreaMarks";
 
@@ -72,6 +73,12 @@ export function KnowledgeHead({
       data-has-aside={aside ? "true" : undefined}
       data-registered={areas && areas.length > 0 ? "true" : undefined}
     >
+      {/*
+       * A record's head carries the mark in its area's colour: the field the
+       * record opens on is NEOGEN's. Brand layer only — far larger than any
+       * figure in the record, cropped by the page, behind the title.
+       */}
+      {areas && areas.length > 0 ? <MarkField name="record" className={styles.field} /> : null}
       <div className={styles.main}>
         {crumbs.length > 0 ? (
           <nav aria-label={crumbsLabel} className={styles.crumbs}>

@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import type React from "react";
 
+import { MarkField } from "@/components/brand/MarkField";
 import { Container } from "@/components/primitives";
 import { AreaCap, AreaIcon, SpecimenPlate } from "@/components/ui";
 
@@ -89,6 +90,9 @@ export function StoreMasthead({
 }) {
   return (
     <section className={styles.masthead} data-surface="dark" aria-labelledby="catalog-title">
+      {/* The catalogue opens inside the mark: its hub behind the three
+          flagships, the connections passing under the cards. */}
+      <MarkField name="store" className={styles.mastheadField} />
       <Container width="full">
         <div className={styles.mastheadGrid}>
           <div className={styles.intro}>

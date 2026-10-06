@@ -20,7 +20,7 @@
     "check:operations": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-operations.mjs",
     "db:migrate": "node scripts/db-migrate.mjs",
     "ops:account": "node scripts/ops-account.mjs",
-    "brand": "node scripts/prepare-brand.mjs && node scripts/trace-mark.mjs && prettier --write src/components/brand/markGeometry.ts",
+    "brand": "node scripts/prepare-brand.mjs && node scripts/trace-mark.mjs && prettier --write src/components/brand/markGeometry.ts src/components/brand/markOutline.ts",
     "capture:specimen": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/capture-specimen.mjs",
     "capture:home": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/capture-home.mjs",
     "check:quality": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-quality.mjs",

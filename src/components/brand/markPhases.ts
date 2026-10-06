@@ -21,6 +21,25 @@ export const ASSEMBLY = {
   tension: (k: number): Phase => [0.52 + 0.09 * k, 0.7 + 0.09 * k],
 } as const;
 
+/*
+ * THE GATHERING — the assembly at architectural scale (a mark hundreds of
+ * pixels tall, scrubbed by a whole section's scroll). A 650ms gesture cannot
+ * simply be enlarged: at this size the nodes TRAVEL. They register far out
+ * along their own arms (`--spread` × the arm's length — often outside the
+ * section, cropped), and the reader's scroll draws them in; only when a node
+ * is nearly home does its connection reach, from both ends, and the tension
+ * settle it. Each arm a beat behind the last, clockwise from the top.
+ */
+export const GATHER = {
+  hub: (): Phase => [0, 0.2],
+  node: (k: number): Phase => [0.02 + 0.04 * k, 0.2 + 0.04 * k],
+  reach: (k: number): Phase => [0.5 + 0.06 * k, 0.74 + 0.06 * k],
+  tension: (k: number): Phase => [0, 0.82 + 0.06 * k],
+} as const;
+
+/** How far out a node starts when gathering, as a share of its arm's length. */
+export const SPREAD = 0.8;
+
 /** The assembly on a clock (the add-to-bag confirmation). */
 export const ASSEMBLY_MS = 1000;
 

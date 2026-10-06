@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { MarkField } from "@/components/brand/MarkField";
 import { NeogenMark } from "@/components/brand/NeogenMark";
 import { Container } from "@/components/primitives";
 import { Body, Mono } from "@/components/typography";
@@ -79,6 +80,20 @@ export function SiteFooter({ locale, dict }: SiteFooterProps) {
 
   return (
     <footer data-surface="dark" className={styles.footer}>
+      {/*
+       * THE SIGNATURE, AT THE SCALE OF THE PAGE. Behind the footer, the mark
+       * a metre tall, cropped by the footer's own edges: as the reader
+       * reaches the end of any page, its four nodes travel in from beyond the
+       * footer, the connections reach, and the mark is whole exactly when the
+       * page ends. Paper a few percent into charcoal — architecture, not a
+       * logo laid on top.
+       */}
+      <MarkField
+        name="footer"
+        className={styles.field}
+        assemble="gather"
+        ink={{ rest: 0.8, disturb: 2.2 }}
+      />
       <Container width="full">
         <div className={styles.brand}>
           {/*

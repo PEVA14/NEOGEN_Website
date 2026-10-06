@@ -21,6 +21,34 @@
   background-color: var(--surface-base);
   color: var(--ink-primary);
   padding-block: var(--space-3xl) var(--space-lg);
+  position: relative;
+  isolation: isolate;
+  view-timeline: --brand-footer block;
+}
+
+/* The page-scale mark behind the footer (`brand/MarkField`). Its hub sits to
+   the right of the wordmark; the footer's edges crop it. It is whole when
+   the footer has fully entered — when the page ends. */
+.field {
+  --hub-x: 74%;
+  --hub-y: 42%;
+  --mark-h: max(64rem, 130%);
+  --mark-tone: color-mix(in oklab, var(--neogen-paper) 9%, var(--neogen-charcoal));
+  --mark-timeline: --brand-footer;
+  --mark-range: entry;
+  --mark-span: 100%;
+  --spread: 0.9;
+}
+
+/* On a phone the footer is a long column: the mark stands beside the
+   wordmark and the first links, a little brighter at this size. */
+@media (max-width: 47.999rem) {
+  .field {
+    --hub-x: 82%;
+    --hub-y: 22rem;
+    --mark-h: 36rem;
+    --mark-tone: color-mix(in oklab, var(--neogen-paper) 9%, var(--neogen-charcoal));
+  }
 }
 
 .brand {

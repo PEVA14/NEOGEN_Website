@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useId, useRef, useState, type KeyboardEvent } from "react";
 
+import { MarkField } from "@/components/brand/MarkField";
 import { useIndicator } from "@/components/motion/useIndicator";
 import { Container } from "@/components/primitives/Container";
 import { AreaIcon } from "@/components/ui/AreaIcon";
@@ -12,6 +13,19 @@ import styles from "./AreaExplorer.module.css";
 
 import type { WorldId } from "@/config/worlds";
 import type { DiscoveryAreaId } from "@/data/discovery";
+
+/* The field's fragment and its material (Living Ink). Constants, so
+   a tab change does not hand the field new objects. */
+const AREA_ARMS = [0, 3] as const;
+const AREA_INK = {
+  rest: 0.6,
+  disturb: 2.2,
+  /* Readable living rest (owner, 2026-10-05: "I cannot perceive it moving",
+     twice): slow local episodes, in artwork units — at this field's scale
+     (~2px per unit) a node swells by ~12px over about four seconds, an edge
+     moving 3–5px a second, which the eye reads as motion, not change. */
+  episodes: { swell: 6, tension: 4, migrate: 5 },
+} as const;
 
 export interface ExplorerProduct {
   slug: string;
@@ -123,6 +137,9 @@ export function AreaExplorer({
       aria-labelledby={`${baseId}-title`}
       id="explora-areas"
     >
+      {/* The hub and two of its nodes, entering from the right edge in the
+          chosen area's colour — the area's atmosphere carries the mark. */}
+      <MarkField name="areas" className={styles.field} arms={AREA_ARMS} ink={AREA_INK} />
       <Container width="full">
         <header className={styles.head}>
           <p className={styles.index}>

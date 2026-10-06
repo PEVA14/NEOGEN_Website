@@ -144,6 +144,19 @@
 /* On the wash, muted labels take the secondary ink, or they fall under AA. */
 .head[data-registered="true"] {
   --ink-muted: var(--ink-secondary);
+  position: relative;
+}
+
+/* The mark in the record's field (`brand/MarkField`): across the whole wash,
+   from under the header to the head's closing rule, its hub to the right of
+   the title, in the area's mark colour a little into the wash. */
+.field {
+  inset-block: calc(-1 * var(--section-pad-quiet)) 0;
+  inset-inline: calc(50% - 50vw);
+  --hub-x: calc(100% - max(18rem, 24vw));
+  --hub-y: 58%;
+  --mark-h: 34rem;
+  --mark-tone: color-mix(in oklab, var(--area-mark, var(--ink-primary)) 16%, var(--area-wash));
 }
 
 /* The marks ride the first line of a wrapping eyebrow. */

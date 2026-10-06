@@ -1,0 +1,42 @@
+/* THE MARK AS ARCHITECTURE — see MarkField.tsx. */
+
+.field {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: clip;
+  pointer-events: none;
+}
+
+.mark {
+  position: absolute;
+  /* The hub's centre at (--hub-x, --hub-y): the artwork's hub sits at
+     232.6 / 485 of the height across and 260.4 / 485 down. */
+  inset-inline-start: calc(var(--hub-x, 50%) - var(--mark-h, 40rem) * 0.4796);
+  inset-block-start: calc(var(--hub-y, 50%) - var(--mark-h, 40rem) * 0.5369);
+  block-size: var(--mark-h, 40rem);
+  color: var(--mark-tone, currentColor);
+  /* A field whose colour follows a choice (an area tab) changes with the
+     ground under it, at the ground's own pace. */
+  transition: color var(--motion-duration-slow) var(--ease-standard);
+}
+
+/* Living Ink: with a gathering, the parts until the page ends,
+   then the material (`LivingLayer` sets `data-ink`). The two are the same
+   outline at the moment they swap. */
+.field[data-ink="on"] .parts {
+  visibility: hidden;
+}
+
+.field[data-ink="off"] .living {
+  visibility: hidden;
+}
+
+/* The material repaints on its own layer: a redrawn outline never repaints
+   the section's content around it. */
+.living {
+  will-change: transform;
+  /* A swelling node may pass the artwork's own box (the left and top nodes
+     touch it): the field clips, never the mark. */
+  overflow: visible;
+}

@@ -11,7 +11,12 @@
   aspect-ratio: 389 / 485;
   fill: currentColor;
   overflow: visible;
-  /* The whole box answers the pointer, not only the painted parts. */
+  pointer-events: none;
+}
+
+/* A mark that responds: the whole box answers the pointer, not only the
+   painted parts. Every other mark lets the pointer through to the page. */
+.mark[data-respond] {
   pointer-events: bounding-box;
 }
 
@@ -64,6 +69,35 @@
     .mark[data-assemble="view"] :is(.hub, .node, .in, .out, .sat) {
       animation-timeline: --neogen-mark;
       animation-range: cover calc(var(--p0) * 38%) cover calc(var(--p1) * 38%);
+    }
+  }
+
+  /* The gathering: on its section's own timeline and range, set by the
+     caller; by default, its own passage through the viewport. */
+  @supports (animation-timeline: view()) {
+    .mark[data-assemble="gather"] {
+      view-timeline: --neogen-mark block;
+    }
+
+    .mark[data-assemble="gather"] :is(.hub, .node, .in, .out, .sat) {
+      animation-timeline: var(--mark-timeline, --neogen-mark);
+      animation-range: var(--mark-range, cover) calc(var(--p0) * var(--mark-span, 60%))
+        var(--mark-range, cover) calc(var(--p1) * var(--mark-span, 60%));
+    }
+
+    .mark[data-assemble="gather"] :is(.hub, .node) {
+      animation-name: mark-register;
+    }
+
+    /* At this scale the connection CATCHES: it reaches as a thread and
+       widens only once it touches (Living Ink). */
+    .mark[data-assemble="gather"] :is(.in, .out) {
+      animation-name: mark-reach-catch;
+      animation-timing-function: linear;
+    }
+
+    .mark[data-assemble="gather"] .sat {
+      animation-name: mark-gather;
     }
   }
 
@@ -158,5 +192,51 @@
 
   45% {
     translate: calc(var(--ux) * var(--tension) * -1) calc(var(--uy) * var(--tension) * -1);
+  }
+}
+
+/* The node travels home along its own arm, from `--spread` of its length
+   out, then its connection's tension draws it a little past and lets go. */
+@keyframes mark-gather {
+  0% {
+    translate: calc(var(--ux) * var(--dist) * var(--spread, var(--spread-default)))
+      calc(var(--uy) * var(--dist) * var(--spread, var(--spread-default)));
+    animation-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+
+  70% {
+    translate: 0 0;
+    animation-timing-function: ease-in-out;
+  }
+
+  85% {
+    translate: calc(var(--ux) * var(--tension) * -1) calc(var(--uy) * var(--tension) * -1);
+  }
+
+  100% {
+    translate: 0 0;
+  }
+}
+
+/* A connection that catches (the gathering): a thread that thins as it
+   stretches, touches, then widens a little past its width and settles. */
+@keyframes mark-reach-catch {
+  0% {
+    transform: rotate(var(--a)) scale(0.001, 0.7) rotate(calc(var(--a) * -1));
+    animation-timing-function: cubic-bezier(0.45, 0, 0.3, 1);
+  }
+
+  78% {
+    transform: rotate(var(--a)) scale(1, 0.38) rotate(calc(var(--a) * -1));
+    animation-timing-function: cubic-bezier(0.2, 0.7, 0.3, 1);
+  }
+
+  90% {
+    transform: rotate(var(--a)) scale(1, 1.07) rotate(calc(var(--a) * -1));
+    animation-timing-function: ease-in-out;
+  }
+
+  100% {
+    transform: rotate(var(--a)) scale(1, 1) rotate(calc(var(--a) * -1));
   }
 }

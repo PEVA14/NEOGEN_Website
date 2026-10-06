@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 
 import { NeogenMark } from "@/components/brand/NeogenMark";
 import { useIndicator } from "@/components/motion/useIndicator";
@@ -90,6 +91,7 @@ export function AddToBag({
    * offering a disabled button would be a permanent reminder of nothing.
    */
   const [docked, setDocked] = useState(false);
+  const browser = useBrowser();
   useEffect(() => {
     const el = blockRef.current;
     if (!el || !enabled || typeof IntersectionObserver === "undefined") return;
@@ -261,32 +263,54 @@ export function AddToBag({
         </Mono>
       ) : null}
 
-      {enabled ? (
-        <div className={styles.dock} data-docked={docked ? "true" : undefined} inert={!docked}>
-          <div className={styles.dockRecord}>
-            <span className={styles.dockName}>{name}</span>
-            <Mono size="2xs" className={styles.dockMeta}>
-              {selected?.presentation}
-              {selected?.pack ? ` ${selected.pack}` : ""}
-            </Mono>
-          </div>
-          {selected?.price ? (
-            <span className={styles.dockPrice}>
-              <ValueRoll value={formatPrice(selected.price, localeTag)} />
-            </span>
-          ) : null}
-          <button
-            type="button"
-            className={styles.dockAdd}
-            onClick={onAdd}
-            disabled={!canAdd}
-            data-added={justAdded ? "true" : undefined}
-          >
-            {soldOut ? copy.soldOut : justAdded ? <Added label={copy.added} /> : copy.add}
-          </button>
-        </div>
-      ) : null}
+      {/*
+       * The dock belongs to the viewport, so it is rendered at the end of the
+       * body. Inside the page it inherited whatever stacking context its
+       * ancestors made — the bench's `isolation: isolate` kept it under every
+       * positioned element further down (the profile's cited sentences), which
+       * painted over it on a phone and took its taps. After hydration only:
+       * it is never docked before then.
+       */}
+      {enabled && browser
+        ? createPortal(
+            <div className={styles.dock} data-docked={docked ? "true" : undefined} inert={!docked}>
+              <div className={styles.dockRecord}>
+                <span className={styles.dockName}>{name}</span>
+                <Mono size="2xs" className={styles.dockMeta}>
+                  {selected?.presentation}
+                  {selected?.pack ? ` ${selected.pack}` : ""}
+                </Mono>
+              </div>
+              {selected?.price ? (
+                <span className={styles.dockPrice}>
+                  <ValueRoll value={formatPrice(selected.price, localeTag)} />
+                </span>
+              ) : null}
+              <button
+                type="button"
+                className={styles.dockAdd}
+                onClick={onAdd}
+                disabled={!canAdd}
+                data-added={justAdded ? "true" : undefined}
+              >
+                {soldOut ? copy.soldOut : justAdded ? <Added label={copy.added} /> : copy.add}
+              </button>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
+  );
+}
+
+const noSubscription = () => () => {};
+
+/** True once rendering in the browser (false on the server and in hydration). */
+function useBrowser(): boolean {
+  return useSyncExternalStore(
+    noSubscription,
+    () => true,
+    () => false,
   );
 }
 

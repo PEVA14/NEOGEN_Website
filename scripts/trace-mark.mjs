@@ -10,18 +10,27 @@
  * from the artwork's own pixels. It draws nothing: every coordinate it writes
  * is read off `public/branding/neogen-mark.png`.
  *
- *   1. The outline: a sub-pixel contour of the alpha channel at 50%.
+ *   1. The outline: a sub-pixel contour of the alpha channel at 50%,
+ *      smoothed along its length by about a pixel (the export's antialiasing
+ *      is quantised to its pixel grid; at 800px and more that grid showed as
+ *      a ripple along every curve).
  *   2. The nodes: the five maxima of the shape's distance transform are the
  *      centres of its five round parts; each is refined by a least-squares
- *      circle fit to the outline points that lie on it. The four outer nodes
- *      are true circles (≈0.4px RMS on a 44–54px radius); the hub is not
- *      quite, so the hub keeps its traced outline rather than its circle.
- *   3. The connections: the stretches of outline that lie on no node are the
- *      two sides of each neck, flares included. Each neck is closed through
- *      the inside of its two nodes and cut in two at the middle of its gap
- *      (with a 1.5-unit overlap, so no seam shows at rest): a half that
- *      belongs to the hub and a half that belongs to the node — which is what
- *      lets a connection reach from both ends and meet.
+ *      circle fit to the outline points that lie on it. The fits find where
+ *      each connection leaves and meets its nodes, and give each node a
+ *      centre and radius for motion — but no node is DRAWN as a circle: at
+ *      macro scale a fitted circle and the drawing differ by up to a pixel
+ *      where they meet, and that showed as a step at every join.
+ *   3. The pieces: the outline is cut where it leaves and meets each node —
+ *      the hub's stretches, each connection's two sides (flares included),
+ *      each node's stretch — and the whole loop becomes ONE chain of smooth
+ *      curves (Catmull-Rom through evenly spaced points) before it is cut,
+ *      so neighbouring pieces share their end point and tangent and no seam
+ *      can show at any size. Each node and the hub close across a
+ *      connection's mouth with an arc of their circle (inside the
+ *      connection); each connection is cut in two at the middle of its gap
+ *      (a 1.5-unit overlap): a half that belongs to the hub and a half that
+ *      belongs to the node — which is what lets it reach from both ends.
  *   4. The proof: the parts are rasterised together and compared with the
  *      artwork pixel for pixel. Below 98.5% overlap the script refuses to
  *      write — a geometry that is not the owner's mark is worse than none.
@@ -36,8 +45,20 @@ import sharp from "sharp";
 
 const SRC = "public/branding/neogen-mark.png";
 const OUT = "src/components/brand/markGeometry.ts";
-/** Simplification tolerance, in artwork pixels (the mark is 389×485). */
-const EPS = 0.2;
+/**
+ * Spacing of the points the curves pass through, in artwork pixels (the mark
+ * is 389×485). Even spacing, not a simplification: Catmull-Rom curves through
+ * unevenly spaced points kink where a long chord meets a short one.
+ */
+const STEP = 5;
+/**
+ * The outline is smoothed along its length with a Gaussian of this many
+ * samples (≈1px) before anything is measured: the export's antialiasing is
+ * quantised to the pixel grid, and at 800px and more those steps showed as a
+ * faint ripple along every curve. One pixel of smoothing removes the grid,
+ * not the drawing (the proof below still compares with the raw artwork).
+ */
+const SIGMA = 3;
 /** How far into a node a connection's half begins, so it grows out of it. */
 const INSET = 8;
 const OVERLAP = 1.5;
@@ -120,8 +141,29 @@ for (const [a] of segs) {
 loops.sort((a, b) => b.length - a.length);
 if (loops.length !== 1) throw new Error(`expected one outline, found ${loops.length}`);
 /* Marching squares works on pixel indices; pixel centres sit at +0.5. */
-const C = loops[0].map(([x, y]) => [x + 0.5, y + 0.5]);
+const C = smoothLoop(
+  loops[0].map(([x, y]) => [x + 0.5, y + 0.5]),
+  SIGMA,
+);
 const n = C.length;
+
+function smoothLoop(pts, sigma) {
+  const k = Math.ceil(sigma * 3);
+  const w = Array.from({ length: 2 * k + 1 }, (_, j) =>
+    Math.exp(-((j - k) ** 2) / (2 * sigma * sigma)),
+  );
+  const sum = w.reduce((a, b) => a + b, 0);
+  return pts.map((_, i) => {
+    let x = 0;
+    let y = 0;
+    for (let j = -k; j <= k; j++) {
+      const [px, py] = pts[(i + j + pts.length) % pts.length];
+      x += px * w[j + k];
+      y += py * w[j + k];
+    }
+    return [x / sum, y / sum];
+  });
+}
 
 /* 2. Nodes: distance-transform maxima, then circle fits. */
 const edge = [];
@@ -211,7 +253,7 @@ const circles = maxima.map((m) => {
 const hubIndex = circles.reduce((b, c, i) => (c.r > circles[b].r ? i : b), 0);
 const hub = circles[hubIndex];
 
-/* 3. Necks: outline runs on no node. */
+/* 3. The pieces: the outline cut where it leaves and meets each node. */
 const onNode = C.map(([x, y]) =>
   circles.findIndex((c) => Math.abs(Math.hypot(x - c.cx, y - c.cy) - c.r) < 1),
 );
@@ -231,41 +273,6 @@ const sides = runs
   .filter((r) => r.length > 60)
   .map((r) => ({ pts: r, from: onNode[(r[0] - 1 + n) % n], to: onNode[(r.at(-1) + 1) % n] }));
 
-function rdp(pts, eps) {
-  if (pts.length < 3) return pts;
-  const [a, b] = [pts[0], pts.at(-1)];
-  const dx = b[0] - a[0];
-  const dy = b[1] - a[1];
-  const len = Math.hypot(dx, dy) || 1;
-  let at = 0;
-  let far = 0;
-  for (let i = 1; i < pts.length - 1; i++) {
-    const d = Math.abs((pts[i][0] - a[0]) * dy - (pts[i][1] - a[1]) * dx) / len;
-    if (d > far) {
-      far = d;
-      at = i;
-    }
-  }
-  if (far <= eps) return [a, b];
-  return [...rdp(pts.slice(0, at + 1), eps).slice(0, -1), ...rdp(pts.slice(at), eps)];
-}
-const poly = (pts) => `${pts.map((p, i) => `${i ? "L" : "M"}${fx(p[0])} ${fx(p[1])}`).join("")}Z`;
-function halfPlane(pts, keep) {
-  const out = [];
-  for (let i = 0; i < pts.length; i++) {
-    const a = pts[i];
-    const b = pts[(i + 1) % pts.length];
-    const fa = keep(a);
-    const fb = keep(b);
-    if (fa >= 0) out.push(a);
-    if (fa >= 0 !== fb >= 0) {
-      const t = fa / (fa - fb);
-      out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]);
-    }
-  }
-  return out;
-}
-
 const arms = circles
   .map((node, index) => ({ node, index }))
   .filter(({ index }) => index !== hubIndex)
@@ -274,74 +281,191 @@ const arms = circles
     const back = sides.find((s) => s.from === index && s.to === hubIndex);
     if (!out || !back) throw new Error(`node ${index} has no connection to the hub`);
     const L = Math.hypot(node.cx - hub.cx, node.cy - hub.cy);
-    const ux = (node.cx - hub.cx) / L;
-    const uy = (node.cy - hub.cy) / L;
-    const neck = [
-      ...rdp(
-        out.pts.map((i) => C[i]),
-        EPS,
-      ),
-      [node.cx, node.cy],
-      ...rdp(
-        back.pts.map((i) => C[i]),
-        EPS,
-      ),
-      [hub.cx, hub.cy],
-    ];
-    const t = (p) => (p[0] - hub.cx) * ux + (p[1] - hub.cy) * uy;
-    const mid = (hub.r + (L - node.r)) / 2;
     return {
+      node,
       out,
       back,
-      angle: (Math.atan2(uy, ux) * 180) / Math.PI,
-      node,
-      inner: poly(halfPlane(neck, (p) => mid + OVERLAP - t(p))),
-      outer: poly(halfPlane(neck, (p) => t(p) - (mid - OVERLAP))),
-      hubOrigin: [hub.cx + ux * (hub.r - INSET), hub.cy + uy * (hub.r - INSET)],
-      nodeOrigin: [node.cx - ux * (node.r - INSET), node.cy - uy * (node.r - INSET)],
+      ux: (node.cx - hub.cx) / L,
+      uy: (node.cy - hub.cy) / L,
+      L,
+      angle: (Math.atan2(node.cy - hub.cy, node.cx - hub.cx) * 180) / Math.PI,
     };
   })
   /* Clockwise from the top: the order the connections close in. */
   .sort((a, b) => ((a.angle + 450) % 360) - ((b.angle + 450) % 360));
 
-/* The hub: its traced outline, each connection's mouth closed by a hub arc. */
-const mouthStart = new Map(arms.map((a) => [a.out.pts[0], a]));
-let i = (arms[0].back.pts.at(-1) + 1) % n;
-const first = i;
-let hubPath = "";
-let chunk = [];
-const flush = () => {
-  const pts = rdp(chunk, EPS);
-  hubPath += pts.map((p, k) => `${hubPath || k ? "L" : "M"}${fx(p[0])} ${fx(p[1])}`).join("");
-  chunk = [];
-};
-do {
-  const arm = mouthStart.get(i);
-  chunk.push(C[i]);
-  if (arm) {
-    flush();
-    const end = arm.back.pts.at(-1);
-    const [sx, sy] = C[i];
-    const [ex, ey] = C[end];
-    const sweep = (sx - hub.cx) * (ey - hub.cy) - (sy - hub.cy) * (ex - hub.cx) > 0 ? 1 : 0;
-    hubPath += `A${fx(hub.r)} ${fx(hub.r)} 0 0 ${sweep} ${fx(ex)} ${fx(ey)}`;
-    i = end;
-    chunk.push(C[i]);
+/*
+ * ONE OUTLINE, CUT INTO PIECES THAT SHARE THEIR ENDS. Going round the
+ * outline: the hub's own stretch, a connection's side out to its node, the
+ * node's stretch, the side back, the hub again… Each stretch is simplified
+ * with its ends kept, and the whole loop is turned into one chain of smooth
+ * curves (Catmull-Rom through the kept points, each tangent from the points
+ * either side) BEFORE it is cut — so where a node meets its connection the
+ * two pieces share the point and the tangent, and no seam or step can show
+ * at any size. Nothing is fitted where the pieces join: the nodes are their
+ * own traced outlines (closed through the mouth by an arc of their circle,
+ * which lies inside the connection), not circles laid over the drawing.
+ */
+/** Points every ~STEP along a stretch of the outline, its two ends kept. */
+function resample(pts) {
+  const acc = [0];
+  for (let i = 1; i < pts.length; i++)
+    acc.push(acc[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+  const total = acc.at(-1);
+  const count = Math.max(1, Math.round(total / STEP));
+  const out = [];
+  let j = 0;
+  for (let k = 0; k <= count; k++) {
+    const d = (total * k) / count;
+    while (j < pts.length - 2 && acc[j + 1] < d) j++;
+    const t = (d - acc[j]) / (acc[j + 1] - acc[j] || 1);
+    out.push([
+      pts[j][0] + (pts[j + 1][0] - pts[j][0]) * t,
+      pts[j][1] + (pts[j + 1][1] - pts[j][1]) * t,
+    ]);
   }
-  i = (i + 1) % n;
-} while (i !== first);
-flush();
+  return out;
+}
+
+const idxRange = (from, to) => {
+  const out = [from];
+  for (let i = from; i !== to;) {
+    i = (i + 1) % n;
+    out.push(i);
+  }
+  return out;
+};
+const stretches = [];
+arms.forEach((arm, k) => {
+  const next = arms[(k + 1) % arms.length];
+  stretches.push({ kind: "out", arm: k, idx: idxRange(arm.out.pts[0], arm.out.pts.at(-1)) });
+  stretches.push({ kind: "node", arm: k, idx: idxRange(arm.out.pts.at(-1), arm.back.pts[0]) });
+  stretches.push({ kind: "back", arm: k, idx: idxRange(arm.back.pts[0], arm.back.pts.at(-1)) });
+  stretches.push({ kind: "hub", arm: k, idx: idxRange(arm.back.pts.at(-1), next.out.pts[0]) });
+});
+/* The loop of kept points, each stretch owning the segments from its first point. */
+const loop = [];
+for (const st of stretches) {
+  const kept = resample(st.idx.map((i) => C[i]));
+  st.first = loop.length;
+  loop.push(...kept.slice(0, -1));
+  st.count = kept.length - 1;
+}
+const m = loop.length;
+const P = (i) => loop[(i + m) % m];
+/** Segment i: from loop point i to i+1, as a cubic [p0, c1, c2, p1]. */
+const seg = (i) => {
+  const [p0, p1, p2, p3] = [P(i - 1), P(i), P(i + 1), P(i + 2)];
+  return [
+    p1,
+    [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6],
+    [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6],
+    p2,
+  ];
+};
+const segsOf = (st) => Array.from({ length: st.count }, (_, j) => seg(st.first + j));
+const pt = (p) => `${fx(p[0])} ${fx(p[1])}`;
+const curves = (segs) => segs.map(([, c1, c2, p1]) => `C${pt(c1)} ${pt(c2)} ${pt(p1)}`).join("");
+const lerp2 = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+function split([p0, c1, c2, p1], t) {
+  const a = lerp2(p0, c1, t);
+  const b = lerp2(c1, c2, t);
+  const c = lerp2(c2, p1, t);
+  const d = lerp2(a, b, t);
+  const e = lerp2(b, c, t);
+  const f = lerp2(d, e, t);
+  return [
+    [p0, a, d, f],
+    [f, e, c, p1],
+  ];
+}
+const at = ([p0, c1, c2, p1], t) => {
+  const u = 1 - t;
+  return [
+    u ** 3 * p0[0] + 3 * u * u * t * c1[0] + 3 * u * t * t * c2[0] + t ** 3 * p1[0],
+    u ** 3 * p0[1] + 3 * u * u * t * c1[1] + 3 * u * t * t * c2[1] + t ** 3 * p1[1],
+  ];
+};
+/** Cut a chain of curves where `f` (linear along the arm) changes sign: [before, after]. */
+function cut(segs, f) {
+  for (let j = 0; j < segs.length; j++) {
+    const s0 = f(segs[j][0]);
+    const s1 = f(segs[j][3]);
+    if (s0 === 0 || s0 > 0 === s1 > 0) continue;
+    let lo = 0;
+    let hi = 1;
+    for (let it = 0; it < 40; it++) {
+      const mid = (lo + hi) / 2;
+      if (f(at(segs[j], mid)) > 0 === s0 > 0) lo = mid;
+      else hi = mid;
+    }
+    const [x, y] = split(segs[j], (lo + hi) / 2);
+    return [
+      [...segs.slice(0, j), x],
+      [y, ...segs.slice(j + 1)],
+    ];
+  }
+  throw new Error("a connection does not cross its own middle");
+}
+
+/** The short arc of a node's circle across a connection's mouth, from a to b. */
+const mouth = (c, a, b) => {
+  const sweep = (a[0] - c.cx) * (b[1] - c.cy) - (a[1] - c.cy) * (b[0] - c.cx) > 0 ? 1 : 0;
+  return `A${fx(c.r)} ${fx(c.r)} 0 0 ${sweep} ${pt(b)}`;
+};
+
+const pieces = arms.map((arm, k) => {
+  const { node, ux, uy, L } = arm;
+  const outSegs = segsOf(stretches.find((s) => s.kind === "out" && s.arm === k));
+  const backSegs = segsOf(stretches.find((s) => s.kind === "back" && s.arm === k));
+  const nodeSegs = segsOf(stretches.find((s) => s.kind === "node" && s.arm === k));
+  const along = (v) => (p) => (p[0] - hub.cx) * ux + (p[1] - hub.cy) * uy - v;
+  const mid = (hub.r + (L - node.r)) / 2;
+  /* Hub half: out-side up to just past the middle, across, back-side home. */
+  const [outIn] = cut(outSegs, along(mid + OVERLAP));
+  const [, backIn] = cut(backSegs, along(mid + OVERLAP));
+  const [, outOut] = cut(outSegs, along(mid - OVERLAP));
+  const [backOut] = cut(backSegs, along(mid - OVERLAP));
+  const inner =
+    `M${pt(outIn[0][0])}${curves(outIn)}L${pt(backIn[0][0])}${curves(backIn)}` +
+    `L${pt([hub.cx, hub.cy])}Z`;
+  const outer =
+    `M${pt(outOut[0][0])}${curves(outOut)}L${pt([node.cx, node.cy])}L${pt(backOut[0][0])}` +
+    `${curves(backOut)}Z`;
+  const nodeStart = nodeSegs[0][0];
+  const nodeEnd = nodeSegs.at(-1)[3];
+  const nodePath = `M${pt(nodeStart)}${curves(nodeSegs)}${mouth(node, nodeEnd, nodeStart)}Z`;
+  return {
+    ...arm,
+    nodeEnd,
+    nodePath,
+    inner,
+    outer,
+    hubOrigin: [hub.cx + ux * (hub.r - INSET), hub.cy + uy * (hub.r - INSET)],
+    nodeOrigin: [node.cx - ux * (node.r - INSET), node.cy - uy * (node.r - INSET)],
+  };
+});
+
+/* The hub: its own stretches, each connection's mouth closed by an arc. */
+let hubPath = "";
+arms.forEach((arm, k) => {
+  const st = stretches.find((s) => s.kind === "hub" && s.arm === k);
+  const segs = segsOf(st);
+  if (!hubPath) hubPath = `M${pt(segs[0][0])}`;
+  hubPath += curves(segs);
+  const j = (k + 1) % arms.length;
+  const mouthStart = segs.at(-1)[3];
+  const mouthEnd = segsOf(stretches.find((s) => s.kind === "back" && s.arm === j)).at(-1)[3];
+  hubPath += mouth(hub, mouthStart, mouthEnd);
+});
 hubPath += "Z";
 
 /* 4. The proof. */
 const S = 2;
 const body =
   `<path d="${hubPath}"/>` +
-  arms
-    .map(
-      (a) =>
-        `<path d="${a.inner}"/><path d="${a.outer}"/><circle cx="${fx(a.node.cx)}" cy="${fx(a.node.cy)}" r="${fx(a.node.r)}"/>`,
-    )
+  pieces
+    .map((a) => `<path d="${a.inner}"/><path d="${a.outer}"/><path d="${a.nodePath}"/>`)
     .join("");
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W * S}" height="${H * S}" viewBox="0 0 ${W} ${H}">${body}</svg>`;
 const drawn = await sharp(Buffer.from(svg)).ensureAlpha().raw().toBuffer();
@@ -379,8 +503,8 @@ export const MARK_BOX = { width: ${W}, height: ${H} } as const;
 export const MARK_HUB = { cx: ${fx(hub.cx)}, cy: ${fx(hub.cy)}, r: ${fx(hub.r)}, d: "${hubPath}" } as const;
 
 export interface MarkArm {
-  /** The outer node: a true circle. */
-  node: { cx: number; cy: number; r: number };
+  /** The outer node: its traced outline, closed across the mouth by an arc of its circle (centre and radius fitted). */
+  node: { cx: number; cy: number; r: number; d: string };
   /** Degrees, hub → node, screen coordinates (y down). */
   angle: number;
   /** The connection's half that belongs to the hub. */
@@ -394,10 +518,10 @@ export interface MarkArm {
 
 /** The four arms, clockwise from the top — the order the connections close. */
 export const MARK_ARMS: readonly MarkArm[] = [
-${arms
+${pieces
   .map(
     (a) => `  {
-    node: { cx: ${fx(a.node.cx)}, cy: ${fx(a.node.cy)}, r: ${fx(a.node.r)} },
+    node: { cx: ${fx(a.node.cx)}, cy: ${fx(a.node.cy)}, r: ${fx(a.node.r)}, d: "${a.nodePath}" },
     angle: ${fx(a.angle)},
     inner: "${a.inner}",
     outer: "${a.outer}",
@@ -409,4 +533,42 @@ ${arms
 ];
 `;
 writeFileSync(OUT, ts);
+
+/*
+ * THE OUTLINE AS POINTS — for a mark whose silhouette is computed at run time
+ * (the Living Ink prototype, `brand/livingInk.ts`). The same evenly spaced
+ * points the curves above pass through, in order round the outline, each
+ * labelled with the piece it belongs to: h = hub, a–d = a connection's sides
+ * (arm 0–3, clockwise from the top), A–D = that arm's node. A separate
+ * module so the static mark never carries it.
+ */
+const label = { hub: "h", out: "abcd", back: "abcd", node: "ABCD" };
+let parts = "";
+for (const st of stretches)
+  parts += (st.kind === "hub" ? "h" : label[st.kind][st.arm]).repeat(st.count);
+const OUTLINE = "src/components/brand/markOutline.ts";
+writeFileSync(
+  OUTLINE,
+  `/*
+ * THE NEOGEN MARK'S OUTLINE AS POINTS — generated by \`scripts/trace-mark.mjs\`
+ * with \`markGeometry.ts\`. Do not edit by hand.
+ */
+
+/** x0, y0, x1, y1… round the outline (artwork units), evenly spaced. */
+export const OUTLINE_POINTS: readonly number[] = [${loop.map(([x, y]) => `${fx(x)},${fx(y)}`).join(",")}];
+
+/** Per point: h hub · a–d a connection's side (arm 0–3) · A–D that arm's node. */
+export const OUTLINE_PARTS = "${parts}";
+
+/** Each arm's excursion: first and last point index (from the hub, round the node, back). */
+export const OUTLINE_ARMS: readonly (readonly [number, number])[] = [${arms
+    .map((_, k) => {
+      const out = stretches.find((st) => st.kind === "out" && st.arm === k);
+      const back = stretches.find((st) => st.kind === "back" && st.arm === k);
+      return `[${out.first}, ${back.first + back.count}]`;
+    })
+    .join(", ")}];
+`,
+);
+console.log(`trace-mark: wrote ${OUTLINE} (${m} points)`);
 console.log(`trace-mark: wrote ${OUT}`);
