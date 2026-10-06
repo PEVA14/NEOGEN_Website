@@ -60,6 +60,7 @@ export default async function CompendiumPage({ params }: { params: Promise<{ loc
   const counts = dict.knowledge.counts;
   const hub = dict.research.hub;
   const path = (route: string) => localizePath(route, locale);
+  const entries = libraryEntries(locale, dict);
   const stats = compendiumStats();
 
   return (
@@ -102,7 +103,25 @@ export default async function CompendiumPage({ params }: { params: Promise<{ loc
 
             <div className={styles.library}>
               <CompoundLibrary
-                entries={libraryEntries(locale, dict)}
+                entries={entries}
+                areaScopes={Object.fromEntries(
+                  publicAreas().map((area) => [
+                    area.id,
+                    {
+                      name: dict.discovery.areas[area.id].title,
+                      detail: dict.discovery.scope.research.replace(
+                        "{n}",
+                        String(entries.filter((e) => e.areas.some((a) => a.id === area.id)).length),
+                      ),
+                      links: [
+                        {
+                          href: path(routes.area(area.slug)),
+                          label: dict.discovery.scope.toProducts,
+                        },
+                      ],
+                    },
+                  ]),
+                )}
                 areas={publicAreas().map((area) => ({
                   id: area.id,
                   label: dict.discovery.areas[area.id].short,

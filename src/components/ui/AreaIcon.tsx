@@ -94,6 +94,9 @@ export function AreaIcon({ id, className }: { id: DiscoveryAreaId; className?: s
       strokeLinejoin="round"
       aria-hidden="true"
       focusable="false"
+      /* Each symbol's own small gesture when what carries it is touched
+         (`styles/area-symbols.css`). */
+      data-symbol={id}
     >
       {PATHS[id]}
     </svg>

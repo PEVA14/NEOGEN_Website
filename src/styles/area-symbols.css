@@ -1,0 +1,224 @@
+/*
+ * THE AREA SYMBOLS, ANSWERING (areas identity pass, owner 2026-10-05: "cute
+ * and smooth animations whenever we interact with something that has a
+ * symbol").
+ *
+ * Each of the eight symbols (`ui/AreaIcon`, `data-symbol`) has ONE small
+ * gesture of its own, taken from what it draws — never a generic wiggle:
+ *
+ *   metabolic   the cycle turns half a turn
+ *   recovery    the two links draw together
+ *   longevity   the cell swells; its nucleus centres and the dot crosses it
+ *   growth      the three steps rise, one after another
+ *   skin        the layers slide past each other
+ *   neuro       the nodes light up in turn
+ *   hormonal    the inner ring turns inside the outer
+ *   materials   the flask tilts; its liquid stays level
+ *
+ * TRIGGERS. Anything that carries a symbol and is touched marks itself
+ * `data-symbol-host`: a tab, a filter option, a card, a tile, a tag, a row.
+ * Hover (on devices that hover) and keyboard focus hold the gesture and it
+ * eases back when they leave — a transition, so leaving early never snaps.
+ * Being CHOSEN (a selected tab, a checked filter, an opened row) plays a
+ * short arrival once; a signet that appears with a choice (`data-enter`)
+ * arrives the same way.
+ *
+ * NOTHING BOUNCES (motion.css): every curve settles, none overshoots. The
+ * gesture returns the symbol exactly to its drawing — the mark is never
+ * left altered. Reduced motion: none of it.
+ */
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-symbol],
+  [data-symbol] > * {
+    transform-box: fill-box;
+    transform-origin: center;
+    transition: transform 520ms var(--ease-out);
+  }
+
+  /* --- Hover (devices that hover) and keyboard focus: the gesture, held ---- */
+
+  @media (hover: hover) {
+    :where([data-symbol-host]:hover) [data-symbol="metabolic"] {
+      transform: rotate(180deg);
+    }
+    :where([data-symbol-host]:hover) [data-symbol="recovery"] > :nth-child(1) {
+      transform: translateX(1.75px);
+    }
+    :where([data-symbol-host]:hover) [data-symbol="recovery"] > :nth-child(2) {
+      transform: translateX(-1.75px);
+    }
+    :where([data-symbol-host]:hover) [data-symbol="longevity"] > :nth-child(1) {
+      transform: scale(1.08);
+    }
+    :where([data-symbol-host]:hover) [data-symbol="longevity"] > :nth-child(2) {
+      transform: translate(-2.5px, 2px);
+    }
+    :where([data-symbol-host]:hover) [data-symbol="longevity"] > :nth-child(3) {
+      transform: translate(10px, 2px);
+    }
+    :where([data-symbol-host]:hover) [data-symbol="growth"] > :nth-child(2) {
+      transform: scaleY(1.5);
+    }
+    :where([data-symbol-host]:hover) [data-symbol="growth"] > :nth-child(3) {
+      transform: scaleY(1.25);
+    }
+    :where([data-symbol-host]:hover) [data-symbol="growth"] > :nth-child(4) {
+      transform: scaleY(1.1);
+    }
+    :where([data-symbol-host]:hover) [data-symbol="skin"] > :nth-child(odd) {
+      transform: translateX(2px);
+    }
+    :where([data-symbol-host]:hover) [data-symbol="skin"] > :nth-child(even) {
+      transform: translateX(-2px);
+    }
+    :where([data-symbol-host]:hover) [data-symbol="neuro"] > circle {
+      transform: scale(1.35);
+    }
+    :where([data-symbol-host]:hover) [data-symbol="neuro"] > :nth-child(6) {
+      transform: scale(1.8);
+    }
+    :where([data-symbol-host]:hover) [data-symbol="hormonal"] > :nth-child(2) {
+      transform: rotate(120deg);
+    }
+    :where([data-symbol-host]:hover) [data-symbol="materials"] {
+      transform: rotate(-10deg);
+    }
+    :where([data-symbol-host]:hover) [data-symbol="materials"] > :nth-child(3) {
+      transform: rotate(10deg);
+    }
+  }
+
+  :where([data-symbol-host]:focus-visible, [data-symbol-host]:has(:focus-visible))
+    [data-symbol="metabolic"] {
+    transform: rotate(180deg);
+  }
+  :where([data-symbol-host]:focus-visible, [data-symbol-host]:has(:focus-visible))
+    [data-symbol="recovery"]
+    > :nth-child(1) {
+    transform: translateX(1.75px);
+  }
+  :where([data-symbol-host]:focus-visible, [data-symbol-host]:has(:focus-visible))
+    [data-symbol="recovery"]
+    > :nth-child(2) {
+    transform: translateX(-1.75px);
+  }
+  :where([data-symbol-host]:focus-visible, [data-symbol-host]:has(:focus-visible))
+    [data-symbol="longevity"]
+    > :nth-child(1) {
+    transform: scale(1.08);
+  }
+  :where([data-symbol-host]:focus-visible, [data-symbol-host]:has(:focus-visible))
+    [data-symbol="longevity"]
+    > :nth-child(2) {
+    transform: translate(-2.5px, 2px);
+  }
+  :where([data-symbol-host]:focus-visible, [data-symbol-host]:has(:focus-visible))
+    [data-symbol="longevity"]
+    > :nth-child(3) {
+    transform: translate(10px, 2px);
+  }
+  :where([data-symbol-host]:focus-visible, [data-symbol-host]:has(:focus-visible))
+    [data-symbol="growth"]
+    > :nth-child(2) {
+    transform: scaleY(1.5);
+  }
+  :where([data-symbol-host]:focus-visible, [data-symbol-host]:has(:focus-visible))
+    [data-symbol="growth"]
+    > :nth-child(3) {
+    transform: scaleY(1.25);
+  }
+  :where([data-symbol-host]:focus-visible, [data-symbol-host]:has(:focus-visible))
+    [data-symbol="growth"]
+    > :nth-child(4) {
+    transform: scaleY(1.1);
+  }
+  :where([data-symbol-host]:focus-visible, [data-symbol-host]:has(:focus-visible))
+    [data-symbol="skin"]
+    > :nth-child(odd) {
+    transform: translateX(2px);
+  }
+  :where([data-symbol-host]:focus-visible, [data-symbol-host]:has(:focus-visible))
+    [data-symbol="skin"]
+    > :nth-child(even) {
+    transform: translateX(-2px);
+  }
+  :where([data-symbol-host]:focus-visible, [data-symbol-host]:has(:focus-visible))
+    [data-symbol="neuro"]
+    > circle {
+    transform: scale(1.35);
+  }
+  :where([data-symbol-host]:focus-visible, [data-symbol-host]:has(:focus-visible))
+    [data-symbol="neuro"]
+    > :nth-child(6) {
+    transform: scale(1.8);
+  }
+  :where([data-symbol-host]:focus-visible, [data-symbol-host]:has(:focus-visible))
+    [data-symbol="hormonal"]
+    > :nth-child(2) {
+    transform: rotate(120deg);
+  }
+  :where([data-symbol-host]:focus-visible, [data-symbol-host]:has(:focus-visible))
+    [data-symbol="materials"] {
+    transform: rotate(-10deg);
+  }
+  :where([data-symbol-host]:focus-visible, [data-symbol-host]:has(:focus-visible))
+    [data-symbol="materials"]
+    > :nth-child(3) {
+    transform: rotate(10deg);
+  }
+
+  /* --- Sequences: the parts move one after another ------------------------- */
+
+  [data-symbol="growth"] > * {
+    transform-origin: center bottom;
+  }
+  [data-symbol="growth"] > :nth-child(3),
+  [data-symbol="skin"] > :nth-child(2),
+  [data-symbol="neuro"] > :nth-child(3) {
+    transition-delay: 60ms;
+  }
+  [data-symbol="growth"] > :nth-child(4),
+  [data-symbol="skin"] > :nth-child(3),
+  [data-symbol="neuro"] > :nth-child(4) {
+    transition-delay: 120ms;
+  }
+  [data-symbol="neuro"] > :nth-child(5) {
+    transition-delay: 180ms;
+  }
+  [data-symbol="neuro"] > :nth-child(6) {
+    transition-delay: 240ms;
+  }
+  /* The flask tilts from where it stands. */
+  [data-symbol="materials"] {
+    transform-origin: 50% 85%;
+  }
+  [data-symbol="metabolic"],
+  [data-symbol="hormonal"] > * {
+    transition-duration: 680ms;
+  }
+
+  /* --- Chosen: a short arrival, once ---------------------------------------- */
+
+  :is(
+      [data-symbol-host][aria-selected="true"],
+      [data-symbol-host][aria-pressed="true"],
+      [data-symbol-host][data-checked],
+      [data-symbol-host][data-open="true"],
+      [data-symbol-host][aria-expanded="true"],
+      [data-enter]
+    )
+    [data-symbol] {
+    animation: symbol-arrive 560ms var(--ease-settle) both;
+  }
+}
+
+/* Individual `scale` / `rotate`, so the arrival composes with a held gesture
+   (`transform`) instead of fighting it. */
+@keyframes symbol-arrive {
+  from {
+    scale: 0.6;
+    rotate: -24deg;
+    opacity: 0.3;
+  }
+}

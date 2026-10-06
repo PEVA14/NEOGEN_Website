@@ -218,6 +218,14 @@ export default async function CompoundRecordPage({
             titleId="record-title"
             transition={recordNames(product.slug)}
             areas={areas.map((a) => a.id)}
+            areaLinks={areas.map((a) => ({
+              id: a.id,
+              label: dict.discovery.scope.productsOf.replace(
+                "{area}",
+                dict.discovery.areas[a.id].short,
+              ),
+              href: path(routes.area(a.slug)),
+            }))}
             lede={record.summary ?? undefined}
             meta={[
               ...(product.subtitle ? [product.subtitle] : []),

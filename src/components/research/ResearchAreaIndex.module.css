@@ -64,10 +64,11 @@
   margin-block-end: var(--space-sm);
 }
 
+/* The area's signet plate (areas identity pass): on paper at rest, so the
+   tile's own wash on hover still reads behind it. */
 .icon {
-  block-size: 2rem;
-  color: var(--area-hue);
-  inline-size: 2rem;
+  --signet: 3.25rem;
+  background: var(--neogen-paper);
 }
 
 .number {
@@ -255,9 +256,8 @@ button.tile:hover {
 }
 
 .rosterIcon {
-  inline-size: 1.4rem;
-  block-size: 1.4rem;
-  color: var(--area-hue);
+  --signet: 2.25rem;
+  background: var(--neogen-paper);
 }
 
 .rosterCount {

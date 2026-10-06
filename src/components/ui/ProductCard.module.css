@@ -178,6 +178,18 @@
   text-transform: uppercase;
 }
 
+/* An area as identity: its symbol and name, then the classification. */
+.eyebrow[data-identity] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.15em 0.9em;
+}
+
+.category {
+  color: var(--ink-muted);
+}
+
 /*
  * The product name at editorial scale. Condensed display face, tight leading,
  * balanced wrapping — the longest name in the catalogue is 33 characters and
@@ -688,7 +700,10 @@
     aspect-ratio: 1 / 1;
   }
 
-  .card[data-variant="store"] .eyebrow {
+  /* The area stays — it is how the shelf is organised; the classification
+     goes. */
+  .card[data-variant="store"] .eyebrow:not([data-identity]),
+  .card[data-variant="store"] .category {
     display: none;
   }
 
@@ -705,24 +720,43 @@
 
 /* --- Store variant: the area grading ---------------------------------------
  *
- * Every store card is faintly graded toward its area's hue, so a shelf reads
- * by category before a single label is read: the paper under the name grades
- * from clean paper to a tint of the hue at the price line.
+ * Every store card's RECORD is coloured the way its area's door in "Compra
+ * por área" is (owner, 2026-10-05: "more akin to the way they look in the
+ * Shop by area section … probably the info"): the area's hairline round the
+ * card, a rule of its full hue along the seam under the stage, and the paper
+ * grading to 16% of the hue at the price line; on hover the border takes the
+ * full hue. The same recipe as `Storefront.module.css` `.area`, so a card and
+ * its area's door read as one family.
  *
  * The STAGE is not graded. Store cards show studio renders and drawn vials
  * side by side, and a render's sweep cannot take a wash — graded, the drawn
  * card stood in a different room from the render next to it. Both now stand
  * on the renders' warm stone; the drawn vial carries its area on its label.
  *
- * Kept to single digits of the hue so charcoal and muted text stay AA. A
- * signature product's world stage (`data-world` on the plate) is untouched:
- * its colour is the product's, not the category's.
+ * Muted text on the tint reads in `--ink-secondary` (the Level-2 recipe,
+ * CONVENTIONS §4b), so it keeps AA at the deepest point. A signature
+ * product's world stage (`data-world` on the plate) is untouched: its colour
+ * is the product's, not the category's.
  */
 .card[data-variant="store"][data-area]:not([data-format="flagship"]) {
-  background-image: linear-gradient(
+  border-color: var(--area-line);
+}
+
+/* The record runs to the card's foot, as the door's tint does: the link's
+   closing padding moves inside it. */
+.card[data-variant="store"][data-area]:not([data-format="flagship"]) .link {
+  padding-block-end: 0;
+}
+
+.card[data-variant="store"][data-area]:not([data-format="flagship"]) .body {
+  --ink-muted: var(--ink-secondary);
+  padding-block-end: var(--space-sm);
+  border-block-start: 3px solid var(--area-hue);
+  background: linear-gradient(
     180deg,
-    var(--neogen-paper) 55%,
-    color-mix(in oklab, var(--area-hue) 7%, var(--neogen-paper)) 100%
+    var(--neogen-paper) 0%,
+    var(--neogen-paper) 35%,
+    color-mix(in oklab, var(--area-hue) 16%, var(--neogen-paper)) 100%
   );
 }
 
@@ -793,7 +827,7 @@
 
 /* Hover answers in the card's own area colour, the way the area tiles do. */
 .card[data-variant="store"][data-area]:hover {
-  border-color: color-mix(in oklab, var(--area-hue) 60%, transparent);
+  border-color: var(--area-hue);
 }
 
 /* Three across on a laptop is compact, but the name should not drop to phone scale. */

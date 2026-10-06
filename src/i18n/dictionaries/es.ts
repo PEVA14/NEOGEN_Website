@@ -2844,6 +2844,19 @@ const es = {
     all: "Todo el catálogo",
     countLabel: "Compuestos",
     /** Copia de la portada de área — ver `components/ui/AreaMasthead`. */
+    /**
+     * EL ÁREA COMO ALCANCE (pase de identidad de áreas, 2026-10-05): lo que
+     * una lista muestra al acotarse a un área — su signo, su nombre, cuánto
+     * hay, y el paso entre catálogo e investigación.
+     */
+    scope: {
+      products: "{n} compuestos en el catálogo",
+      research: "{n} compuestos en el compendio",
+      several: "{n} áreas",
+      toProducts: "Productos del área",
+      toResearch: "Investigación del área",
+      productsOf: "Productos · {area}",
+    },
     masthead: {
       compounds: "Compuestos en esta área",
       examples: "Punto de entrada",

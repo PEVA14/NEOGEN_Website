@@ -1,6 +1,15 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-10-05**: **Living Ink and the mark at macro scale are
+Last updated **2026-10-05**: **the Areas are sub-identities — permanent**
+(owner: "Love it, commit everything, permanent feature") (§8az): each area's
+existing symbol and colour as one system (signet, tag, scope, badge) across
+the explorer, the catalogue and its filters, store cards, the area pages,
+product pages and Research, every symbol answering touch with a gesture of
+its own; committed with the catalogue masthead's Living Ink. Before
+that, the same day: **the catalogue masthead is Living Ink too**
+(owner: "apply the same living ink to the catalogue masthead") — the same
+material as the homepage's area field, defined once as `READABLE_INK`
+(§8ay). Before that, the same day: **Living Ink and the mark at macro scale are
 permanent** (owner: "Love it, commit everything, permanent feature") — the
 footer signature and the homepage's "Explora por área" field are the mark as
 a slow living material: a readable living rest of slow local episodes, a
@@ -2589,6 +2598,88 @@ from the catalogue grid, the phone strip and by direct URL; reduced motion;
 GLOW's circle unchanged; at 4× CPU throttle on the phone there is no long task
 between the flight's start and the formation's end.
 
+## 8az. The Areas as sub-identities (2026-10-05, PERMANENT)
+
+Owner: the areas' marks and colours "feel too secondary"; make each area a
+recognisable sub-identity within NEOGEN — marks far more predominant, colour
+carried into Products and Research, a chosen area visibly changing the page —
+without redesigning the marks, inventing colours, or flooding the neutral
+aesthetic. Made permanent the same day after three review rounds (the symbol
+gestures, the product badge, the store cards' colouring — below).
+
+**Audit.** The eight symbols (`AreaIcon`) appeared only as 20–32px icons on
+the explorer's tabs and the area tiles. Elsewhere membership was a 0.5rem
+colour square (`AreaMarks`) or text: the area page's masthead, the product
+page and the research record carried no symbol at all; the catalogue's area
+filter was eight plain checkboxes and the compendium's a native select; store
+cards named the supplier classification, not the area.
+
+**The system** (`ui/AreaSignet.tsx`; rules in CONVENTIONS §4b):
+
+- `AreaSignet` — the symbol at identity scale (xs inline → xl ~16rem), as
+  line, plate (wash, hairline frame, a rule in its mark colour) or deep; it
+  carries its own `data-area`; its stroke is held at a drawn weight at
+  display sizes. Base rules are `:where()` so a placement tunes it with one
+  class.
+- `AreaTag` — symbol + name in `--area-text`; a link where it leads to the
+  area; `plate` for a page's identity line.
+- `AreaScope` — a list narrowed to an area: the area arriving (Level-2 field,
+  large signet, name, count, links across catalogue ↔ research). Several
+  areas: their signets side by side, no colour, never a blend.
+- `AreaMarks` now draws the symbol by default (`square` and `rule` remain).
+
+**Placements.** Explorer: tabs carry their own symbol and a trace of their
+wash at rest; the chosen area's signet on a paper plate beside its name;
+cards name their area; the "all" tile carries the symbol. Catalogue: area
+tiles' symbols at 2.5rem; the area facet as eight identities (symbol, wash
+on hover, wash + mark rule when chosen, mark-coloured check); the chosen
+area's chip in its colours; one chosen area → `AreaScope` over the results
+(its page, its research); every store card's eyebrow is its area (symbol +
+name), then the classification. Area page: the symbol at department scale
+over a pool of its hue, a 3px hue rule on top. Product page: the identity
+line is the area's plate + name, linking to the area; the profile's area
+routes carry plates. Research: hub tiles and roster with plates; the
+compendium filtered to an area opens on its scope (→ its products); a
+record's head lists "Products · <area>" plates; every registration mark in
+Research is the symbol.
+
+**The symbols answer** (owner: "cute and smooth animations whenever we
+interact with something that has a symbol"; `styles/area-symbols.css`). Each
+symbol has one gesture of its own, from what it draws: the cycle turns half a
+turn, the links draw together, the cell swells as its dot crosses it, the
+steps rise in turn, the layers slide past each other, the nodes light up in
+turn, the inner ring turns, the flask tilts with its liquid level. Whatever
+carries a symbol is a `data-symbol-host` (explorer tabs and its "all" tile,
+area filter options and chips, store and product cards, store area tiles,
+research tiles, compendium rows, area tags, scopes): hover and keyboard
+focus hold the gesture and it eases back on leaving (a transition — leaving
+early never snaps); being chosen (a selected tab, a checked filter, an opened
+row or tile) and a signet appearing with a choice play a short arrival once.
+Settling curves only, no overshoot (motion.css: nothing bounces); the symbol
+always returns to its drawing; nothing under reduced motion.
+
+**A product's area as a badge** (owner: "have the symbol be much bigger and
+whenever you hover/tap over it it shows the category's name"):
+`ui/AreaBadge` replaces the product page's small plate + name. A large signet
+(4.25–6.25rem) beside the product name; hover, keyboard focus or a tap slides
+the area's name out of the plate to its left (the plate seems to widen into
+it) while the symbol makes its gesture. On a touch screen the first tap
+shows the name and the second follows the link; the name is always the
+link's accessible name.
+
+**Store cards coloured like their area's door** (owner: "more akin to the
+way they look in the Shop by area section … probably the info"): a store
+card's record takes the "Compra por área" tile's recipe — the area's
+hairline round the card, a 3px rule of its full hue along the seam under the
+stage, paper grading to 16% of the hue at the foot, the full hue on hover.
+The photo stage stays neutral (renders and drawn vials stand in one room).
+Muted text on the tint reads in `--ink-secondary` (≈11:1 at the deepest
+point, every area).
+
+**Unchanged by rule:** research lines, sources and document levels never
+take an area colour; the three worlds keep theirs (no area tag on a
+flagship); colour is never the only carrier.
+
 ## 8ay. Living Ink — the mark as a material (2026-10-05, PERMANENT)
 
 Owner's experiment: can the large marks feel made of a slow, viscous living
@@ -2662,6 +2753,15 @@ frame while near, written only when moved; ≤0.4px between frames in a sweep.
 Touch keeps a single ripple on a tap (following a finger would fight the
 scroll); an area change keeps its single catch at the hub. This applies to
 the footer's material too.
+
+**Extended — the catalogue masthead** (owner: "apply the same living ink to
+the catalogue masthead"). The explorer's material is now one constant,
+`READABLE_INK` (`livingInk.ts`: rest 0.6, disturb 2.2, episodes swell 6 /
+tension 4 / migrate 5), and the `/productos` masthead's whole mark uses it.
+Same artwork units, so the same proportions: at the masthead's 47.5rem
+(~1.6px per unit) a node swells ~9–10px, against ~12px at the explorer's
+60rem. The pointer leans the material from anywhere in the masthead,
+including over the flagship cards.
 
 ## 8ax. The NEOGEN mark at macro scale (2026-10-05, PERMANENT)
 

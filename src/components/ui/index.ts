@@ -17,3 +17,4 @@ export { TextLink } from "./TextLink";
 export { WorldDot } from "./WorldDot";
 export { AreaIcon } from "./AreaIcon";
 export { AreaCap } from "./AreaCap";
+export { AreaSignet, AreaTag, AreaScope, type AreaScopeLink } from "./AreaSignet";

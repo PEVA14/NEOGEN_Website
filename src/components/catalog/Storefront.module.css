@@ -539,18 +539,15 @@
   border-block-start: 3px solid var(--area-hue);
 }
 
-/* The symbol shares the number's row, so the name keeps the tile's full width. */
+/* The symbol shares the number's row, so the name keeps the tile's full width.
+   At the size of a sign, not an icon; on hover it makes its own gesture
+   (`styles/area-symbols.css` — the tile is a `data-symbol-host`). */
 .areaIcon {
   grid-column: 2;
   grid-row: 1;
-  inline-size: 1.75rem;
-  block-size: 1.75rem;
-  color: var(--area-hue);
-  transition: transform var(--motion-duration-base) var(--ease-standard);
-}
-
-.area:hover .areaIcon {
-  transform: scale(1.1);
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  color: var(--area-mark);
 }
 
 .areaIndex {
@@ -633,13 +630,8 @@
 @media (prefers-reduced-motion: reduce) {
   .signatureMedia > *,
   .areaCap,
-  .areaIcon,
   .arrow {
     transition: none;
-  }
-
-  .area:hover .areaIcon {
-    transform: none;
   }
 
   .signature:hover .signatureMedia > *,

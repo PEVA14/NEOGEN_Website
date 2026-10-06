@@ -12,6 +12,9 @@ import {
 
 import { Body, Mono } from "@/components/typography";
 import { ProductCard, type CardDetailsCopy } from "@/components/ui";
+import { AreaIcon } from "@/components/ui/AreaIcon";
+import { AreaScope, type AreaScopeLink } from "@/components/ui/AreaSignet";
+import type { DiscoveryAreaId } from "@/data/discovery";
 
 import {
   activeFilterCount,
@@ -146,6 +149,7 @@ export function CatalogBrowser({
   pageSize,
   moreCopy,
   variant = "default",
+  areaScopes,
 }: {
   products: readonly CatalogProduct[];
   copy: CatalogCopy;
@@ -167,6 +171,16 @@ export function CatalogBrowser({
   moreCopy?: { show: string; showing: string };
   /** "store": the storefront card and grid (/productos). */
   variant?: "default" | "store";
+  /**
+   * Each area as a scope (areas identity pass): what the results become when
+   * the reader narrows them to areas — the area's signet and name, how much
+   * of it there is, and the way to its page and its research. `several` is
+   * "{n} áreas", for more than one.
+   */
+  areaScopes?: {
+    areas: Record<string, { name: string; detail: string; links: readonly AreaScopeLink[] }>;
+    several: string;
+  };
 }) {
   const [filters, setFilters] = useUrlFilters();
   const wide = useMediaQuery("(min-width: 64rem)");
@@ -183,6 +197,11 @@ export function CatalogBrowser({
   const pages = paging.key === filterKey ? paging.pages : 1;
   const visible = pageSize ? pageSize * pages : Infinity;
   const active = activeFilterCount(filters);
+  /* The areas the reader has narrowed to — the results take their identity. */
+  const scoped =
+    areaScopes && areaFacet === "area"
+      ? (filters.lists.area.filter((id) => id in areaScopes.areas) as DiscoveryAreaId[])
+      : [];
   const bounds = useMemo(() => priceBounds(products), [products]);
   const money = useMemo(
     () =>
@@ -238,7 +257,12 @@ export function CatalogBrowser({
   })).filter((f) => flagVisible(f));
 
   /* The active filters, as removable chips. */
-  const chips: { key: string; label: string; remove: CatalogFilters }[] = [
+  const chips: {
+    key: string;
+    label: string;
+    remove: CatalogFilters;
+    area?: DiscoveryAreaId;
+  }[] = [
     ...(filters.query.trim()
       ? [{ key: "q", label: `“${filters.query.trim()}”`, remove: { ...filters, query: "" } }]
       : []),
@@ -247,6 +271,7 @@ export function CatalogBrowser({
         key: `${facet}:${value}`,
         label: labelFor(facet, value),
         remove: toggleValue(filters, facet, value),
+        area: facet === "area" ? (value as DiscoveryAreaId) : undefined,
       })),
     ),
     ...FLAG_FACETS.filter((flag) => filters.flags[flag]).map((flag) => ({
@@ -376,6 +401,7 @@ export function CatalogBrowser({
             {groups.map((group) => (
               <FacetGroup
                 key={group.facet}
+                areas={group.facet === "area"}
                 legend={group.legend}
                 options={group.options}
                 selected={filters.lists[group.facet]}
@@ -440,7 +466,29 @@ export function CatalogBrowser({
           </div>
         </details>
 
-        <div className={styles.results} id="catalog-results">
+        <div
+          className={styles.results}
+          id="catalog-results"
+          data-area={scoped.length === 1 ? scoped[0] : undefined}
+        >
+          {areaScopes && scoped.length > 0 ? (
+            <AreaScope
+              key={scoped.join()}
+              className={styles.scope}
+              areas={scoped}
+              name={
+                scoped.length === 1
+                  ? areaScopes.areas[scoped[0]].name
+                  : scoped.map((id) => copy.areaLabels[id] ?? id).join(" · ")
+              }
+              detail={
+                scoped.length === 1
+                  ? areaScopes.areas[scoped[0]].detail
+                  : areaScopes.several.replace("{n}", String(scoped.length))
+              }
+              links={scoped.length === 1 ? areaScopes.areas[scoped[0]].links : []}
+            />
+          ) : null}
           <div className={styles.toolbar}>
             {/* Announced, so a filter change is perceivable without sight. */}
             <Mono size="2xs" className={styles.count} aria-live="polite">
@@ -525,9 +573,12 @@ export function CatalogBrowser({
                     <button
                       type="button"
                       className={styles.activeChip}
+                      data-area={chip.area}
+                      data-symbol-host={chip.area ? "" : undefined}
                       onClick={() => setFilters(chip.remove)}
                       aria-label={`${copy.facets.remove}: ${chip.label}`}
                     >
+                      {chip.area ? <AreaIcon id={chip.area} className={styles.chipIcon} /> : null}
                       {chip.label}
                       <span aria-hidden="true">×</span>
                     </button>
@@ -568,6 +619,7 @@ export function CatalogBrowser({
                       world={product.world}
                       worldLabel={product.worldLabel}
                       areaId={product.areaId as never}
+                      areaLabel={product.areaId ? copy.areaLabels[product.areaId] : undefined}
                       eyebrow={product.categoryLabel}
                       name={product.name}
                       subtitle={product.subtitle}
@@ -624,7 +676,10 @@ function FacetGroup({
   selected,
   label,
   onToggle,
+  areas = false,
 }: {
+  /** The area facet: each option is its area — its symbol, its colour. */
+  areas?: boolean;
   legend: string;
   options: readonly FacetOption[];
   selected: readonly string[];
@@ -640,8 +695,13 @@ function FacetGroup({
         {options.map((option) => {
           const checked = selected.includes(option.value);
           return (
-            <li key={option.value}>
-              <label className={styles.option} data-empty={option.count === 0 || undefined}>
+            <li key={option.value} data-area={areas ? option.value : undefined}>
+              <label
+                className={styles.option}
+                data-empty={option.count === 0 || undefined}
+                data-checked={checked || undefined}
+                data-symbol-host={areas ? "" : undefined}
+              >
                 <input
                   type="checkbox"
                   className={styles.checkbox}
@@ -649,7 +709,12 @@ function FacetGroup({
                   disabled={option.count === 0 && !checked}
                   onChange={() => onToggle(option.value)}
                 />
-                <span className={styles.optionLabel}>{label(option.value)}</span>
+                <span className={styles.optionLabel}>
+                  {areas ? (
+                    <AreaIcon id={option.value as DiscoveryAreaId} className={styles.optionIcon} />
+                  ) : null}
+                  {label(option.value)}
+                </span>
                 <span className={styles.optionCount}>{String(option.count).padStart(2, "0")}</span>
               </label>
             </li>

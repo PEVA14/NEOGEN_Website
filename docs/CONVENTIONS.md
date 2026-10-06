@@ -138,6 +138,35 @@ a document level is never given an area colour.
 - **Colour is never the only carrier.** An area's name is in text beside its
   mark, everywhere.
 
+**An area is a sub-identity: its symbol and its colour, always together**
+(areas identity pass, 2026-10-05; `ui/AreaSignet.tsx`). The symbols are
+`AreaIcon`'s, never redrawn; the colours are `areas.css`'s, never new.
+
+| piece        | what                                                                        | where                                            |
+| ------------ | --------------------------------------------------------------------------- | ------------------------------------------------ |
+| `AreaSignet` | the symbol at identity scale: line, plate or deep; xs → xl                  | explorer, area masthead, research tiles, scopes  |
+| `AreaTag`    | symbol + name in `--area-text`; a link where it leads; `plate` for a page   | store cards, a product's identity line, a record |
+| `AreaScope`  | a list narrowed to an area: signet, name, count, catalogue ↔ research links | catalogue results, compendium                    |
+| `AreaMarks`  | membership in dense lists — the symbol at text size (`square`, `rule` too)  | compendium rows, lines, references, glossary     |
+
+- **Where an area is presented, its symbol leads** — a tab, a tile, a
+  masthead, a filter option. **Where something belongs to an area**, it
+  carries the tag. **Where a list is narrowed to an area**, the area arrives
+  (`AreaScope`) and leads across to the other half of the ecosystem.
+- **One exception to the name beside the mark: a product's `AreaBadge`.**
+  On a product page the area is a large signet beside the product's name; its
+  name slides out of the plate on hover, focus or tap (first tap shows, the
+  second follows the link) and is always the link's accessible name. The
+  page names the area in text again in its profile's routes.
+- **A flagship carries its world, not its area tag.** Lines, sources and
+  document levels carry neither.
+- **The symbols answer** (`styles/area-symbols.css`): each has one gesture
+  from what it draws, held while its host (`data-symbol-host`) is hovered or
+  focused, eased back after; choosing plays a short arrival once. Settling
+  curves only, always back to the drawing, nothing under reduced motion. A
+  new surface that carries a symbol marks itself a host — it never writes
+  its own symbol animation.
+
 ## 5. Responsive — CSS-first
 
 **Layout is handled in CSS. There is no JavaScript breakpoint logic.**
@@ -1328,10 +1357,11 @@ fragment is a choice of arms (`arms`, clockwise from the top) and the hub.
   footer — never in or beside a figure, the archive plate, the map, lines,
   citations or references. Far larger and fainter than any figure, never
   clickable (`pointer-events: none`), `aria-hidden`.
-- **It moves only at the footer and in "Explora por área"** (the footer:
-  `assemble="gather"`, the nodes travel in from beyond the footer along their
-  own arms, whole exactly when the page ends, then Living Ink; the explorer:
-  Living Ink). Every other field is static: the identity must survive a
+- **It moves only at the footer, in "Explora por área" and in the
+  `/productos` masthead** (the footer: `assemble="gather"`, the nodes travel
+  in from beyond the footer along their own arms, whole exactly when the page
+  ends, then Living Ink; the explorer and the masthead: Living Ink,
+  `READABLE_INK`). Every other field is static: the identity must survive a
   screenshot. Reduced motion: every field is whole and still.
 
 ### Living Ink (`brand/livingInk.ts`, `LivingLayer`; MarkField's `ink`)
@@ -1344,10 +1374,10 @@ depicts nothing and is never described as anything scientific.
 
 | layer       | what                                                                                         | where                       |
 | ----------- | -------------------------------------------------------------------------------------------- | --------------------------- |
-| drift       | node volume redistributing (the hub answers), neck tension, a rare migrating swell; 17s–2min | footer, explorer (`rest`)   |
-| episodes    | one region at a time swells / tenses / carries a bulge, then settles; 2 at most, out of step | explorer only (`episodes`)  |
-| pointer     | the nearest surface leans toward the pointer, follows with a lag, lets go slowly             | both (`disturb`), mouse/pen |
-| disturbance | a ripple round the surface from a tap, an area change or a connection closing; then settles  | both (`disturb`)            |
+| drift       | node volume redistributing (the hub answers), neck tension, a rare migrating swell; 17s–2min | every living field (`rest`) |
+| episodes    | one region at a time swells / tenses / carries a bulge, then settles; 2 at most, out of step | explorer, `/productos`      |
+| pointer     | the nearest surface leans toward the pointer, follows with a lag, lets go slowly             | all (`disturb`), mouse/pen  |
+| disturbance | a ripple round the surface from a tap, an area change or a connection closing; then settles  | all (`disturb`)             |
 
 - **Readable, not restless.** A living rest that nobody can see is not a
   living rest: the explorer's episodes move an edge 2–6px a second at desktop

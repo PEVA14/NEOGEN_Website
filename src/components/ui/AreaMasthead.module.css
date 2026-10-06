@@ -9,6 +9,7 @@
 .masthead {
   position: relative;
   padding-block: var(--space-3xl) var(--space-xl);
+  border-block-start: 3px solid var(--area-hue);
   background: var(--area-deep, var(--surface-inverse));
   color: var(--ink-inverse);
   overflow: hidden;
@@ -30,11 +31,37 @@
       color-mix(in oklab, var(--area-wash, var(--neogen-paper)) 26%, transparent),
       transparent 58%
     ),
+    radial-gradient(
+      40% 70% at 84% 34%,
+      color-mix(in oklab, var(--area-hue) 34%, transparent),
+      transparent 70%
+    ),
     linear-gradient(
       180deg,
       transparent 55%,
       color-mix(in oklab, var(--neogen-charcoal) 35%, transparent)
     );
+}
+
+/*
+ * THE SIGNET. In the flow above the eyebrow on a phone; on a wide screen it
+ * stands to the right of the name, at department scale, over the pooled hue.
+ */
+.emblem {
+  --signet: 5rem;
+  display: grid;
+  color: color-mix(in oklab, var(--area-hue) 70%, var(--neogen-paper));
+  margin-block-end: var(--space-md);
+}
+
+@media (min-width: 64rem) {
+  .emblem {
+    --signet: clamp(12rem, 4rem + 14vw, 17rem);
+    position: absolute;
+    inset-block-start: calc(-1 * var(--space-md));
+    inset-inline-end: calc(var(--gutter) + 6%);
+    margin: 0;
+  }
 }
 
 /* A hairline register across the field — the laboratory grid the hero

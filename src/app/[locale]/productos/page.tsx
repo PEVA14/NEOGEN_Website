@@ -106,6 +106,26 @@ export default async function ProductsPage({ params }: { params: Promise<{ local
     count: entries.filter((entry) => entry.areas.includes(area.id)).length,
   }));
 
+  /* Each area as the results' scope once the reader narrows to it: its
+     page and its research, one step away (areas identity pass). */
+  const scope = dict.discovery.scope;
+  const areaScopes = {
+    several: scope.several,
+    areas: Object.fromEntries(
+      areaShelf.map((area) => [
+        area.id,
+        {
+          name: dict.discovery.areas[area.id].title,
+          detail: fillTemplate(scope.products, { n: String(area.count) }),
+          links: [
+            { href: area.href, label: scope.toProducts },
+            { href: `${path(routes.compendium)}?area=${area.id}`, label: scope.toResearch },
+          ],
+        },
+      ]),
+    ),
+  };
+
   const stats = fillTemplate(store.stats, {
     products: String(published.length),
     presentations: String(published.reduce((n, p) => n + p.variants.length, 0)),
@@ -155,6 +175,7 @@ export default async function ProductsPage({ params }: { params: Promise<{ local
           moreCopy={store.more}
           variant="store"
           cardHeadingLevel={3}
+          areaScopes={areaScopes}
         />
       </StoreCollection>
     </PageTransition>

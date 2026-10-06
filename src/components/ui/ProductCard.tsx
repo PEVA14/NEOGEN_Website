@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { Mono } from "@/components/typography";
+import { AreaTag } from "@/components/ui/AreaSignet";
 import { SpecimenPlate } from "@/components/ui/SpecimenPlate";
 import { WorldDot } from "@/components/ui/WorldDot";
 import { CARD_SIZES, commerceStill, productMedia, stillMedia } from "@/content/media";
@@ -75,6 +76,12 @@ export interface ProductCardProps {
   worldLabel?: string;
   /** Primary discovery area — drives the plate's tone. */
   areaId?: DiscoveryAreaId | null;
+  /**
+   * The primary area's short name — "Metabolismo". With `areaId`, the card
+   * carries its area as an identity (symbol + name, in the area's colour)
+   * above the product name, ahead of the eyebrow.
+   */
+  areaLabel?: string;
   /** Area or category name, above the product name. */
   eyebrow?: string;
   name: string;
@@ -144,6 +151,7 @@ export function ProductCard({
   world,
   worldLabel,
   areaId = null,
+  areaLabel,
   eyebrow,
   name,
   subtitle,
@@ -264,6 +272,8 @@ export function ProductCard({
       <Link
         href={href}
         className={styles.link}
+        /* Its area's symbol answers the pointer (`styles/area-symbols.css`). */
+        data-symbol-host=""
         onFocus={warm}
         /* A finger has no hover; this is the last moment before the click. */
         onPointerDown={transition ? warm : undefined}
@@ -323,6 +333,15 @@ export function ProductCard({
         <span className={styles.body}>
           {world && worldLabel ? (
             <WorldDot world={world}>{worldLabel}</WorldDot>
+          ) : areaId && areaLabel ? (
+            /* The area first, as an identity; the catalogue classification
+               after it, as a fact. */
+            <Mono size="2xs" className={styles.eyebrow} data-identity="">
+              <AreaTag id={areaId}>{areaLabel}</AreaTag>
+              {eyebrow && eyebrow !== areaLabel ? (
+                <span className={styles.category}>{eyebrow}</span>
+              ) : null}
+            </Mono>
           ) : eyebrow ? (
             <Mono size="2xs" className={styles.eyebrow}>
               {eyebrow}

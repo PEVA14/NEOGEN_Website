@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Fragment, useEffect, useId, useRef, useState } from "react";
 
 import { Mono } from "@/components/typography";
-import { AreaIcon } from "@/components/ui/AreaIcon";
+import { AreaSignet } from "@/components/ui/AreaSignet";
 
 import { DepthMarks, type DepthMarksCopy, type RecordDepth } from "./DepthMarks";
 import styles from "./ResearchAreaIndex.module.css";
@@ -137,7 +137,7 @@ export function ResearchAreaIndex({
         const face = (
           <>
             <span className={styles.top}>
-              <AreaIcon id={entry.id} className={styles.icon} />
+              <AreaSignet id={entry.id} size="md" tone="plate" className={styles.icon} />
               <Mono size="2xs" className={styles.number} aria-hidden="true">
                 {entry.index}
               </Mono>
@@ -193,6 +193,7 @@ export function ResearchAreaIndex({
                   type="button"
                   id={`${id}-${entry.id}`}
                   className={styles.tile}
+                  data-symbol-host=""
                   style={{ "--share": entry.compounds / max } as CSSProperties}
                   aria-expanded={expanded}
                   aria-controls={expanded ? panelId : undefined}
@@ -207,6 +208,7 @@ export function ResearchAreaIndex({
                 <Link
                   href={entry.href}
                   className={styles.tile}
+                  data-symbol-host=""
                   style={{ "--share": entry.compounds / max } as CSSProperties}
                 >
                   {face}
@@ -235,7 +237,12 @@ export function ResearchAreaIndex({
                   <div className={styles.rosterInner}>
                     <div className={styles.rosterHead}>
                       <p className={styles.rosterTitle}>
-                        <AreaIcon id={openEntry.id} className={styles.rosterIcon} />
+                        <AreaSignet
+                          id={openEntry.id}
+                          size="sm"
+                          tone="plate"
+                          className={styles.rosterIcon}
+                        />
                         {openEntry.short}
                         <Mono size="2xs" className={styles.rosterCount}>
                           {openEntry.compounds} {copy.compounds.toLowerCase()}

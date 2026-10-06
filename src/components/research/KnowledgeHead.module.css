@@ -119,6 +119,18 @@
   min-inline-size: 0;
 }
 
+/* The record's areas, as places to go: their products. */
+.areaLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs) var(--space-lg);
+  list-style: none;
+  margin: var(--space-md) 0 0;
+  padding: 0;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
 /* A record's head, registered to its areas (color pass): the eyebrow reads in
    the record's area, beside its marks, and the head closes on its colour. */
 .head[data-registered="true"] {

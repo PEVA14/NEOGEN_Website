@@ -861,3 +861,21 @@
 .row[data-open] .inspectHead {
   --ink-muted: var(--ink-secondary);
 }
+
+/* The area, arriving: filtered to one area, the index opens on its scope. */
+.scope {
+  margin-block-end: var(--space-md);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .scope {
+    animation: scope-in var(--motion-duration-slow) var(--ease-settle) both;
+  }
+}
+
+@keyframes scope-in {
+  from {
+    opacity: 0;
+    translate: 0 -0.5rem;
+  }
+}

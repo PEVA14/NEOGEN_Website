@@ -1,0 +1,211 @@
+/*
+ * The area signet, tag and scope — see AreaSignet.tsx.
+ *
+ * The signet's own rules are `:where()` (no specificity), so a placement can
+ * set its size (`--signet`), ground or colour with one class.
+ */
+
+:where(.signet) {
+  --signet: 3rem;
+  box-sizing: border-box;
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  inline-size: var(--signet);
+  block-size: var(--signet);
+  color: var(--area-mark);
+}
+
+.symbol {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+:where(.signet[data-size="xs"]) {
+  --signet: 1.1em;
+}
+
+:where(.signet[data-size="sm"]) {
+  --signet: 2rem;
+}
+
+:where(.signet[data-size="lg"]) {
+  --signet: clamp(4.5rem, 3rem + 3.5vw, 7rem);
+}
+
+:where(.signet[data-size="xl"]) {
+  --signet: clamp(9rem, 5rem + 12vw, 16rem);
+}
+
+/* A drawn weight at display sizes: the same line, not a heavier one. */
+.signet:is([data-size="lg"], [data-size="xl"]) .symbol :is(path, circle, rect) {
+  vector-effect: non-scaling-stroke;
+  stroke-width: 3px;
+}
+
+.signet[data-size="xl"] .symbol :is(path, circle, rect) {
+  stroke-width: 4px;
+}
+
+/* The registration plate: wash, hairline frame, a rule in the mark colour. */
+:where(.signet[data-tone="plate"]) {
+  /* Relative to the signet itself (a % would follow the parent's width). */
+  padding: calc(var(--signet) * 0.18);
+  background: var(--area-wash);
+  box-shadow: inset 0 0 0 1px var(--area-line);
+  border-block-start: 2px solid var(--area-mark);
+}
+
+:where(.signet[data-tone="deep"]) {
+  /* Relative to the signet itself (a % would follow the parent's width). */
+  padding: calc(var(--signet) * 0.18);
+  background: var(--area-deep);
+  color: color-mix(in oklab, var(--area-hue) 72%, var(--neogen-paper));
+}
+
+/* --- The tag ---------------------------------------------------------------- */
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  color: var(--area-text);
+  text-decoration: none;
+}
+
+.tag .signet {
+  /* Optically on the cap height of the label beside it. */
+  translate: 0 -0.04em;
+}
+
+.tag[data-plate] {
+  gap: 0.75em;
+}
+
+.tag[data-plate] .signet {
+  translate: none;
+}
+
+.tagGo {
+  transition: translate var(--motion-duration-base) var(--ease-standard);
+}
+
+a.tag:hover .tagLabel {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+a.tag:hover .tagGo {
+  translate: 3px 0;
+}
+
+a.tag:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* --- The scope -------------------------------------------------------------- */
+
+.scope {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-sm) var(--space-md);
+  padding: var(--space-sm);
+  border-block-start: 1px solid var(--border-default);
+  --ink-muted: var(--ink-secondary);
+}
+
+.scope[data-single] {
+  background: linear-gradient(
+    90deg,
+    var(--area-wash),
+    color-mix(in oklab, var(--area-wash) 40%, var(--neogen-paper))
+  );
+  border-block-start: 2px solid var(--area-mark);
+}
+
+@media (min-width: 48rem) {
+  .scope {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    padding: var(--space-sm) var(--space-md);
+  }
+}
+
+.scopeSignets {
+  display: inline-flex;
+  gap: var(--space-2xs);
+}
+
+.scopeText {
+  display: grid;
+  gap: var(--space-3xs);
+  min-inline-size: 0;
+}
+
+.scopeName {
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-2xl);
+  line-height: 0.95;
+  letter-spacing: var(--tracking-tight);
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.scope[data-single] .scopeName {
+  color: var(--area-text);
+}
+
+.scopeDetail {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+
+.scopeLinks {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs) var(--space-md);
+}
+
+@media (min-width: 48rem) {
+  .scopeLinks {
+    grid-column: auto;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+}
+
+.scopeLink {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-primary);
+  text-decoration: underline;
+  text-decoration-color: var(--area-line);
+  text-underline-offset: 0.3em;
+  white-space: nowrap;
+}
+
+.scopeLink:hover {
+  text-decoration-color: var(--area-mark);
+}
+
+.scopeLink:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tagGo {
+    transition: none;
+  }
+}

@@ -4,6 +4,7 @@ import { ViewTransition, type ReactNode } from "react";
 import { MarkField } from "@/components/brand/MarkField";
 import { Mono } from "@/components/typography";
 import { AreaMarks } from "@/components/ui/AreaMarks";
+import { AreaTag } from "@/components/ui/AreaSignet";
 
 import styles from "./KnowledgeHead.module.css";
 
@@ -37,6 +38,7 @@ export function KnowledgeHead({
   children,
   transition,
   areas,
+  areaLinks,
 }: {
   crumbs: readonly Crumb[];
   crumbsLabel: string;
@@ -61,6 +63,12 @@ export function KnowledgeHead({
    * colour, which its index, numbers and connections then carry.
    */
   areas?: readonly DiscoveryAreaId[];
+  /**
+   * The record's areas as places to go (areas identity pass): each one's
+   * signet plate and name, leading to the area's products — research →
+   * catalogue in one step.
+   */
+  areaLinks?: readonly { id: DiscoveryAreaId; label: string; href: string }[];
 }) {
   const heading = (
     <h1 id={titleId} className={styles.title}>
@@ -110,6 +118,19 @@ export function KnowledgeHead({
             {meta.map((item) => (
               <li key={item}>
                 <Mono size="2xs">{item}</Mono>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {areaLinks && areaLinks.length > 0 ? (
+          <ul className={styles.areaLinks}>
+            {areaLinks.map((area) => (
+              <li key={area.id}>
+                <Mono size="2xs">
+                  <AreaTag id={area.id} href={area.href} plate>
+                    {area.label}
+                  </AreaTag>
+                </Mono>
               </li>
             ))}
           </ul>

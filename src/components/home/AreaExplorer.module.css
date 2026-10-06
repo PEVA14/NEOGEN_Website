@@ -133,8 +133,15 @@
     border-color var(--motion-duration-base) var(--ease-standard);
 }
 
+/* Every tab is its own area at rest — its symbol in its colour, a trace of
+   its wash — so the row reads as eight identities before one is chosen. */
+.tab {
+  background: color-mix(in oklab, var(--area-wash) 45%, var(--neogen-paper) 55%);
+}
+
 .tab:hover {
-  background: var(--neogen-paper);
+  background: var(--area-wash);
+  border-color: color-mix(in oklab, var(--area-mark) 35%, transparent);
 }
 
 .tab[aria-selected="true"] {
@@ -179,9 +186,9 @@
 }
 
 .tabIcon {
-  inline-size: 1.25rem;
-  block-size: 1.25rem;
-  color: var(--area-hue);
+  inline-size: 1.625rem;
+  block-size: 1.625rem;
+  color: var(--area-mark);
 }
 
 .tabName {
@@ -272,10 +279,19 @@
   }
 }
 
+/* The chosen area's plate, on paper over the section's wash: a label on
+   the shelf, not a swatch. */
 .introIcon {
-  inline-size: 3rem;
-  block-size: 3rem;
-  color: var(--area-hue);
+  grid-row: span 2;
+  align-self: start;
+  background: var(--neogen-paper);
+}
+
+@media (max-width: 63.999rem) {
+  .introIcon {
+    --signet: 4.5rem;
+    grid-row: auto;
+  }
 }
 
 .areaTitle {
@@ -361,7 +377,7 @@
     align-self: end;
   }
   .introIcon {
-    grid-row: 1;
+    grid-row: 1 / span 2;
     align-self: end;
   }
 }
@@ -428,6 +444,10 @@
 .more:focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: 2px;
+}
+
+.moreSignet {
+  color: color-mix(in oklab, var(--area-hue) 72%, var(--neogen-paper));
 }
 
 .moreFigure {

@@ -1,6 +1,8 @@
 import { Mono } from "@/components/typography";
 import { TextLink, WorldDot } from "@/components/ui";
+import { AreaBadge } from "@/components/ui/AreaBadge";
 import type { WorldId } from "@/config/worlds";
+import type { DiscoveryAreaId } from "@/data/discovery";
 
 import type { ReactNode } from "react";
 
@@ -60,8 +62,15 @@ export function CommercePanel({
   children,
   conditions,
   descriptor,
+  area,
 }: {
   copy: CommerceCopy;
+  /**
+   * The product's first area (not for a world's flagship): a large signet
+   * beside the name, its name shown on hover, focus or tap, leading to the
+   * area (areas identity pass, 2026-10-05).
+   */
+  area?: { id: DiscoveryAreaId; label: string; href: string };
   world: WorldId | null;
   /** Short world character label — "PRECISIÓN". Identity, never an action. */
   worldLabel: string;
@@ -106,16 +115,27 @@ export function CommercePanel({
         <WorldDot world={world} className={styles.identity}>
           {worldLabel}
         </WorldDot>
-      ) : (
+      ) : area ? null : (
         <Mono size="2xs" className={styles.identity}>
           {worldLabel}
         </Mono>
       )}
 
       {/* `data-product-name`: a world may set its own name (GLOW's is gold). */}
-      <h1 className={styles.name} data-product-name="">
-        {copy.name}
-      </h1>
+      {area ? (
+        /* The area as a large signet beside the name; its name on hover,
+           focus or tap (`AreaBadge`). */
+        <div className={styles.nameRow}>
+          <h1 className={styles.name} data-product-name="">
+            {copy.name}
+          </h1>
+          <AreaBadge id={area.id} label={area.label} href={area.href} />
+        </div>
+      ) : (
+        <h1 className={styles.name} data-product-name="">
+          {copy.name}
+        </h1>
+      )}
 
       {/* No SKU line. It is an internal identifier and customers do not shop
           by it; displaying `SKU — PLACEHOLDER` only advertised an empty field. */}

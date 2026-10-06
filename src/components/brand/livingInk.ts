@@ -134,6 +134,20 @@ export interface InkOptions {
   episodes?: { swell: number; tension: number; migrate: number };
 }
 
+/**
+ * THE READABLE MATERIAL of a macro field (owner, 2026-10-05: "I cannot
+ * perceive it moving", twice): the drift kept faint, and slow local episodes
+ * over it, in artwork units — at 60rem (~2px per unit) a node swells by
+ * ~12px over about four seconds, an edge moving 3–5px a second, which the eye
+ * reads as motion, not change. The homepage's "Explora por área" and the
+ * catalogue masthead.
+ */
+export const READABLE_INK = {
+  rest: 0.6,
+  disturb: 2.2,
+  episodes: { swell: 6, tension: 4, migrate: 5 },
+} as const;
+
 /*
  * AN EPISODE — one region of the material changing, slowly and coherently,
  * then settling: the drift alone moves a tenth of a pixel a second in every

@@ -23,3 +23,21 @@
   inline-size: 1.5rem;
   block-size: 3px;
 }
+
+/* The area's own symbol, at text size, in its mark colour. */
+.marks[data-variant="symbol"] {
+  gap: 0.2em;
+}
+
+.marks[data-variant="symbol"] .mark {
+  inline-size: 1.15em;
+  block-size: 1.15em;
+  background: none;
+  color: var(--area-mark);
+}
+
+.symbol {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+}

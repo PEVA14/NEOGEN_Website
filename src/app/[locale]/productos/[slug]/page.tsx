@@ -24,6 +24,7 @@ import { TermLens } from "@/components/motion/TermLens";
 import { RECORD_NAVIGATION, recordNames } from "@/components/research/recordTransition";
 import { Body, Mono } from "@/components/typography";
 import { TextLink } from "@/components/ui";
+import { AreaTag } from "@/components/ui/AreaSignet";
 import { PageTransition } from "@/components/vial-transition/PageTransition";
 import { BENCH } from "@/components/spec-ribbon/benches";
 import { RibbonBench } from "@/components/spec-ribbon/RibbonBench";
@@ -52,7 +53,7 @@ import {
   publishedProducts,
 } from "@/data/catalog";
 import { formatPrice, getAvailability, getPrices } from "@/data/commerce";
-import { productsInArea, publicAreasFor } from "@/data/discovery";
+import { productsInArea, publicAreasFor, type DiscoveryAreaId } from "@/data/discovery";
 import { isLocale, localeTags } from "@/i18n/config";
 import { getDictionary } from "@/i18n/getDictionary";
 import { localizePath } from "@/i18n/routing";
@@ -380,7 +381,14 @@ export default async function ProductPage({
     /** Areas and lines are destinations and carry the arrow; a term is a
         definition lookup, so it is set quiet and without one. */
     quiet?: boolean;
-    items: readonly { key: string; href: string; text: string; term?: string }[];
+    items: readonly {
+      key: string;
+      href: string;
+      text: string;
+      term?: string;
+      /** An area route carries its signet: the area as a place to go. */
+      area?: DiscoveryAreaId;
+    }[];
   }[] = [
     {
       label: pdp.research.routes,
@@ -388,6 +396,7 @@ export default async function ProductPage({
         key: area.id,
         href: path(routes.area(area.slug)),
         text: dict.discovery.areas[area.id].title,
+        area: area.id,
       })),
     },
     {
@@ -430,14 +439,20 @@ export default async function ProductPage({
             >
               {group.items.map((item) => (
                 <li key={item.key}>
-                  <TextLink
-                    href={item.href}
-                    arrow={!group.quiet}
-                    tone={group.quiet ? "muted" : "default"}
-                    term={item.term}
-                  >
-                    {item.text}
-                  </TextLink>
+                  {item.area ? (
+                    <AreaTag id={item.area} href={item.href} plate>
+                      {item.text}
+                    </AreaTag>
+                  ) : (
+                    <TextLink
+                      href={item.href}
+                      arrow={!group.quiet}
+                      tone={group.quiet ? "muted" : "default"}
+                      term={item.term}
+                    >
+                      {item.text}
+                    </TextLink>
+                  )}
                 </li>
               ))}
             </ul>
@@ -484,6 +499,16 @@ export default async function ProductPage({
           : undefined
       }
       world={product.world}
+      /* Not for a flagship: its world is its identity. */
+      area={
+        !product.world && areas[0]
+          ? {
+              id: areas[0].id,
+              label: dict.discovery.areas[areas[0].id].title,
+              href: path(routes.area(areas[0].slug)),
+            }
+          : undefined
+      }
       /*
        * THE EYEBROW, IN PRIORITY ORDER.
        *

@@ -42,6 +42,19 @@
   margin-block-start: var(--space-xs);
 }
 
+/* The name with its area's signet beside it, level with the name's top. */
+.nameRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-block-start: var(--space-xs);
+}
+
+.nameRow .name {
+  min-inline-size: 0;
+}
+
 /*
  * The product page's masthead, at the largest scale that still lets the whole
  * opening — plate, identity, price and action — land inside a 900px laptop

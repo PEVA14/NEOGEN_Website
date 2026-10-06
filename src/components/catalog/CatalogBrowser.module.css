@@ -881,3 +881,85 @@
 .browser[data-variant="store"] .count {
   white-space: nowrap;
 }
+
+/* --- Areas as identity (areas identity pass, 2026-10-05) -------------------
+ *
+ * The area facet is not eight checkboxes: each option is its area — its
+ * symbol in its colour, a trace of its wash on hover, the wash and a rule in
+ * its mark colour once chosen. A chosen area becomes the results' scope
+ * (`AreaScope`) and its chip carries its symbol.
+ */
+li[data-area] > .option {
+  margin-inline: calc(-1 * var(--space-2xs));
+  padding-inline: var(--space-2xs);
+  border-inline-start: 2px solid transparent;
+  transition: background-color var(--motion-duration-base) var(--ease-standard);
+}
+
+li[data-area] > .option:not([data-empty]):hover {
+  background: color-mix(in oklab, var(--area-wash) 60%, transparent);
+}
+
+li[data-area] > .option[data-checked] {
+  background: var(--area-wash);
+  border-inline-start-color: var(--area-mark);
+  --ink-muted: var(--ink-secondary);
+}
+
+li[data-area] .checkbox:checked {
+  background: var(--area-text);
+  border-color: var(--area-text);
+}
+
+li[data-area] .optionLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+}
+
+.optionIcon {
+  flex: none;
+  inline-size: 1.375rem;
+  block-size: 1.375rem;
+  color: var(--area-mark);
+}
+
+li[data-area] > .option[data-empty] .optionIcon {
+  opacity: 0.45;
+}
+
+.activeChip[data-area] {
+  border-color: var(--area-mark);
+  background: var(--area-wash);
+  color: var(--area-text);
+}
+
+.chipIcon {
+  inline-size: 1.125rem;
+  block-size: 1.125rem;
+  color: var(--area-mark);
+}
+
+/* Scoped to one area, the results' rules take its hairline. */
+.results[data-area] .toolbar {
+  border-block-end-color: var(--area-line);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .scope {
+    animation: scope-in var(--motion-duration-slow) var(--ease-settle) both;
+  }
+}
+
+@keyframes scope-in {
+  from {
+    opacity: 0;
+    translate: 0 -0.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  li[data-area] > .option {
+    transition: none;
+  }
+}

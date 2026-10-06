@@ -1,6 +1,8 @@
 import { Container } from "@/components/primitives";
 import { Mono } from "@/components/typography";
 
+import { AreaSignet } from "./AreaSignet";
+
 import styles from "./AreaMasthead.module.css";
 
 import type { DiscoveryAreaId } from "@/data/discovery";
@@ -25,6 +27,11 @@ export interface AreaFact {
  * warm, longevity mineral. The tone is the only thing that changes between
  * the eight; the composition is one composition, which is what keeps them a
  * system rather than eight designs.
+ *
+ * ITS SIGNET (areas identity pass, 2026-10-05): the area's own symbol at
+ * department scale beside its name, in its hue lifted for the dark ground,
+ * with the hue pooled behind it — the front door of a sub-identity, not a
+ * category heading.
  *
  * EVERY FACT IS FROM THE REGISTRY: how many compounds are filed here, the
  * cheapest way in, and which compounds a reader will recognise. Nothing is
@@ -63,6 +70,7 @@ export function AreaMasthead({
       </div>
 
       <Container width="full" className={styles.inner}>
+        <AreaSignet id={areaId} size="xl" tone="line" className={styles.emblem} />
         <Mono size="2xs" className={styles.eyebrow}>
           {index} — {eyebrow}
         </Mono>

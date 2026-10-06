@@ -2629,6 +2629,15 @@ const en: Dictionary = {
     all: "Full catalogue",
     countLabel: "Compounds",
     /** Area masthead copy — see `components/ui/AreaMasthead`. */
+    /** The area as a scope (areas identity pass, 2026-10-05). */
+    scope: {
+      products: "{n} compounds in the catalogue",
+      research: "{n} compounds in the compendium",
+      several: "{n} areas",
+      toProducts: "The area's products",
+      toResearch: "The area's research",
+      productsOf: "{area} products",
+    },
     masthead: {
       compounds: "Compounds in this area",
       examples: "Way in",

@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import type React from "react";
 
+import { READABLE_INK } from "@/components/brand/livingInk";
 import { MarkField } from "@/components/brand/MarkField";
 import { Container } from "@/components/primitives";
 import { AreaCap, AreaIcon, SpecimenPlate } from "@/components/ui";
@@ -91,8 +92,9 @@ export function StoreMasthead({
   return (
     <section className={styles.masthead} data-surface="dark" aria-labelledby="catalog-title">
       {/* The catalogue opens inside the mark: its hub behind the three
-          flagships, the connections passing under the cards. */}
-      <MarkField name="store" className={styles.mastheadField} />
+          flagships, the connections passing under the cards — as the same
+          living material as the homepage's area field. */}
+      <MarkField name="store" className={styles.mastheadField} ink={READABLE_INK} />
       <Container width="full">
         <div className={styles.mastheadGrid}>
           <div className={styles.intro}>
@@ -237,7 +239,7 @@ export function AreaShelf({
         <ul className={styles.areaList}>
           {areas.map((area, i) => (
             <li key={area.id} className={styles.areaItem} data-area={area.id}>
-              <Link prefetch={false} href={area.href} className={styles.area}>
+              <Link prefetch={false} href={area.href} className={styles.area} data-symbol-host="">
                 <span className={styles.areaHead}>
                   <AreaIcon id={area.id} className={styles.areaIcon} />
                   <span className={styles.areaIndex}>{String(i + 1).padStart(2, "0")}</span>

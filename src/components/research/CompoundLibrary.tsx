@@ -19,6 +19,7 @@ import {
 
 import { ValueRoll } from "@/components/motion/ValueRoll";
 import { AreaMarks } from "@/components/ui/AreaMarks";
+import { AreaScope, type AreaScopeLink } from "@/components/ui/AreaSignet";
 
 import { prefersReducedMotion } from "@/lib/reducedMotion";
 import { fold, foldIndex, matchesText } from "@/lib/search";
@@ -187,6 +188,7 @@ export function CompoundLibrary({
   lineGroups,
   copy,
   endpoint,
+  areaScopes,
 }: {
   entries: readonly LibraryEntry[];
   areas: readonly { id: string; label: string }[];
@@ -194,6 +196,12 @@ export function CompoundLibrary({
   copy: LibraryCopy;
   /** Where one compound's Quick Record is fetched: "/api/compendio/es/{slug}". */
   endpoint: string;
+  /**
+   * Each area as the index's scope once it is filtered to it (areas identity
+   * pass): its signet and name, how many compounds it holds, and the way to
+   * its products.
+   */
+  areaScopes?: Record<string, { name: string; detail: string; links: readonly AreaScopeLink[] }>;
 }) {
   const [search, setSearch] = useUrlSearch();
   const filters = useMemo(() => parse(search), [search]);
@@ -686,6 +694,18 @@ export function CompoundLibrary({
         </div>
       </div>
 
+      {/* ---- the area, arriving ------------------------------------------- */}
+      {filters.area && areaScopes?.[filters.area] ? (
+        <AreaScope
+          key={filters.area}
+          className={styles.scope}
+          areas={[filters.area as DiscoveryAreaId]}
+          name={areaScopes[filters.area].name}
+          detail={areaScopes[filters.area].detail}
+          links={areaScopes[filters.area].links}
+        />
+      ) : null}
+
       {/* ---- count and letters ------------------------------------------- */}
       <div className={styles.status}>
         <p className={styles.count} aria-live="polite">
@@ -844,6 +864,7 @@ const LibraryRow = memo(function LibraryRow({
          opens and on to the full record (one record, many magnifications). */
       data-area={entry.areas[0]?.id}
       data-open={isOpen ? "true" : undefined}
+      data-symbol-host=""
     >
       <Link
         id={`compound-${entry.slug}`}

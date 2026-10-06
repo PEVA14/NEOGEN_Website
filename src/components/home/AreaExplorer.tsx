@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { useId, useRef, useState, type KeyboardEvent } from "react";
 
+import { READABLE_INK } from "@/components/brand/livingInk";
 import { MarkField } from "@/components/brand/MarkField";
 import { useIndicator } from "@/components/motion/useIndicator";
 import { Container } from "@/components/primitives/Container";
 import { AreaIcon } from "@/components/ui/AreaIcon";
+import { AreaSignet } from "@/components/ui/AreaSignet";
 import { ProductCard } from "@/components/ui/ProductCard";
 
 import styles from "./AreaExplorer.module.css";
@@ -17,15 +19,6 @@ import type { DiscoveryAreaId } from "@/data/discovery";
 /* The field's fragment and its material (Living Ink). Constants, so
    a tab change does not hand the field new objects. */
 const AREA_ARMS = [0, 3] as const;
-const AREA_INK = {
-  rest: 0.6,
-  disturb: 2.2,
-  /* Readable living rest (owner, 2026-10-05: "I cannot perceive it moving",
-     twice): slow local episodes, in artwork units — at this field's scale
-     (~2px per unit) a node swells by ~12px over about four seconds, an edge
-     moving 3–5px a second, which the eye reads as motion, not change. */
-  episodes: { swell: 6, tension: 4, migrate: 5 },
-} as const;
 
 export interface ExplorerProduct {
   slug: string;
@@ -139,7 +132,7 @@ export function AreaExplorer({
     >
       {/* The hub and two of its nodes, entering from the right edge in the
           chosen area's colour — the area's atmosphere carries the mark. */}
-      <MarkField name="areas" className={styles.field} arms={AREA_ARMS} ink={AREA_INK} />
+      <MarkField name="areas" className={styles.field} arms={AREA_ARMS} ink={READABLE_INK} />
       <Container width="full">
         <header className={styles.head}>
           <p className={styles.index}>
@@ -167,6 +160,7 @@ export function AreaExplorer({
               tabIndex={index === active ? 0 : -1}
               className={styles.tab}
               data-area={area.id}
+              data-symbol-host=""
               onClick={() => open(index)}
               onKeyDown={onKey}
             >
@@ -189,7 +183,15 @@ export function AreaExplorer({
             {opened.has(index) ? (
               <>
                 <div className={styles.intro}>
-                  <AreaIcon id={area.id} className={styles.introIcon} />
+                  {/* The area's signet, at the scale of an identity: the
+                      section is this area, not a list filtered by it. */}
+                  <AreaSignet
+                    id={area.id}
+                    size="lg"
+                    tone="plate"
+                    enter
+                    className={styles.introIcon}
+                  />
                   <h3 className={styles.areaTitle}>{area.title}</h3>
                   <p className={styles.areaBody}>{area.body}</p>
                   <p className={styles.areaFacts}>
@@ -216,6 +218,7 @@ export function AreaExplorer({
                         slug={product.slug}
                         world={product.world}
                         areaId={area.id}
+                        areaLabel={area.short}
                         name={product.name}
                         href={product.href}
                         price={product.price}
@@ -231,7 +234,13 @@ export function AreaExplorer({
                     className={styles.shelfItem}
                     style={{ ["--i" as string]: area.products.length }}
                   >
-                    <Link href={area.href} className={styles.more}>
+                    <Link href={area.href} className={styles.more} data-symbol-host="">
+                      <AreaSignet
+                        id={area.id}
+                        size="md"
+                        tone="line"
+                        className={styles.moreSignet}
+                      />
                       <span className={styles.moreFigure}>{pad(area.count)}</span>
                       <span className={styles.moreLabel}>
                         {copy.all.replace("{n}", String(area.count))}
