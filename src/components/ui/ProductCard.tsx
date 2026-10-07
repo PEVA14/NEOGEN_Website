@@ -6,6 +6,7 @@ import { useEffect, useId, useRef, useState } from "react";
 
 import { Mono } from "@/components/typography";
 import { AreaTag } from "@/components/ui/AreaSignet";
+import { SimpleEffects } from "@/components/ui/SimpleEffects";
 import { SpecimenPlate } from "@/components/ui/SpecimenPlate";
 import { WorldDot } from "@/components/ui/WorldDot";
 import { CARD_SIZES, commerceStill, productMedia, stillMedia } from "@/content/media";
@@ -18,6 +19,7 @@ import { warmDestination } from "@/components/vial-transition/warm";
 
 import styles from "./ProductCard.module.css";
 
+import type { PublicSimpleEffects } from "@/content/effects";
 import type { WorldId } from "@/config/worlds";
 import type { DiscoveryAreaId } from "@/data/discovery";
 
@@ -87,6 +89,19 @@ export interface ProductCardProps {
   name: string;
   /** Alternative designation, under the name. */
   subtitle?: string | null;
+  /**
+   * What it is studied for, in plain language (`StudiedFor`), under the name.
+   * Clamped to three lines on the face; the product page shows it whole.
+   * Every summary opens with what was studied and in what — the model before
+   * the topic — so the clamp can shorten a sentence but never strengthen it.
+   */
+  studiedFor?: string | null;
+  /**
+   * Owner-authored Simple Effects, when approved: tags and one sentence under
+   * the name. Where present it takes the card's one orientation slot — the
+   * StudiedFor sentence then waits for the product page.
+   */
+  simpleEffects?: PublicSimpleEffects | null;
   href: string;
   /** Formatted "from" price. Null where none is set — the line is then absent. */
   price?: string | null;
@@ -155,6 +170,8 @@ export function ProductCard({
   eyebrow,
   name,
   subtitle,
+  studiedFor,
+  simpleEffects,
   href,
   price,
   priceFrom,
@@ -354,6 +371,12 @@ export function ProductCard({
             <Mono size="2xs" className={styles.subtitle}>
               {subtitle}
             </Mono>
+          ) : null}
+
+          {simpleEffects ? (
+            <SimpleEffects effects={simpleEffects} variant="card" />
+          ) : studiedFor ? (
+            <span className={styles.studied}>{studiedFor}</span>
           ) : null}
 
           <span className={styles.spacer} />

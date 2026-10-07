@@ -1,7 +1,8 @@
 import "server-only";
 
+import { publicSimpleEffects } from "@/content/effects";
 import { stillMedia } from "@/content/media";
-import { OVERVIEWS, publicCopy, type ProductOverview } from "@/content/overview";
+import { OVERVIEWS, publicCopy, publicStudiedFor, type ProductOverview } from "@/content/overview";
 import { formatStrength, presentationRange, productType, type Product } from "@/data/catalog";
 import { formatPrice, getAvailability, getPrices, type Money } from "@/data/commerce";
 import { publicAreasFor } from "@/data/discovery";
@@ -67,6 +68,9 @@ export async function catalogEntries(
       slug: product.slug,
       name: product.name,
       subtitle: product.subtitle,
+      /* Not for injected (preview) overviews: their statements are fixtures. */
+      studiedFor: overviews ? null : (publicStudiedFor(product.slug, locale)?.text ?? null),
+      simpleEffects: overviews ? null : publicSimpleEffects(product.slug, locale),
       category: product.category,
       categoryLabel: dict.products.catalog.categoryLabels[product.category] ?? product.category,
       productType: productType(product),

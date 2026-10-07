@@ -83,6 +83,20 @@
   text-wrap: pretty;
 }
 
+/*
+ * What it is studied for (comprehension pass): the descriptor's register, a
+ * step smaller, so it reads as the answer to "what is this?" and not as a
+ * second title — and so the opening still lands inside a laptop viewport.
+ */
+.orientation {
+  margin: var(--space-2xs) 0 0;
+  max-inline-size: 32rem;
+  color: var(--ink-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  text-wrap: pretty;
+}
+
 .rule {
   block-size: 1px;
   inline-size: 100%;

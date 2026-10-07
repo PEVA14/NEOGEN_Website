@@ -81,6 +81,12 @@ export interface RecordStatement {
 export interface CompoundRecord {
   product: Product;
   summary: string | null;
+  /**
+   * What the compound is studied for, in plain language (`StudiedFor`): the
+   * record's orientation, read before any statement. A restatement of the
+   * statements below it, never an addition to them.
+   */
+  studiedFor: string | null;
   mechanism: readonly RecordStatement[];
   research: readonly RecordStatement[];
   byArea: readonly { area: DiscoveryAreaId; statement: RecordStatement }[];
@@ -140,6 +146,7 @@ export function compoundRecord(slug: string, locale: Locale): CompoundRecord | n
   return {
     product,
     summary: o.summary,
+    studiedFor: o.studiedFor?.text ?? null,
     mechanism,
     research,
     byArea,
@@ -149,6 +156,7 @@ export function compoundRecord(slug: string, locale: Locale): CompoundRecord | n
     identity: publicIdentity(slug),
     text: [
       o.summary ?? "",
+      o.studiedFor?.text ?? "",
       ...mechanism.map((s) => s.text),
       ...research.map((s) => s.text),
       ...byArea.map((a) => a.statement.text),

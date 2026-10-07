@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "npm run lint && npm run typecheck && npm run check:catalog && npm run check:media && npm run check:commerce && npm run check:checkout && npm run check:payments && npm run check:operations && npm run check:quality && npm run check:content && npm run check:atlas && npm run build && npm run check:output",
+    "check": "npm run lint && npm run typecheck && npm run check:catalog && npm run check:media && npm run check:commerce && npm run check:checkout && npm run check:payments && npm run check:operations && npm run check:quality && npm run check:content && npm run check:effects && npm run check:atlas && npm run build && npm run check:output",
     "check:catalog": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-catalog.mjs",
     "check:commerce": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-commerce.mjs",
     "check:media": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-media.mjs",
@@ -25,6 +25,7 @@
     "capture:home": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/capture-home.mjs",
     "check:quality": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-quality.mjs",
     "check:content": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-content.mjs",
+    "check:effects": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-effects.mjs",
     "check:atlas": "node --experimental-strip-types --import ./scripts/lib/register-ts.mjs scripts/check-atlas.mjs"
   },
   "dependencies": {

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { publicSimpleEffects } from "@/content/effects";
 import { routes } from "@/config/routes";
 import { compoundRecord } from "@/content/compendium";
 import { termsInText } from "@/content/glossary";
@@ -97,6 +98,7 @@ export async function quickRecord(slug: string, locale: Locale): Promise<QuickRe
     recordData = {
       href: recordHref,
       summary: record.summary,
+      studiedFor: record.studiedFor,
       statements,
       notes: record.notes,
       sources,
@@ -143,6 +145,7 @@ export async function quickRecord(slug: string, locale: Locale): Promise<QuickRe
 
   return {
     slug,
+    simpleEffects: publicSimpleEffects(slug, locale),
     record: recordData,
     product: {
       href: path(routes.product(slug)),

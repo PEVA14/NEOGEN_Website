@@ -40,6 +40,7 @@ import { GlowConstituents } from "@/components/product/glow/GlowConstituents";
 import { GlowComposition } from "@/components/product/glow/GlowComposition";
 import { specimenFor } from "@/components/vial-transition/specimens";
 import { compoundRecord, hasRecord, lineIds } from "@/content/compendium";
+import { publicSimpleEffects } from "@/content/effects";
 import { termSpans, termsInText } from "@/content/glossary";
 import { publicOverview } from "@/content/overview";
 import { referencesForProduct } from "@/content/research";
@@ -505,6 +506,11 @@ export default async function ProductPage({
 
   const commercePanel = (
     <CommercePanel
+      /* "What is this?" in plain words, before any science (`StudiedFor`). The
+         Resumen científico below stays the evidence; this is orientation. */
+      orientation={overview?.studiedFor?.text ?? null}
+      /* Owner-authored Simple Effects — renders only when approved. */
+      effects={publicSimpleEffects(product.slug, locale)}
       descriptor={
         constituents
           ? (className) => (

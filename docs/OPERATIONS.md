@@ -129,6 +129,43 @@ then every route is a 404.
    as a second layer. This is not an identity provider: it has no 2FA and no
    password reset.
 
+### 3.1 Content: Simple Effects (`/ops/contenido/efectos`)
+
+The console's one content tool, not an order tool: the owner-authored tags
+and one-sentence descriptions per product (CONVENTIONS §20.14). Same
+sign-in, same 404-when-closed.
+
+- **List**: all 85 products, with tabs (all · no content · drafts · in
+  review · approved · flagged), search by name or slug, and each row's
+  status, warnings and last edit.
+- **Bulk status** (on the list): tick rows, or "Seleccionar todas las de
+  esta vista", then "Aprobar seleccionadas" or "Pasar a borrador". Only
+  the status changes. Each entry passes the same gate as a single save;
+  one missing a language or using an unknown tag is left as it was and
+  named in the summary. Warnings never skip an entry.
+- **Product** (`/ops/contenido/efectos/<slug>`): tags from the vocabulary,
+  the ES and EN sentences with a length counter, internal notes, the
+  status, warnings as you type, and a preview with the
+  public components (catalogue card, PDP, Vista rápida, record) in either
+  language. "Anterior / Siguiente" walks the catalogue for one-by-one
+  review.
+- **Warnings are advisory.** The editor flags dosing or administration
+  wording, personal recommendations, strong effect verbs, treatment verbs, a
+  missing translation and length, and repeats the count beside "Aprobado".
+  Simple Effects warnings are advisory editorial signals. They never
+  determine publication eligibility. Publication is an explicit owner
+  decision. Approval needs only both languages and known tags.
+- **Import** (`…/importar`): paste or upload CSV or JSON in the export's
+  shape, review the plan, then confirm. Everything arrives as a draft.
+- **Export** (`…/exportar?formato=csv|json`): every product, filled or not —
+  the template for drafting elsewhere.
+- **Tags** (`…/etiquetas`): add or relabel; a tag in use cannot be deleted.
+
+Saves go to `src/content/effects/simple-effects.json`. Edit locally, commit
+the file, and the next build publishes what is approved. A deployed copy
+cannot save (`read_only`). Each save records who saved it and when, plus a
+revision number that refuses a save from a stale tab.
+
 ## 4. Inventory
 
 Tracking is **opt-in per SKU**. A SKU is untracked, and sells without limit

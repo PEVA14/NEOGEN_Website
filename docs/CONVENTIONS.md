@@ -1550,6 +1550,7 @@ empty spectacle or invented science.
 | presentations / strengths    | `product.variants`                                     | — (every published product has ≥1)                             |
 | prices / availability        | the commerce layer                                     | "Sin precio"; the bag stays honest                             |
 | sourced scientific profile   | `publicOverview(slug, locale)`                         | no Resumen científico; Research routes only                    |
+| plain-language summary       | `publicStudiedFor(slug, locale)` (`StudiedFor`)        | no orientation line on the card, PDP, Vista rápida or record   |
 | scientific record            | `hasRecord` / `compoundRecord` (`content/compendium`)  | the PDP shows its whole profile; Research links the quick view |
 | references                   | `referencesForProduct` / the record                    | no rail                                                        |
 | glossary terms               | `termsInText` over the published text                  | no terms                                                       |
@@ -1639,6 +1640,35 @@ instructions or individualised recommendation renders (forbidden vocabulary
 blocks it in both locales). Profiles under owner review stay unpublished;
 material identity is never inferred from literature.
 
+**Plain-language summaries (`StudiedFor`, 2026-10-06).** One sentence per
+compound saying what it is studied for, for a reader with no biology —
+`content/overview/studiedFor.ts`, one canonical entry per slug, consumed
+unchanged by the catalogue card (clamped: three lines, four on a phone's
+two-up card), the PDP (under the name), Vista rápida (first line of the
+overview) and the record (the head's lede). Never authored per surface.
+
+- It is a restatement, not a statement. Every idea is a **concept** pinned to
+  an approved statement of the same product and to the exact words of that
+  statement it restates; every word outside the concepts must belong to a
+  closed framing list (`plainLanguage.ts`). A new idea therefore needs a
+  quote, and a quote needs an approved statement.
+- It renders only while every statement it rests on renders, in both
+  languages; its sources are those statements' sources.
+- "Studied for", never "for": no outcome promised, no "who should use it", no
+  marketing vocabulary (`promotionalTermIn`) and no dosing vocabulary
+  (`forbiddenTermIn`). The two languages state the same numbers.
+- What was studied, and in what, opens the sentence; what the compound is
+  follows. The model or population comes before the topic ("in rats…", "in
+  clinical trials…"), so the card's clamp can shorten a sentence but never
+  strengthen it.
+- Not searched. The catalogue and the research index find compounds by what
+  they are; matching a reader's words to what a compound was studied for
+  would be selection by goal.
+- A compound with no approved statement gets no summary and no fallback
+  sentence (Batch 6 included). The checks are structural: they prove
+  traceability, not that a plain word is a fair translation — that is a
+  scientific reader's job (`PROJECT_STATE` §8bc lists what to read first).
+
 ### 20.11 Research IA contract
 
 §17d "Research architecture". Compound-centred: search · browse · start from
@@ -1681,3 +1711,63 @@ record head, the homepage area field and the footer signature. Each
 `MarkField` placement keeps its own `--hub-x / --hub-y / --mark-h /
 --mark-tone` in its own stylesheet (§19's table): the variable contract is
 the shared system; the compositions stay different on purpose.
+
+### 20.14 Three content systems: Scientific Record, StudiedFor, Simple Effects
+
+Three layers describe a compound, and they are authored differently on
+purpose. They share a product slug and nothing else.
+
+| layer              | what it answers                        | who writes it                         | how it is checked                                                          | where it lives                                |
+| ------------------ | -------------------------------------- | ------------------------------------- | -------------------------------------------------------------------------- | --------------------------------------------- |
+| Scientific Record  | what the literature reports            | sourced statements, batch-reviewed    | every statement needs a public reference (`check:content`)                 | `content/overview`, `content/references`      |
+| StudiedFor         | what it is studied for, in plain words | restated from approved statements     | every idea traced to a quote of an approved statement (`plainLanguage.ts`) | `content/overview/studiedFor.ts` (Batch 7)    |
+| **Simple Effects** | what is it for, at a glance            | **the owner**, by hand or from drafts | **the owner** decides; warnings are advisory (`check:effects`)             | `content/effects/simple-effects.json`, `/ops` |
+
+**Simple Effects is editorial, not evidence.** A sentence there is never a
+scientific statement because the owner wrote it, and the layer can never
+change the record: it imports nothing from `content/overview`,
+`content/references`, the Areas or the research lines, and they import
+nothing from it (`check:effects` enforces both directions). Its tags are a
+comprehension vocabulary of their own. They never filter, rank, recommend
+or relate products, and search never reads them.
+
+**The workflow.** Draft (typed in `/ops/contenido/efectos`, or imported as
+CSV/JSON from any tool, an AI model included) → owner edit → owner approval
+→ the next build publishes it. An AI draft is unverified; approving it is
+the owner's decision, and checking any claim before approving is the
+owner's responsibility (owner direction, 2026-10-06: no review fields, no
+second reviewer, no hidden publication gate).
+
+**Simple Effects warnings are advisory editorial signals. They never
+determine publication eligibility. Publication is an explicit owner
+decision.**
+
+- **The editor warns.** Dosing or administration wording, personal
+  recommendations, strong effect verbs ("reduce", "mejora"), treatment
+  verbs ("trata", "previene"), a missing translation, no tags, too many tags
+  and over-long sentences are shown as warnings while editing and again
+  next to the status when approving. None of them blocks saving, approving,
+  rendering or importing.
+- **The owner decides.** Approval needs only both languages written and
+  tags that exist in the vocabulary — structure, never wording.
+  `publicSimpleEffects` renders an approved entry that meets those two
+  facts; drafts and entries in review never render.
+- **Approved stays approved.** Re-wording an approved entry keeps it
+  approved; the new wording publishes on the next build. Setting it back to
+  draft unpublishes it.
+- **Imports never publish.** Every changed row arrives as a draft, whatever
+  the file claims. An unchanged row is left alone, so re-importing an export
+  keeps approvals. A structurally invalid row (unknown product, duplicate
+  row, unknown tag, tags that disagree between languages) refuses the whole
+  import; risky wording never does — its warnings appear in the plan.
+
+**Storage** is the JSON file, versioned by git. The console writes it on a
+local machine; a deployed copy is read-only (a save returns `read_only`).
+The public site reads it at build time, so approval reaches customers on
+the next build, never by itself. Moving to a database means reimplementing
+`server/effects/store.ts`, nothing else.
+
+**On the surfaces** (`SimpleEffects`, one component in four variants):
+under the name on the catalogue card (taking the card's one orientation
+slot, ahead of StudiedFor), the PDP, Vista rápida and the record head. With
+no approved entry, nothing renders: no placeholder, no empty tags.

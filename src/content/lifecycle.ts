@@ -128,7 +128,8 @@ export const FORBIDDEN_PUBLIC_TERMS: readonly string[] = [
   ...FORBIDDEN_PUBLIC_WORDS,
 ];
 
-function fold(text: string): string {
+/** Lowercased, accents removed — how every vocabulary rule compares text. */
+export function fold(text: string): string {
   return text
     .toLocaleLowerCase("es")
     .normalize("NFD")

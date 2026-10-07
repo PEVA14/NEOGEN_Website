@@ -1,0 +1,1402 @@
+{
+  "version": 1,
+  "vocabulary": [
+    {
+      "id": "apetito",
+      "label": {
+        "es": "APETITO",
+        "en": "APPETITE"
+      }
+    },
+    {
+      "id": "peso",
+      "label": {
+        "es": "PESO",
+        "en": "WEIGHT"
+      }
+    },
+    {
+      "id": "glucosa",
+      "label": {
+        "es": "GLUCOSA",
+        "en": "GLUCOSE"
+      }
+    },
+    {
+      "id": "piel",
+      "label": {
+        "es": "PIEL",
+        "en": "SKIN"
+      }
+    },
+    {
+      "id": "cabello",
+      "label": {
+        "es": "CABELLO",
+        "en": "HAIR"
+      }
+    },
+    {
+      "id": "recuperacion",
+      "label": {
+        "es": "RECUPERACIÓN",
+        "en": "RECOVERY"
+      }
+    },
+    {
+      "id": "tejidos",
+      "label": {
+        "es": "TEJIDOS",
+        "en": "TISSUE"
+      }
+    },
+    {
+      "id": "musculo",
+      "label": {
+        "es": "MÚSCULO",
+        "en": "MUSCLE"
+      }
+    },
+    {
+      "id": "tendones",
+      "label": {
+        "es": "TENDONES",
+        "en": "TENDONS"
+      }
+    },
+    {
+      "id": "articulaciones",
+      "label": {
+        "es": "ARTICULACIONES",
+        "en": "JOINTS"
+      }
+    },
+    {
+      "id": "sueno",
+      "label": {
+        "es": "SUEÑO",
+        "en": "SLEEP"
+      }
+    },
+    {
+      "id": "energia",
+      "label": {
+        "es": "ENERGÍA",
+        "en": "ENERGY"
+      }
+    },
+    {
+      "id": "inflamacion",
+      "label": {
+        "es": "INFLAMACIÓN",
+        "en": "INFLAMMATION"
+      }
+    },
+    {
+      "id": "intestino",
+      "label": {
+        "es": "INTESTINO",
+        "en": "GUT"
+      }
+    },
+    {
+      "id": "hormonas",
+      "label": {
+        "es": "HORMONAS",
+        "en": "HORMONES"
+      }
+    },
+    {
+      "id": "cognicion",
+      "label": {
+        "es": "COGNICIÓN",
+        "en": "COGNITION"
+      }
+    },
+    {
+      "id": "longevidad",
+      "label": {
+        "es": "LONGEVIDAD",
+        "en": "LONGEVITY"
+      }
+    },
+    {
+      "id": "metabolismo",
+      "label": {
+        "es": "METABOLISMO",
+        "en": "METABOLISM"
+      }
+    },
+    {
+      "id": "salud-sexual",
+      "label": {
+        "es": "SALUD SEXUAL",
+        "en": "SEXUAL HEALTH"
+      }
+    },
+    {
+      "id": "inmunidad",
+      "label": {
+        "es": "INMUNIDAD",
+        "en": "IMMUNITY"
+      }
+    },
+    {
+      "id": "estres",
+      "label": {
+        "es": "ESTRÉS",
+        "en": "STRESS"
+      }
+    }
+  ],
+  "entries": {
+    "5-amino-1mq": {
+      "slug": "5-amino-1mq",
+      "status": "approved",
+      "tags": [
+        "metabolismo",
+        "peso"
+      ],
+      "description": {
+        "es": "Compuesto experimental investigado en relación con el metabolismo y el manejo del peso.",
+        "en": "An experimental compound researched in relation to metabolism and weight management."
+      },
+      "notes": "Compuesto experimental sin datos en humanos; la mayoría de la información proviene de estudios de laboratorio.",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "ace-031": {
+      "slug": "ace-031",
+      "status": "approved",
+      "tags": [
+        "musculo"
+      ],
+      "description": {
+        "es": "Compuesto experimental investigado por su posible papel en el crecimiento muscular.",
+        "en": "An experimental compound researched for its possible role in muscle growth."
+      },
+      "notes": "Los ensayos clínicos se detuvieron por efectos adversos; no está disponible para uso general.",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "adamax-with-adamantane": {
+      "slug": "adamax-with-adamantane",
+      "status": "approved",
+      "tags": [
+        "cognicion"
+      ],
+      "description": {
+        "es": "Se relaciona con la función cognitiva y el enfoque mental.",
+        "en": "Associated with cognitive function and mental focus."
+      },
+      "notes": "Evidencia muy limitada; principalmente investigación de origen. La adición de adamantano se asocia con una acción más prolongada.",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "adamax-without-adamantane": {
+      "slug": "adamax-without-adamantane",
+      "status": "approved",
+      "tags": [
+        "cognicion"
+      ],
+      "description": {
+        "es": "Se relaciona con la función cognitiva y el enfoque mental.",
+        "en": "Associated with cognitive function and mental focus."
+      },
+      "notes": "Evidencia muy limitada; principalmente investigación de origen.",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "ahk-cu": {
+      "slug": "ahk-cu",
+      "status": "approved",
+      "tags": [
+        "piel",
+        "cabello"
+      ],
+      "description": {
+        "es": "Se relaciona con la apariencia de la piel y el cabello.",
+        "en": "Associated with the appearance of skin and hair."
+      },
+      "notes": "Evidencia mayormente limitada a estudios de laboratorio y cosmética.",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "aod9604": {
+      "slug": "aod9604",
+      "status": "approved",
+      "tags": [
+        "peso",
+        "metabolismo"
+      ],
+      "description": {
+        "es": "Se investiga por su posible papel en el metabolismo de las grasas y el manejo del peso.",
+        "en": "Being researched for its possible role in fat metabolism and weight management."
+      },
+      "notes": "La evidencia en humanos es limitada; los estudios disponibles no muestran efectos consistentes.",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "ara-290": {
+      "slug": "ara-290",
+      "status": "approved",
+      "tags": [
+        "recuperacion",
+        "tejidos"
+      ],
+      "description": {
+        "es": "Se investiga por su posible papel en la protección y reparación de tejidos.",
+        "en": "Being researched for its possible role in tissue protection and repair."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "b12-methylcobalamin": {
+      "slug": "b12-methylcobalamin",
+      "status": "approved",
+      "tags": [
+        "energia"
+      ],
+      "description": {
+        "es": "Se relaciona con la energía y el funcionamiento normal del sistema nervioso.",
+        "en": "Associated with energy and normal nervous system function."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "bpc-10mg-tb-10mg": {
+      "slug": "bpc-10mg-tb-10mg",
+      "status": "approved",
+      "tags": [
+        "recuperacion",
+        "tejidos"
+      ],
+      "description": {
+        "es": "Combinación que se investiga por su posible papel en la reparación de tejidos y la recuperación.",
+        "en": "A combination being researched for its possible role in tissue repair and recovery."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "bpc-5mg-tb-5mg": {
+      "slug": "bpc-5mg-tb-5mg",
+      "status": "approved",
+      "tags": [
+        "recuperacion",
+        "tejidos"
+      ],
+      "description": {
+        "es": "Combinación que se investiga por su posible papel en la reparación de tejidos y la recuperación.",
+        "en": "A combination being researched for its possible role in tissue repair and recovery."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "bpc157": {
+      "slug": "bpc157",
+      "status": "approved",
+      "tags": [
+        "recuperacion",
+        "tejidos"
+      ],
+      "description": {
+        "es": "Se investiga por su posible papel en la reparación de tejidos y la recuperación después de lesiones.",
+        "en": "Being researched for its possible role in tissue repair and recovery after injuries."
+      },
+      "notes": "La evidencia en humanos es limitada; la mayoría de los datos son preclínicos o de estudios en curso.",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "cagrilintide": {
+      "slug": "cagrilintide",
+      "status": "approved",
+      "tags": [
+        "apetito",
+        "peso"
+      ],
+      "description": {
+        "es": "Se estudia por su relación con la reducción del apetito y el manejo del peso corporal.",
+        "en": "Studied for its relationship with appetite reduction and body weight management."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "cardiogen": {
+      "slug": "cardiogen",
+      "status": "approved",
+      "tags": [
+        "longevidad"
+      ],
+      "description": {
+        "es": "Se relaciona con la salud del corazón y los vasos sanguíneos.",
+        "en": "Associated with heart and blood vessel health."
+      },
+      "notes": "Evidencia muy limitada fuera de la investigación de origen.",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "cartalax": {
+      "slug": "cartalax",
+      "status": "approved",
+      "tags": [
+        "articulaciones"
+      ],
+      "description": {
+        "es": "Se relaciona con la salud de las articulaciones y el cartílago.",
+        "en": "Associated with joint and cartilage health."
+      },
+      "notes": "Evidencia muy limitada fuera de la investigación de origen.",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "cerebrolysin": {
+      "slug": "cerebrolysin",
+      "status": "approved",
+      "tags": [
+        "cognicion"
+      ],
+      "description": {
+        "es": "Se relaciona con la función cerebral y se estudia en contextos de recuperación neurológica.",
+        "en": "Associated with brain function and studied in neurological recovery contexts."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "cjc-1295-with-dac": {
+      "slug": "cjc-1295-with-dac",
+      "status": "approved",
+      "tags": [
+        "hormonas"
+      ],
+      "description": {
+        "es": "Se relaciona con la liberación de la hormona del crecimiento y su acción es más prolongada.",
+        "en": "Associated with growth hormone release and has a longer-lasting action."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "cjc-1295-without-dac": {
+      "slug": "cjc-1295-without-dac",
+      "status": "approved",
+      "tags": [
+        "hormonas"
+      ],
+      "description": {
+        "es": "Se relaciona con la liberación de la hormona del crecimiento.",
+        "en": "Associated with growth hormone release."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "cjc-1295-without-dac-ipamorelin": {
+      "slug": "cjc-1295-without-dac-ipamorelin",
+      "status": "approved",
+      "tags": [
+        "hormonas",
+        "recuperacion"
+      ],
+      "description": {
+        "es": "Combinación que se relaciona con la liberación de la hormona del crecimiento y la recuperación.",
+        "en": "A combination associated with growth hormone release and recovery."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "cortagen": {
+      "slug": "cortagen",
+      "status": "approved",
+      "tags": [
+        "cognicion"
+      ],
+      "description": {
+        "es": "Se relaciona con la función cerebral y el sistema nervioso.",
+        "en": "Associated with brain function and the nervous system."
+      },
+      "notes": "Evidencia muy limitada fuera de la investigación de origen.",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "crystagen": {
+      "slug": "crystagen",
+      "status": "approved",
+      "tags": [
+        "inmunidad"
+      ],
+      "description": {
+        "es": "Se relaciona con el sistema inmune y la defensa del organismo.",
+        "en": "Associated with the immune system and the body's defenses."
+      },
+      "notes": "Evidencia muy limitada fuera de la investigación de origen.",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "dihexa": {
+      "slug": "dihexa",
+      "status": "approved",
+      "tags": [
+        "cognicion"
+      ],
+      "description": {
+        "es": "Compuesto experimental investigado en relación con la función cognitiva.",
+        "en": "An experimental compound researched in relation to cognitive function."
+      },
+      "notes": "Evidencia muy limitada; principalmente estudios preclínicos.",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "dsip": {
+      "slug": "dsip",
+      "status": "approved",
+      "tags": [
+        "sueno"
+      ],
+      "description": {
+        "es": "Se relaciona con el sueño y se estudia por su posible papel en mejorar su calidad.",
+        "en": "Associated with sleep and studied for its possible role in improving its quality."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "epithalon": {
+      "slug": "epithalon",
+      "status": "approved",
+      "tags": [
+        "longevidad"
+      ],
+      "description": {
+        "es": "Se relaciona con el envejecimiento celular y se investiga en contextos de longevidad.",
+        "en": "Associated with cellular aging and studied in longevity contexts."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "follistatin-344": {
+      "slug": "follistatin-344",
+      "status": "approved",
+      "tags": [
+        "musculo"
+      ],
+      "description": {
+        "es": "Se investiga por su posible papel en el crecimiento muscular, principalmente en estudios de laboratorio.",
+        "en": "Being researched for its possible role in muscle growth, mainly in laboratory studies."
+      },
+      "notes": "Evidencia en humanos prácticamente inexistente; datos provienen de modelos animales y terapia génica experimental.",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "fox04-dir": {
+      "slug": "fox04-dir",
+      "status": "approved",
+      "tags": [
+        "longevidad"
+      ],
+      "description": {
+        "es": "Compuesto experimental investigado en relación con el envejecimiento celular.",
+        "en": "An experimental compound researched in relation to cellular aging."
+      },
+      "notes": "Evidencia muy limitada; principalmente estudios preclínicos.",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "gdf-8": {
+      "slug": "gdf-8",
+      "status": "approved",
+      "tags": [
+        "musculo"
+      ],
+      "description": {
+        "es": "Se relaciona con la regulación del crecimiento muscular. Se investiga por su posible papel en el control de la masa muscular.",
+        "en": "Associated with muscle growth regulation. Being researched for its possible role in muscle mass control."
+      },
+      "notes": "GDF-8 es miostatina; su inhibición se investiga para el crecimiento muscular, pero GDF-8 en sí es la proteína que limita el crecimiento.",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "ghk-cu": {
+      "slug": "ghk-cu",
+      "status": "approved",
+      "tags": [
+        "piel",
+        "cabello"
+      ],
+      "description": {
+        "es": "Se relaciona con la reparación de la piel y los tejidos. Puede ayudar a mejorar la apariencia de la piel.",
+        "en": "Associated with skin and tissue repair. May help improve the appearance of skin."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "ghrp-2-acetate": {
+      "slug": "ghrp-2-acetate",
+      "status": "approved",
+      "tags": [
+        "hormonas",
+        "apetito"
+      ],
+      "description": {
+        "es": "Se relaciona con la liberación de la hormona del crecimiento. También puede estimular el apetito.",
+        "en": "Associated with growth hormone release. It may also stimulate appetite."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "ghrp-6-acetate": {
+      "slug": "ghrp-6-acetate",
+      "status": "approved",
+      "tags": [
+        "hormonas",
+        "apetito"
+      ],
+      "description": {
+        "es": "Se relaciona con la liberación de la hormona del crecimiento. También se conoce por estimular el apetito.",
+        "en": "Associated with growth hormone release. Also known for stimulating appetite."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "glow": {
+      "slug": "glow",
+      "status": "approved",
+      "tags": [
+        "piel",
+        "recuperacion"
+      ],
+      "description": {
+        "es": "Mezcla de péptidos que se relaciona con la apariencia de la piel y la reparación de tejidos.",
+        "en": "A peptide blend associated with skin appearance and tissue repair."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "glutathione": {
+      "slug": "glutathione",
+      "status": "approved",
+      "tags": [
+        "piel",
+        "longevidad"
+      ],
+      "description": {
+        "es": "Se relaciona con la protección celular y se usa en contextos de salud de la piel.",
+        "en": "Associated with cellular protection and used in skin health contexts."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "gonadorelin-acetate": {
+      "slug": "gonadorelin-acetate",
+      "status": "approved",
+      "tags": [
+        "hormonas",
+        "salud-sexual"
+      ],
+      "description": {
+        "es": "Se relaciona con las hormonas reproductivas.",
+        "en": "Associated with reproductive hormones."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "hcg": {
+      "slug": "hcg",
+      "status": "approved",
+      "tags": [
+        "hormonas",
+        "salud-sexual"
+      ],
+      "description": {
+        "es": "Se relaciona con las hormonas reproductivas. Se usa en contextos de fertilidad y salud hormonal.",
+        "en": "Associated with reproductive hormones. Used in fertility and hormonal health contexts."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "healthy-hair-skin-nails-blend": {
+      "slug": "healthy-hair-skin-nails-blend",
+      "status": "approved",
+      "tags": [
+        "cabello",
+        "piel"
+      ],
+      "description": {
+        "es": "Mezcla orientada a la salud y apariencia del cabello, la piel y las uñas.",
+        "en": "A blend oriented toward the health and appearance of hair, skin, and nails."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "hexarelin-acetate": {
+      "slug": "hexarelin-acetate",
+      "status": "approved",
+      "tags": [
+        "hormonas"
+      ],
+      "description": {
+        "es": "Se relaciona con la liberación de la hormona del crecimiento.",
+        "en": "Associated with growth hormone release."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "hgh-fragment-176-191": {
+      "slug": "hgh-fragment-176-191",
+      "status": "approved",
+      "tags": [
+        "peso",
+        "metabolismo"
+      ],
+      "description": {
+        "es": "Se investiga por su posible papel en el metabolismo de las grasas y el manejo del peso.",
+        "en": "Being researched for its possible role in fat metabolism and weight management."
+      },
+      "notes": "La evidencia en humanos es limitada; los datos disponibles son principalmente preclínicos.",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "hmg": {
+      "slug": "hmg",
+      "status": "approved",
+      "tags": [
+        "hormonas",
+        "salud-sexual"
+      ],
+      "description": {
+        "es": "Se relaciona con las hormonas reproductivas y se usa en contextos de fertilidad.",
+        "en": "Associated with reproductive hormones and used in fertility contexts."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "humanin": {
+      "slug": "humanin",
+      "status": "approved",
+      "tags": [
+        "longevidad",
+        "metabolismo"
+      ],
+      "description": {
+        "es": "Se investiga por su posible papel en la protección celular y el envejecimiento.",
+        "en": "Being researched for its possible role in cellular protection and aging."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "igf-1lr3": {
+      "slug": "igf-1lr3",
+      "status": "approved",
+      "tags": [
+        "musculo"
+      ],
+      "description": {
+        "es": "Se investiga por su posible papel en el crecimiento muscular.",
+        "en": "Being researched for its possible role in muscle growth."
+      },
+      "notes": "Potente factor de crecimiento con riesgos significativos; la evidencia en humanos para uso recreativo es prácticamente inexistente.",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "ipamorelin": {
+      "slug": "ipamorelin",
+      "status": "approved",
+      "tags": [
+        "hormonas",
+        "recuperacion"
+      ],
+      "description": {
+        "es": "Se relaciona con la liberación de la hormona del crecimiento. Se investiga por su posible papel en la recuperación.",
+        "en": "Associated with growth hormone release. Being researched for its possible role in recovery."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "kisspeptin-10": {
+      "slug": "kisspeptin-10",
+      "status": "approved",
+      "tags": [
+        "hormonas",
+        "salud-sexual"
+      ],
+      "description": {
+        "es": "Se relaciona con las hormonas reproductivas y se estudia en contextos de fertilidad.",
+        "en": "Associated with reproductive hormones and studied in fertility contexts."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "klow": {
+      "slug": "klow",
+      "status": "approved",
+      "tags": [
+        "piel",
+        "recuperacion"
+      ],
+      "description": {
+        "es": "Mezcla de péptidos que se relaciona con la apariencia de la piel y la reparación de tejidos.",
+        "en": "A peptide blend associated with skin appearance and tissue repair."
+      },
+      "notes": "Composición específica no proporcionada; se asume un perfil similar a otras mezclas de reparación.",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "kpv": {
+      "slug": "kpv",
+      "status": "approved",
+      "tags": [
+        "inflamacion",
+        "piel"
+      ],
+      "description": {
+        "es": "Se relaciona con la respuesta inflamatoria y la salud de la piel.",
+        "en": "Associated with the inflammatory response and skin health."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "l-carnitine": {
+      "slug": "l-carnitine",
+      "status": "approved",
+      "tags": [
+        "energia",
+        "metabolismo"
+      ],
+      "description": {
+        "es": "Se relaciona con el metabolismo de las grasas y la producción de energía.",
+        "en": "Associated with fat metabolism and energy production."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "ll-37": {
+      "slug": "ll-37",
+      "status": "approved",
+      "tags": [
+        "inmunidad"
+      ],
+      "description": {
+        "es": "Se relaciona con la defensa natural del organismo contra infecciones.",
+        "en": "Associated with the body's natural defense against infections."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "mazdutide": {
+      "slug": "mazdutide",
+      "status": "approved",
+      "tags": [
+        "peso",
+        "apetito"
+      ],
+      "description": {
+        "es": "Se estudia por su relación con la pérdida de peso y la reducción del apetito.",
+        "en": "Studied for its association with weight loss and reduced appetite."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "melanotan-1": {
+      "slug": "melanotan-1",
+      "status": "approved",
+      "tags": [
+        "piel"
+      ],
+      "description": {
+        "es": "Se relaciona con el bronceado de la piel. Se ha estudiado junto con la exposición a la luz para oscurecer la piel.",
+        "en": "Associated with skin tanning. Studied together with light exposure to darken the skin."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "melanotan-2": {
+      "slug": "melanotan-2",
+      "status": "approved",
+      "tags": [
+        "piel",
+        "salud-sexual"
+      ],
+      "description": {
+        "es": "Se usa por su relación con el bronceado de la piel. También se ha estudiado en relación con la función sexual.",
+        "en": "Used for its association with skin tanning. Also studied in relation to sexual function."
+      },
+      "notes": "Producto no autorizado con reportes de efectos adversos graves; las afirmaciones sobre sus beneficios provienen principalmente de uso no regulado.",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "melatonin": {
+      "slug": "melatonin",
+      "status": "approved",
+      "tags": [
+        "sueno"
+      ],
+      "description": {
+        "es": "Se relaciona con el sueño y con la regulación del ciclo natural de sueño y vigilia.",
+        "en": "Associated with sleep and with regulating the natural sleep-wake cycle."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "mgf": {
+      "slug": "mgf",
+      "status": "approved",
+      "tags": [
+        "musculo",
+        "recuperacion"
+      ],
+      "description": {
+        "es": "Se investiga por su posible papel en el crecimiento y la recuperación del músculo.",
+        "en": "Being researched for its possible role in muscle growth and recovery."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "mots-c": {
+      "slug": "mots-c",
+      "status": "approved",
+      "tags": [
+        "metabolismo",
+        "energia"
+      ],
+      "description": {
+        "es": "Se investiga por su posible papel en el metabolismo y la energía celular.",
+        "en": "Being researched for its possible role in metabolism and cellular energy."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "nad": {
+      "slug": "nad",
+      "status": "approved",
+      "tags": [
+        "energia",
+        "longevidad"
+      ],
+      "description": {
+        "es": "Se relaciona con la energía celular y se investiga en contextos de envejecimiento.",
+        "en": "Associated with cellular energy and studied in aging contexts."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "oxytocin-acetate": {
+      "slug": "oxytocin-acetate",
+      "status": "approved",
+      "tags": [
+        "hormonas"
+      ],
+      "description": {
+        "es": "Se relaciona con el vínculo social y las respuestas emocionales.",
+        "en": "Associated with social bonding and emotional responses."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "p21-p021": {
+      "slug": "p21-p021",
+      "status": "approved",
+      "tags": [
+        "cognicion"
+      ],
+      "description": {
+        "es": "Compuesto experimental investigado en relación con la función cognitiva.",
+        "en": "An experimental compound researched in relation to cognitive function."
+      },
+      "notes": "Evidencia muy limitada; principalmente estudios preclínicos.",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "pe-22-28": {
+      "slug": "pe-22-28",
+      "status": "approved",
+      "tags": [
+        "cognicion"
+      ],
+      "description": {
+        "es": "Compuesto experimental investigado en relación con el estado de ánimo y la función cognitiva.",
+        "en": "An experimental compound researched in relation to mood and cognitive function."
+      },
+      "notes": "Evidencia muy limitada; principalmente estudios preclínicos.",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "peg-mgf": {
+      "slug": "peg-mgf",
+      "status": "approved",
+      "tags": [
+        "musculo",
+        "recuperacion"
+      ],
+      "description": {
+        "es": "Se investiga por su posible papel en el crecimiento y la recuperación del músculo.",
+        "en": "Being researched for its possible role in muscle growth and recovery."
+      },
+      "notes": "Se considera una versión de acción más prolongada de MGF; la evidencia en humanos es muy limitada.",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "pinealon": {
+      "slug": "pinealon",
+      "status": "approved",
+      "tags": [
+        "cognicion",
+        "sueno"
+      ],
+      "description": {
+        "es": "Se relaciona con la función cerebral y los ciclos de sueño.",
+        "en": "Associated with brain function and sleep cycles."
+      },
+      "notes": "Evidencia muy limitada fuera de la investigación de origen.",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "pt141": {
+      "slug": "pt141",
+      "status": "approved",
+      "tags": [
+        "salud-sexual"
+      ],
+      "description": {
+        "es": "Se relaciona con el deseo sexual y se estudia en contextos de función sexual.",
+        "en": "Associated with sexual desire and studied in sexual function contexts."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "relaxation-pm": {
+      "slug": "relaxation-pm",
+      "status": "approved",
+      "tags": [
+        "sueno",
+        "estres"
+      ],
+      "description": {
+        "es": "Mezcla orientada a la relajación y el sueño.",
+        "en": "A blend oriented toward relaxation and sleep."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "reta": {
+      "slug": "reta",
+      "status": "approved",
+      "tags": [
+        "apetito",
+        "peso",
+        "glucosa"
+      ],
+      "description": {
+        "es": "Se investiga por su posible papel en reducir el apetito, favorecer la pérdida de peso y controlar el azúcar en sangre.",
+        "en": "Being researched for its possible role in reducing appetite, supporting weight loss, and controlling blood sugar."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "selank": {
+      "slug": "selank",
+      "status": "approved",
+      "tags": [
+        "estres",
+        "cognicion"
+      ],
+      "description": {
+        "es": "Se relaciona con el manejo del estrés y la función cognitiva.",
+        "en": "Associated with stress management and cognitive function."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "selank-semax": {
+      "slug": "selank-semax",
+      "status": "approved",
+      "tags": [
+        "cognicion",
+        "estres"
+      ],
+      "description": {
+        "es": "Combinación que se relaciona con la función cognitiva y el manejo del estrés.",
+        "en": "A combination associated with cognitive function and stress management."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "semaglutide": {
+      "slug": "semaglutide",
+      "status": "approved",
+      "tags": [
+        "apetito",
+        "peso",
+        "glucosa"
+      ],
+      "description": {
+        "es": "Reduce el apetito, ayuda a comer menos y favorece la pérdida de peso. También ayuda a controlar el azúcar en sangre.",
+        "en": "Reduces appetite, helps you eat less, and supports weight loss. It also helps control blood sugar."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:10:23.328Z",
+      "updatedBy": "pablo"
+    },
+    "semax": {
+      "slug": "semax",
+      "status": "approved",
+      "tags": [
+        "cognicion",
+        "energia"
+      ],
+      "description": {
+        "es": "Se relaciona con la función cognitiva y el enfoque mental.",
+        "en": "Associated with cognitive function and mental focus."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "sermorelin": {
+      "slug": "sermorelin",
+      "status": "approved",
+      "tags": [
+        "hormonas"
+      ],
+      "description": {
+        "es": "Se relaciona con la producción natural de la hormona del crecimiento.",
+        "en": "Associated with the body's natural growth hormone production."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "snap-8": {
+      "slug": "snap-8",
+      "status": "approved",
+      "tags": [
+        "piel"
+      ],
+      "description": {
+        "es": "Se relaciona con la apariencia de la piel y la reducción de líneas de expresión.",
+        "en": "Associated with skin appearance and reducing expression lines."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "ss-31": {
+      "slug": "ss-31",
+      "status": "approved",
+      "tags": [
+        "energia",
+        "longevidad"
+      ],
+      "description": {
+        "es": "Se investiga por su posible papel en la energía celular y la protección de las células.",
+        "en": "Being researched for its possible role in cellular energy and cell protection."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "survodutide": {
+      "slug": "survodutide",
+      "status": "approved",
+      "tags": [
+        "peso",
+        "apetito"
+      ],
+      "description": {
+        "es": "En investigación se relaciona con la reducción del apetito y la pérdida de peso.",
+        "en": "In research, it is associated with reduced appetite and weight loss."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "tb500": {
+      "slug": "tb500",
+      "status": "approved",
+      "tags": [
+        "recuperacion",
+        "tejidos"
+      ],
+      "description": {
+        "es": "Se relaciona con la reparación de tejidos y se investiga por su posible papel en la recuperación.",
+        "en": "Associated with tissue repair and being researched for its possible role in recovery."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "tesamorelin": {
+      "slug": "tesamorelin",
+      "status": "approved",
+      "tags": [
+        "peso",
+        "hormonas"
+      ],
+      "description": {
+        "es": "Se estudia por su relación con la reducción de grasa abdominal y ciertas hormonas del crecimiento.",
+        "en": "Studied for its association with reducing abdominal fat and certain growth hormones."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "thymalin": {
+      "slug": "thymalin",
+      "status": "approved",
+      "tags": [
+        "inmunidad",
+        "longevidad"
+      ],
+      "description": {
+        "es": "Se relaciona con la función del sistema inmune y se estudia en contextos de envejecimiento.",
+        "en": "Associated with immune system function and studied in aging contexts."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "thymosin-alpha-1": {
+      "slug": "thymosin-alpha-1",
+      "status": "approved",
+      "tags": [
+        "inmunidad"
+      ],
+      "description": {
+        "es": "Se relaciona con el sistema inmune y se estudia por su posible papel en la defensa del organismo.",
+        "en": "Associated with the immune system and studied for its possible role in the body's defenses."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "tirzepatide": {
+      "slug": "tirzepatide",
+      "status": "approved",
+      "tags": [
+        "apetito",
+        "peso",
+        "glucosa"
+      ],
+      "description": {
+        "es": "Reduce el apetito y ayuda a bajar de peso. También ayuda a controlar el azúcar en sangre.",
+        "en": "Reduces appetite and helps with weight loss. It also helps control blood sugar."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "vesugen": {
+      "slug": "vesugen",
+      "status": "approved",
+      "tags": [
+        "longevidad"
+      ],
+      "description": {
+        "es": "Se investiga en relación con la salud de los vasos sanguíneos y el envejecimiento.",
+        "en": "Being researched in relation to blood vessel health and aging."
+      },
+      "notes": "Evidencia muy limitada fuera de la investigación rusa; la mayoría de los datos no están disponibles en inglés.",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    },
+    "vip": {
+      "slug": "vip",
+      "status": "approved",
+      "tags": [
+        "intestino",
+        "inmunidad"
+      ],
+      "description": {
+        "es": "Se relaciona con la función intestinal y la respuesta inmune.",
+        "en": "Associated with gut function and immune response."
+      },
+      "notes": "",
+      "source": "import",
+      "revision": 2,
+      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "updatedBy": "pablo"
+    }
+  }
+}

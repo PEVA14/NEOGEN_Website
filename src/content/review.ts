@@ -144,3 +144,23 @@ export const BATCH_5_REMAINDER_PROFILES: ContentStatus = "approved";
  * product documentation.
  */
 export const BATCH_6_RECORDLESS_AUDIT: ContentStatus = "owner-review";
+
+/**
+ * Batch 7 — the plain-language summaries (`content/overview/studiedFor.ts`),
+ * written 2026-10-06 for the comprehension pass: one sentence per compound
+ * saying what it is studied for, for a reader with no biology.
+ *
+ * Nothing new is sourced here. Each summary restates statements Batches 1–5
+ * already approved, and every idea in it is pinned to the exact words it
+ * restates (`StudiedFor.concepts`); a summary renders only while each of
+ * those statements does. Batch 6 is untouched: none of its ten compounds has
+ * a summary, and none will until the owner approves its profiles.
+ *
+ * OWNER REVIEW (owner, 2026-10-06): held until a scientific reader has gone
+ * through the wording concerns listed in `PROJECT_STATE` §8bc. While held,
+ * no summary renders anywhere and every surface reads as it did before the
+ * pass. A shorter, effect-first layer above these sentences is being
+ * reviewed separately (`docs/reviews/effect-layer-candidates.md`) and is not
+ * implemented.
+ */
+export const BATCH_7_PLAIN_SUMMARIES: ContentStatus = "owner-review";

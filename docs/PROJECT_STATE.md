@@ -1,6 +1,12 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-10-06**: **NEOGEN V1 UX/UI — consolidated and FROZEN**
+Last updated **2026-10-06**: **Simple Effects — an owner-authored
+comprehension layer with its own editor at `/ops/contenido/efectos`; the
+owner's 75 drafts imported, bulk approval added** (§8bd; committed). Before
+that, the same day: **comprehension pass — every compound with an
+approved profile now says, in one plain sentence, what it is studied for**
+(§8bc; committed with §8bd). Before that, the same day: **NEOGEN V1 UX/UI —
+consolidated and FROZEN**
 (§8bb): the approved experience unchanged, its rules written as one contract
 (CONVENTIONS §20), dead code removed, two offscreen loops paused, landmarks
 fixed, every gate and journey re-verified. Commerce has not started. Before
@@ -2606,6 +2612,181 @@ Evaluated on a production build in headless Chrome, at 1440×900 and 390×844,
 from the catalogue grid, the phone strip and by direct URL; reduced motion;
 GLOW's circle unchanged; at 4× CPU throttle on the phone there is no long task
 between the flight's start and the formation's end.
+
+## 8bd. Simple Effects — the owner-authored comprehension layer (2026-10-06)
+
+Owner direction: stop the effect-evidence research (it had only begun, in
+the session's scratchpad; nothing reached the repository) and build an
+**editorial** layer instead. Simple tags and one plain sentence per
+product, written by the owner (by hand or from any AI tool), published only
+once the owner approves it. Architecture only: **no descriptions written,
+nothing approved, nothing researched.** Follow-ups the same day (owner): the scientific/regulatory review fields and
+the reset-on-edit were removed, and content warnings were made advisory
+only — approval is the owner's call.
+
+- **Model**: `content/effects/types.ts`. Per product: status
+  (draft/review/approved), tag ids, ES/EN description, internal notes, source (manual/import), revision, last
+  edit and editor. A controlled tag vocabulary with ES/EN labels, seeded
+  with the owner's 14 example words (no entries).
+- **Persistence**: `content/effects/simple-effects.json`, written by the
+  console through `server/effects/store.ts` (atomic, serialized,
+  revision-checked), versioned by git, read by the site at build time. Not
+  the order database (no commerce coupling). A deployed copy is read-only.
+- **Editor**: `/ops/contenido/efectos` (list, product editor with live
+  warnings and a preview built from the public components, import, export,
+  tag vocabulary). OPERATIONS §3.1.
+- **Rules** (`content/effects/rules.ts`): **the editor warns, the owner
+  decides.** Dosing/administration wording, personal recommendations, strong
+  effect verbs and treatment verbs are advisory warnings, shown before
+  approval; they never block saving, approving, rendering or importing.
+  Approval needs only both languages and known tags. Approved copy stays
+  approved when re-worded. Imports always land as drafts. "Simple Effects
+  warnings are advisory editorial signals. They never determine publication
+  eligibility. Publication is an explicit owner decision."
+- **Public**: `publicSimpleEffects(slug, locale)` → `SimpleEffects` on the
+  catalogue card, PDP, Vista rápida and record head. **Zero approved
+  entries, so the site renders identically**: 0 of 418 prerendered pages
+  contain the component.
+- **Separate from the science**: the layer imports nothing from the
+  scientific record, Areas or research lines, and they import nothing from
+  it; search never reads it (`check:effects`, 98 assertions).
+- **StudiedFor (Batch 7) stays in owner-review.** Batch 6 is untouched.
+
+**Populated (owner, same day).** The owner's externally drafted JSON
+(`docs/reviews/simple-effects-import.json`, 85 rows) was normalised for tags
+only — `TISSUES` → `TISSUE` in 5 rows; no wording touched — and the
+vocabulary grew from 14 to 21 tags (hormonas, cognición, longevidad,
+metabolismo, salud sexual, inmunidad, estrés). The owner imported it: 75
+entries as drafts, 10 products left empty. What is approved is the owner's
+call, made in the console; `check:effects` reports the current count.
+
+**Bulk status** (owner request): the list page selects rows (or the whole
+view) and sets "Aprobado" or "Borrador" on all of them at once
+(`applyBulkStatus`, `bulkStatusAction`). Only the status changes; each entry
+passes the same structural gate as a single save, and one that fails is left
+as it was and named in the summary. Warnings never skip an entry.
+
+Approval does not reach customers until the file is committed and the site
+rebuilt.
+
+## 8bc. Comprehension — what each compound is studied for (2026-10-06)
+
+Owner brief: first-time users opened a product and asked "what does this
+actually do?". A **content comprehension** pass, not a design pass: one
+plain-language sentence per compound answering "what is this generally
+studied for?" — never "what should I take this for?". UX/UI stays frozen
+(§8bb); only the layout needed to hold one sentence was touched.
+
+**Model — `StudiedFor`** (`content/overview/types.ts`, registry
+`content/overview/studiedFor.ts`, rules `content/overview/plainLanguage.ts`).
+One canonical entry per slug, derived copy whose only lineage is sourced
+science. Every idea in the sentence is a _concept_: the words the sentence
+uses, the approved statement (same product) it restates, and the verbatim
+words of that statement it restates them from, per language. Every word left
+once the concepts are removed must belong to a closed framing list
+("studied", "in", "and"…). `publicStudiedFor` renders it only when it is
+approved, breaks no rule, and every statement it rests on renders in both
+languages; its references are those statements' references. Review switch:
+`BATCH_7_PLAIN_SUMMARIES` in `content/review.ts` — **back in `owner-review`**
+(owner, 2026-10-06): nothing renders until the wording concerns below are
+read. The surfaces are wired, but while the batch is held they read exactly as
+before.
+
+**Owner follow-up (2026-10-06): an effect-first layer.** The owner found the
+sentences still read like simplified abstracts and asked for a shorter layer
+above them: everyday tags plus one effect-first line, worded by a fixed
+claim-strength grammar (A direct · B qualified · C research topic · D none).
+Candidate copy for all 62 compounds, with sources and "NOT supported"
+boundaries, is in `docs/reviews/effect-layer-candidates.md` (A 7 · B 6 ·
+C 43 · D 6). **Not implemented, not approved.** It needs the owner's wording
+review and three decisions (legal review of class A outcome lines; when tags
+show on preclinical products; Dermorphin and Melanotan 2).
+
+**Coverage (85 published products).**
+
+- **30 specific** — a concrete subject of study with its model: Semaglutide,
+  Tirzepatide, RETA, Cagrilintide, Survodutide, Mazdutide, Tesamorelin,
+  AOD9604, Adipotide, L-carnitine, B12, BPC-157, TB-500, GHK-Cu, Thymosin
+  α-1, KPV, ARA-290, LL-37, Melanotan 1, CJC-1295 with DAC, GHRP-2, HCG,
+  Kisspeptin-10, PT-141, Oxytocin, VIP, NAD+, Glutathione, Melatonin,
+  Cerebrolysin.
+- **32 general** — what kind of compound it is, one narrow study, or a
+  blend's components: the two BPC+TB blends, GLOW, KLOW, Melanotan 2, MGF,
+  PEG-MGF, IGF-1 LR3, HGH Fragment 176-191, 5-amino-1MQ, SLU-PP-332,
+  Ipamorelin, Sermorelin, Hexarelin, GHRP-6, CJC-1295 without DAC,
+  CJC-1295 + Ipamorelin, Thymalin, AHK-Cu, GDF-8, ACE-031, MOTS-c, Humanin,
+  SS-31, FOXO4-DRI, Epithalon, P21, Dihexa, Selank, Semax, Selank+Semax,
+  Dermorphin.
+- **23 with no summary, and no fallback sentence** — Batch 6, still in owner
+  review and untouched (PE-22-28, DSIP, Follistatin 344, HMG, Gonadorelin,
+  Pinealon, Vesugen, Cortagen, Cardiogen, Cartalax); no approved literature
+  (Crystagen, SNAP-8, Adamax ×2, Lipo-C ×2, Lemon Bottle, Relaxation PM,
+  SUPER Human Blend, Healthy Hair Skin Nails Blend); supplies (sterile,
+  bacteriostatic and amino-acid water).
+
+**Where it renders when approved — one source, four surfaces, verified identical.**
+Catalogue card face (under the name; clamped to three lines, four on a
+phone's two-up card); PDP (`CommercePanel`, under the name, before the
+composition and the price — Add to bag still lands inside 1440×900); Vista
+rápida (the first line of Resumen, before "Lo que describe la fuente"); the
+record (the head's lede, after its purpose line). Resumen científico on the
+PDP is unchanged. Not added to search (catalogue or research index) — that
+would match a reader's goal to compounds — nor to the list view or the
+research index rows (dense tables; the opened row is Vista rápida).
+
+**Writing rule found by testing.** The first draft opened with identity ("A
+compound acting on two receptors, …"); at the card's clamp a newcomer saw
+only that. Every summary now opens with _what was studied, and in what_
+("Studied in clinical trials for its effects on body weight…"), model before
+topic, identity after — so the clamp shortens a sentence but never
+strengthens it. Re-tested on 26 sampled cards, ES and EN, 1440 and 390: each
+face names the subject of study before it cuts.
+
+**Validation added (`check:content`, 37,195 assertions).** Fixtures prove a
+summary is refused for: an untraced word (in either language — and the other
+language with it), a quote not in its statement, an unknown statement, a
+withdrawn statement or source, unapproved status, a non-science lineage,
+filing as a statement, marketing vocabulary (`promotionalTermIn`), dosing
+vocabulary, no research frame, differing numbers between languages, more than
+35 words. The registry: every summary belongs to a published product,
+renders in both languages with sources, is not a copy of a statement, and no
+product without an approved statement has one. Forbidden-term rules
+unchanged.
+
+**For a scientific reader first** (the checks prove traceability, not that a
+plain word is a fair translation):
+
+1. HbA1c → "blood sugar" (Semaglutide, Tirzepatide, RETA, Mazdutide).
+2. Melanotan 1: "a disease in which light causes painful skin reactions" for
+   "severe photodermatosis with acute phototoxicity".
+3. HGH Fragment 176-191: "based on the region of growth hormone linked to fat
+   breakdown" — the sources study AOD9604 (177–191 + Tyr), not this fragment.
+4. 5-amino-1MQ: "inhibitors of this enzyme were studied" — the cited work
+   used methylquinolinium analogues and "a potent NNMT inhibitor".
+5. LL-37: the rising and falling levels are of hCAP18, its parent protein
+   ("the protein it comes from").
+6. Epithalon: "(the ends of chromosomes)" is the one gloss that is a
+   definition rather than a restatement.
+7. Semax / Selank+Semax: "the hormone ACTH" — "hormone" is not in the
+   statement.
+8. SS-31: "a fat molecule" for phospholipid; GHK-Cu: "naturally present in
+   human blood" for plasma, "copper-binding" for "proposed to act as a
+   complex with copper".
+9. FOXO4-DRI: "remove senescent cells" for targeted apoptosis. Separately,
+   the _approved statement_ says "chemotoxic damage" in EN and "daño por
+   quimioterapia" in ES — a parity gap in Batch 5, not introduced here; the
+   summary says "toxic damage" in both.
+10. Dermorphin: accurate, but an opioid in rat overdose research on a shop
+    card is an owner decision.
+11. Cerebrolysin (ES): "ictus" is the statement's word; Mexican readers more
+    often say "evento vascular cerebral" or "embolia".
+
+**Gates.** `npm run check` (lint, typecheck, every content gate, build,
+check:output). axe: clean on the catalogue (ES/EN), standard, flagship and
+no-summary PDPs, the record and an area page at 1440 and 390. With a Vista
+rápida open in the research index, axe reports contrast on the _other_ rows —
+the existing deliberate 0.4 dimming (focus mode), not this pass. No page
+errors.
 
 ## 8bb. V1 consolidation and freeze (2026-10-06)
 

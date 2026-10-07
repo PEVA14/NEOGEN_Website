@@ -191,6 +191,11 @@
   text-transform: uppercase;
 }
 
+/* Owner-authored Simple Effects, above the sourced summary. */
+.effects {
+  margin-block-end: var(--space-sm);
+}
+
 .summary {
   font-size: var(--text-lg);
   line-height: var(--leading-relaxed);

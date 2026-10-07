@@ -18,6 +18,7 @@ import { ResearchAnchor } from "@/components/research/ResearchAnchor";
 import { recordNames } from "@/components/research/recordTransition";
 import { routes } from "@/config/routes";
 import { compoundRecord, recordSlugs, relatedByLines } from "@/content/compendium";
+import { publicSimpleEffects } from "@/content/effects";
 import { termSpans, termsInText } from "@/content/glossary";
 import { productType } from "@/data/catalog";
 import { publicAreasFor } from "@/data/discovery";
@@ -30,6 +31,7 @@ import { count, documentCount, fill, linkableLines, presentationLabels } from "@
 
 import doc from "@/components/research/KnowledgeDocument.module.css";
 import { AreaMarks } from "@/components/ui/AreaMarks";
+import { SimpleEffects } from "@/components/ui/SimpleEffects";
 
 import styles from "./page.module.css";
 
@@ -221,6 +223,10 @@ export default async function CompoundRecordPage({
               { label: dict.knowledge.crumbs.compendium, href: path(routes.compendium) },
             ]}
             current={product.name}
+            /* Owner-authored Simple Effects — renders only when approved. */
+            effects={
+              <SimpleEffects effects={publicSimpleEffects(product.slug, locale)} variant="record" />
+            }
             purpose={copy.purpose}
             crumbsLabel={dict.knowledge.crumbs.trail}
             eyebrow={[copy.label, ...areas.map((a) => dict.discovery.areas[a.id].title)].join(
@@ -239,7 +245,9 @@ export default async function CompoundRecordPage({
               href: `${path(routes.compendium)}?area=${a.id}`,
             }))}
             catalog={{ href: path(routes.product(product.slug)), label: copy.product.link }}
-            lede={record.summary ?? undefined}
+            /* What it is studied for, in plain words, before any statement:
+               the record's orientation (`StudiedFor`, comprehension pass). */
+            lede={record.studiedFor ?? record.summary ?? undefined}
             meta={[
               ...(product.subtitle ? [product.subtitle] : []),
               count(statementCount, counts.statements, counts.statement),

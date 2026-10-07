@@ -1,6 +1,8 @@
 import { Mono } from "@/components/typography";
 import { TextLink, WorldDot } from "@/components/ui";
 import { AreaBadge } from "@/components/ui/AreaBadge";
+import { SimpleEffects } from "@/components/ui/SimpleEffects";
+import type { PublicSimpleEffects } from "@/content/effects";
 import type { WorldId } from "@/config/worlds";
 import type { DiscoveryAreaId } from "@/data/discovery";
 
@@ -63,8 +65,22 @@ export function CommercePanel({
   conditions,
   descriptor,
   area,
+  orientation,
+  effects,
 }: {
   copy: CommerceCopy;
+  /**
+   * What the compound is studied for, in plain language (`StudiedFor`,
+   * comprehension pass): under the name, so "what is this?" is answered
+   * before the price, the composition or any science. Absent where no
+   * approved summary exists — the panel then reads as it always has.
+   */
+  orientation?: string | null;
+  /**
+   * Owner-authored Simple Effects, when approved (`content/effects`): above
+   * the sourced orientation — the plain answer first, then its evidence.
+   */
+  effects?: PublicSimpleEffects | null;
   /**
    * The product's first area (not for a world's flagship): a large signet
    * beside the name, its name shown on hover, focus or tap, leading to the
@@ -145,6 +161,10 @@ export function CommercePanel({
           {copy.subtitle}
         </Mono>
       ) : null}
+
+      <SimpleEffects effects={effects} variant="pdp" />
+
+      {orientation ? <p className={styles.orientation}>{orientation}</p> : null}
 
       {descriptor ? (
         descriptor(styles.descriptor)

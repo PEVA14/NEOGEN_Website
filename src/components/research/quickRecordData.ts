@@ -1,3 +1,5 @@
+import type { PublicSimpleEffects } from "@/content/effects";
+
 /**
  * THE QUICK RECORD PAYLOAD — what the compendium drawer shows for one compound.
  *
@@ -12,6 +14,9 @@
  *   docs      what has been documented about NEOGEN's own material — by
  *             product, presentation or lot — which is not science about the
  *             compound
+ *
+ * Plus, above all three, the owner-authored Simple Effects when approved
+ * (`simpleEffects`): editorial comprehension copy, never a statement.
  */
 export type StatementSection = "mechanism" | "research" | "area";
 export type StatementAspect = "safety" | "limits";
@@ -48,9 +53,13 @@ export interface QuickSource {
 
 export interface QuickRecordData {
   slug: string;
+  /** Owner-authored Simple Effects, when approved (`content/effects`). */
+  simpleEffects: PublicSimpleEffects | null;
   record: {
     href: string;
     summary: string | null;
+    /** What it is studied for, in plain language — read before anything else. */
+    studiedFor: string | null;
     statements: readonly QuickStatement[];
     /** Record notes: derived copy about what the sources cover. Unsourced by design. */
     notes: readonly string[];

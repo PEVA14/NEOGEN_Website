@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 
+import { SimpleEffects } from "@/components/ui/SimpleEffects";
+
 import styles from "./QuickRecord.module.css";
 
 import type { QuickRecordData, QuickSource, QuickStatement } from "./quickRecordData";
@@ -329,9 +331,16 @@ export function QuickRecord({
 
   const overview = (
     <>
+      {/* Owner-authored Simple Effects, when approved: the plain answer
+          before the sourced one. */}
+      <SimpleEffects effects={data.simpleEffects} variant="quick" className={styles.effects} />
       {record ? (
         <>
-          {record.summary ? <p className={styles.summary}>{record.summary}</p> : null}
+          {/* What it is studied for, in plain words, before the first
+              statement: whether to open the record starts here. */}
+          {record.studiedFor || record.summary ? (
+            <p className={styles.summary}>{record.studiedFor ?? record.summary}</p>
+          ) : null}
           {lead ? (
             <section className={styles.block}>
               <header className={styles.blockHead}>

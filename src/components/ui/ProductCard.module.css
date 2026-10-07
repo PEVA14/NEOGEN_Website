@@ -214,6 +214,34 @@
   text-transform: uppercase;
 }
 
+/*
+ * What it is studied for (comprehension pass): body text under the name, at
+ * most three lines. A clamp, not a second sentence — the product page shows
+ * the whole one.
+ */
+.studied {
+  display: -webkit-box;
+  margin-block-start: var(--space-3xs);
+  overflow: hidden;
+  color: var(--ink-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+/* A phone's two-up card is half as wide: a step smaller and a line longer,
+   so the sentence still reaches what was studied, not only how. */
+@container (max-width: 12rem) {
+  .studied {
+    font-size: var(--text-xs);
+    line-height: 1.4;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+  }
+}
+
 /* Pushes the commercial line to the bottom, so cards of different name
    lengths still align their prices across a row. */
 .spacer {

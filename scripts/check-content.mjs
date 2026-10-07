@@ -37,8 +37,13 @@ import {
   auditOverviews,
   citedReferenceIds,
   OVERVIEWS,
+  promotionalTermIn,
   publicFunctions,
   publicOverview,
+  publicStudiedFor,
+  STUDIED_FOR,
+  STUDIED_FOR_MAX_WORDS,
+  studiedForIssues,
 } from "../src/content/overview/index.ts";
 import { RESEARCH_FUNCTIONS, RESEARCH_FUNCTION_GROUPS } from "../src/content/functions.ts";
 import {
@@ -854,6 +859,236 @@ for (const slug of Object.keys(OVERVIEWS)) {
 assertions += Object.keys(OVERVIEWS).length;
 eq(auditOverviews().length, 0, "the declared overviews audit clean");
 
+/* ---- plain-language summaries: a restatement, never a new claim -------- */
+
+/*
+ * A `StudiedFor` sentence may only say what its product's approved statements
+ * say, in plainer words. The fixtures prove each rule refuses what it must;
+ * the registry checks prove every real summary passes them and renders.
+ */
+{
+  const trial = science({
+    id: "t1",
+    text: {
+      es: "Ensayo de fase 3 en adultos con obesidad: el peso corporal bajó.",
+      en: "Phase 3 trial in adults with obesity: body weight fell.",
+    },
+  });
+  const base = overview({ researchContext: [trial] });
+  const concepts = [
+    {
+      statement: "t1",
+      says: { es: "ensayos clínicos", en: "clinical trials" },
+      quote: { es: "Ensayo de fase 3", en: "Phase 3 trial" },
+    },
+    {
+      statement: "t1",
+      says: { es: "adultos con obesidad", en: "adults with obesity" },
+      quote: { es: "adultos con obesidad", en: "adults with obesity" },
+    },
+  ];
+  const entry = (overrides = {}) => ({
+    id: "alpha-studied-for",
+    text: {
+      es: "Se ha estudiado en ensayos clínicos en adultos con obesidad.",
+      en: "Studied in clinical trials in adults with obesity.",
+    },
+    scope: "specific",
+    concepts,
+    provenance: { class: "derived-copy", status: "approved", derivedFrom: ["scientific-source"] },
+    ...overrides,
+  });
+  const shown = (e, o = base, locale = "es") =>
+    publicOverview("alpha", locale, {
+      overviews: { alpha: o },
+      references: pool,
+      studiedFor: { alpha: e },
+    })?.studiedFor ?? null;
+  const rules = (e, o = base) =>
+    studiedForIssues(
+      e,
+      new Map([...o.researchContext, ...o.mechanismNotes].map((x) => [x.id, x])),
+    ).map((i) => i.rule);
+  const withText = (es, en) => entry({ text: { es, en } });
+
+  eq(
+    shown(entry())?.text,
+    "Se ha estudiado en ensayos clínicos en adultos con obesidad.",
+    "a summary whose every idea is traced renders",
+  );
+  eq(
+    shown(entry(), base, "en")?.references.map((r) => r.id),
+    ["r1"],
+    "…citing its statements' sources, and no others",
+  );
+  eq(
+    shown(entry({ provenance: { ...entry().provenance, status: "owner-review" } })),
+    null,
+    "a summary awaiting review does not render",
+  );
+  eq(
+    shown(
+      entry({
+        provenance: { class: "derived-copy", status: "approved", derivedFrom: ["product-fact"] },
+      }),
+    ),
+    null,
+    "a summary must derive from sourced science and nothing else",
+  );
+  eq(
+    shown(entry({ provenance: { class: "scientific-source", status: "approved" } })),
+    null,
+    "a summary may not pass itself off as a sourced statement",
+  );
+  const appetite = withText(
+    "Se ha estudiado en ensayos clínicos en adultos con obesidad.",
+    "Studied in clinical trials for appetite in adults with obesity.",
+  );
+  eq(shown(appetite, base, "en"), null, "an idea no statement holds cannot render");
+  eq(shown(appetite, base, "es"), null, "…in EITHER language — nor the other one with it");
+  ok(rules(appetite).includes("unaccounted_words"), "the audit names the untraced words");
+  eq(
+    shown(
+      entry({
+        concepts: [
+          { ...concepts[0], quote: { es: "Ensayo de fase 4", en: "Phase 4 trial" } },
+          concepts[1],
+        ],
+      }),
+    ),
+    null,
+    "a concept whose quote is not in its statement cannot render",
+  );
+  eq(
+    shown(entry({ concepts: [{ ...concepts[0], statement: "missing" }, concepts[1]] })),
+    null,
+    "a concept pointing at no statement cannot render",
+  );
+  eq(
+    shown(
+      entry(),
+      overview({
+        researchContext: [
+          { ...trial, provenance: { class: "scientific-source", status: "source-needed" } },
+        ],
+      }),
+    ),
+    null,
+    "a summary disappears with a statement it rests on",
+  );
+  eq(
+    shown(entry(), overview({ researchContext: [{ ...trial, references: ["r2"] }] })),
+    null,
+    "…and with that statement's sources",
+  );
+  ok(
+    rules(
+      withText(
+        "Te ayuda a bajar de peso en ensayos clínicos en adultos con obesidad.",
+        "Helps you lose weight in clinical trials in adults with obesity.",
+      ),
+    ).includes("promotional_term"),
+    "marketing language is refused",
+  );
+  for (const phrase of [
+    "burns fat",
+    "builds muscle",
+    "anti-aging",
+    "ideal for",
+    "best for",
+    "quema grasa",
+    "antienvejecimiento",
+  ]) {
+    ok(promotionalTermIn(phrase) !== null, `"${phrase}" is promotional`);
+  }
+  ok(promotionalTermIn("wound healing") === null, "…but a research topic is not");
+  ok(
+    rules(
+      withText(
+        "Se ha estudiado en ensayos clínicos en adultos con obesidad, por dosis.",
+        "Studied in clinical trials in adults with obesity, by dose.",
+      ),
+    ).includes("forbidden_term"),
+    "dosing language is refused in a summary as everywhere else",
+  );
+  ok(
+    rules(
+      withText("Adultos con obesidad: ensayos clínicos.", "Adults with obesity: clinical trials."),
+    ).length === 0,
+    "(control) a terse summary that still names its trials passes",
+  );
+  ok(
+    rules(
+      entry({
+        text: { es: "Adultos con obesidad.", en: "Adults with obesity." },
+        concepts: [concepts[1]],
+      }),
+    ).includes("no_research_frame"),
+    "a summary must say research happened, not only what a compound does",
+  );
+  ok(
+    rules(
+      entry({
+        text: {
+          es: "Se ha estudiado en 2 ensayos clínicos en adultos con obesidad.",
+          en: "Studied in 3 clinical trials in adults with obesity.",
+        },
+      }),
+    ).includes("numbers_differ"),
+    "the two languages may not state different numbers",
+  );
+  ok(
+    rules(
+      withText(
+        `Se ha estudiado en ensayos clínicos en adultos con obesidad${" y en adultos con obesidad".repeat(8)}.`,
+        `Studied in clinical trials in adults with obesity${" and in adults with obesity".repeat(8)}.`,
+      ),
+    ).includes("too_long"),
+    `a summary past ${STUDIED_FOR_MAX_WORDS} words is a paragraph, and refused`,
+  );
+  const sfAudit = auditOverviews({
+    overviews: { alpha: base },
+    references: pool,
+    studiedFor: { alpha: appetite },
+  }).map((i) => i.code);
+  ok(sfAudit.includes("studied_for_rule"), "the overview audit reports a broken summary");
+
+  /* The real registry. */
+  const published = new Set(publishedProducts.map((p) => p.slug));
+  const counts = { specific: 0, general: 0 };
+  for (const [slug, e] of Object.entries(STUDIED_FOR)) {
+    ok(published.has(slug), `summary \`${slug}\` belongs to a published product`);
+    ok(e.id === `${slug}-studied-for`, `summary \`${slug}\` has its canonical id`);
+    ok(OVERVIEWS[slug] !== undefined, `summary \`${slug}\` has an overview to restate`);
+    const es = publicStudiedFor(slug, "es");
+    const en = publicStudiedFor(slug, "en");
+    if (e.provenance.status === "approved") {
+      ok(es !== null && en !== null, `approved summary \`${slug}\` renders in both languages`);
+      ok((en?.references.length ?? 0) > 0, `summary \`${slug}\` carries sources`);
+    }
+    counts[e.scope] += 1;
+    /* A summary restates; it never repeats a statement word for word. */
+    const statements = [...OVERVIEWS[slug].researchContext, ...OVERVIEWS[slug].mechanismNotes];
+    ok(
+      statements.every((st) => st.text.en.trim() !== e.text.en.trim()),
+      `summary \`${slug}\` is not a copy of a statement`,
+    );
+  }
+  /* Nothing still under review, and nothing without approved literature,
+     acquires a summary: no statement of theirs renders. */
+  for (const product of publishedProducts) {
+    const o = publicOverview(product.slug, "en");
+    const statements = o ? o.researchContext.length + o.mechanismNotes.length : 0;
+    if (statements === 0) {
+      ok(
+        STUDIED_FOR[product.slug] === undefined,
+        `\`${product.slug}\` has no approved statement, so no summary`,
+      );
+    }
+  }
+  globalThis.__studiedForCounts = counts;
+}
+
 /* ---- research connection: one truth, both ends ------------------------- */
 
 for (const product of publishedProducts) {
@@ -1534,4 +1769,9 @@ if (failures.length) {
 console.log(
   `content check passed — ${assertions} assertions, ${REFERENCES.length} references / ` +
     `${Object.keys(OVERVIEWS).length} overviews declared, ${FORBIDDEN_PUBLIC_TERMS.length} forbidden stems, both dictionaries clean`,
+);
+console.log(
+  `plain-language summaries: ${Object.keys(STUDIED_FOR).length} ` +
+    `(${globalThis.__studiedForCounts.specific} specific, ${globalThis.__studiedForCounts.general} general), ` +
+    `each traced concept by concept to approved statements`,
 );

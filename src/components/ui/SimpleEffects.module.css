@@ -1,0 +1,63 @@
+/*
+ * SIMPLE EFFECTS — see SimpleEffects.tsx.
+ *
+ * Tags in the mono label register every surface already uses for its
+ * eyebrows; the sentence in body type, a step below each surface's own
+ * headline. Nothing new: the layer borrows each surface's existing voice.
+ */
+.effects {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+}
+
+.tags {
+  color: var(--ink-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.description {
+  color: var(--ink-primary);
+  line-height: var(--leading-normal);
+  text-wrap: pretty;
+}
+
+/* The card: three lines at most; the product page shows the whole sentence. */
+.effects[data-variant="card"] {
+  margin-block-start: var(--space-3xs);
+}
+
+.effects[data-variant="card"] .description {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: var(--text-sm);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+.effects[data-variant="pdp"] {
+  margin-block-start: var(--space-xs);
+  max-inline-size: 32rem;
+}
+
+.effects[data-variant="pdp"] .description {
+  font-size: var(--text-base);
+}
+
+.effects[data-variant="quick"] .description {
+  font-size: var(--text-lg);
+}
+
+.effects[data-variant="record"] {
+  margin-block-start: var(--space-xs);
+  max-inline-size: 42rem;
+}
+
+.effects[data-variant="record"] .description {
+  font-size: var(--text-lg);
+  line-height: var(--leading-relaxed);
+}

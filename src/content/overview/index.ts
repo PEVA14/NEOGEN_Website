@@ -2,15 +2,26 @@ import { RESEARCH_FUNCTION_IDS, type ResearchFunctionId } from "@/content/functi
 import { forbiddenTermIn, isPublishable } from "@/content/lifecycle";
 import { publicReferencesById, REFERENCES } from "@/content/references";
 
+import { studiedForIssues, type StudiedForIssue } from "./plainLanguage";
 import { OVERVIEWS } from "./registry";
+import { STUDIED_FOR } from "./studiedFor";
 
 import type { Locale } from "@/i18n/config";
 import type { Reference } from "@/content/references";
 import type { DiscoveryAreaId } from "@/data/discovery/types";
-import type { CopyBlock, ProductOverview, SourcedStatement, StatementAspect } from "./types";
+import type {
+  CopyBlock,
+  ProductOverview,
+  SourcedStatement,
+  StatementAspect,
+  StudiedFor,
+  StudiedForScope,
+} from "./types";
 
-export type { CopyBlock, ProductOverview, SourcedStatement } from "./types";
+export type { CopyBlock, ProductOverview, SourcedStatement, StudiedFor } from "./types";
 export { OVERVIEWS } from "./registry";
+export { STUDIED_FOR } from "./studiedFor";
+export { promotionalTermIn, studiedForIssues, STUDIED_FOR_MAX_WORDS } from "./plainLanguage";
 
 export interface PublicStatement {
   id: string;
@@ -19,8 +30,23 @@ export interface PublicStatement {
   aspect: StatementAspect | null;
 }
 
+/**
+ * What a compound is studied for, in plain language, as it renders: the
+ * sentence, how far it reaches, and the sources of the statements it
+ * restates — the same sources, never new ones.
+ */
+export interface PublicStudiedFor {
+  text: string;
+  scope: StudiedForScope;
+  /** The statements it restates, by id. */
+  statements: readonly string[];
+  references: readonly Reference[];
+}
+
 export interface PublicOverview {
   summary: string | null;
+  /** The orientation sentence (`StudiedFor`). Null where none renders. */
+  studiedFor: PublicStudiedFor | null;
   researchContext: readonly PublicStatement[];
   areasOfInvestigation: readonly { area: DiscoveryAreaId; statement: PublicStatement }[];
   mechanismNotes: readonly PublicStatement[];
@@ -36,7 +62,10 @@ export type OverviewIssueCode =
   | "derived_copy_without_lineage"
   | "empty_text"
   | "function_unknown"
-  | "function_without_statement";
+  | "function_without_statement"
+  | "studied_for_without_overview"
+  | "studied_for_rule"
+  | "studied_for_statement_not_public";
 
 export interface OverviewIssue {
   slug: string;
@@ -48,9 +77,15 @@ export interface OverviewIssue {
 interface Deps {
   overviews: Readonly<Record<string, ProductOverview>>;
   references: readonly Reference[];
+  /** Plain-language summaries. Absent in a fixture means none. */
+  studiedFor?: Readonly<Record<string, StudiedFor>>;
 }
 
-const DEFAULT_DEPS: Deps = { overviews: OVERVIEWS, references: REFERENCES };
+const DEFAULT_DEPS: Deps = {
+  overviews: OVERVIEWS,
+  references: REFERENCES,
+  studiedFor: STUDIED_FOR,
+};
 
 /**
  * Can this sourced statement render, in this locale?
@@ -137,6 +172,7 @@ function resolveOverview(slug: string, locale: Locale, deps: Deps): PublicOvervi
 
   const result: PublicOverview = {
     summary: publicCopy(overview.summary, locale),
+    studiedFor: resolveStudiedFor(slug, locale, deps),
     researchContext: pick(overview.researchContext),
     areasOfInvestigation: overview.areasOfInvestigation
       .map((entry) => {
@@ -159,6 +195,64 @@ function resolveOverview(slug: string, locale: Locale, deps: Deps): PublicOvervi
     result.keyReferences.length === 0 &&
     result.technicalNotes.length === 0;
   return empty ? null : result;
+}
+
+/** Every sourced statement in an overview, by id. */
+function statementsOf(overview: ProductOverview): ReadonlyMap<string, SourcedStatement> {
+  return new Map(
+    [
+      ...overview.researchContext,
+      ...overview.mechanismNotes,
+      ...overview.areasOfInvestigation.map((a) => a.statement),
+    ].map((s) => [s.id, s]),
+  );
+}
+
+/**
+ * Can this plain-language summary render, in this locale?
+ *
+ * All of: it is approved; it is derived copy whose only lineage is sourced
+ * science; it breaks none of the rules in `plainLanguage.ts`; and EVERY
+ * statement it restates renders in BOTH languages — so a summary can never
+ * outlive a statement it rests on, and neither language can carry a summary
+ * the other cannot. Its references are those statements' public references.
+ */
+function resolveStudiedFor(slug: string, locale: Locale, deps: Deps): PublicStudiedFor | null {
+  const entry = deps.studiedFor?.[slug];
+  const overview = deps.overviews[slug];
+  if (!entry || !overview) return null;
+  if (!isPublishable(entry.provenance)) return null;
+  const statements = statementsOf(overview);
+  if (studiedForIssues(entry, statements).length > 0) return null;
+
+  const ids = [...new Set(entry.concepts.map((c) => c.statement))];
+  const references = new Map<string, Reference>();
+  for (const id of ids) {
+    const statement = statements.get(id);
+    if (!statement) return null;
+    const es = publicStatement(statement, "es", deps.references);
+    const en = publicStatement(statement, "en", deps.references);
+    if (!es || !en) return null;
+    for (const ref of (locale === "es" ? es : en).references) references.set(ref.id, ref);
+  }
+  return {
+    text: entry.text[locale].trim(),
+    scope: entry.scope,
+    statements: ids,
+    references: [...references.values()],
+  };
+}
+
+/**
+ * The plain-language summary alone — for the surfaces that need nothing else
+ * (a catalogue card). Same rules, same cache, as the overview it belongs to.
+ */
+export function publicStudiedFor(
+  slug: string,
+  locale: Locale,
+  deps: Deps = DEFAULT_DEPS,
+): PublicStudiedFor | null {
+  return publicOverview(slug, locale, deps)?.studiedFor ?? null;
 }
 
 /**
@@ -324,6 +418,41 @@ export function auditOverviews(deps: Deps = DEFAULT_DEPS): readonly OverviewIssu
           itemId: block.id,
           code: "derived_copy_without_lineage",
         });
+      }
+    }
+  }
+  for (const [slug, entry] of Object.entries(deps.studiedFor ?? {})) {
+    const overview = deps.overviews[slug];
+    if (!overview) {
+      issues.push({ slug, itemId: entry.id, code: "studied_for_without_overview" });
+      continue;
+    }
+    const statements = statementsOf(overview);
+    for (const issue of studiedForIssues(entry, statements) as readonly StudiedForIssue[]) {
+      issues.push({
+        slug,
+        itemId: entry.id,
+        code: "studied_for_rule",
+        detail: [issue.rule, issue.locale, issue.detail].filter(Boolean).join(" · "),
+      });
+    }
+    /* An approved summary must render: one resting on a statement that does
+       not would vanish silently, which is a shorter page, not a failing check. */
+    if (entry.provenance.status === "approved") {
+      for (const id of new Set(entry.concepts.map((c) => c.statement))) {
+        const statement = statements.get(id);
+        if (!statement) continue;
+        const shown = (["es", "en"] as const).every((l) =>
+          publicStatement(statement, l, deps.references),
+        );
+        if (!shown) {
+          issues.push({
+            slug,
+            itemId: entry.id,
+            code: "studied_for_statement_not_public",
+            detail: id,
+          });
+        }
       }
     }
   }

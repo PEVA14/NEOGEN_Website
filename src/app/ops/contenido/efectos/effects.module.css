@@ -1,0 +1,198 @@
+/*
+ * SIMPLE EFFECTS — the editor's own layout. Everything else comes from the
+ * console's stylesheet (`ops.module.css`); this file only arranges.
+ */
+.intro {
+  max-inline-size: 46rem;
+  margin-block-start: var(--space-2xs);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+  align-items: flex-start;
+}
+
+.tagsCell {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  max-inline-size: 12rem;
+}
+
+.textCell {
+  max-inline-size: 26rem;
+  font-size: var(--text-sm);
+}
+
+.nowrapSmall {
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+/* --- bulk status --------------------------------------------------------- */
+
+.bulkBar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs) var(--space-md);
+  margin-block: var(--space-sm);
+}
+
+.bulkActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+  margin-inline-start: auto;
+}
+
+.selectCell {
+  inline-size: 2.75rem;
+}
+
+.selectBox {
+  block-size: 1.25rem;
+  inline-size: 1.25rem;
+}
+
+.bulkLine {
+  margin: 0;
+}
+
+.bulkSkipped {
+  margin: var(--space-3xs) 0 0;
+  padding-inline-start: var(--space-md);
+}
+
+.foot {
+  margin-block-start: var(--space-md);
+  font-size: var(--text-xs);
+}
+
+/* --- the editor ---------------------------------------------------------- */
+
+.editor {
+  display: grid;
+  gap: var(--space-lg);
+  align-items: start;
+}
+
+@media (min-width: 72rem) {
+  .editor {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.pager {
+  display: flex;
+  gap: var(--space-2xs);
+}
+
+.tagGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3xs) var(--space-sm);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.tagOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.textarea {
+  min-block-size: 5.5rem;
+  resize: vertical;
+}
+
+.counter {
+  font-size: var(--text-xs);
+}
+
+.counter[data-over="true"] {
+  color: var(--status-attention, #9a4a00);
+}
+
+.findings {
+  display: grid;
+  gap: var(--space-3xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+}
+
+.finding {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em;
+  align-items: baseline;
+}
+
+.radioRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+/* --- the preview ----------------------------------------------------------- */
+
+.preview {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.previewNote {
+  font-size: var(--text-xs);
+}
+
+.frame {
+  display: grid;
+  gap: var(--space-2xs);
+  padding: var(--space-sm);
+  border: 1px dashed var(--border-default);
+  background: var(--surface-base);
+}
+
+/* The real card, at a real card's width, and inert: it is a picture. */
+.cardFrame {
+  inline-size: min(100%, 17rem);
+  pointer-events: none;
+}
+
+.surfaceLabel {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.surfaceName {
+  margin: 0;
+  font-family: var(--font-display);
+  font-stretch: var(--font-stretch-display);
+  font-weight: 700;
+  font-size: var(--text-2xl);
+  line-height: 1;
+}
+
+.localeSwitch {
+  display: flex;
+  gap: var(--space-2xs);
+}
+
+.planTable td {
+  vertical-align: top;
+  font-size: var(--text-sm);
+}

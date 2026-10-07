@@ -27,7 +27,12 @@ import type {
  */
 export const OPS = {
   brand: "NEOGEN · Operaciones",
-  nav: { orders: "Pedidos", inventory: "Inventario", messages: "Mensajes" },
+  nav: {
+    orders: "Pedidos",
+    inventory: "Inventario",
+    messages: "Mensajes",
+    content: "Contenido",
+  },
   signOut: "Cerrar sesión",
   signedInAs: "Sesión",
 
@@ -150,6 +155,17 @@ export const OPS = {
     nothing_to_refund: "No hay un pago que reembolsar.",
     invalid_tracking_url: "La URL de rastreo debe ser https.",
     invalid_input: "Revisa los datos.",
+    stale: "Alguien guardó esta ficha mientras la editabas. Recarga para ver la versión actual.",
+    approval_blocked: "No se puede aprobar todavía. Revisa los requisitos de aprobación.",
+    read_only:
+      "Este entorno es de solo lectura: edita Simple Effects en local y confirma el archivo con git.",
+    malformed: "El archivo de Simple Effects no es válido. Corrígelo antes de editar.",
+    unreadable: "No se pudo leer el archivo de Simple Effects.",
+    unknown_product: "Ese producto no existe en el catálogo publicado.",
+    tag_exists: "Ya existe una etiqueta con ese identificador.",
+    tag_invalid: "Una etiqueta necesita texto en español y en inglés.",
+    tag_in_use: "Esa etiqueta está en uso. Quítala de las fichas antes de eliminarla.",
+    bulk_empty: "No seleccionaste ninguna ficha.",
     duplicate: "Ya estaba registrado.",
     not_found: "No existe ese pedido.",
     conflict: "El pedido cambió mientras tanto. Vuelve a intentarlo.",
@@ -180,6 +196,10 @@ export const OPS = {
     ack: "Marcado como revisado.",
     external: "Referencia externa añadida.",
     stock: "Inventario actualizado.",
+    effects_saved: "Ficha guardada.",
+    tag_added: "Etiqueta añadida.",
+    tag_updated: "Etiqueta actualizada.",
+    tag_deleted: "Etiqueta eliminada.",
   },
 
   events: {
@@ -260,3 +280,62 @@ export const dateTime = new Intl.DateTimeFormat("es-MX", {
 
 export const money = (amount: number) =>
   new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(amount);
+
+/**
+ * SIMPLE EFFECTS — the console's words for the owner-authored layer
+ * (`content/effects`). Kept apart from the order vocabulary above.
+ */
+export const EFFECTS = {
+  title: "Simple Effects",
+  eyebrow: "Contenido · capa editorial",
+  intro:
+    "Etiquetas y una frase sencilla por producto, escritas por el equipo. No es el registro científico: solo se publica lo aprobado, después de volver a compilar el sitio.",
+  status: { draft: "Borrador", review: "En revisión", approved: "Aprobado" },
+  filters: {
+    all: "Todos",
+    empty: "Sin contenido",
+    draft: "Borradores",
+    review: "En revisión",
+    approved: "Aprobados",
+    flagged: "Con avisos",
+  },
+  source: { manual: "Escrito en el editor", import: "Importado (p. ej., borrador de IA)" },
+  findings: {
+    forbidden_term: "Lenguaje de instrucción de uso",
+    personal_recommendation: "Recomendación personal",
+    unknown_tag: "Etiqueta desconocida",
+    strong_effect: "Afirmación de efecto fuerte",
+    therapeutic_claim: "Lenguaje de tratamiento",
+    missing_translation: "Falta la traducción",
+    no_tags: "Sin etiquetas",
+    too_many_tags: "Muchas etiquetas",
+    too_long: "Descripción larga",
+  },
+  /** Wording warnings are advisory; only an unknown tag stops approval. */
+  advisory: "Avisos editoriales: no impiden guardar ni aprobar. La decisión de publicar es tuya.",
+  findingHelp: {
+    unknown_tag: "Impide aprobar: la etiqueta no existe en el vocabulario.",
+  } as Record<string, string>,
+  blockers: {
+    description_es: "Falta la descripción en español",
+    description_en: "Falta la descripción en inglés",
+    unknown_tags: "Hay etiquetas que no existen en el vocabulario",
+  } as Record<string, string>,
+  plan: {
+    new: "Nueva",
+    changed: "Cambia",
+    unchanged: "Sin cambios",
+    empty: "Vacía (se ignora)",
+    error: "Error",
+  },
+  planNotes: {
+    name_differs: "El nombre no coincide con el catálogo (se usa el slug)",
+    notes_ignored_on_unchanged: "Notas ignoradas: el texto no cambió",
+  } as Record<string, string>,
+  problems: {
+    empty: "No hay nada que importar.",
+    json_invalid: "El JSON no es válido.",
+    json_shape: "El JSON debe ser una lista de filas (como la exportación).",
+    csv_no_slug: "El CSV necesita una columna «slug».",
+  } as Record<string, string>,
+};

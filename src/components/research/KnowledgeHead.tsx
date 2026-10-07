@@ -81,6 +81,7 @@ export function KnowledgeHead({
   current,
   purpose,
   catalog,
+  effects,
 }: {
   crumbs: readonly Crumb[];
   crumbsLabel: string;
@@ -127,6 +128,12 @@ export function KnowledgeHead({
    * catalogue ("Ver en el catálogo"), set apart from the research links.
    */
   catalog?: { href: string; label: string };
+  /**
+   * Owner-authored Simple Effects for a record's compound, when approved
+   * (`content/effects`) — under the title, before the page says what it is.
+   * Editorial, not evidence: the record's own sentences follow.
+   */
+  effects?: ReactNode;
 }) {
   const heading = (
     <h1 id={titleId} className={styles.title}>
@@ -158,6 +165,7 @@ export function KnowledgeHead({
         ) : (
           heading
         )}
+        {effects}
         {purpose ? <p className={styles.purpose}>{purpose}</p> : null}
         {lede ? <p className={styles.lede}>{lede}</p> : null}
         {meta && meta.length > 0 ? (

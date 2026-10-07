@@ -26,6 +26,8 @@ import type { WorldId } from "@/config/worlds";
 export type StrengthKind = "solid" | "solution" | "volume" | "iu" | "blend";
 export type AvailabilityValue = "in-stock" | "made-to-order" | "unavailable";
 
+import type { PublicSimpleEffects } from "@/content/effects";
+
 /** What the browser needs to know about one product. Thin and serialisable. */
 export interface CatalogProduct {
   id: string;
@@ -33,6 +35,18 @@ export interface CatalogProduct {
   slug: string;
   name: string;
   subtitle: string | null;
+  /**
+   * What it is studied for, in plain language (`StudiedFor`) — shown on the
+   * card, never searched: the catalogue's search finds products by what they
+   * ARE, and matching a reader's words to what a compound was studied for
+   * would be selection by goal (CONVENTIONS §20.10).
+   */
+  studiedFor: string | null;
+  /**
+   * Owner-authored Simple Effects (`content/effects`), when approved — also
+   * shown, never searched or filtered on, for the same reason.
+   */
+  simpleEffects: PublicSimpleEffects | null;
   category: string;
   categoryLabel: string;
   productType: string;

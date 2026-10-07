@@ -623,6 +623,8 @@ export function CatalogBrowser({
                       eyebrow={product.categoryLabel}
                       name={product.name}
                       subtitle={product.subtitle}
+                      studiedFor={product.studiedFor}
+                      simpleEffects={product.simpleEffects}
                       href={product.href}
                       price={product.price}
                       priceFrom={copy.from}

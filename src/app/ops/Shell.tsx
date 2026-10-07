@@ -7,15 +7,16 @@ import styles from "./ops.module.css";
 
 import type { FulfilmentState, PaymentState, ShipmentState, ShipmentSummary } from "@/domain/order";
 
-type Section = "orders" | "inventory" | "messages";
+type Section = "orders" | "inventory" | "messages" | "content";
 
 const LINKS: readonly { id: Section; href: string }[] = [
   { id: "orders", href: "/ops/pedidos" },
   { id: "inventory", href: "/ops/inventario" },
   { id: "messages", href: "/ops/mensajes" },
+  { id: "content", href: "/ops/contenido/efectos" },
 ];
 
-/** The console frame: one bar, three sections, who is signed in. */
+/** The console frame: one bar, four sections, who is signed in. */
 export function Shell({
   current,
   operator,
