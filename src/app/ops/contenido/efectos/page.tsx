@@ -27,10 +27,10 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Simple Effects" };
 
 /**
- * SIMPLE EFFECTS — every published product, what it says, and how far it is
- * from being publishable. Built for going through 85 products: the tabs say
- * what is missing, waiting or approved; the warnings column says what still
- * blocks approval.
+ * SIMPLE EFFECTS — every published product, what it says, and its status.
+ * Built for going through 85 products: the tabs say what is missing,
+ * waiting or approved; the warnings column is advisory (only an unknown tag
+ * blocks approval); the bulk bar approves or unpublishes a selection.
  */
 export default async function EffectsListPage({
   searchParams,

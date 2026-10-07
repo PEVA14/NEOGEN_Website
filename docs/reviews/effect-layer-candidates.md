@@ -1,5 +1,12 @@
 # Effect layer — candidate copy for owner review
 
+> **Superseded (2026-10-06).** The owner chose a different architecture:
+> Simple Effects, an owner-authored layer with its own editor
+> (`CONVENTIONS` §20.14, `PROJECT_STATE` §8bd). Nothing below was
+> implemented; it is kept as the record of what the approved statements
+> alone would support. The live wording is in
+> `src/content/effects/simple-effects.json`, not here.
+
 2026-10-06 · **Status: candidates only. Not implemented, not approved, not
 rendered anywhere.** Batch 7 (the evidence-oriented `StudiedFor` sentences) is
 also back in `owner-review`, so no plain-language copy currently reaches

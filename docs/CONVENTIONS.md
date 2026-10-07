@@ -1755,11 +1755,26 @@ decision.**
 - **Approved stays approved.** Re-wording an approved entry keeps it
   approved; the new wording publishes on the next build. Setting it back to
   draft unpublishes it.
+- **Statuses.** `draft` (default), `review` (an optional holding state
+  for the owner's own use — it never renders and nothing requires it) and
+  `approved`. Only `approved` renders.
+- **Bulk status is the same decision, many times.** The list can set
+  "Aprobado" or "Borrador" on a selection (`applyBulkStatus`). Only the
+  status changes; each entry passes the same structural gate as a single
+  save, one that fails is left as it was and named back, and warnings never
+  skip an entry.
 - **Imports never publish.** Every changed row arrives as a draft, whatever
   the file claims. An unchanged row is left alone, so re-importing an export
   keeps approvals. A structurally invalid row (unknown product, duplicate
   row, unknown tag, tags that disagree between languages) refuses the whole
   import; risky wording never does — its warnings appear in the plan.
+
+**The tag vocabulary** lives in the same file and is managed at
+`/ops/contenido/efectos/etiquetas`. A tag's id (what entries point at) never
+changes once created; relabelling changes only its ES/EN words; a tag in use
+cannot be deleted. An import matches tags by id or by either label, folded
+for case and accents, and refuses a word the vocabulary lacks — the
+vocabulary grows by an owner decision, never by an import.
 
 **Storage** is the JSON file, versioned by git. The console writes it on a
 local machine; a deployed copy is read-only (a save returns `read_only`).
@@ -1769,5 +1784,9 @@ the next build, never by itself. Moving to a database means reimplementing
 
 **On the surfaces** (`SimpleEffects`, one component in four variants):
 under the name on the catalogue card (taking the card's one orientation
-slot, ahead of StudiedFor), the PDP, Vista rápida and the record head. With
-no approved entry, nothing renders: no placeholder, no empty tags.
+slot, ahead of StudiedFor), the PDP (above the StudiedFor orientation),
+Vista rápida (above the overview) and the record head (under the title).
+With no approved entry, nothing renders: no placeholder, no empty tags.
+What is currently written and approved is recorded in `PROJECT_STATE` §8bd
+and, authoritatively, in the file (`npm run check:effects` prints the
+count).

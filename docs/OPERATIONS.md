@@ -166,6 +166,23 @@ the file, and the next build publishes what is approved. A deployed copy
 cannot save (`read_only`). Each save records who saved it and when, plus a
 revision number that refuses a save from a stale tab.
 
+**From a draft to the live site**
+
+1. Run the site locally (`npm run dev`) with `OPS_ACCOUNTS` and
+   `OPS_SESSION_SECRET` in `.env.local` (§3, "Access"), and sign in at `/ops/acceso`.
+2. Write the entries in the editor, or import them (`…/importar`). Imports
+   arrive as drafts. Extra columns in a file (for example a reviewer's
+   notes) are ignored; only the export's columns are read.
+3. Approve: one at a time in the editor ("Aprobado" → "Guardar"), or many
+   at once from the list. `next dev` shows an approved entry on the public
+   pages after a reload.
+4. Commit `src/content/effects/simple-effects.json` and push. The host's
+   next build is what customers see.
+
+To unpublish, set the entry (or a selection) back to "Borrador" and repeat
+step 4. "En revisión" is an optional holding state for your own use; it
+never renders.
+
 ## 4. Inventory
 
 Tracking is **opt-in per SKU**. A SKU is untracked, and sells without limit

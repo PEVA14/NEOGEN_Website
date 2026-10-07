@@ -258,6 +258,7 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 | `2d650d1`   | Documentation caught up with the 3D and product-media work                                                                      |
 | `ae3c8af`   | Peptide guide, editorial notes, FAQ, shipping facts, and the blocking research-use declaration (§8y)                            |
 | _this_      | RETA V3, with its mock-up label replaced at build time (§8z)                                                                    |
+| `48ce261`   | StudiedFor summaries and Simple Effects: the owner-authored layer, its editor, bulk status, the owner's 75 entries (§8bc, §8bd) |
 
 **Current priority (owner, 2026-09-17): V1 completion.** Make NEOGEN V1 as
 complete, polished and commercially effective as possible with the
@@ -2627,7 +2628,8 @@ only — approval is the owner's call.
 - **Model**: `content/effects/types.ts`. Per product: status
   (draft/review/approved), tag ids, ES/EN description, internal notes, source (manual/import), revision, last
   edit and editor. A controlled tag vocabulary with ES/EN labels, seeded
-  with the owner's 14 example words (no entries).
+  with the owner's 14 example words and grown to 21 when the content was
+  imported (below).
 - **Persistence**: `content/effects/simple-effects.json`, written by the
   console through `server/effects/store.ts` (atomic, serialized,
   revision-checked), versioned by git, read by the site at build time. Not
@@ -2644,12 +2646,11 @@ only — approval is the owner's call.
   warnings are advisory editorial signals. They never determine publication
   eligibility. Publication is an explicit owner decision."
 - **Public**: `publicSimpleEffects(slug, locale)` → `SimpleEffects` on the
-  catalogue card, PDP, Vista rápida and record head. **Zero approved
-  entries, so the site renders identically**: 0 of 418 prerendered pages
-  contain the component.
+  catalogue card, PDP, Vista rápida and record head. Built empty (0 of 418
+  prerendered pages contained the component); populated the same day.
 - **Separate from the science**: the layer imports nothing from the
   scientific record, Areas or research lines, and they import nothing from
-  it; search never reads it (`check:effects`, 98 assertions).
+  it; search never reads it (`check:effects`; 264 assertions at commit).
 - **StudiedFor (Batch 7) stays in owner-review.** Batch 6 is untouched.
 
 **Populated (owner, same day).** The owner's externally drafted JSON
@@ -2657,8 +2658,15 @@ only — approval is the owner's call.
 only — `TISSUES` → `TISSUE` in 5 rows; no wording touched — and the
 vocabulary grew from 14 to 21 tags (hormonas, cognición, longevidad,
 metabolismo, salud sexual, inmunidad, estrés). The owner imported it: 75
-entries as drafts, 10 products left empty. What is approved is the owner's
-call, made in the console; `check:effects` reports the current count.
+entries as drafts, 10 products left empty (dermorphin, adipotide-fttp,
+slu-pp-332, both lipo-c, lemon-bottle, super-human-blend and the three
+waters — the owner's file had no sentence for them). The owner then approved
+all 75; that state is what `48ce261` committed. `check:effects` reports the
+current count.
+
+The wording is the owner's, drafted outside this repository and approved
+without a claims review, by explicit owner decision (CONVENTIONS §20.14).
+It is not part of the scientific record and was not checked against it.
 
 **Bulk status** (owner request): the list page selects rows (or the whole
 view) and sets "Aprobado" or "Borrador" on all of them at once
