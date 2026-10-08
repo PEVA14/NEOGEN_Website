@@ -2,6 +2,8 @@
 
 import { useEffect, useId, useRef, type ReactNode } from "react";
 
+import { prefersReducedMotion } from "@/lib/reducedMotion";
+
 import { useUrlFilters } from "./useUrlFilters";
 import styles from "./Storefront.module.css";
 
@@ -14,7 +16,9 @@ import styles from "./Storefront.module.css";
  * `?q=` and the browser filters on arrival.
  *
  * "/" reaches it from anywhere on the page; Enter takes the visitor to the
- * results.
+ * results. While a query is typed the masthead steps aside (`SearchAware`),
+ * and the first character brings the field up when the results would start
+ * out of sight (`revealResults`).
  */
 export function StoreSearch({
   label,
@@ -31,6 +35,7 @@ export function StoreSearch({
   const [filters, setFilters] = useUrlFilters();
   const id = useId();
   const input = useRef<HTMLInputElement>(null);
+  const form = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -52,6 +57,7 @@ export function StoreSearch({
   return (
     <search>
       <form
+        ref={form}
         className={styles.search}
         action=""
         method="get"
@@ -75,7 +81,11 @@ export function StoreSearch({
           name="q"
           type="search"
           value={filters.query}
-          onChange={(event) => setFilters({ ...filters, query: event.target.value })}
+          onChange={(event) => {
+            const query = event.target.value;
+            setFilters({ ...filters, query });
+            if (!filters.query.trim() && query.trim()) revealResults(form.current, resultsId);
+          }}
           onKeyDown={(event) => {
             if (event.key === "Escape" && filters.query) {
               event.preventDefault();
@@ -105,4 +115,39 @@ export function StoreSearch({
 export function HideWhileSearching({ children }: { children: ReactNode }) {
   const [filters] = useUrlFilters();
   return <div hidden={filters.query.trim().length > 0 || undefined}>{children}</div>;
+}
+
+/**
+ * The masthead, aware of the search (UX pass, 2026-10-07: "a user can type
+ * while the matching products are not visible"). While a query is typed it
+ * marks itself `data-searching`, and its stylesheet steps the merchandising
+ * down — the signature strip and "see the whole catalogue" go; on a wide
+ * screen the conditions of sale move beside the field — so the masthead is
+ * the title and the field, and the results start right under them.
+ */
+export function SearchAware({ className, children }: { className?: string; children: ReactNode }) {
+  const [filters] = useUrlFilters();
+  return (
+    <div className={className} data-searching={filters.query.trim() ? "" : undefined}>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * The first character of a search brings the field to the top of the window
+ * when the results would otherwise start below it — on a phone, with its
+ * keyboard up, they always would. Only on that first character, and only if
+ * needed: typing on never moves the page again.
+ */
+function revealResults(form: HTMLFormElement | null, resultsId: string) {
+  requestAnimationFrame(() => {
+    const results = document.getElementById(resultsId);
+    if (!form || !results) return;
+    const visible = window.visualViewport?.height ?? window.innerHeight;
+    if (results.getBoundingClientRect().top < visible * 0.7) return;
+    const header = document.querySelector("header")?.getBoundingClientRect().bottom ?? 0;
+    const top = window.scrollY + form.getBoundingClientRect().top - header - 12;
+    window.scrollTo({ top, behavior: prefersReducedMotion() ? "auto" : "smooth" });
+  });
 }

@@ -43,9 +43,23 @@ right, the stripe down its left (its notice set vertically); the
 specifications inside stay upright and stacked, and set the panel's length;
 the heading stands above the bench. Nothing is re-modelled: `RibbonOverlay`
 turns every measured box back into the band's own frame (`frame`) and rolls
-its camera a quarter, so it draws the wide picture, turned. Where the band
-unwinds less than a quarter turn and a logo (a short panel), the vial carries
-one logo that drifts, not two.
+its camera a quarter, so it draws the wide picture, turned.
+
+**The lockup on the vial, across** (fixed 2026-10-07). The band's back
+carries the lockup twice, each centred on the vial's visible quarter — the
+first at rest, the second once laid down — so as the band unwinds the first
+rolls past the vial's front and off the page's edge while the second comes
+round its right silhouette, as a printed label on a turning vial would. That
+needs the band to unwind an eighth of a turn and half a logo (`clear` in
+`ribbonPrint`) — in practice a panel at least ~0.84 of the bench's height
+long, which a one-presentation panel meets on an ordinary laptop window but
+not on a tall, narrow one. Below that the second takes over from the first
+mid-run (`handover`, a crossfade while both are on the turn), each still
+printed where it sits.
+Before this, short panels (one or two presentations — most of the catalogue)
+fell back to ONE logo placed midway, which started wrapped past the right
+silhouette and landed straddling the vial's axis, its symbol cut off by the
+page's edge.
 
 **Without it** — reduced motion, no WebGL 2 — section 02 renders exactly as it always has. If the band's code or
 WebGL fails after all, an error boundary shows the panel at once.

@@ -67,7 +67,35 @@ export function HeroHandoff() {
       ls1: number;
     } | null = null;
 
+    /*
+     * Measured in the page's resting layout: the gateway is a `Passage`
+     * whose scroll-linked recede moves it, and a measure taken while it is
+     * receding (a reload restored mid-page, fonts arriving, a resize) put the
+     * landing that far too low — the name kept travelling past its title.
+     * For the instant of measuring, every ancestor of the title that is
+     * moved by an animation is held still.
+     */
+    const holdStill = () => {
+      const held: HTMLElement[] = [];
+      for (let el = target.parentElement; el; el = el.parentElement) {
+        if (getComputedStyle(el).transform !== "none") {
+          el.style.animation = "none";
+          held.push(el);
+        }
+      }
+      return () => held.forEach((el) => (el.style.animation = ""));
+    };
+
     const measure = () => {
+      const release = holdStill();
+      try {
+        measureStill();
+      } finally {
+        release();
+      }
+    };
+
+    const measureStill = () => {
       poster.style.transform = "";
       poster.style.letterSpacing = "";
       twin.style.transform = "";

@@ -1,0 +1,286 @@
+/*
+ * THE PASSAGE — see Passage.tsx.
+ *
+ * LEAVING. `travel` runs over the whole of the place's exit — from its foot
+ * at the window's foot to its foot at the top — drifting it down by
+ * `--passage-lag` (slower than the page, so it slides under the next passage,
+ * painted above) and deepening a shade over it. `dusk` only deepens the
+ * shade, from a little later. The next passage is in normal flow right after
+ * it, so nothing ever opens a gap.
+ *
+ * ARRIVING. A flagship's arrival is drawn on its passage's `::before`, above
+ * the world and under nothing, over its `cover` range: from its top at the
+ * window's foot to about when it fills the window.
+ */
+
+.passage {
+  --passage-lag: 32vh;
+  --passage-shade: 0.55;
+  position: relative;
+}
+
+@media (max-width: 47.999rem) {
+  .passage {
+    /* A phone travels the same way, less far. */
+    --passage-lag: 24vh;
+    --passage-shade: 0.45;
+  }
+}
+
+/* Over the section's own content (`--z-content`: a world's title and facts
+   sit there), under the sticky header. */
+.passage::before,
+.passage::after {
+  content: none;
+  position: absolute;
+  z-index: calc(var(--z-content) + 1);
+  pointer-events: none;
+}
+
+.passage::after {
+  inset: 0;
+  background: #000;
+  opacity: 0;
+}
+
+/* The copper sweep travels across the plate and RETA's grid starts a little
+   larger than its world: the passage keeps both in. */
+.passage:is([data-arrive="ghk-cu"], [data-arrive="reta"]) {
+  overflow-x: clip;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .passage:is([data-leave="travel"], [data-leave="dusk"], [data-arrive]) {
+      view-timeline: --passage block;
+    }
+
+    /* ---- leaving ------------------------------------------------------ */
+
+    .passage[data-leave="travel"] {
+      animation: passage-recede linear both;
+      animation-timeline: --passage;
+      animation-range: exit 0% exit 100%;
+    }
+
+    .passage:is([data-leave="travel"], [data-leave="dusk"])::after {
+      content: "";
+      animation: passage-shade linear both;
+      animation-timeline: --passage;
+      animation-range: exit 0% exit 100%;
+    }
+
+    /* A dusk is quieter: the place does not move, dims less, a little later. */
+    .passage[data-leave="dusk"] {
+      --passage-shade: 0.42;
+    }
+
+    .passage[data-leave="dusk"]::after {
+      animation-range: exit 0% exit 100%;
+    }
+
+    /* ---- arriving: RETA, precision ------------------------------------ */
+
+    /* A measured hairline across the world's edge with a tick at each end:
+       it opens from the centre as RETA rises, the ticks travelling out like
+       a caliper's jaws, and holds at full width — the edge, calibrated. */
+    .passage[data-arrive="reta"]::before {
+      content: "";
+      inset-inline: 0;
+      inset-block-start: 0;
+      block-size: 9px;
+      translate: 0 -4px;
+      border-inline: 1px solid var(--world-accent);
+      background: linear-gradient(var(--world-accent), var(--world-accent)) center / 100% 1px
+        no-repeat;
+      box-shadow:
+        0 0 18px color-mix(in oklab, var(--world-accent) 70%, transparent),
+        0 0 2px var(--world-light);
+      transform-origin: 50% 50%;
+      animation: passage-calibrate linear both;
+      animation-timeline: --passage;
+      animation-range: cover 0vh cover 55vh;
+    }
+
+    /* And the world arrives on a calibration grid: fine RETA-blue rules over
+       the whole world, a little out of register, that tighten into place and
+       fade as RETA settles — the environment becoming precision. Timed to the
+       window, not the section, so it reads the same on a phone. */
+    .passage[data-arrive="reta"]::after {
+      content: "";
+      inset: 0;
+      opacity: 0;
+      background:
+        repeating-linear-gradient(
+          to right,
+          color-mix(in oklab, var(--world-accent) 70%, transparent) 0 1px,
+          transparent 1px 56px
+        ),
+        repeating-linear-gradient(
+          to bottom,
+          color-mix(in oklab, var(--world-accent) 70%, transparent) 0 1px,
+          transparent 1px 56px
+        );
+      background-position: center top;
+      mix-blend-mode: screen;
+      transform-origin: 50% 0%;
+      animation: passage-register linear both;
+      animation-timeline: --passage;
+      animation-range: cover 0vh cover 95vh;
+    }
+
+    /* ---- arriving: GLOW, light ---------------------------------------- */
+
+    /* The world comes in unlit — its own void over it — and brightens as it
+       fills the window; as it does, a warm bloom rises over it once and
+       settles (the bloom on `::after`, free: GLOW leaves by staying). */
+    .passage[data-arrive="glow"]::before {
+      content: "";
+      inset: 0;
+      background: var(--world-void);
+      animation: passage-illuminate linear both;
+      animation-timeline: --passage;
+      /* Lengths, not percentages: on a phone the world is several windows
+         tall, and a share of it put the light coming up long after the
+         world filled the screen. */
+      animation-range: cover 0vh cover 100vh;
+    }
+
+    .passage[data-arrive="glow"]::after {
+      content: "";
+      background: radial-gradient(
+        65% 55% at 50% 42%,
+        color-mix(in oklab, var(--world-light) 55%, transparent) 0%,
+        color-mix(in oklab, var(--world-accent) 22%, transparent) 45%,
+        transparent 75%
+      );
+      mix-blend-mode: screen;
+      animation: passage-bloom linear both;
+      animation-timeline: --passage;
+      animation-range: cover 70vh cover 135vh;
+    }
+
+    /* ---- arriving: GHK-Cu, material ----------------------------------- */
+
+    /* A burnished band of copper light runs across the plate as it rises,
+       the way light runs over metal when it is turned. */
+    .passage[data-arrive="ghk-cu"]::before {
+      content: "";
+      inset-block: 0;
+      inset-inline-start: 0;
+      inline-size: 55%;
+      background: linear-gradient(
+        100deg,
+        transparent 0%,
+        color-mix(in oklab, var(--world-accent) 0%, transparent) 20%,
+        color-mix(in oklab, var(--world-accent) 30%, transparent) 42%,
+        color-mix(in oklab, var(--world-light) 34%, transparent) 50%,
+        color-mix(in oklab, var(--world-accent) 30%, transparent) 58%,
+        transparent 80%
+      );
+      mix-blend-mode: screen;
+      animation: passage-burnish linear both;
+      animation-timeline: --passage;
+      animation-range: cover 0vh cover 95vh;
+    }
+  }
+}
+
+@keyframes passage-recede {
+  from {
+    transform: none;
+  }
+  to {
+    transform: translate3d(0, var(--passage-lag), 0);
+  }
+}
+
+/* Eased: the shade gathers late, as the place goes out of reach. */
+@keyframes passage-shade {
+  from {
+    opacity: 0;
+  }
+  35% {
+    opacity: calc(var(--passage-shade) * 0.25);
+  }
+  to {
+    opacity: var(--passage-shade);
+  }
+}
+
+@keyframes passage-calibrate {
+  from {
+    transform: scaleX(0.04);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+/* The void is the world's own ground, so "dim" is the world unlit, not grey:
+   held a moment, then lifted. */
+@keyframes passage-illuminate {
+  /* Unlit while it rises into the window; the light comes up as its top
+     crosses from the middle of the window to the top — fully lit as it fills
+     the screen. */
+  from {
+    opacity: 0.74;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Rises as the last of the dark lifts, crests just after the world fills the
+   window, settles. */
+@keyframes passage-bloom {
+  from {
+    opacity: 0;
+  }
+  45% {
+    opacity: 0.9;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Out of register, then true: the grid tightens to its rule and fades. */
+@keyframes passage-register {
+  from {
+    opacity: 0.55;
+    transform: scale(1.12);
+  }
+  55% {
+    opacity: 0.45;
+  }
+  to {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+@keyframes passage-burnish {
+  from {
+    transform: translate3d(-110%, 0, 0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  to {
+    transform: translate3d(200%, 0, 0);
+    opacity: 0;
+  }
+}

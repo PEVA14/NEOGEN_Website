@@ -11,7 +11,7 @@ import { AreaCap, AreaIcon, SpecimenPlate } from "@/components/ui";
 import { SpecimenLink } from "@/components/vial-transition/SpecimenLink";
 import { specimenFor } from "@/components/vial-transition/specimens";
 
-import { StoreSearch } from "./StoreSearch";
+import { HideWhileSearching, SearchAware, StoreSearch } from "./StoreSearch";
 import styles from "./Storefront.module.css";
 
 import type { WorldId } from "@/config/worlds";
@@ -96,7 +96,9 @@ export function StoreMasthead({
           living material as the homepage's area field. */}
       <MarkField name="store" className={styles.mastheadField} ink={READABLE_INK} />
       <Container width="full">
-        <div className={styles.mastheadGrid}>
+        {/* While a search is typed the grid steps down to the title and the
+            field, so the results start right under them (`SearchAware`). */}
+        <SearchAware className={styles.mastheadGrid}>
           <div className={styles.intro}>
             <p className={styles.eyebrow}>{copy.eyebrow}</p>
             <h1 id="catalog-title" className={styles.title}>
@@ -188,7 +190,7 @@ export function StoreMasthead({
               </ul>
             </nav>
           ) : null}
-        </div>
+        </SearchAware>
       </Container>
     </section>
   );
@@ -305,7 +307,11 @@ export function StoreCollection({
   return (
     <section className={styles.collection} aria-labelledby="store-collection-title">
       <Container width="full">
-        <StoreSectionHead {...head} id="store-collection-title" />
+        {/* "The whole catalogue" is not what a search shows: its heading steps
+            aside with the rest, and the results' own count leads. */}
+        <HideWhileSearching>
+          <StoreSectionHead {...head} id="store-collection-title" />
+        </HideWhileSearching>
         <div id={resultsId} className={styles.collectionBody}>
           {children}
         </div>

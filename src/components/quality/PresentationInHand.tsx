@@ -22,6 +22,10 @@ export interface PresentationInHandCopy {
   choose: string;
   /** "Documentos publicados". */
   documents: string;
+  /** "Certificados y validación" — in place of the count when it is 0. */
+  onRequestLabel: string;
+  /** "Bajo solicitud tras la compra". */
+  onRequest: string;
 }
 
 /**
@@ -36,9 +40,11 @@ export interface PresentationInHandCopy {
  *
  * The buy box's own radios are the single source of truth: this listens to
  * their `change` and, to choose, clicks the matching radio. Nothing here can
- * show a document, a state or a count the resolver did not produce; with no
- * public documentation the count is 0, stated as the figure it is. Without
- * script, the record above still states the absence once.
+ * show a document, a state or a count the resolver did not produce. With
+ * nothing published for the presentation, it does not show a 0 — which read
+ * as "no documentation exists" — but NEOGEN's policy: certificates and
+ * validation are available on request after purchase (owner, 2026-10-07).
+ * Without script, the record above states the policy once.
  */
 export function PresentationInHand({
   presentations,
@@ -118,8 +124,17 @@ export function PresentationInHand({
           </dd>
         </div>
         <div className={styles.inHandCount}>
-          <dt>{copy.documents}</dt>
-          <dd>{current.documents}</dd>
+          {current.documents > 0 ? (
+            <>
+              <dt>{copy.documents}</dt>
+              <dd>{current.documents}</dd>
+            </>
+          ) : (
+            <>
+              <dt>{copy.onRequestLabel}</dt>
+              <dd data-policy="">{copy.onRequest}</dd>
+            </>
+          )}
         </div>
       </dl>
     </div>

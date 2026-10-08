@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { ViewTransition } from "react";
 
+import { useReleaseKey } from "./armed";
 import { names, type Specimen, type StageStandIn } from "./specimens";
 
 import styles from "./SpecimenLayers.module.css";
@@ -59,6 +60,8 @@ export function SpecimenLayers({
   priority?: boolean;
 }) {
   const { box, object } = specimen;
+  /* Giving the names up remounts the boundaries (see `useReleaseKey`). */
+  const release = useReleaseKey(named);
   /*
    * MAGNIFICATION. On the product page the same still is framed closer: the
    * object grows more than its frame does, around its own centre, and the set
@@ -87,6 +90,7 @@ export function SpecimenLayers({
           priority={priority}
         />
         <ViewTransition
+          key={release}
           name={named ? names.specimen(slug) : "auto"}
           share="vt-specimen"
           default="none"
@@ -127,7 +131,12 @@ export function SpecimenLayers({
   return (
     <>
       {frame}
-      <ViewTransition name={named ? names.world(slug) : "auto"} share="vt-world" default="none">
+      <ViewTransition
+        key={release}
+        name={named ? names.world(slug) : "auto"}
+        share="vt-world"
+        default="none"
+      >
         <span className={styles.worldProxy} aria-hidden="true" />
       </ViewTransition>
     </>

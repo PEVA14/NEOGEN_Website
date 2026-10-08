@@ -3,11 +3,16 @@
   border-block: 1px solid var(--border-subtle);
 }
 
+/*
+ * The structure is the section's subject, so it takes the larger column
+ * (UX pass, 2026-10-07: "the timeline feels too small relative to the rest of
+ * the section") — the heading beside it, centred on it.
+ */
 .inner {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: var(--space-2xl);
-  align-items: end;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+  gap: var(--space-2xl) var(--space-3xl);
+  align-items: center;
   max-inline-size: var(--container-max);
   margin-inline: auto;
   padding: var(--space-3xl) var(--gutter);

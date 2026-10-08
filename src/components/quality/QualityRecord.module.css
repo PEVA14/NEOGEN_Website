@@ -229,10 +229,19 @@
   color: var(--ink-muted);
 }
 
+.inHandCount {
+  flex-wrap: wrap;
+}
+
 .inHandCount dd {
   color: var(--ink-primary);
   font-size: var(--text-sm);
   font-variant-numeric: tabular-nums;
+}
+
+/* The policy in place of a count: set in the label's own register. */
+.inHandCount dd[data-policy] {
+  font-size: var(--text-2xs);
 }
 
 .codes {

@@ -85,8 +85,22 @@ export function Backdrop({
   // the ratio of their distances from the camera — plus margin, so no edge can
   // enter the shot at any aspect ratio.
   const depthScale = ((CAMERA_Z - BACKDROP_Z) / CAMERA_Z) * 1.15;
-  const width = scope === "full" ? viewport.width * depthScale : 3.6;
-  const height = scope === "full" ? viewport.height * depthScale : 4.4;
+  /*
+   * The local card never reaches the canvas's edge (2026-10-07: on a phone the
+   * stage's canvas is narrower than the card, which cut its light off at the
+   * canvas's sides — a visible box behind GLOW's and GHK-Cu's vials). It is
+   * kept inside what the camera sees at its depth, so its light has fallen to
+   * nothing before the frame ends.
+   */
+  const frameAtDepth = (CAMERA_Z - BACKDROP_Z) / CAMERA_Z;
+  const width =
+    scope === "full"
+      ? viewport.width * depthScale
+      : Math.min(3.6, viewport.width * frameAtDepth * 0.96);
+  const height =
+    scope === "full"
+      ? viewport.height * depthScale
+      : Math.min(4.4, viewport.height * frameAtDepth * 0.96);
 
   const texture = useMemo(() => {
     const size = 1024;
@@ -144,10 +158,14 @@ export function Backdrop({
       const cx = size / 2;
       const cy = size / 2;
 
+      /* Light only, to nothing: a darker tint in its falloff (it used the
+         world's `mid`) shaded a page brighter than the void behind it — GHK-Cu's
+         copper bands — so the card read as a panel, darker in places. */
+      const light = new Color(palette.light);
       const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, size / 2);
-      gradient.addColorStop(0, rgba(new Color(palette.light), 0.13));
-      gradient.addColorStop(0.42, rgba(mid, 0.07));
-      gradient.addColorStop(1, rgba(base, 0));
+      gradient.addColorStop(0, rgba(light, 0.13));
+      gradient.addColorStop(0.42, rgba(light, 0.05));
+      gradient.addColorStop(1, rgba(light, 0));
 
       ctx.clearRect(0, 0, size, size);
       ctx.fillStyle = gradient;

@@ -75,8 +75,10 @@ export const GLYPH: Record<EvidenceState, string> = {
  * `check:output` counts against the resolver.
  *
  * THE EMPTY STATE IS DESIGNED, not pending. With no public document — every
- * product today — the block states that plainly, once, and shows the chain
- * evidence will follow. No "coming soon", no hollow badge, no row of
+ * product today — the block states NEOGEN's policy, once: certificates and
+ * validation documentation are available on request after purchase (owner,
+ * 2026-10-07). It never says the documentation does not exist — only that it
+ * is not published here. No "coming soon", no hollow badge, no row of
  * "unavailable" placeholders pretending to be structure.
  */
 export function QualityRecord({

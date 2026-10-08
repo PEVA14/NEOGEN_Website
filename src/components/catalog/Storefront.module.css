@@ -241,6 +241,47 @@
   outline-offset: 2px;
 }
 
+/*
+ * SEARCHING (`SearchAware`, UX pass 2026-10-07). While a query is typed the
+ * masthead is the title and the field, and the results begin right under
+ * them: the signature strip and "see the whole catalogue" step aside (the
+ * area shelf does too, `HideWhileSearching`). On a wide screen the
+ * conditions of sale move into the column the strip held, beside the field,
+ * so they stay on the store front; below 64rem, where they would stand
+ * between the field and its results, they wait for the search to be
+ * cleared — the research-use line is repeated on every product page, the
+ * bag and the footer. Clearing the field restores the store front as it was.
+ */
+.mastheadGrid[data-searching] .signatures,
+.mastheadGrid[data-searching] .browseAll {
+  display: none;
+}
+
+@media (min-width: 64rem) {
+  .mastheadGrid[data-searching] .intro {
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    column-gap: var(--space-2xl);
+  }
+
+  .mastheadGrid[data-searching] .intro > * {
+    grid-column: 1;
+  }
+
+  .mastheadGrid[data-searching] .conditions {
+    grid-column: 2;
+    grid-row: 1 / span 5;
+    align-self: end;
+    margin-block-start: 0;
+  }
+}
+
+@media (max-width: 63.999rem) {
+  .mastheadGrid[data-searching] .conditions {
+    display: none;
+  }
+}
+
 /* --- Signature products: the only coloured grounds on the page ----------- */
 
 .signatures {

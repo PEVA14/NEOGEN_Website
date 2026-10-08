@@ -60,6 +60,9 @@ export interface CatalogCopy {
   viewIndex: string;
   countLabel: string;
   empty: string;
+  /** "Ningún compuesto coincide con «{q}»…" — a search with no other filter. */
+  emptySearch: string;
+  clearSearch: string;
   clear: string;
   matrix: RegisterMatrixCopy;
   facets: {
@@ -306,6 +309,7 @@ export function CatalogBrowser({
       ? copy.facets.showResult
       : copy.facets.showResults.replace("{n}", String(results.length));
   const clearAll = () => setFilters(clearFilters(filters));
+  const searchOnly = filters.query.trim().length > 0 && chips.length === 1;
 
   /* "/" focuses the search from anywhere on the page, unless the reader is typing. */
   useEffect(() => {
@@ -595,9 +599,14 @@ export function CatalogBrowser({
 
           {results.length === 0 ? (
             <div className={styles.empty}>
-              <Body tone="muted">{copy.empty}</Body>
+              {/* A search on its own names what was searched; filters, the rule. */}
+              {searchOnly ? (
+                <Body tone="muted">{copy.emptySearch.replace("{q}", filters.query.trim())}</Body>
+              ) : (
+                <Body tone="muted">{copy.empty}</Body>
+              )}
               <button type="button" className={styles.reset} onClick={clearAll}>
-                {copy.clear}
+                {searchOnly ? copy.clearSearch : copy.clear}
               </button>
             </div>
           ) : filters.view === "grid" ? (

@@ -537,8 +537,8 @@ const es = {
         },
         documentation: {
           label: "Documentación",
-          title: "Documentos antes que promesas",
-          body: "Cada análisis se publica con su emisor, su fecha y la presentación exacta que examina. Nada se afirma antes de que exista el documento.",
+          title: "Certificados bajo solicitud",
+          body: "Los certificados y la documentación de validación están disponibles bajo solicitud después de la compra. En su lugar, el sitio no muestra sellos ni cifras de pureza.",
         },
       },
       vialAlt:
@@ -1076,6 +1076,10 @@ const es = {
       from: "Desde",
       /** Shown when the filters exclude everything. Never a fabricated state. */
       empty: "Ningún compuesto coincide con los filtros aplicados.",
+      /** A search alone found nothing: say what was searched, and what works. */
+      emptySearch:
+        "Ningún compuesto coincide con «{q}». Busca por nombre o por concentración, como «10 mg».",
+      clearSearch: "Limpiar búsqueda",
       clear: "Limpiar filtros",
       /** The architecture exists; the taxonomy does not. Stated, not faked. */
       /** Column heads for the index view. */
@@ -1525,7 +1529,7 @@ const es = {
           noPrice: "Sin precio",
           docs: "Documentación NEOGEN",
           docsNone:
-            "Aún no hay documentos públicos —análisis o certificados— del producto, de una presentación ni de un lote.",
+            "Los certificados y la documentación de validación están disponibles bajo solicitud después de la compra.",
           docsCounts: "{p} de producto · {v} por presentación · {l} por lote",
           docsLink: "Calidad y documentación",
         },
@@ -1714,7 +1718,7 @@ const es = {
           { term: "Presentación", value: "Cantidad por vial y viales por empaque, según la ficha" },
           {
             term: "Documentación",
-            value: "Vinculada a la presentación o al lote, en la ficha del producto",
+            value: "Certificados y validación: bajo solicitud, después de la compra",
           },
         ],
       },
@@ -1976,9 +1980,9 @@ const es = {
       panelLabel: "Estado de calidad",
       coverageLabel: "Cobertura",
       coverage: "{n} de {total} presentaciones con documentación pública",
-      emptyTitle: "Este compuesto no tiene documentación pública.",
+      emptyTitle: "Certificados y validación, bajo solicitud tras la compra.",
       emptyBody:
-        "La documentación se publica cuando existe, vinculada a la presentación exacta y, cuando corresponde, al lote que examina. Un análisis de una presentación nunca se muestra como válido para otra.",
+        "Los certificados y la documentación de validación de NEOGEN están disponibles bajo solicitud después de la compra. No se publican en el sitio, así que aquí no aparece un sello ni una cifra de pureza en su lugar.",
       tableCaption: "Documentación publicada por presentación",
       columns: {
         presentation: "Presentación",
@@ -2022,6 +2026,9 @@ const es = {
         label: "En inspección",
         choose: "Presentación a inspeccionar",
         documents: "Documentos públicos",
+        /** With nothing published: the policy, not a zero. */
+        onRequestLabel: "Certificados y validación",
+        onRequest: "Bajo solicitud tras la compra",
       },
       guides: {
         coa: "Cómo leer un certificado de análisis",
@@ -2822,7 +2829,7 @@ const es = {
         index: "04",
         label: "Documentación",
         title: "Cómo documentamos",
-        body: "La documentación analítica pertenece a un lote y a una presentación concretos, nunca al compuesto en abstracto, y aparece en la ficha del producto cuando existe. Donde no existe un documento, no aparece un sello: una cifra de pureza sin informe detrás es exactamente el tipo de dato que este sitio no publica.",
+        body: "La documentación analítica pertenece a un lote y a una presentación concretos, nunca al compuesto en abstracto. Los certificados y la documentación de validación están disponibles bajo solicitud después de la compra; no se publican en el sitio, y en su lugar no aparece un sello: una cifra de pureza sin informe detrás es exactamente el tipo de dato que este sitio no publica.",
         action: "Ver el modelo completo",
       },
       handling: {

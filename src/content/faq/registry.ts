@@ -101,8 +101,8 @@ export const FAQ_ENTRIES: readonly FaqEntry[] = [
      * persuasive than a badge would be.
      */
     answer: {
-      es: "No publicamos ningún sello de certificación, y conviene decir por qué: «certificado» solo significa algo con tres datos —quién lo emite, contra qué norma y qué alcance cubre— y un documento verificable de forma independiente. Cuando un documento así exista, aparecerá con esos datos. Lo que sí publicamos hoy es el modelo con el que se documenta cada presentación, y cada documento está atado al lote o a la presentación que analiza.",
-      en: "We publish no certification seal, and it is worth saying why: “certified” only means something with three facts — who issued it, against which standard, and what scope it covers — plus a document you can check independently. When such a document exists, it will appear with those facts. What we do publish today is the model each presentation is documented under, and every document is tied to the lot or presentation it analyses.",
+      es: "No publicamos ningún sello de certificación, y conviene decir por qué: «certificado» solo significa algo con tres datos —quién lo emite, contra qué norma y qué alcance cubre— y un documento verificable de forma independiente. Cuando un documento así exista, aparecerá con esos datos. Lo que sí publicamos hoy es el modelo con el que se documenta cada presentación, y cada documento está atado al lote o a la presentación que analiza. Los certificados de análisis y la documentación de validación son otra cosa: están disponibles bajo solicitud después de la compra.",
+      en: "We publish no certification seal, and it is worth saying why: “certified” only means something with three facts — who issued it, against which standard, and what scope it covers — plus a document you can check independently. When such a document exists, it will appear with those facts. What we do publish today is the model each presentation is documented under, and every document is tied to the lot or presentation it analyses. Certificates of analysis and validation documentation are a different thing: they are available on request after purchase.",
     },
     links: ["research", "article:como-leer-un-certificado-de-analisis"],
   },
@@ -115,8 +115,8 @@ export const FAQ_ENTRIES: readonly FaqEntry[] = [
       en: "Do products come with a certificate of analysis?",
     },
     answer: {
-      es: "La documentación analítica pertenece a un lote y a una presentación concretos, y aparece en la ficha del producto cuando existe para ese lote. Donde no existe un documento, no aparece un sello ni una cifra de pureza: preferimos que el catálogo se lea con lo que hay detrás, no con lo que suena bien.",
-      en: "Analytical documentation belongs to a specific lot and presentation, and appears on the product page when it exists for that lot. Where no document exists, no seal and no purity figure appears: we would rather the catalogue be read for what stands behind it than for what sounds good.",
+      es: "Los certificados y la documentación de validación están disponibles bajo solicitud después de la compra; no se publican en el sitio antes de ella. Un certificado pertenece a un lote y a una presentación concretos, y en el sitio no aparece un sello ni una cifra de pureza en su lugar: preferimos que el catálogo se lea con lo que hay detrás, no con lo que suena bien.",
+      en: "Certificates and validation documentation are available on request after purchase; they are not published on the site before it. A certificate belongs to a specific lot and presentation, and no seal or purity figure appears on the site in its place: we would rather the catalogue be read for what stands behind it than for what sounds good.",
     },
     links: ["research", "article:como-leer-un-certificado-de-analisis"],
   },

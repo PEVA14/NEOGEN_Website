@@ -312,8 +312,8 @@ export const ARTICLES: readonly Article[] = [
         kind: "paragraph",
         editorialClass: "practice",
         text: {
-          es: "La documentación en este sitio está atada a una presentación o a un lote concreto, nunca al compuesto en general, y el modelo completo puede consultarse en NEOGEN Research. Donde no existe un documento, no aparece un sello: una cifra de pureza sin informe detrás es exactamente el tipo de dato que este sitio no publica.",
-          en: "Documentation on this site is tied to a specific presentation or lot, never to the compound in general, and the full model can be read in NEOGEN Research. Where no document exists, no seal appears: a purity figure with no report behind it is exactly the kind of data this site does not publish.",
+          es: "En NEOGEN la documentación está atada a una presentación o a un lote concreto, nunca al compuesto en general, y el modelo completo puede consultarse en NEOGEN Research. Los certificados y la documentación de validación están disponibles bajo solicitud después de la compra; no se publican en el sitio, y en su lugar no aparece un sello: una cifra de pureza sin informe detrás es exactamente el tipo de dato que este sitio no publica.",
+          en: "At NEOGEN, documentation is tied to a specific presentation or lot, never to the compound in general, and the full model can be read in NEOGEN Research. Certificates and validation documentation are available on request after purchase; they are not published on the site, and no seal appears in their place: a purity figure with no report behind it is exactly the kind of data this site does not publish.",
         },
       },
     ],

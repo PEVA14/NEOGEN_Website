@@ -10,7 +10,7 @@ import { SimpleEffects } from "@/components/ui/SimpleEffects";
 import { SpecimenPlate } from "@/components/ui/SpecimenPlate";
 import { WorldDot } from "@/components/ui/WorldDot";
 import { CARD_SIZES, commerceStill, productMedia, stillMedia } from "@/content/media";
-import { arm, useArmed } from "@/components/vial-transition/armed";
+import { arm, useArmed, useReleaseKey } from "@/components/vial-transition/armed";
 import { boxOf, markIncoming } from "@/components/vial-transition/incoming";
 import { SPECIMEN_NAVIGATION } from "@/components/vial-transition/PageTransition";
 import { SpecimenLayers } from "@/components/vial-transition/SpecimenLayers";
@@ -210,6 +210,8 @@ export function ProductCard({
      grid shows the same products, and a name may appear once. See `armed.ts`. */
   const armKey = `grid:${slug}`;
   const armed = useArmed(armKey);
+  /* A drawn plate gives the name up by remounting (see `useReleaseKey`). */
+  const release = useReleaseKey(armed);
 
   /*
    * The vial transition: warm the destination's pictures once the card has
@@ -334,6 +336,7 @@ export function ProductCard({
              * lands on sets it down on its own.
              */
             <SpecimenPlate
+              key={release}
               areaId={areaId}
               world={world}
               name={name}

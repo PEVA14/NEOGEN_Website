@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 /**
  * WHICH CARD THE SPECIMEN LEAVES FROM.
@@ -34,4 +34,28 @@ export function useArmed(key: string): boolean {
     () => armed === key,
     () => false,
   );
+}
+
+/**
+ * A key for a named `<ViewTransition>` that changes when the boundary LOSES
+ * its name, so letting go is an unmount, never a rename.
+ *
+ * React registers a boundary's name when it mounts and unregisters it when it
+ * unmounts, by the name it has then. A boundary renamed from
+ * `vt-specimen-reta` to `auto` therefore stays registered under the old name
+ * for the rest of the visit, and the next card to take that name was reported
+ * as a duplicate (2026-10-08: grid RETA → back → strip RETA logged "two
+ * <ViewTransition name="vt-specimen-reta">" and its `vt-world-` twin). Keyed
+ * by this, the card that gives the names up remounts its boundary — React
+ * drops the old name — while the card that takes them keeps its boundary,
+ * and its picture, exactly as they are at the moment of the tap.
+ */
+export function useReleaseKey(named: boolean): number {
+  const [state, setState] = useState({ named, generation: 0 });
+  if (state.named !== named) {
+    const next = { named, generation: named ? state.generation : state.generation + 1 };
+    setState(next);
+    return next.generation;
+  }
+  return state.generation;
 }

@@ -11,7 +11,15 @@ import {
   type MaterialMomentCopy,
   type RetaExperienceCopy,
 } from "@/components/experience";
-import { AreaExplorer, ClosingShelf, HomeGateway, ScienceBand, WorldBand } from "@/components/home";
+import {
+  AreaExplorer,
+  ClosingShelf,
+  HomeGateway,
+  Passage,
+  ScienceBand,
+  SectionSeam,
+  WorldBand,
+} from "@/components/home";
 import { HeroHandoff } from "@/components/home/HeroHandoff";
 import { StageHost } from "@/components/experience/StageHost";
 import { routes } from "@/config/routes";
@@ -55,6 +63,20 @@ import type { Metadata } from "next";
  *
  * Two structural rules from the reference set still hold: only Quiet sections
  * are numbered, and no two Impact sections are adjacent.
+ *
+ * PASSAGES (owner, 2026-10-07). The sections after the hero are layers. How
+ * each is left is chosen for rhythm — a full `travel` into the three worlds
+ * and into GHK-Cu, a `dusk` behind RETA and before GLOW — and each flagship
+ * ARRIVES in its own character: RETA calibrated (a measured hairline opens
+ * across its edge), GLOW out of the dark into light, GHK-Cu with light
+ * running across copper. See `Passage`.
+ *
+ * SEAMS (UX pass, 2026-10-07). Where a world gives way to paper — RETA,
+ * GLOW and GHK-Cu each into the Quiet section after it — a `SectionSeam` lets
+ * the world's ground reach into the arriving section and lift as the reader
+ * scrolls it up: the impact releases into the quiet instead of being cut off.
+ * The way INTO a world stays the clean edge with its accent rule (settled,
+ * DEFERRED_POLISH): a paper veil over a dark world read as fog.
  */
 export async function generateMetadata({
   params,
@@ -288,175 +310,199 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       {/* The poster's NEOGEN travels down into the gateway's title. */}
       <HeroHandoff />
 
-      <HomeGateway
-        copy={home.gateway}
-        data={{
-          counts: data.counts,
-          lowestPrice: data.lowestPrice,
-          productsImage: data.catalogFace?.image ?? null,
-          productsFallback: data.catalogFace
-            ? {
-                name: data.catalogFace.name,
-                range: data.catalogFace.range,
-                areaId: data.catalogFace.areaId,
-              }
-            : null,
-          areas: data.areas.map((area) => ({
-            id: area.id,
-            label: areaLabel(area.id),
-            count: area.count,
-            href: area.href,
-          })),
-          worlds: data.flagships.map((f) => ({
+      {/* Into the worlds: the one full travel at the top of the page. */}
+      <Passage leave="travel">
+        <HomeGateway
+          copy={home.gateway}
+          data={{
+            counts: data.counts,
+            lowestPrice: data.lowestPrice,
+            productsImage: data.catalogFace?.image ?? null,
+            productsFallback: data.catalogFace
+              ? {
+                  name: data.catalogFace.name,
+                  range: data.catalogFace.range,
+                  areaId: data.catalogFace.areaId,
+                }
+              : null,
+            areas: data.areas.map((area) => ({
+              id: area.id,
+              label: areaLabel(area.id),
+              count: area.count,
+              href: area.href,
+            })),
+            worlds: data.flagships.map((f) => ({
+              world: f.world,
+              label: getWorld(f.world).label,
+              name: f.name,
+              range: f.range,
+              href: f.href,
+              price: f.price,
+              image: f.image,
+            })),
+            /* Real searches: each area's entry compound, straight to its results. */
+            suggestions: [
+              ...new Set(
+                data.areas.flatMap((area) =>
+                  area.entry && !area.entry.world ? [area.entry.name] : [],
+                ),
+              ),
+            ]
+              .slice(0, 6)
+              .map((name) => ({
+                label: name,
+                href: `${catalogPath}?q=${encodeURIComponent(name)}`,
+              })),
+            strengths: data.strengths.map((label) => ({
+              label,
+              href: `${catalogPath}?q=${encodeURIComponent(label)}`,
+            })),
+            recentReferences: data.recentReferences,
+            links: {
+              catalog: catalogPath,
+              areas: "#coleccion",
+              research: data.links.research,
+              explorer: data.links.explorer,
+            },
+          }}
+        />
+      </Passage>
+
+      {/* Into RETA: the store dusks behind it, and RETA arrives calibrated. */}
+      <Passage leave="dusk">
+        <WorldBand
+          copy={{
+            index: home.worlds.index,
+            label: home.worlds.label,
+            title: home.worlds.title,
+            lede: home.worlds.lede,
+            action: home.worlds.action,
+            actionHref: catalogPath,
+            from,
+          }}
+          panels={data.flagships.map((f) => ({
             world: f.world,
-            label: getWorld(f.world).label,
+            brand: getWorld(f.world).label,
+            worldLabel: home.products.worldLabels[f.world],
+            tagline: home.worlds.taglines[f.world],
             name: f.name,
-            range: f.range,
             href: f.href,
+            range: f.range,
             price: f.price,
             image: f.image,
-          })),
-          /* Real searches: each area's entry compound, straight to its results. */
-          suggestions: [
-            ...new Set(
-              data.areas.flatMap((area) =>
-                area.entry && !area.entry.world ? [area.entry.name] : [],
-              ),
-            ),
-          ]
-            .slice(0, 6)
-            .map((name) => ({ label: name, href: `${catalogPath}?q=${encodeURIComponent(name)}` })),
-          strengths: data.strengths.map((label) => ({
-            label,
-            href: `${catalogPath}?q=${encodeURIComponent(label)}`,
-          })),
-          recentReferences: data.recentReferences,
-          links: {
-            catalog: catalogPath,
-            areas: "#coleccion",
-            research: data.links.research,
-            explorer: data.links.explorer,
-          },
-        }}
-      />
+          }))}
+        />
 
-      <WorldBand
-        copy={{
-          index: home.worlds.index,
-          label: home.worlds.label,
-          title: home.worlds.title,
-          lede: home.worlds.lede,
-          action: home.worlds.action,
-          actionHref: catalogPath,
-          from,
-        }}
-        panels={data.flagships.map((f) => ({
-          world: f.world,
-          brand: getWorld(f.world).label,
-          worldLabel: home.products.worldLabels[f.world],
-          tagline: home.worlds.taglines[f.world],
-          name: f.name,
-          href: f.href,
-          range: f.range,
-          price: f.price,
-          image: f.image,
-        }))}
-      />
-
-      <AreaShelf
-        id="coleccion"
-        allHref={catalogPath}
-        areas={data.areas.map((area) => ({
-          id: area.id,
-          href: area.href,
-          label: areaLabel(area.id),
-          count: area.count,
-        }))}
-        copy={{
-          index: home.collection.index,
-          label: home.collection.label,
-          title: home.collection.title
-            .replace("{n}", String(data.counts.products))
-            .replace("{areas}", String(data.counts.areas)),
-          count: home.collection.count,
-          all: home.collection.action,
-        }}
-      />
+        <AreaShelf
+          id="coleccion"
+          allHref={catalogPath}
+          areas={data.areas.map((area) => ({
+            id: area.id,
+            href: area.href,
+            label: areaLabel(area.id),
+            count: area.count,
+          }))}
+          copy={{
+            index: home.collection.index,
+            label: home.collection.label,
+            title: home.collection.title
+              .replace("{n}", String(data.counts.products))
+              .replace("{areas}", String(data.counts.areas)),
+            count: home.collection.count,
+            all: home.collection.action,
+          }}
+        />
+      </Passage>
 
       {/* Impact — the object, resolving into RETA. */}
-      <RetaExperience copy={retaCopy} />
+      <Passage arrive="reta">
+        <RetaExperience copy={retaCopy} />
+      </Passage>
 
-      <AreaExplorer
-        copy={{ ...home.explorer, cta: home.products.cta }}
-        areas={data.areas.map((area) => ({
-          id: area.id,
-          short: areaLabel(area.id),
-          title: dict.discovery.areas[area.id].title,
-          body: dict.discovery.areas[area.id].body,
-          href: area.href,
-          count: area.count,
-          price: area.entry?.price ?? null,
-          products: area.shelf.map((p) => ({
-            slug: p.slug,
-            name: p.name,
-            href: p.href,
-            world: p.world,
-            range: p.range,
-            presentations: p.presentations,
-            price: p.price,
-          })),
-        }))}
-      />
+      <SectionSeam world="reta" ground="var(--world-void)" />
+      {/* Into GLOW: the explorer dims, and GLOW comes up out of the dark. */}
+      <Passage leave="dusk">
+        <AreaExplorer
+          copy={{ ...home.explorer, cta: home.products.cta }}
+          areas={data.areas.map((area) => ({
+            id: area.id,
+            short: areaLabel(area.id),
+            title: dict.discovery.areas[area.id].title,
+            body: dict.discovery.areas[area.id].body,
+            href: area.href,
+            count: area.count,
+            price: area.entry?.price ?? null,
+            products: area.shelf.map((p) => ({
+              slug: p.slug,
+              name: p.name,
+              href: p.href,
+              world: p.world,
+              range: p.range,
+              presentations: p.presentations,
+              price: p.price,
+            })),
+          }))}
+        />
+      </Passage>
 
       {/* Impact — light, resolving into GLOW. */}
-      {glowProduct && glowCopy ? <GlowMoment copy={glowCopy} /> : null}
+      <Passage arrive="glow">
+        {glowProduct && glowCopy ? <GlowMoment copy={glowCopy} /> : null}
+      </Passage>
 
-      <ScienceBand
-        index={home.science.index}
-        label={home.science.label}
-        title={home.science.title}
-        lede={home.science.lede}
-        stats={[
-          { value: data.counts.profiles, label: home.science.profiles },
-          { value: data.counts.references, label: home.science.references },
-          { value: data.counts.areas, label: home.science.areas },
-        ]}
-        structure={{
-          labels: {
-            profiles: home.science.profiles,
-            references: home.science.references,
-            areas: home.science.areas,
-          },
-          profiles: data.evidence.profiles,
-          references: data.evidence.references,
-          areas: data.evidence.areaIds.map((id) => ({
-            id,
-            label: dict.discovery.areas[id].short,
-          })),
-          copy: home.science.structure,
-        }}
-        actions={[
-          { href: data.links.research, label: home.science.action },
-          ...(data.links.references
-            ? [{ href: data.links.references, label: home.science.referencesAction }]
-            : []),
-        ]}
-      />
+      <SectionSeam world="glow" ground="var(--world-void)" />
+      {/* Into GHK-Cu: Evidencia sinks away under the copper plate. */}
+      <Passage leave="travel">
+        <ScienceBand
+          index={home.science.index}
+          label={home.science.label}
+          title={home.science.title}
+          lede={home.science.lede}
+          stats={[
+            { value: data.counts.profiles, label: home.science.profiles },
+            { value: data.counts.references, label: home.science.references },
+            { value: data.counts.areas, label: home.science.areas },
+          ]}
+          structure={{
+            labels: {
+              profiles: home.science.profiles,
+              references: home.science.references,
+              areas: home.science.areas,
+            },
+            profiles: data.evidence.profiles,
+            references: data.evidence.references,
+            areas: data.evidence.areaIds.map((id) => ({
+              id,
+              label: dict.discovery.areas[id].short,
+            })),
+            copy: home.science.structure,
+          }}
+          actions={[
+            { href: data.links.research, label: home.science.action },
+            ...(data.links.references
+              ? [{ href: data.links.references, label: home.science.referencesAction }]
+              : []),
+          ]}
+        />
+      </Passage>
 
       {/* Impact — material, resolving into GHK-Cu. */}
-      {ghkCopy ? <MaterialMoment copy={ghkCopy} /> : null}
+      <Passage arrive="ghk-cu">{ghkCopy ? <MaterialMoment copy={ghkCopy} /> : null}</Passage>
 
-      <ClosingShelf
-        copy={home.closing}
-        areas={data.directory.map((area) => ({
-          id: area.areaId,
-          name: areaLabel(area.areaId),
-          href: area.href,
-          items: area.items,
-        }))}
-        counts={data.counts}
-        href={catalogPath}
-      />
+      <SectionSeam world="ghk-cu" ground="var(--world-void)" />
+      <Passage>
+        <ClosingShelf
+          copy={home.closing}
+          areas={data.directory.map((area) => ({
+            id: area.areaId,
+            name: areaLabel(area.areaId),
+            href: area.href,
+            items: area.items,
+          }))}
+          counts={data.counts}
+          href={catalogPath}
+        />
+      </Passage>
     </>
   );
 }

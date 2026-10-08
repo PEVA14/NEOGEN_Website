@@ -1,0 +1,63 @@
+/*
+ * THE SEAM — see SectionSeam.tsx.
+ *
+ * A one-pixel line on the boundary (its own negative margin gives the pixel
+ * back, so nothing moves). Its veil hangs from it over the arriving
+ * section's top: the leaving ground, eased out to nothing, under a third of
+ * the window. The seam is the view timeline's subject: the veil is whole
+ * while the boundary enters at the window's foot, and gone by the time it
+ * reaches the middle.
+ */
+
+.seam {
+  position: relative;
+  z-index: 1;
+  block-size: 1px;
+  margin-block-end: -1px;
+  pointer-events: none;
+}
+
+.seam::after {
+  content: none;
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 0;
+  block-size: min(28vh, 18rem);
+  /* An eased fall-off, not a straight ramp: no band where it ends. */
+  background: linear-gradient(
+    to bottom,
+    var(--seam-ground) 0%,
+    color-mix(in oklab, var(--seam-ground) 78%, transparent) 16%,
+    color-mix(in oklab, var(--seam-ground) 56%, transparent) 32%,
+    color-mix(in oklab, var(--seam-ground) 36%, transparent) 47%,
+    color-mix(in oklab, var(--seam-ground) 20%, transparent) 62%,
+    color-mix(in oklab, var(--seam-ground) 8%, transparent) 78%,
+    transparent 100%
+  );
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    /* The boundary is the subject — not the veil, whose own box would
+       start the lift a third of a window late. */
+    .seam {
+      view-timeline: --seam block;
+    }
+
+    .seam::after {
+      content: "";
+      animation: seam-lift linear both;
+      animation-timeline: --seam;
+      animation-range: cover 0% cover 50%;
+    }
+  }
+}
+
+@keyframes seam-lift {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}

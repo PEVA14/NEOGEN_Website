@@ -262,6 +262,13 @@ export interface RibbonPrint {
   /** Its left edge on the back, at rest and laid down. */
   lockupBack: [number, number];
   /**
+   * The two lockups would share the vial's visible face for part of the run
+   * (the band unwinds too little to carry the first out of view before the
+   * second comes round): hand over from one to the other instead of showing
+   * both. Across only; upright they are always apart.
+   */
+  handover: boolean;
+  /**
    * Upright only: where the back carries the product's name and range at
    * rest — along the band from, to; across it from, to. Null across.
    */
@@ -284,34 +291,43 @@ export function ribbonPrint(
 ): RibbonPrint {
   const X = (pageX: number) => plan.woundAtEnd + (pageX - axisPage);
   const Y = (pageY: number) => pageY - panel.top;
-  /* Where the vial's visible quarter is — between its front and its right
-     edge, half a radius in — at rest and once laid down. The second is on an
-     inner turn at rest, and comes round into view as the outer turns leave.
+  /* Where the vial shows its label: centred on its visible quarter — between
+     its front and its right edge — at rest and once laid down. Across, the
+     vial stands half off the page, so that quarter is all of it there is:
+     from the front (its axis, the page's edge) to its right silhouette. The
+     second logo is on an inner turn at rest, and comes round into view from
+     behind the right silhouette as the outer turns leave; the first rolls
+     past the front and off the page.
 
-     Unless the band unwinds less than that quarter and a logo (a short panel:
-     a phone's GLOW, a tablet): then the first would still be in view at the
-     end, beside the second. One logo instead, midway — in view at rest, it
-     drifts round by the little the band unwinds.
+     That is only true when the band unwinds enough to carry the first one
+     wholly past the front while the second comes wholly round: an eighth of
+     a turn and half a logo (`clear`). Below that (a very short panel) both
+     would share the face mid-run: the second takes over from the first
+     (`handover`), each still printed where it sits, never drifting into the
+     page's edge. (Before 2026-10-07 a short panel got one logo midway, which
+     started wrapped past the right silhouette and landed straddling the
+     vial's axis — the mark cut off by the page's edge — on almost every
+     product with one or two presentations.)
 
      The whole vial in view (upright): the logo faces the viewer square on,
      and the front that shows it is a half turn wide, not a quarter. */
   const shown = (whole ? 1 : 1.25) * Math.PI * radius;
-  const inView = (whole ? 1 : 0.5) * Math.PI * radius;
   const half = marks.lockup.width / 2;
   const unwound = plan.woundAtRest - plan.woundAtEnd;
   const atRest = plan.woundAtRest - shown - half;
   const atEnd = plan.woundAtEnd - shown - half;
-  const once = (atRest + atEnd) / 2;
-  const both = unwound >= inView + marks.lockup.width;
+  /* A little more than the geometry needs: the layers add to the radius. */
+  const clear = 0.25 * Math.PI * radius + half + 2 * LAYER;
 
   /* Upright, the logo reads upright, left-aligned with the name, above it at
      rest; a second one stands at the vial's front once the band is laid
      down. They are always apart: the band has unwound between them. */
-  type Logos = Pick<RibbonPrint, "lockup" | "lockupBack" | "upright">;
+  type Logos = Pick<RibbonPrint, "lockup" | "lockupBack" | "upright" | "handover">;
   let logos: Logos = {
     lockup: [Y(marks.lockup.top), marks.lockup.width, marks.lockup.height],
-    lockupBack: both ? [atRest, atEnd] : [once, once],
+    lockupBack: [atRest, atEnd],
     upright: false,
+    handover: unwound < clear,
   };
   if (whole) {
     const width = 0.42 * panel.height;
@@ -321,6 +337,7 @@ export function ribbonPrint(
       lockup: [0.78 * panel.height - width, length, width],
       lockupBack: [from(plan.woundAtRest, 0.8), from(plan.woundAtEnd, 1)],
       upright: true,
+      handover: false,
     };
   }
   return {

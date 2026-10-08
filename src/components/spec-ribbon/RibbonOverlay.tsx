@@ -166,6 +166,8 @@ function Band({
   /** The name and range, drawn once per size for the vial's front (upright). */
   const words = useRef<{ key: string; texture: CanvasTexture } | null>(null);
   const label = useRef<[number, number, number, number] | null>(null);
+  /** The two lockups would share the vial's face mid-run (`RibbonPrint.handover`). */
+  const handover = useRef(false);
   const shown = useRef(-1);
   /** The band has come into view: it starts on the next frame. */
   const due = useRef(false);
@@ -287,6 +289,7 @@ function Band({
         upright,
       );
       label.current = print.label;
+      handover.current = print.handover;
       paper.current.print(print, key);
     }
     paper.current.ink(logo.current);
@@ -305,8 +308,15 @@ function Band({
     const bottom = toY(box.bottom);
     const t = phase(p, ...RIBBON.unroll);
     /* Upright, the logo that ends at the vial's front would show under the
-       name at rest; it comes in as the name goes. */
-    paper.current.logos(1, upright ? phase(t, 0.3, 0.75) : 1);
+       name at rest; it comes in as the name goes. Across, each is printed
+       where it sits and turns with the band — the first rolls past the front
+       and off the page, the second comes round the right silhouette — unless
+       the band unwinds too little to part them: then the second takes over
+       from the first while both are on the turn. */
+    paper.current.logos(
+      handover.current ? 1 - phase(t, 0.1, 0.45) : 1,
+      upright ? phase(t, 0.3, 0.75) : handover.current ? phase(t, 0.5, 0.9) : 1,
+    );
     paper.current.words(
       label.current && words.current ? words.current.texture : null,
       label.current,

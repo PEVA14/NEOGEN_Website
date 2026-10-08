@@ -522,8 +522,8 @@ const en: Dictionary = {
         },
         documentation: {
           label: "Documentation",
-          title: "Documents before promises",
-          body: "Every analysis is published with its issuer, its date and the exact presentation it examines. Nothing is claimed before the document exists.",
+          title: "Certificates on request",
+          body: "Certificates and validation documentation are available on request after purchase. The site shows no seal or purity figure in their place.",
         },
       },
       vialAlt: "NEOGEN glass vial labelled RETA, tilted in a dark environment with blue light.",
@@ -988,6 +988,9 @@ const en: Dictionary = {
       /** Qualifier before a "from" price on a card. */
       from: "From",
       empty: "No compound matches the applied filters.",
+      /** A search alone found nothing: say what was searched, and what works. */
+      emptySearch: "No compound matches “{q}”. Search by name or by strength, such as “10 mg”.",
+      clearSearch: "Clear search",
       clear: "Clear filters",
       /** THE STOREFRONT — /productos as NEOGEN's primary store (2026-09-18). */
       store: {
@@ -1398,7 +1401,7 @@ const en: Dictionary = {
           noPrice: "No price",
           docs: "NEOGEN documentation",
           docsNone:
-            "There are no public documents yet — analyses or certificates — for the product, a presentation or a lot.",
+            "Certificates and validation documentation are available on request after purchase.",
           docsCounts: "{p} product · {v} per presentation · {l} per lot",
           docsLink: "Quality and documentation",
         },
@@ -1587,7 +1590,7 @@ const en: Dictionary = {
           },
           {
             term: "Documentation",
-            value: "Attached to the presentation or the lot, on the product page",
+            value: "Certificates and validation: on request, after purchase",
           },
         ],
       },
@@ -1825,9 +1828,9 @@ const en: Dictionary = {
       panelLabel: "Quality status",
       coverageLabel: "Coverage",
       coverage: "{n} of {total} presentations with public documentation",
-      emptyTitle: "This compound has no public documentation.",
+      emptyTitle: "Certificates and validation, on request after purchase.",
       emptyBody:
-        "Documentation is published when it exists, tied to the exact presentation and, where it applies, to the lot it examines. An analysis of one presentation is never shown as valid for another.",
+        "NEOGEN's certificates and validation documentation are available on request after purchase. They are not published on the site, so no seal or purity figure appears here in their place.",
       tableCaption: "Published documentation by presentation",
       columns: {
         presentation: "Presentation",
@@ -1869,6 +1872,9 @@ const en: Dictionary = {
         label: "Under inspection",
         choose: "Presentation to inspect",
         documents: "Public documents",
+        /** With nothing published: the policy, not a zero. */
+        onRequestLabel: "Certificates and validation",
+        onRequest: "On request after purchase",
       },
       guides: {
         coa: "How to read a certificate of analysis",
@@ -2602,7 +2608,7 @@ const en: Dictionary = {
         index: "04",
         label: "Documentation",
         title: "How we document",
-        body: "Analytical documentation belongs to a specific lot and presentation, never to the compound in the abstract, and appears on the product page when it exists. Where no document exists, no seal appears: a purity figure with no report behind it is exactly the kind of data this site does not publish.",
+        body: "Analytical documentation belongs to a specific lot and presentation, never to the compound in the abstract. Certificates and validation documentation are available on request after purchase; they are not published on the site, and no seal appears in their place: a purity figure with no report behind it is exactly the kind of data this site does not publish.",
         action: "See the full model",
       },
       handling: {

@@ -13,9 +13,12 @@
   gap: var(--space-sm);
 }
 
+/* At the scale of the section's subject (UX pass, 2026-10-07): the figures
+   at display size, the strips tall enough to read as a row of real things and
+   to aim at with a finger. */
 .rows {
   display: grid;
-  gap: var(--space-lg);
+  gap: var(--space-xl);
   margin: 0;
 }
 
@@ -33,7 +36,7 @@
   grid-area: label;
   color: var(--ink-muted);
   font-family: var(--font-mono);
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
 }
@@ -49,7 +52,7 @@
   font-family: var(--font-display);
   font-stretch: var(--font-stretch-display);
   font-weight: 700;
-  font-size: var(--text-4xl);
+  font-size: var(--text-5xl);
   line-height: 0.85;
   letter-spacing: var(--tracking-display);
   font-variant-numeric: tabular-nums;
@@ -58,7 +61,7 @@
 .strip {
   grid-area: strip;
   position: relative;
-  block-size: 1.75rem;
+  block-size: clamp(2.75rem, 1.9rem + 2.6vw, 4.75rem);
   border-block-end: 1px solid var(--border-default);
 }
 
@@ -73,8 +76,8 @@
 
 .mark {
   justify-self: center;
-  inline-size: max(1px, min(3px, 40%));
-  block-size: 45%;
+  inline-size: max(1px, min(4px, 42%));
+  block-size: 42%;
   background: var(--ink-secondary);
   opacity: 0.55;
   transition:
@@ -100,7 +103,8 @@
 /* The areas are the one row coloured at rest: each is its own swatch, as the
    area is coloured everywhere else on the site. */
 .row[data-row="areas"] .mark {
-  inline-size: 0.6rem;
+  inline-size: clamp(0.7rem, 0.4rem + 1vw, 1.25rem);
+  block-size: 62%;
   background: var(--area-mark);
   opacity: 1;
 }
@@ -138,7 +142,7 @@
 .thread {
   fill: none;
   stroke: var(--area-mark, var(--ink-primary));
-  stroke-width: 1;
+  stroke-width: 1.25;
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
   opacity: 0.85;
@@ -157,7 +161,7 @@
   flex-wrap: wrap;
   align-items: baseline;
   gap: var(--space-2xs) var(--space-sm);
-  min-block-size: 2.75rem;
+  min-block-size: 3.5rem;
   margin: 0;
 }
 
@@ -165,6 +169,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-2xs);
+  font-size: var(--text-lg);
   font-weight: 600;
   color: var(--ink-primary);
 }

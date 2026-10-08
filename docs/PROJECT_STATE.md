@@ -1,6 +1,14 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-10-06**: **Simple Effects — an owner-authored
+Last updated **2026-10-08**: **the first Vercel Preview candidate — the
+UX/UI polish pass (homepage travel between sections and seams, a larger
+Section 05, catalogue search that shows its results, documentation stated as
+"available on request after purchase", the spec ribbon's lockup fixed), the
+owner's rewrite of all 75 Simple Effects descriptions, and the `.gitignore`
+cleanup that keeps every `.env*` file out while tracking `.env.example`**
+(§8be; prepared on a `staging` branch, not merged to `main`, awaiting the
+owner's review). Before that, 2026-10-06:
+**Simple Effects — an owner-authored
 comprehension layer with its own editor at `/ops/contenido/efectos`; the
 owner's 75 drafts imported, bulk approval added** (§8bd; committed). Before
 that, the same day: **comprehension pass — every compound with an
@@ -378,6 +386,11 @@ also encoded in `src/config/site.ts`; anything undecided there is `null`.
 - **Quantity:** capped at 99 per line.
 - **Contact:** one phone number only (in `site.ts`), rendered as `tel:`. Do
   not label it WhatsApp — that was never confirmed. No support email yet.
+- **Certificates and validation documentation (owner, 2026-10-07):**
+  "available on request after purchase." Not publicly downloadable before
+  purchase. Never say documentation does not exist; say it is provided on
+  request after purchase. HOW a customer requests it (channel, timing, what
+  exactly is sent) has not been stated — do not invent it.
 - **Age:** a simple 18+ statement, probably inside the Terms.
 - **Photography priority:** P0 is the three flagships (RETA, GLOW, GHK-Cu).
 - **Language (Q34):** "Spanish only for now". The English locale exists in
@@ -2613,6 +2626,120 @@ Evaluated on a production build in headless Chrome, at 1440×900 and 390×844,
 from the catalogue grid, the phone strip and by direct URL; reduced motion;
 GLOW's circle unchanged; at 4× CPU throttle on the phone there is no long task
 between the flight's start and the formation's end.
+
+## 8be. UX/UI polish pass (2026-10-07; first Vercel Preview candidate, 2026-10-08)
+
+Owner brief (while the owner handles credentials and external setup): six
+polish items on the existing site, no redesign, no payment/integration work.
+
+**Status (2026-10-08).** Prepared as the first Vercel Preview candidate, to
+be committed on a `staging` branch and not merged to `main` until the owner
+has reviewed the preview. Per the owner, Vercel Production resolves to the
+Neon `main` branch and Vercel Preview to the Neon `staging` branch, and
+migrations 001 and 002 have been applied to `staging` twice with the eight
+expected tables. The fixes dated 2026-10-08 below were made after the
+polish pass was first verified.
+
+- **Homepage seams** (`home/SectionSeam`): where RETA, GLOW and GHK-Cu give
+  way to paper, the world's ground reaches into the next section and lifts as
+  the boundary rises (CSS view timeline, opacity only, cinematic tier; none
+  under reduced motion or without scroll timelines). Tried into the worlds as
+  well: a paper veil over a dark world read as fog, and the entry edge with
+  its accent rule is settled (DEFERRED_POLISH), so arrivals are unchanged.
+- **Travelling between places, and flagship arrivals** (`home/Passage`;
+  owner, same day, over three rounds: "feels like we are travelling to
+  another section"; "a tiny bit repetitive … I like the first use of it a
+  lot"; "Tres Mundos was fine as it was … make the transitions into the
+  flagships more unique to each, GLOW could be a little dim while going into
+  it just to then BRIGHTEN up"). The sections after the hero are layers.
+  LEAVING: `travel` (lags the scroll 32vh / 24vh phone and sinks into shade
+  while the next slides over it, over its whole exit) into Tres Mundos and
+  into GHK-Cu; `dusk` (dims only, from `exit 15%`) behind RETA and before
+  GLOW. ARRIVING, each flagship in its own character: RETA (precision) — a
+  RETA-blue hairline with end ticks opens from the centre across its edge
+  like a caliper; GLOW (light) — the world arrives under its own void and
+  brightens as it fills the window, a warm bloom cresting once; GHK-Cu
+  (material) — a burnished copper band sweeps across the plate. Round 4
+  (owner: GLOW "dims down when it covers the whole screen", "RETA doesn't
+  have a transition"): arrivals are timed in window lengths (`cover 0vh …
+100vh`), not shares of the section — on a phone a world is several windows
+  tall; GLOW is unlit while it rises, lights as its top crosses the upper
+  half, then blooms; RETA also arrives on a RETA-blue calibration grid that
+  tightens into register and fades; dusks start at `exit 0%`. CSS view
+  timelines, transform + opacity (+ a screen blend), cinematic tier. The
+  arrival layers sit at `--z-content + 1` (world titles are at
+  `--z-content`). TRANSLATION ONLY, NEVER A SCALE on a passage: it changed
+  the box the shared 3D canvas measures and RETA's vial was not redrawn on
+  the way back up (found in headless Chrome). Seams still lift out of each
+  world.
+- **Duplicate view-transition names on the catalogue (pre-existing,
+  fixed 2026-10-08)**: grid RETA → back → strip RETA logged four console
+  errors ("two <ViewTransition name="vt-specimen-reta">", and `vt-world-`).
+  Not a real duplicate: React (dev) registers a boundary's name on mount and
+  unregisters it on unmount BY ITS NAME THEN, so a card renamed to `auto`
+  when it lost the arm stayed registered under the old name all visit.
+  `useReleaseKey` (`vial-transition/armed.ts`) remounts a boundary when it
+  gives its name up — never when it takes one, so the tapped card's picture
+  is untouched at the snapshot. Applied in `SpecimenLayers` and to
+  `ProductCard`'s drawn plate. Verified: 8 taps across RETA/GLOW/GHK-Cu,
+  grid and strip, in mixed order: 8 transitions, none skipped, 0 errors.
+  Remaining console noise is three.js's own `THREE.Clock` deprecation
+  warning (library, pre-existing).
+- **Hero handoff vs passages (regression, fixed)**: `HeroHandoff` measured
+  "Explora NEOGEN" with on-screen boxes; measured while the gateway's
+  passage was receding (a reload restored mid-page, fonts, a resize), the
+  landing was off by the recede and the name kept travelling past its title.
+  It now holds animated ancestors still for the instant it measures.
+  Verified: fresh load and mid-page reload trace the same path and land on
+  the title (1440 and phone).
+- **3D stage backdrop seam (pre-existing, fixed)**: on a phone the homepage
+  stages use the `local` backdrop card (3.6 × 4.4 units), wider than the
+  phone's stage canvas, so its light was cut off at the canvas's sides — a
+  visible box behind GLOW's and GHK-Cu's vials (owner screenshot); its
+  falloff also used a darker world tint that shaded GHK-Cu's copper bands.
+  `Backdrop` now fits the card inside the frame at its depth and fades light
+  only, to nothing. Measured: the step across the canvas edge equals the
+  page gradient's own over the same 8px (GLOW 6/6, GHK-Cu 3/4 levels). The
+  hero uses the same card.
+- **Section 05 (Evidencia)**: the evidence structure takes the larger column
+  (4fr/7fr), figures at `--text-5xl`, strips 2.75–4.75rem tall, wider marks,
+  larger readout. Same data, same interaction.
+- **Catalogue search** (`StoreSearch`): while a query is typed the masthead
+  marks itself `data-searching` (`SearchAware`) — signature strip, "ver todo"
+  and the collection heading step aside; wide, the conditions of sale move
+  beside the field; below 64rem they are hidden until the search is cleared
+  (the RUO line stays on every PDP, the bag and the footer — owner may want
+  to review this). The first character scrolls the field to the top only if
+  the results would start out of sight (a phone with its keyboard up). A
+  query-only miss names the query (`emptySearch`, `clearSearch`).
+- **Documentation copy**: the PDP quality record, its "En inspección"
+  counter (policy instead of "Documentos públicos 00"), the homepage RETA
+  fact, /peptidos, the FAQ (COA and certification answers), the COA note,
+  the handling reference and the Research Quick Record now say certificates
+  and validation are available on request after purchase. Storage-condition
+  copy (genuinely unpublished data) unchanged. Atlas copy (frozen, hidden)
+  unchanged.
+- **Spec ribbon lockup**: short panels used one "drifting" logo that landed
+  straddling the vial's axis — the mark cut by the page edge on most
+  products. Now two lockups turn with the band (the visibility test was twice
+  as strict as the geometry); a crossfade `handover` only where a panel is
+  too short for that window (tall, narrow screens). README updated.
+- **Simple Effects content (owner, 2026-10-07)**: all 75 entries were
+  rewritten through the editor's import and re-approved in one operation
+  (every `updatedAt` is the same instant, `updatedBy` is the owner, each
+  entry's revision advanced, all 75 remain `approved`). The change is to the
+  published sentences only: the vocabulary, the statuses and the editor are
+  unchanged, and `check:effects` passes (75 publishable). The owner's text is
+  not edited here.
+- **Housekeeping**: `.gitignore` now ignores every `.env*` file (local,
+  pulled from Vercel, backups) and un-ignores `.env.example`, which stays
+  the one tracked template, plus `.vercel/`; the earlier per-name env rules
+  were subsumed and removed.
+
+Verified: `npm run check` (all gates, build, output) passed; axe 0 and no
+overflow at 375 and 1280 on the catalogue (searching and empty), home, a PDP,
+FAQ and a compound record; the ribbon frame-by-frame (slowed clock) on
+BPC157, AOD9604 (handover) and RETA; upright on a phone.
 
 ## 8bd. Simple Effects — the owner-authored comprehension layer (2026-10-06)
 
