@@ -158,13 +158,13 @@
         "peso"
       ],
       "description": {
-        "es": "Compuesto experimental investigado en relación con el metabolismo y el manejo del peso.",
-        "en": "An experimental compound researched in relation to metabolism and weight management."
+        "es": "Aún en etapa experimental. Se explora su posible efecto sobre las células de grasa y el metabolismo. Todavía no hay pruebas en personas.",
+        "en": "Still at an experimental stage. Its possible effect on fat cells and metabolism is being explored. There is no human evidence yet."
       },
       "notes": "Compuesto experimental sin datos en humanos; la mayoría de la información proviene de estudios de laboratorio.",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "ace-031": {
@@ -174,13 +174,13 @@
         "musculo"
       ],
       "description": {
-        "es": "Compuesto experimental investigado por su posible papel en el crecimiento muscular.",
-        "en": "An experimental compound researched for its possible role in muscle growth."
+        "es": "Diseñado para bloquear la miostatina, una proteína que frena el crecimiento del músculo. Los ensayos se detuvieron por efectos secundarios.",
+        "en": "Designed to block myostatin, a protein that slows muscle growth. Trials were stopped because of side effects."
       },
       "notes": "Los ensayos clínicos se detuvieron por efectos adversos; no está disponible para uso general.",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "adamax-with-adamantane": {
@@ -190,13 +190,13 @@
         "cognicion"
       ],
       "description": {
-        "es": "Se relaciona con la función cognitiva y el enfoque mental.",
-        "en": "Associated with cognitive function and mental focus."
+        "es": "Su foco es la mente: concentración y claridad. Esta versión incluye adamantano y se le atribuye un efecto más duradero que la versión simple.",
+        "en": "Its focus is the mind: focus and clarity. This version includes adamantane and is said to last longer than the simple version."
       },
       "notes": "Evidencia muy limitada; principalmente investigación de origen. La adición de adamantano se asocia con una acción más prolongada.",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "adamax-without-adamantane": {
@@ -206,13 +206,13 @@
         "cognicion"
       ],
       "description": {
-        "es": "Se relaciona con la función cognitiva y el enfoque mental.",
-        "en": "Associated with cognitive function and mental focus."
+        "es": "Su foco es la mente: concentración y claridad. Esta versión es la más simple, sin adamantano, y actúa por menos tiempo.",
+        "en": "Its focus is the mind: focus and clarity. This is the simple version, without adamantane, and its effect is shorter."
       },
       "notes": "Evidencia muy limitada; principalmente investigación de origen.",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "ahk-cu": {
@@ -223,13 +223,13 @@
         "cabello"
       ],
       "description": {
-        "es": "Se relaciona con la apariencia de la piel y el cabello.",
-        "en": "Associated with the appearance of skin and hair."
+        "es": "Péptido con cobre pensado para el cuidado de la piel y el cabello. Se encuentra sobre todo en productos de belleza más que en investigación médica.",
+        "en": "A copper peptide intended for skin and hair care. Found mainly in beauty products rather than medical research."
       },
       "notes": "Evidencia mayormente limitada a estudios de laboratorio y cosmética.",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "aod9604": {
@@ -240,13 +240,13 @@
         "metabolismo"
       ],
       "description": {
-        "es": "Se investiga por su posible papel en el metabolismo de las grasas y el manejo del peso.",
-        "en": "Being researched for its possible role in fat metabolism and weight management."
+        "es": "Un pedazo de la hormona del crecimiento, modificado para durar más. Se explora si ayuda a procesar la grasa corporal. La evidencia en personas es limitada.",
+        "en": "A piece of growth hormone, modified to last longer. Being explored for helping process body fat. Human evidence is limited."
       },
       "notes": "La evidencia en humanos es limitada; los estudios disponibles no muestran efectos consistentes.",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "ara-290": {
@@ -257,13 +257,13 @@
         "tejidos"
       ],
       "description": {
-        "es": "Se investiga por su posible papel en la protección y reparación de tejidos.",
-        "en": "Being researched for its possible role in tissue protection and repair."
+        "es": "Derivado de la eritropoyetina. Se explora si puede proteger los tejidos y los nervios.",
+        "en": "A derivative of erythropoietin. Being explored for possibly protecting tissues and nerves."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "b12-methylcobalamin": {
@@ -273,13 +273,13 @@
         "energia"
       ],
       "description": {
-        "es": "Se relaciona con la energía y el funcionamiento normal del sistema nervioso.",
-        "en": "Associated with energy and normal nervous system function."
+        "es": "Es vitamina B12. Ayuda a que el cuerpo tenga energía y que el sistema nervioso funcione bien.",
+        "en": "This is vitamin B12. It helps the body have energy and the nervous system work properly."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "bpc-10mg-tb-10mg": {
@@ -290,13 +290,13 @@
         "tejidos"
       ],
       "description": {
-        "es": "Combinación que se investiga por su posible papel en la reparación de tejidos y la recuperación.",
-        "en": "A combination being researched for its possible role in tissue repair and recovery."
+        "es": "La misma combinación de BPC-157 y TB-500, pero con más cantidad de cada péptido. Enfocada en la reparación de tejidos.",
+        "en": "The same combination of BPC-157 and TB-500, but with a larger amount of each peptide. Focused on tissue repair."
       },
-      "notes": "",
+      "notes": "Misma combinación que BPC 5mg + TB 5mg, en presentación de mayor cantidad.",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "bpc-5mg-tb-5mg": {
@@ -307,13 +307,13 @@
         "tejidos"
       ],
       "description": {
-        "es": "Combinación que se investiga por su posible papel en la reparación de tejidos y la recuperación.",
-        "en": "A combination being researched for its possible role in tissue repair and recovery."
+        "es": "Combinación de BPC-157 y TB-500, dos péptidos enfocados en la reparación de tejidos. Aquí vienen en partes iguales.",
+        "en": "A combination of BPC-157 and TB-500, two peptides focused on tissue repair. Here they come in equal parts."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "bpc157": {
@@ -324,13 +324,13 @@
         "tejidos"
       ],
       "description": {
-        "es": "Se investiga por su posible papel en la reparación de tejidos y la recuperación después de lesiones.",
-        "en": "Being researched for its possible role in tissue repair and recovery after injuries."
+        "es": "Péptido conocido por su posible papel en reparar el revestimiento del estómago y otros tejidos, y en la recuperación tras una lesión.",
+        "en": "A peptide known for its possible role in repairing the stomach lining and other tissues, and in recovery after injury."
       },
       "notes": "La evidencia en humanos es limitada; la mayoría de los datos son preclínicos o de estudios en curso.",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "cagrilintide": {
@@ -341,13 +341,13 @@
         "peso"
       ],
       "description": {
-        "es": "Se estudia por su relación con la reducción del apetito y el manejo del peso corporal.",
-        "en": "Studied for its relationship with appetite reduction and body weight management."
+        "es": "Ayuda a generar más saciedad y a bajar el apetito. Frecuentemente se combina con otros péptidos para el peso.",
+        "en": "Helps create more fullness and lower appetite. Often combined with other weight-related peptides."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "cardiogen": {
@@ -357,13 +357,13 @@
         "longevidad"
       ],
       "description": {
-        "es": "Se relaciona con la salud del corazón y los vasos sanguíneos.",
-        "en": "Associated with heart and blood vessel health."
+        "es": "Producto ruso enfocado en la salud del corazón y los vasos sanguíneos. Evidencia escasa fuera de Rusia.",
+        "en": "A Russian product focused on heart and blood vessel health. Scarce evidence outside Russia."
       },
       "notes": "Evidencia muy limitada fuera de la investigación de origen.",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "cartalax": {
@@ -373,13 +373,13 @@
         "articulaciones"
       ],
       "description": {
-        "es": "Se relaciona con la salud de las articulaciones y el cartílago.",
-        "en": "Associated with joint and cartilage health."
+        "es": "Se orienta al cuidado de las articulaciones y el cartílago. Evidencia escasa.",
+        "en": "Oriented toward joint and cartilage care. Scarce evidence."
       },
       "notes": "Evidencia muy limitada fuera de la investigación de origen.",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "cerebrolysin": {
@@ -389,13 +389,13 @@
         "cognicion"
       ],
       "description": {
-        "es": "Se relaciona con la función cerebral y se estudia en contextos de recuperación neurológica.",
-        "en": "Associated with brain function and studied in neurological recovery contexts."
+        "es": "Mezcla de péptidos obtenidos del cerebro. Se usa en recuperación neurológica y para apoyar la función cerebral.",
+        "en": "A mix of brain-derived peptides. Used in neurological recovery and to support brain function."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "cjc-1295-with-dac": {
@@ -405,13 +405,13 @@
         "hormonas"
       ],
       "description": {
-        "es": "Se relaciona con la liberación de la hormona del crecimiento y su acción es más prolongada.",
-        "en": "Associated with growth hormone release and has a longer-lasting action."
+        "es": "Estimula la liberación de la hormona del crecimiento. La versión con DAC permanece activa más tiempo en el cuerpo.",
+        "en": "Stimulates growth hormone release. The version with DAC stays active longer in the body."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "cjc-1295-without-dac": {
@@ -421,13 +421,13 @@
         "hormonas"
       ],
       "description": {
-        "es": "Se relaciona con la liberación de la hormona del crecimiento.",
-        "en": "Associated with growth hormone release."
+        "es": "Estimula la liberación de la hormona del crecimiento. La versión sin DAC actúa por menos tiempo.",
+        "en": "Stimulates growth hormone release. The version without DAC acts for less time."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "cjc-1295-without-dac-ipamorelin": {
@@ -438,13 +438,13 @@
         "recuperacion"
       ],
       "description": {
-        "es": "Combinación que se relaciona con la liberación de la hormona del crecimiento y la recuperación.",
-        "en": "A combination associated with growth hormone release and recovery."
+        "es": "Mezcla de CJC-1295 sin DAC e Ipamorelin. Apunta a la liberación de hormona de crecimiento y a la recuperación.",
+        "en": "A mix of CJC-1295 without DAC and Ipamorelin. Aims at growth hormone release and recovery."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "cortagen": {
@@ -454,13 +454,13 @@
         "cognicion"
       ],
       "description": {
-        "es": "Se relaciona con la función cerebral y el sistema nervioso.",
-        "en": "Associated with brain function and the nervous system."
+        "es": "Apunta a la función cerebral y al sistema nervioso. Evidencia escasa.",
+        "en": "Aims at brain function and the nervous system. Scarce evidence."
       },
       "notes": "Evidencia muy limitada fuera de la investigación de origen.",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "crystagen": {
@@ -470,13 +470,13 @@
         "inmunidad"
       ],
       "description": {
-        "es": "Se relaciona con el sistema inmune y la defensa del organismo.",
-        "en": "Associated with the immune system and the body's defenses."
+        "es": "Se orienta a apoyar el sistema inmune. Evidencia escasa.",
+        "en": "Oriented toward supporting the immune system. Scarce evidence."
       },
       "notes": "Evidencia muy limitada fuera de la investigación de origen.",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "dihexa": {
@@ -486,13 +486,13 @@
         "cognicion"
       ],
       "description": {
-        "es": "Compuesto experimental investigado en relación con la función cognitiva.",
-        "en": "An experimental compound researched in relation to cognitive function."
+        "es": "Aún en fase experimental. Se explora si puede favorecer la formación de conexiones nerviosas y mejorar la cognición.",
+        "en": "Still at an experimental stage. Being explored for possibly favoring nerve connections and improving cognition."
       },
       "notes": "Evidencia muy limitada; principalmente estudios preclínicos.",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "dsip": {
@@ -502,13 +502,13 @@
         "sueno"
       ],
       "description": {
-        "es": "Se relaciona con el sueño y se estudia por su posible papel en mejorar su calidad.",
-        "en": "Associated with sleep and studied for its possible role in improving its quality."
+        "es": "Péptido enfocado en el sueño. Se explora su posible papel en la calidad del descanso. No es una hormona como la melatonina.",
+        "en": "A peptide focused on sleep. Being explored for its possible role in rest quality. It is not a hormone like melatonin."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "epithalon": {
@@ -518,13 +518,13 @@
         "longevidad"
       ],
       "description": {
-        "es": "Se relaciona con el envejecimiento celular y se investiga en contextos de longevidad.",
-        "en": "Associated with cellular aging and studied in longevity contexts."
+        "es": "Péptido vinculado al envejecimiento de las células y a la telomerasa. Se investiga en el área de la longevidad.",
+        "en": "A peptide linked to cell aging and telomerase. Studied in the longevity field."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "follistatin-344": {
@@ -534,13 +534,13 @@
         "musculo"
       ],
       "description": {
-        "es": "Se investiga por su posible papel en el crecimiento muscular, principalmente en estudios de laboratorio.",
-        "en": "Being researched for its possible role in muscle growth, mainly in laboratory studies."
+        "es": "Proteína que se explora por bloquear la miostatina y así favorecer el crecimiento muscular. Casi no hay datos en personas.",
+        "en": "A protein being explored for blocking myostatin and thereby favoring muscle growth. Almost no human data."
       },
       "notes": "Evidencia en humanos prácticamente inexistente; datos provienen de modelos animales y terapia génica experimental.",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "fox04-dir": {
@@ -550,13 +550,13 @@
         "longevidad"
       ],
       "description": {
-        "es": "Compuesto experimental investigado en relación con el envejecimiento celular.",
-        "en": "An experimental compound researched in relation to cellular aging."
+        "es": "Aún en fase experimental. Se explora si influye en el envejecimiento de las células y en la resistencia al estrés.",
+        "en": "Still at an experimental stage. Being explored for possibly influencing cell aging and stress resistance."
       },
       "notes": "Evidencia muy limitada; principalmente estudios preclínicos.",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "gdf-8": {
@@ -566,13 +566,13 @@
         "musculo"
       ],
       "description": {
-        "es": "Se relaciona con la regulación del crecimiento muscular. Se investiga por su posible papel en el control de la masa muscular.",
-        "en": "Associated with muscle growth regulation. Being researched for its possible role in muscle mass control."
+        "es": "Es la miostatina: una proteína que pone un límite al crecimiento del músculo. Se estudia para entender cómo se regula la masa muscular.",
+        "en": "This is myostatin: a protein that puts a limit on muscle growth. Studied to understand how muscle mass is regulated."
       },
       "notes": "GDF-8 es miostatina; su inhibición se investiga para el crecimiento muscular, pero GDF-8 en sí es la proteína que limita el crecimiento.",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "ghk-cu": {
@@ -583,13 +583,13 @@
         "cabello"
       ],
       "description": {
-        "es": "Se relaciona con la reparación de la piel y los tejidos. Puede ayudar a mejorar la apariencia de la piel.",
-        "en": "Associated with skin and tissue repair. May help improve the appearance of skin."
+        "es": "Péptido con cobre enfocado en reparar la piel y los tejidos. Puede ayudar a que la piel se vea mejor.",
+        "en": "A copper peptide focused on repairing skin and tissues. May help skin look better."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "ghrp-2-acetate": {
@@ -600,13 +600,13 @@
         "apetito"
       ],
       "description": {
-        "es": "Se relaciona con la liberación de la hormona del crecimiento. También puede estimular el apetito.",
-        "en": "Associated with growth hormone release. It may also stimulate appetite."
+        "es": "Libera hormona de crecimiento y también puede abrir el apetito, aunque menos que GHRP-6.",
+        "en": "Releases growth hormone and may also open appetite, though less than GHRP-6."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "ghrp-6-acetate": {
@@ -617,13 +617,13 @@
         "apetito"
       ],
       "description": {
-        "es": "Se relaciona con la liberación de la hormona del crecimiento. También se conoce por estimular el apetito.",
-        "en": "Associated with growth hormone release. Also known for stimulating appetite."
+        "es": "Libera hormona de crecimiento y es famoso por abrir mucho el apetito.",
+        "en": "Releases growth hormone and is famous for greatly opening appetite."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "glow": {
@@ -634,13 +634,13 @@
         "recuperacion"
       ],
       "description": {
-        "es": "Mezcla de péptidos que se relaciona con la apariencia de la piel y la reparación de tejidos.",
-        "en": "A peptide blend associated with skin appearance and tissue repair."
+        "es": "Mezcla de péptidos pensada para mejorar la apariencia de la piel y ayudar a reparar tejidos. La composición exacta puede variar.",
+        "en": "A peptide blend intended to improve skin appearance and help repair tissues. The exact composition may vary."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "glutathione": {
@@ -651,13 +651,13 @@
         "longevidad"
       ],
       "description": {
-        "es": "Se relaciona con la protección celular y se usa en contextos de salud de la piel.",
-        "en": "Associated with cellular protection and used in skin health contexts."
+        "es": "Antioxidante natural. Ayuda a proteger las células y se usa en el cuidado de la piel.",
+        "en": "A natural antioxidant. Helps protect cells and is used in skin care."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "gonadorelin-acetate": {
@@ -668,13 +668,13 @@
         "salud-sexual"
       ],
       "description": {
-        "es": "Se relaciona con las hormonas reproductivas.",
-        "en": "Associated with reproductive hormones."
+        "es": "Hormona relacionada con las hormonas reproductivas. Se usa en temas de fertilidad y pruebas médicas.",
+        "en": "A hormone related to reproductive hormones. Used in fertility and medical testing."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "hcg": {
@@ -685,13 +685,13 @@
         "salud-sexual"
       ],
       "description": {
-        "es": "Se relaciona con las hormonas reproductivas. Se usa en contextos de fertilidad y salud hormonal.",
-        "en": "Associated with reproductive hormones. Used in fertility and hormonal health contexts."
+        "es": "Hormona relacionada con las hormonas reproductivas. Se usa en fertilidad y salud hormonal.",
+        "en": "A hormone related to reproductive hormones. Used in fertility and hormonal health."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "healthy-hair-skin-nails-blend": {
@@ -702,13 +702,13 @@
         "piel"
       ],
       "description": {
-        "es": "Mezcla orientada a la salud y apariencia del cabello, la piel y las uñas.",
-        "en": "A blend oriented toward the health and appearance of hair, skin, and nails."
+        "es": "Mezcla enfocada en la salud y la apariencia del cabello, la piel y las uñas. La composición puede variar.",
+        "en": "A blend focused on the health and appearance of hair, skin, and nails. Composition may vary."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "hexarelin-acetate": {
@@ -718,13 +718,13 @@
         "hormonas"
       ],
       "description": {
-        "es": "Se relaciona con la liberación de la hormona del crecimiento.",
-        "en": "Associated with growth hormone release."
+        "es": "Libera hormona de crecimiento. Es uno de los más potentes, pero con el uso continuo puede perder fuerza.",
+        "en": "Releases growth hormone. It is one of the most potent, but with continuous use it may lose strength."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "hgh-fragment-176-191": {
@@ -735,13 +735,13 @@
         "metabolismo"
       ],
       "description": {
-        "es": "Se investiga por su posible papel en el metabolismo de las grasas y el manejo del peso.",
-        "en": "Being researched for its possible role in fat metabolism and weight management."
+        "es": "Fragmento de la hormona del crecimiento. Se explora su papel en cómo el cuerpo procesa la grasa. Evidencia limitada.",
+        "en": "A fragment of growth hormone. Being explored for its role in how the body processes fat. Limited evidence."
       },
       "notes": "La evidencia en humanos es limitada; los datos disponibles son principalmente preclínicos.",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "hmg": {
@@ -752,13 +752,13 @@
         "salud-sexual"
       ],
       "description": {
-        "es": "Se relaciona con las hormonas reproductivas y se usa en contextos de fertilidad.",
-        "en": "Associated with reproductive hormones and used in fertility contexts."
+        "es": "Relacionado con las hormonas reproductivas. Se usa en fertilidad y contiene gonadotropinas.",
+        "en": "Related to reproductive hormones. Used in fertility and contains gonadotropins."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "humanin": {
@@ -769,13 +769,13 @@
         "metabolismo"
       ],
       "description": {
-        "es": "Se investiga por su posible papel en la protección celular y el envejecimiento.",
-        "en": "Being researched for its possible role in cellular protection and aging."
+        "es": "Péptido en estudio por su posible papel en proteger las células y en el metabolismo. Evidencia preliminar.",
+        "en": "A peptide under study for its possible role in protecting cells and in metabolism. Preliminary evidence."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "igf-1lr3": {
@@ -785,13 +785,13 @@
         "musculo"
       ],
       "description": {
-        "es": "Se investiga por su posible papel en el crecimiento muscular.",
-        "en": "Being researched for its possible role in muscle growth."
+        "es": "Factor de crecimiento parecido a la insulina. Se explora su papel en el crecimiento muscular. Tiene riesgos importantes.",
+        "en": "An insulin-like growth factor. Being explored for its role in muscle growth. It has significant risks."
       },
       "notes": "Potente factor de crecimiento con riesgos significativos; la evidencia en humanos para uso recreativo es prácticamente inexistente.",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "ipamorelin": {
@@ -802,13 +802,13 @@
         "recuperacion"
       ],
       "description": {
-        "es": "Se relaciona con la liberación de la hormona del crecimiento. Se investiga por su posible papel en la recuperación.",
-        "en": "Associated with growth hormone release. Being researched for its possible role in recovery."
+        "es": "Libera hormona de crecimiento. Es más selectivo y tiene menos efecto sobre el apetito que otros.",
+        "en": "Releases growth hormone. It is more selective and has less effect on appetite than others."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "kisspeptin-10": {
@@ -819,13 +819,13 @@
         "salud-sexual"
       ],
       "description": {
-        "es": "Se relaciona con las hormonas reproductivas y se estudia en contextos de fertilidad.",
-        "en": "Associated with reproductive hormones and studied in fertility contexts."
+        "es": "Relacionado con las hormonas reproductivas. Se estudia en fertilidad y actúa sobre el eje reproductivo.",
+        "en": "Related to reproductive hormones. Studied in fertility and acts on the reproductive axis."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "klow": {
@@ -836,13 +836,13 @@
         "recuperacion"
       ],
       "description": {
-        "es": "Mezcla de péptidos que se relaciona con la apariencia de la piel y la reparación de tejidos.",
-        "en": "A peptide blend associated with skin appearance and tissue repair."
+        "es": "Mezcla de péptidos orientada a la piel y a la reparación de tejidos. No se dio a conocer su composición exacta.",
+        "en": "A peptide blend oriented toward skin and tissue repair. Its exact composition was not disclosed."
       },
       "notes": "Composición específica no proporcionada; se asume un perfil similar a otras mezclas de reparación.",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "kpv": {
@@ -853,13 +853,13 @@
         "piel"
       ],
       "description": {
-        "es": "Se relaciona con la respuesta inflamatoria y la salud de la piel.",
-        "en": "Associated with the inflammatory response and skin health."
+        "es": "Péptido vinculado a la respuesta inflamatoria y a la salud de la piel. Se estudia por su posible papel en la inflamación.",
+        "en": "A peptide linked to the inflammatory response and skin health. Studied for its possible role in inflammation."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "l-carnitine": {
@@ -870,13 +870,13 @@
         "metabolismo"
       ],
       "description": {
-        "es": "Se relaciona con el metabolismo de las grasas y la producción de energía.",
-        "en": "Associated with fat metabolism and energy production."
+        "es": "Nutriente que ayuda al cuerpo a usar la grasa como energía. No es un péptido.",
+        "en": "A nutrient that helps the body use fat as energy. It is not a peptide."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "ll-37": {
@@ -886,13 +886,13 @@
         "inmunidad"
       ],
       "description": {
-        "es": "Se relaciona con la defensa natural del organismo contra infecciones.",
-        "en": "Associated with the body's natural defense against infections."
+        "es": "Péptido antimicrobiano. Forma parte de las defensas naturales del cuerpo contra infecciones.",
+        "en": "An antimicrobial peptide. It is part of the body's natural defenses against infections."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "mazdutide": {
@@ -903,13 +903,13 @@
         "apetito"
       ],
       "description": {
-        "es": "Se estudia por su relación con la pérdida de peso y la reducción del apetito.",
-        "en": "Studied for its association with weight loss and reduced appetite."
+        "es": "En estudio. Se le vincula con bajar de peso y reducir el apetito. Su enfoque combina dos señales del cuerpo relacionadas con el peso.",
+        "en": "Under study. Linked to losing weight and reducing appetite. Its approach combines two body signals related to weight."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "melanotan-1": {
@@ -919,13 +919,13 @@
         "piel"
       ],
       "description": {
-        "es": "Se relaciona con el bronceado de la piel. Se ha estudiado junto con la exposición a la luz para oscurecer la piel.",
-        "en": "Associated with skin tanning. Studied together with light exposure to darken the skin."
+        "es": "Relacionado con el bronceado. Se ha estudiado junto con la luz para oscurecer la piel.",
+        "en": "Related to tanning. Studied alongside light to darken the skin."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "melanotan-2": {
@@ -936,13 +936,13 @@
         "salud-sexual"
       ],
       "description": {
-        "es": "Se usa por su relación con el bronceado de la piel. También se ha estudiado en relación con la función sexual.",
-        "en": "Used for its association with skin tanning. Also studied in relation to sexual function."
+        "es": "Se usa para broncear la piel. También se ha estudiado por su relación con la función sexual. No está autorizado.",
+        "en": "Used for tanning the skin. Also studied for its link to sexual function. It is not approved."
       },
       "notes": "Producto no autorizado con reportes de efectos adversos graves; las afirmaciones sobre sus beneficios provienen principalmente de uso no regulado.",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 6,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "melatonin": {
@@ -952,13 +952,13 @@
         "sueno"
       ],
       "description": {
-        "es": "Se relaciona con el sueño y con la regulación del ciclo natural de sueño y vigilia.",
-        "en": "Associated with sleep and with regulating the natural sleep-wake cycle."
+        "es": "Hormona que ayuda a regular el sueño y el ciclo natural de sueño y vigilia.",
+        "en": "A hormone that helps regulate sleep and the natural sleep-wake cycle."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "mgf": {
@@ -969,13 +969,13 @@
         "recuperacion"
       ],
       "description": {
-        "es": "Se investiga por su posible papel en el crecimiento y la recuperación del músculo.",
-        "en": "Being researched for its possible role in muscle growth and recovery."
+        "es": "Factor de crecimiento mecánico. Se explora por su posible papel en el crecimiento y la recuperación del músculo.",
+        "en": "A mechanical growth factor. Being explored for its possible role in muscle growth and recovery."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "mots-c": {
@@ -986,13 +986,13 @@
         "energia"
       ],
       "description": {
-        "es": "Se investiga por su posible papel en el metabolismo y la energía celular.",
-        "en": "Being researched for its possible role in metabolism and cellular energy."
+        "es": "Péptido que vive en las mitocondrias. Se explora su papel en el metabolismo y en la energía de las células.",
+        "en": "A peptide that lives in the mitochondria. Being explored for its role in metabolism and cell energy."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "nad": {
@@ -1003,13 +1003,13 @@
         "longevidad"
       ],
       "description": {
-        "es": "Se relaciona con la energía celular y se investiga en contextos de envejecimiento.",
-        "en": "Associated with cellular energy and studied in aging contexts."
+        "es": "Coenzima que ayuda a las células a tener energía. Se investiga en el área del envejecimiento.",
+        "en": "A coenzyme that helps cells have energy. Studied in the aging field."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "oxytocin-acetate": {
@@ -1019,13 +1019,13 @@
         "hormonas"
       ],
       "description": {
-        "es": "Se relaciona con el vínculo social y las respuestas emocionales.",
-        "en": "Associated with social bonding and emotional responses."
+        "es": "Hormona que se asocia con el vínculo social y las emociones.",
+        "en": "A hormone associated with social bonding and emotions."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "p21-p021": {
@@ -1035,13 +1035,13 @@
         "cognicion"
       ],
       "description": {
-        "es": "Compuesto experimental investigado en relación con la función cognitiva.",
-        "en": "An experimental compound researched in relation to cognitive function."
+        "es": "En fase experimental. Se explora su posible papel en la cognición y en proteger las neuronas.",
+        "en": "At an experimental stage. Being explored for its possible role in cognition and protecting neurons."
       },
       "notes": "Evidencia muy limitada; principalmente estudios preclínicos.",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "pe-22-28": {
@@ -1051,13 +1051,13 @@
         "cognicion"
       ],
       "description": {
-        "es": "Compuesto experimental investigado en relación con el estado de ánimo y la función cognitiva.",
-        "en": "An experimental compound researched in relation to mood and cognitive function."
+        "es": "En fase experimental. Se explora su posible papel en el estado de ánimo y en la cognición.",
+        "en": "At an experimental stage. Being explored for its possible role in mood and cognition."
       },
       "notes": "Evidencia muy limitada; principalmente estudios preclínicos.",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "peg-mgf": {
@@ -1068,13 +1068,13 @@
         "recuperacion"
       ],
       "description": {
-        "es": "Se investiga por su posible papel en el crecimiento y la recuperación del músculo.",
-        "en": "Being researched for its possible role in muscle growth and recovery."
+        "es": "Versión de MGF que dura más tiempo en el cuerpo. Se explora por su posible papel en el crecimiento y la recuperación del músculo.",
+        "en": "A version of MGF that lasts longer in the body. Being explored for its possible role in muscle growth and recovery."
       },
       "notes": "Se considera una versión de acción más prolongada de MGF; la evidencia en humanos es muy limitada.",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "pinealon": {
@@ -1085,13 +1085,13 @@
         "sueno"
       ],
       "description": {
-        "es": "Se relaciona con la función cerebral y los ciclos de sueño.",
-        "en": "Associated with brain function and sleep cycles."
+        "es": "Se asocia con la función cerebral y los ciclos de sueño. Evidencia escasa.",
+        "en": "Associated with brain function and sleep cycles. Scarce evidence."
       },
       "notes": "Evidencia muy limitada fuera de la investigación de origen.",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "pt141": {
@@ -1101,13 +1101,13 @@
         "salud-sexual"
       ],
       "description": {
-        "es": "Se relaciona con el deseo sexual y se estudia en contextos de función sexual.",
-        "en": "Associated with sexual desire and studied in sexual function contexts."
+        "es": "Se vincula con el deseo sexual. Se estudia en temas de función sexual. Es parecido a la melanocortina.",
+        "en": "Linked to sexual desire. Studied in sexual function topics. It is similar to melanocortin."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "relaxation-pm": {
@@ -1118,13 +1118,13 @@
         "estres"
       ],
       "description": {
-        "es": "Mezcla orientada a la relajación y el sueño.",
-        "en": "A blend oriented toward relaxation and sleep."
+        "es": "Mezcla pensada para relajarse y dormir mejor. La composición puede variar.",
+        "en": "A blend designed for relaxing and sleeping better. Composition may vary."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "reta": {
@@ -1136,13 +1136,13 @@
         "glucosa"
       ],
       "description": {
-        "es": "Se investiga por su posible papel en reducir el apetito, favorecer la pérdida de peso y controlar el azúcar en sangre.",
-        "en": "Being researched for its possible role in reducing appetite, supporting weight loss, and controlling blood sugar."
+        "es": "Se investiga para bajar el apetito, perder peso y controlar el azúcar en sangre. Es un compuesto experimental que actúa sobre tres vías.",
+        "en": "Being researched for lowering appetite, losing weight, and controlling blood sugar. It is an experimental compound that acts on three pathways."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "selank": {
@@ -1153,13 +1153,13 @@
         "cognicion"
       ],
       "description": {
-        "es": "Se relaciona con el manejo del estrés y la función cognitiva.",
+        "es": "Se asocia con el manejo del estrés y la función cognitiva.",
         "en": "Associated with stress management and cognitive function."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "selank-semax": {
@@ -1170,13 +1170,13 @@
         "estres"
       ],
       "description": {
-        "es": "Combinación que se relaciona con la función cognitiva y el manejo del estrés.",
-        "en": "A combination associated with cognitive function and stress management."
+        "es": "Mezcla de Selank y Semax. Su enfoque es la función cognitiva y el manejo del estrés.",
+        "en": "A blend of Selank and Semax. Its focus is cognitive function and stress management."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "semaglutide": {
@@ -1188,13 +1188,13 @@
         "glucosa"
       ],
       "description": {
-        "es": "Reduce el apetito, ayuda a comer menos y favorece la pérdida de peso. También ayuda a controlar el azúcar en sangre.",
-        "en": "Reduces appetite, helps you eat less, and supports weight loss. It also helps control blood sugar."
+        "es": "Baja el apetito, ayuda a comer menos y favorece la pérdida de peso. También ayuda a controlar el azúcar en sangre.",
+        "en": "Lowers appetite, helps eat less, and supports weight loss. It also helps control blood sugar."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:10:23.328Z",
+      "revision": 4,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "semax": {
@@ -1205,13 +1205,13 @@
         "energia"
       ],
       "description": {
-        "es": "Se relaciona con la función cognitiva y el enfoque mental.",
+        "es": "Se asocia con la función cognitiva y el enfoque mental.",
         "en": "Associated with cognitive function and mental focus."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "sermorelin": {
@@ -1221,13 +1221,13 @@
         "hormonas"
       ],
       "description": {
-        "es": "Se relaciona con la producción natural de la hormona del crecimiento.",
-        "en": "Associated with the body's natural growth hormone production."
+        "es": "Apoya la producción natural de la hormona del crecimiento. Es un fragmento de GHRH.",
+        "en": "Supports the natural production of growth hormone. It is a GHRH fragment."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "snap-8": {
@@ -1237,13 +1237,13 @@
         "piel"
       ],
       "description": {
-        "es": "Se relaciona con la apariencia de la piel y la reducción de líneas de expresión.",
-        "en": "Associated with skin appearance and reducing expression lines."
+        "es": "Péptido cosmético. Se enfoca en la apariencia de la piel y en suavizar las líneas de expresión.",
+        "en": "A cosmetic peptide. Focused on skin appearance and softening expression lines."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "ss-31": {
@@ -1254,13 +1254,13 @@
         "longevidad"
       ],
       "description": {
-        "es": "Se investiga por su posible papel en la energía celular y la protección de las células.",
-        "en": "Being researched for its possible role in cellular energy and cell protection."
+        "es": "Se explora su posible papel en la energía celular y en proteger las mitocondrias.",
+        "en": "Being explored for its possible role in cellular energy and protecting mitochondria."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "survodutide": {
@@ -1271,13 +1271,13 @@
         "apetito"
       ],
       "description": {
-        "es": "En investigación se relaciona con la reducción del apetito y la pérdida de peso.",
-        "en": "In research, it is associated with reduced appetite and weight loss."
+        "es": "Bajo investigación. Se le asocia con menos apetito y pérdida de peso. Combina dos acciones relacionadas con el peso.",
+        "en": "Under research. Associated with less appetite and weight loss. Combines two weight-related actions."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "tb500": {
@@ -1288,13 +1288,13 @@
         "tejidos"
       ],
       "description": {
-        "es": "Se relaciona con la reparación de tejidos y se investiga por su posible papel en la recuperación.",
-        "en": "Associated with tissue repair and being researched for its possible role in recovery."
+        "es": "Enfocado en la reparación de tejidos y la recuperación. Se le asocia sobre todo con tendones y ligamentos.",
+        "en": "Focused on tissue repair and recovery. It is mostly associated with tendons and ligaments."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "tesamorelin": {
@@ -1305,13 +1305,13 @@
         "hormonas"
       ],
       "description": {
-        "es": "Se estudia por su relación con la reducción de grasa abdominal y ciertas hormonas del crecimiento.",
-        "en": "Studied for its association with reducing abdominal fat and certain growth hormones."
+        "es": "Se estudia por su relación con la reducción de grasa abdominal y con ciertas hormonas del crecimiento.",
+        "en": "Studied for its link to reducing abdominal fat and to certain growth hormones."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 4,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "thymalin": {
@@ -1322,13 +1322,13 @@
         "longevidad"
       ],
       "description": {
-        "es": "Se relaciona con la función del sistema inmune y se estudia en contextos de envejecimiento.",
-        "en": "Associated with immune system function and studied in aging contexts."
+        "es": "Se asocia con el sistema inmune y se estudia en el área del envejecimiento.",
+        "en": "Associated with the immune system and studied in the aging field."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "thymosin-alpha-1": {
@@ -1338,13 +1338,13 @@
         "inmunidad"
       ],
       "description": {
-        "es": "Se relaciona con el sistema inmune y se estudia por su posible papel en la defensa del organismo.",
-        "en": "Associated with the immune system and studied for its possible role in the body's defenses."
+        "es": "Se centra en el sistema inmune y en cómo el cuerpo se defiende.",
+        "en": "Centers on the immune system and how the body defends itself."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 4,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "tirzepatide": {
@@ -1356,13 +1356,13 @@
         "glucosa"
       ],
       "description": {
-        "es": "Reduce el apetito y ayuda a bajar de peso. También ayuda a controlar el azúcar en sangre.",
-        "en": "Reduces appetite and helps with weight loss. It also helps control blood sugar."
+        "es": "Baja el apetito y ayuda a perder peso. Además, ayuda a mantener el azúcar en sangre bajo control.",
+        "en": "Lowers appetite and helps with weight loss. It also helps keep blood sugar under control."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 4,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "vesugen": {
@@ -1372,13 +1372,13 @@
         "longevidad"
       ],
       "description": {
-        "es": "Se investiga en relación con la salud de los vasos sanguíneos y el envejecimiento.",
-        "en": "Being researched in relation to blood vessel health and aging."
+        "es": "Se explora en relación con la salud de los vasos sanguíneos y el envejecimiento. Poca evidencia fuera de Rusia.",
+        "en": "Being explored in relation to blood vessel health and aging. Little evidence outside Russia."
       },
       "notes": "Evidencia muy limitada fuera de la investigación rusa; la mayoría de los datos no están disponibles en inglés.",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     },
     "vip": {
@@ -1389,13 +1389,13 @@
         "inmunidad"
       ],
       "description": {
-        "es": "Se relaciona con la función intestinal y la respuesta inmune.",
-        "en": "Associated with gut function and immune response."
+        "es": "Se centra en la función intestinal y en la respuesta inmune. Es un péptido que manda señales.",
+        "en": "Centers on gut function and immune response. It is a peptide that sends signals."
       },
       "notes": "",
       "source": "import",
-      "revision": 2,
-      "updatedAt": "2026-10-07T05:16:17.980Z",
+      "revision": 5,
+      "updatedAt": "2026-10-07T16:56:52.741Z",
       "updatedBy": "pablo"
     }
   }
