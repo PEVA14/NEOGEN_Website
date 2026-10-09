@@ -1,6 +1,8 @@
 import Link from "next/link";
 
+import { activeProvider } from "@/payments";
 import { logoutAction } from "@/server/ops/actions";
+import { orderRepository, storageKind } from "@/server/persistence";
 
 import { OPS } from "./copy";
 import styles from "./ops.module.css";
@@ -16,8 +18,14 @@ const LINKS: readonly { id: Section; href: string }[] = [
   { id: "content", href: "/ops/contenido/efectos" },
 ];
 
-/** The console frame: one bar, four sections, who is signed in. */
-export function Shell({
+/**
+ * The console frame: four sections, who is signed in, and — always visible —
+ * what kind of environment this is. An operator must never have to wonder
+ * whether a payment here is real money, or whether an order here will last.
+ * "Pedidos" carries the number of orders that need a person, from the same
+ * count the order list uses.
+ */
+export async function Shell({
   current,
   operator,
   children,
@@ -26,10 +34,30 @@ export function Shell({
   operator: string;
   children: React.ReactNode;
 }) {
+  const now = new Date().toISOString();
+  let attention = 0;
+  try {
+    attention = (await orderRepository().counts(now)).attention;
+  } catch {
+    /* The bar must render even if the store is unreachable; the page says why. */
+  }
+  const provider = activeProvider();
+  const notices: { text: string; tone: "warn" | "quiet" }[] = [];
+  if (!provider.isConfigured()) {
+    notices.push({ text: "Pagos sin configurar", tone: "quiet" });
+  } else if (provider.mode() === "test") {
+    notices.push({ text: "Pagos en modo de prueba", tone: "warn" });
+  }
+  if (storageKind() === "memory") {
+    notices.push({ text: "Datos en memoria: se pierden al reiniciar", tone: "warn" });
+  }
+
   return (
     <div className={styles.shell}>
       <header className={styles.bar}>
-        <p className={styles.brand}>{OPS.brand}</p>
+        <Link href="/ops/pedidos" className={styles.brand}>
+          {OPS.brand}
+        </Link>
         <nav aria-label="Operaciones" className={styles.nav}>
           {LINKS.map((l) => (
             <Link
@@ -39,17 +67,30 @@ export function Shell({
               aria-current={l.id === current ? "page" : undefined}
             >
               {OPS.nav[l.id]}
+              {l.id === "orders" && attention > 0 ? (
+                <span className={styles.navAlert}>
+                  {attention}
+                  <span className="sr-only"> requieren atención</span>
+                </span>
+              ) : null}
             </Link>
           ))}
         </nav>
-        <form action={logoutAction} className={styles.session}>
-          <span>
-            {OPS.signedInAs}: {operator}
-          </span>
-          <button type="submit" className={styles.signOut}>
-            {OPS.signOut}
-          </button>
-        </form>
+        <div className={styles.barEnd}>
+          {notices.map((n) => (
+            <span key={n.text} className={styles.envNotice} data-tone={n.tone}>
+              {n.text}
+            </span>
+          ))}
+          <form action={logoutAction} className={styles.session}>
+            <span>
+              {OPS.signedInAs}: {operator}
+            </span>
+            <button type="submit" className={styles.signOut}>
+              {OPS.signOut}
+            </button>
+          </form>
+        </div>
       </header>
       <main id="main-content" className={styles.main}>
         {children}

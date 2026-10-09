@@ -257,11 +257,150 @@ export const OPS = {
     "order.disputed.internal": "Operaciones · disputa",
   } satisfies Record<NotificationKind, string>,
 
+  /*
+   * A message's state on its own. WHY a pending message has not gone (no
+   * provider) is the environment's fact, said once by `outboxReason`, not
+   * repeated as if every message had its own problem.
+   */
   outbox: {
-    pending: "Pendiente — sin proveedor de correo; no se ha enviado",
+    pending: "Pendiente — no se ha enviado",
     sent: "Enviado (aceptado por el proveedor)",
     failed: "Falló el envío",
   } satisfies Record<OutboxStatus, string>,
+
+  outboxShort: {
+    pending: "Pendiente",
+    sent: "Enviado",
+    failed: "Falló",
+  } satisfies Record<OutboxStatus, string>,
+
+  outboxReason: {
+    noProvider: "Sin proveedor de correo: no salió y no saldrá hasta configurar uno.",
+    queued: "En cola: se enviará con el proveedor configurado.",
+  },
+
+  /* ---- orientation: what each screen is for ------------------------------ */
+  pages: {
+    orders: "Lo que requiere tu atención, lo que sigue en la cola y dónde está cada pedido.",
+    inventory:
+      "Cuántas unidades hay de cada presentación. Un SKU sin conteo se vende sin límite; con conteo, el sistema no cobra lo que no hay.",
+    messages: "Cada correo que un pedido le debe al cliente o a operaciones, y si salió.",
+    content: "Textos editoriales que se muestran en el sitio público.",
+  },
+
+  /* The order views, grouped by what an operator does with them. */
+  viewGroups: {
+    attention: "Atención",
+    work: "Preparar y enviar",
+    transit: "En camino",
+    done: "Completados",
+    records: "Pagos y cierres",
+  },
+
+  /* What each view holds, said when it is empty — and whether that is normal. */
+  viewEmpty: {
+    attention:
+      "Nada requiere atención. Aquí aparecen los pagos atascados, las disputas, los reembolsos por enviar, los pedidos en espera y las incidencias de envío.",
+    to_fulfil:
+      "No hay pedidos pagados esperando preparación. Un pedido llega aquí en cuanto el procesador confirma su pago.",
+    preparing: "Ningún pedido se está preparando ahora.",
+    ready_to_ship: "No hay pedidos empacados esperando su envío.",
+    in_transit: "No hay paquetes en camino.",
+    delivered: "Todavía no hay pedidos entregados.",
+    awaiting_payment:
+      "No hay pedidos esperando pago. Aquí aparecen los pedidos creados sin pagar, los pagos en proceso y los que fallaron.",
+    disputed: "No hay disputas. Una disputa aparece si el banco del cliente abre un contracargo.",
+    refunded: "No hay pedidos reembolsados.",
+    cancelled: "No hay pedidos cancelados.",
+    all: "Todavía no hay pedidos. Un pedido aparece en cuanto un cliente lo confirma en el checkout.",
+  } satisfies Record<OrderView, string>,
+
+  /* The attention reasons, short enough for a list row. */
+  attentionShort: {
+    payment_disputed: "Disputa abierta",
+    payment_stalled: "Pago sin resolver",
+    paid_on_earlier_attempt: "Posible cargo doble",
+    amount_mismatch: "Importe no coincide",
+    refund_open: "Reembolso por enviar",
+    refund_unconfirmed: "Reembolso sin confirmar",
+    fulfilment_on_hold: "En espera",
+    shipment_exception: "Incidencia de envío",
+    refunded_after_dispatch: "Reembolsado tras despachar",
+    stock_short: "Faltaron existencias",
+  } satisfies Record<AttentionReason, string>,
+
+  /* Why a payment attempt was declined, in words a person can repeat. */
+  declines: {
+    insufficient_funds: "Fondos insuficientes",
+    card_data: "Datos de la tarjeta incorrectos",
+    call_for_authorize: "El banco pide que el cliente autorice el cargo",
+    card_disabled: "Tarjeta desactivada",
+    high_risk: "Rechazado por riesgo",
+    issuer_rejected: "Rechazado por el banco emisor",
+    amount_limit: "El importe supera el límite de la tarjeta",
+    installments: "Meses no permitidos",
+    attempts_exceeded: "Demasiados intentos",
+    expired: "El pago expiró",
+    cancelled: "El pago se canceló",
+    unconfirmed: "El procesador no confirmó el intento",
+    out_of_stock: "Sin existencias: no se intentó cobrar",
+    generic: "Rechazado",
+  } as Record<string, string>,
+
+  attemptOutcomes: {
+    submitted: "Enviado, sin respuesta todavía",
+    answered: "Respondido por el procesador",
+    refused: "Rechazado",
+    unanswered: "Sin respuesta",
+  } as Record<string, string>,
+
+  /* History notes the system writes as codes, in words. Unknown codes stay as written. */
+  eventNotes: {
+    payment_confirmed: "al confirmarse el pago",
+    dispatched: "al despachar el envío",
+    resumed: "se reanudó",
+    same_state: "sin cambios",
+    already_applied: "ya aplicado",
+    provider_ref_mismatch: "referencia del procesador distinta",
+    illegal_transition: "no aplicado: no corresponde al estado actual",
+    unconfirmed: "sin confirmar",
+    provider_side: "iniciado en el procesador",
+    answered: "respuesta recibida",
+    unanswered: "sin respuesta",
+    accredited: "acreditado",
+    in_process: "en proceso",
+  } as Record<string, string>,
+
+  movementKinds: {
+    count: "Conteo",
+    adjustment: "Ajuste",
+    hold: "Reservado para un pedido",
+    release: "Reserva liberada",
+    consume: "Salió con un pedido",
+  } as Record<string, string>,
+
+  holdStatus: {
+    held: "Reservado",
+    released: "Liberado",
+    consumed: "Salió del almacén",
+  } as Record<string, string>,
+
+  acknowledgements: {
+    "research-use": "Uso exclusivo en investigación",
+  } as Record<string, string>,
+
+  /* What an action does, said beside it. Short, factual, the same everywhere. */
+  effects: {
+    reversible: "Se puede deshacer",
+    irreversible: "No se puede deshacer",
+    noMoney: "No mueve dinero",
+    moneyMoves: "Devuelve dinero al cliente",
+    noNotice: "No avisa al cliente",
+    notifies: "Avisa al cliente",
+    noStock: "No cambia el inventario",
+    stockOut: "El inventario sale del almacén",
+    stockReleased: "Libera el inventario reservado",
+  },
 
   adjustments: {
     initial_count: "Conteo inicial",

@@ -37,6 +37,7 @@ export default async function LoginPage({
           <p className={styles.eyebrow}>{OPS.brand}</p>
           <h1 className={styles.title}>Acceso</h1>
         </div>
+        <p className={styles.hint}>Consola de operaciones. Solo para el equipo de NEOGEN.</p>
         {error && ERRORS[error] ? (
           <p className={styles.flash} data-tone="error" role="alert">
             {ERRORS[error]}

@@ -1,44 +1,51 @@
 import Link from "next/link";
 
-import { attentionReasons, isOrderView, shipmentSummary } from "@/domain/order";
+import { isOrderView, shipmentSummary } from "@/domain/order";
 import { requireOperator } from "@/server/ops/auth";
-import { orderRepository, storageKind } from "@/server/persistence";
+import { orderRepository } from "@/server/persistence";
 
 import { age, dateTime, money, OPS } from "../copy";
+import {
+  firstAttention,
+  FULFILMENT_TONE,
+  itemsSummary,
+  NEXT_TONE,
+  nextStep,
+  PAYMENT_TONE,
+  SHIPMENT_TONE,
+} from "../lifecycle";
 import styles from "../ops.module.css";
-import { AxisChip, Flash, Shell } from "../Shell";
+import { Flash, Shell } from "../Shell";
+import { Count, EmptyState, PageHeader, State } from "../ui";
 
 import type { OrderView } from "@/domain/order";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
-
-/* The work queue in the order an order moves through it, then the records. */
-const WORK_VIEWS: readonly OrderView[] = [
-  "attention",
-  "to_fulfil",
-  "preparing",
-  "ready_to_ship",
-  "in_transit",
-  "delivered",
-];
-const RECORD_VIEWS: readonly OrderView[] = [
-  "awaiting_payment",
-  "disputed",
-  "refunded",
-  "cancelled",
-  "all",
-];
 export const metadata: Metadata = { title: "Pedidos" };
 
+/*
+ * The views, grouped by what an operator DOES with them: look at what needs a
+ * person, work the queue in the order an order moves through it, watch what is
+ * on its way, and keep the records. The views and their counts are exactly the
+ * domain's (`domain/order/attention.ts`); only their arrangement is new.
+ */
+const GROUPS: readonly { id: keyof typeof OPS.viewGroups; views: readonly OrderView[] }[] = [
+  { id: "attention", views: ["attention"] },
+  { id: "work", views: ["to_fulfil", "preparing", "ready_to_ship"] },
+  { id: "transit", views: ["in_transit"] },
+  { id: "done", views: ["delivered"] },
+  { id: "records", views: ["awaiting_payment", "disputed", "refunded", "cancelled"] },
+];
+
 /**
- * THE ORDER LIST — what needs doing, newest first.
+ * THE ORDER LIST — what needs a person, then the work, newest first.
  *
- * Tabs are views over the three axes (`domain/order/attention.ts`), counted by
- * the same predicates that filter the list. The default is "needs attention"
- * when anything does, otherwise "to prepare". Search takes an order number
- * (prefix) or a customer's exact email — what an operator is given on the
- * phone. Nothing on this page is invented to fill it: an empty view says so.
+ * The default view is "needs attention" when anything does, otherwise "to
+ * prepare" (unchanged). Search takes an order number (prefix) or a customer's
+ * exact email — what an operator is given on the phone. Each row says, in
+ * words, why it needs attention or what its next step is, so the list can be
+ * read without opening every order.
  */
 export default async function OrdersPage({
   searchParams,
@@ -67,74 +74,130 @@ export default async function OrdersPage({
 
   return (
     <Shell current="orders" operator={operator}>
-      <div className={styles.head}>
-        <div>
-          <p className={styles.eyebrow}>
-            {storageKind() === "memory"
-              ? "Almacenamiento en memoria — solo desarrollo; se pierde al reiniciar"
-              : "Pedidos"}
-          </p>
-          <h1 className={styles.title}>{OPS.views[view]}</h1>
-        </div>
-      </div>
+      <PageHeader title="Pedidos" description={OPS.pages.orders} />
 
       <Flash error={error} />
 
-      <nav aria-label="Vistas" className={styles.tabGroups}>
-        {(
-          [
-            ["queue", WORK_VIEWS],
-            ["records", RECORD_VIEWS],
-          ] as const
-        ).map(([group, views]) => (
-          <ul key={group} className={styles.tabs} data-group={group}>
-            {views.map((v) => (
-              <li key={v}>
-                <Link
-                  href={href(v)}
-                  className={styles.tab}
-                  aria-current={v === view ? "page" : undefined}
-                  data-alert={v === "attention" && counts.attention > 0 ? "true" : undefined}
-                >
-                  {OPS.views[v]}
-                  <span className={styles.count}>{counts[v]}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+      {/* ---- views: grouped on a wide screen ------------------------------ */}
+      <nav aria-label="Vistas de pedidos" className={styles.viewNav}>
+        {GROUPS.map((g) => (
+          <div key={g.id} className={styles.viewGroup} data-group={g.id}>
+            <span className={styles.viewGroupLabel}>{OPS.viewGroups[g.id]}</span>
+            <ul className={styles.viewList}>
+              {g.views.map((v) => (
+                <li key={v}>
+                  <Link
+                    href={href(v)}
+                    className={styles.viewLink}
+                    aria-current={v === view ? "page" : undefined}
+                    data-alert={v === "attention" && counts.attention > 0 ? "true" : undefined}
+                  >
+                    {OPS.views[v]}
+                    <Count n={counts[v]} alert={v === "attention"} />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
         ))}
+        <div className={styles.viewGroup} data-group="all">
+          <span className={styles.viewGroupLabel}>&nbsp;</span>
+          <ul className={styles.viewList}>
+            <li>
+              <Link
+                href={href("all")}
+                className={styles.viewLink}
+                aria-current={view === "all" ? "page" : undefined}
+              >
+                {OPS.views.all}
+                <Count n={counts.all} />
+              </Link>
+            </li>
+          </ul>
+        </div>
       </nav>
 
-      <form className={styles.search} role="search" action="/ops/pedidos">
-        <input type="hidden" name="vista" value={view} />
-        <label className="sr-only" htmlFor="q">
-          Buscar por número de pedido o correo exacto
-        </label>
-        <input
-          id="q"
-          name="q"
-          defaultValue={search}
-          className={styles.input}
-          placeholder="NG-… o correo del cliente"
-          autoComplete="off"
-          spellCheck={false}
-        />
-        <button type="submit" className={styles.button}>
-          Buscar
-        </button>
-        {search ? (
-          <Link href={href(view)} className={styles.button} data-variant="quiet">
-            Limpiar
+      {/* ---- views on a phone: one selector, plus attention when it matters - */}
+      <div className={styles.viewSwitch}>
+        {counts.attention > 0 && view !== "attention" ? (
+          <Link href={href("attention")} className={styles.attentionLink}>
+            <span className={styles.stateDot} data-tone="bad" aria-hidden="true" />
+            {counts.attention} {counts.attention === 1 ? "pedido requiere" : "pedidos requieren"}{" "}
+            atención
           </Link>
         ) : null}
-      </form>
+        <form action="/ops/pedidos" className={styles.viewSwitchForm}>
+          {search ? <input type="hidden" name="q" value={search} /> : null}
+          <label htmlFor="vista" className={styles.labelText}>
+            Vista
+          </label>
+          <select id="vista" name="vista" defaultValue={view} className={styles.select}>
+            {GROUPS.map((g) => (
+              <optgroup key={g.id} label={OPS.viewGroups[g.id]}>
+                {g.views.map((v) => (
+                  <option key={v} value={v}>
+                    {OPS.views[v]} ({counts[v]})
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+            <option value="all">
+              {OPS.views.all} ({counts.all})
+            </option>
+          </select>
+          <button type="submit" className={styles.button} data-variant="quiet">
+            Ver
+          </button>
+        </form>
+      </div>
+
+      <div className={styles.listHead}>
+        <h2 className={styles.listTitle}>
+          {OPS.views[view]} <span className={styles.listCount}>{counts[view]}</span>
+        </h2>
+        <form className={styles.search} role="search" action="/ops/pedidos">
+          <input type="hidden" name="vista" value={view} />
+          <label className="sr-only" htmlFor="q">
+            Buscar por número de pedido o correo exacto del cliente
+          </label>
+          <input
+            id="q"
+            name="q"
+            type="search"
+            defaultValue={search}
+            className={styles.input}
+            placeholder="Número NG-… o correo del cliente"
+            autoComplete="off"
+            spellCheck={false}
+          />
+          <button type="submit" className={styles.button}>
+            Buscar
+          </button>
+          {search ? (
+            <Link href={href(view)} className={styles.button} data-variant="quiet">
+              Limpiar
+            </Link>
+          ) : null}
+        </form>
+      </div>
 
       {orders.length === 0 ? (
-        <p className={styles.empty}>
-          {search
-            ? `Ningún pedido en «${OPS.views[view]}» coincide con «${search}».`
-            : `No hay pedidos en «${OPS.views[view]}».`}
-        </p>
+        search ? (
+          <EmptyState
+            title={`Ningún pedido en «${OPS.views[view]}» coincide con «${search}».`}
+            action={
+              view !== "all" ? (
+                <Link href={href("all")} className={styles.button} data-variant="quiet">
+                  Buscar en todos los pedidos
+                </Link>
+              ) : null
+            }
+          >
+            La búsqueda acepta el inicio del número de pedido (NG-…) o el correo exacto del cliente.
+          </EmptyState>
+        ) : (
+          <EmptyState title={OPS.viewEmpty[view]} />
+        )
       ) : (
         <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="Lista de pedidos">
           <table className={`${styles.table} ${styles.orderTable}`}>
@@ -145,72 +208,77 @@ export default async function OrdersPage({
               <tr>
                 <th scope="col">Pedido</th>
                 <th scope="col">Recibido</th>
-                <th scope="col">Cliente</th>
-                <th scope="col">Destino</th>
-                <th scope="col">Artículos</th>
-                <th scope="col" className={styles.num}>
-                  Total
-                </th>
                 <th scope="col">Pago</th>
                 <th scope="col">Preparación</th>
                 <th scope="col">Envío</th>
+                <th scope="col" className={styles.num}>
+                  Total
+                </th>
+                <th scope="col">Siguiente paso</th>
               </tr>
             </thead>
             <tbody>
               {orders.map((o) => {
-                const units = o.lines.reduce((n, l) => n + l.quantity, 0);
-                const attention = attentionReasons(o, now).length > 0;
+                const reason = firstAttention(o, now);
+                const step = nextStep(o, now);
+                const ship = shipmentSummary(o);
                 return (
-                  <tr key={o.id}>
+                  <tr key={o.id} data-attention={reason ? "true" : undefined}>
                     <td data-cell="id">
-                      {attention ? (
-                        <span
-                          className={styles.attentionDot}
-                          role="img"
-                          aria-label="Requiere atención"
-                        />
-                      ) : null}
                       <Link href={`/ops/pedidos/${o.id}`} className={styles.rowLink}>
                         {o.id}
                       </Link>
+                      <span className={styles.rowName}>{o.contact.name}</span>
+                      <span className={styles.rowMeta}>
+                        {o.shipping.city}, {o.shipping.state} · {itemsSummary(o)}
+                      </span>
                     </td>
                     <td data-cell="age">
                       <span title={dateTime.format(new Date(o.createdAt))}>
                         {age(o.createdAt, nowMs)}
                       </span>
                     </td>
-                    <td data-cell="who">{o.contact.name}</td>
-                    <td data-cell="where">
-                      {o.shipping.city}, {o.shipping.state}
-                      <br />
-                      <span className={`${styles.mono} ${styles.muted}`}>
-                        {o.route === "priority" ? "prioritaria" : "nacional"}
-                      </span>
+                    <td data-cell="pay">
+                      <State tone={PAYMENT_TONE[o.state]} label="Pago">
+                        {OPS.payment[o.state]}
+                      </State>
                     </td>
-                    <td data-cell="items">
-                      <span className={styles.mono}>
-                        {units} u · {o.lines.length} SKU
-                      </span>
-                      <br />
-                      <span className={`${styles.mono} ${styles.muted}`}>
-                        {o.lines
-                          .slice(0, 2)
-                          .map((l) => `${l.variantId}×${l.quantity}`)
-                          .join(", ")}
-                        {o.lines.length > 2 ? "…" : ""}
-                      </span>
+                    <td data-cell="ful">
+                      <State tone={FULFILMENT_TONE[o.fulfilment.state]} label="Preparación">
+                        {OPS.fulfilment[o.fulfilment.state]}
+                      </State>
+                    </td>
+                    <td data-cell="ship">
+                      <State tone={SHIPMENT_TONE[ship]} label="Envío">
+                        {OPS.shipment[ship]}
+                      </State>
                     </td>
                     <td data-cell="total" className={styles.num}>
                       {money(o.totals.total.amount)}
                     </td>
-                    <td data-cell="pay">
-                      <AxisChip axis="payment" state={o.state} />
-                    </td>
-                    <td data-cell="ful">
-                      <AxisChip axis="fulfilment" state={o.fulfilment.state} />
-                    </td>
-                    <td data-cell="ship">
-                      <AxisChip axis="shipment" state={shipmentSummary(o)} />
+                    <td data-cell="next">
+                      {reason ? (
+                        <State tone="bad" strong>
+                          <span className="sr-only">Requiere atención: </span>
+                          {OPS.attentionShort[reason]}
+                        </State>
+                      ) : (
+                        <span className={styles.nextCell} data-kind={step.kind}>
+                          <span className="sr-only">Siguiente paso: </span>
+                          {step.kind === "act" ? (
+                            <span className={styles.nextArrow} aria-hidden="true">
+                              →
+                            </span>
+                          ) : (
+                            <span
+                              className={styles.stateDot}
+                              data-tone={NEXT_TONE[step.kind]}
+                              aria-hidden="true"
+                            />
+                          )}
+                          {step.short}
+                        </span>
+                      )}
                     </td>
                   </tr>
                 );

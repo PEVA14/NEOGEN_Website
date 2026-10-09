@@ -18,6 +18,7 @@ import { bulkStatusAction } from "@/server/ops/effectsActions";
 import { dateTime, EFFECTS, OPS } from "../../copy";
 import styles from "../../ops.module.css";
 import { Flash, Shell } from "../../Shell";
+import { EmptyState, PageHeader, State } from "../../ui";
 import { BulkBar } from "./BulkBar";
 import local from "./effects.module.css";
 
@@ -79,43 +80,43 @@ export default async function EffectsListPage({
 
   return (
     <Shell current="content" operator={operator}>
-      <div className={styles.head}>
-        <div>
-          <p className={styles.eyebrow}>{EFFECTS.eyebrow}</p>
-          <h1 className={styles.title}>{EFFECTS.title}</h1>
-          <p className={`${styles.muted} ${local.intro}`}>{EFFECTS.intro}</p>
-        </div>
-        <div className={local.toolbar}>
-          <Link href="/ops/contenido/efectos/importar" className={styles.button}>
-            Importar
-          </Link>
-          {/* A file download, not a page: a plain link, so the browser saves it. */}
-          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-          <a
-            href="/ops/contenido/efectos/exportar?formato=csv"
-            className={styles.button}
-            data-variant="quiet"
-          >
-            Exportar CSV
-          </a>
-          {/* A file download, not a page: a plain link, so the browser saves it. */}
-          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-          <a
-            href="/ops/contenido/efectos/exportar?formato=json"
-            className={styles.button}
-            data-variant="quiet"
-          >
-            Exportar JSON
-          </a>
-          <Link
-            href="/ops/contenido/efectos/etiquetas"
-            className={styles.button}
-            data-variant="quiet"
-          >
-            Etiquetas ({file.vocabulary.length})
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow={EFFECTS.eyebrow}
+        title={EFFECTS.title}
+        description={EFFECTS.intro}
+        actions={
+          <>
+            <Link href="/ops/contenido/efectos/importar" className={styles.button}>
+              Importar
+            </Link>
+            {/* A file download, not a page: a plain link, so the browser saves it. */}
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+            <a
+              href="/ops/contenido/efectos/exportar?formato=csv"
+              className={styles.button}
+              data-variant="quiet"
+            >
+              Exportar CSV
+            </a>
+            {/* A file download, not a page: a plain link, so the browser saves it. */}
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+            <a
+              href="/ops/contenido/efectos/exportar?formato=json"
+              className={styles.button}
+              data-variant="quiet"
+            >
+              Exportar JSON
+            </a>
+            <Link
+              href="/ops/contenido/efectos/etiquetas"
+              className={styles.button}
+              data-variant="quiet"
+            >
+              Etiquetas ({file.vocabulary.length})
+            </Link>
+          </>
+        }
+      />
       {ok === "effects_bulk_approved" || ok === "effects_bulk_draft" ? (
         <BulkSummary
           approved={ok === "effects_bulk_approved"}
@@ -179,7 +180,11 @@ export default async function EffectsListPage({
       <BulkBar action={bulkStatusAction} vista={filter === "all" ? "" : filter} q={q} />
 
       {shown.length === 0 ? (
-        <p className={styles.empty}>Ningún producto coincide.</p>
+        <EmptyState
+          title={q ? `Ningún producto coincide con «${q}».` : "Ningún producto en esta vista."}
+        >
+          {q ? "La búsqueda acepta el nombre o el slug del producto." : null}
+        </EmptyState>
       ) : (
         <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="Productos">
           <table className={styles.table}>
@@ -230,13 +235,10 @@ export default async function EffectsListPage({
                     </td>
                     <td>
                       {entry ? (
-                        <span
-                          className={styles.chip}
-                          data-tone={live ? "good" : entry.status === "review" ? "wait" : "quiet"}
-                        >
+                        <State tone={live ? "good" : entry.status === "review" ? "warn" : "quiet"}>
                           {EFFECTS.status[entry.status]}
                           {entry.status === "approved" && !live ? " · incompleto" : ""}
-                        </span>
+                        </State>
                       ) : (
                         <span className={styles.muted}>—</span>
                       )}
