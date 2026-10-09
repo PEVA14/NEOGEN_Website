@@ -2675,6 +2675,18 @@ empty).
   say.
 - **Stock form hint** says "Conteo" sets the total and "Ajuste" adds or subtracts.
 
+**Second batch: the stuck-payment reconcile (2026-10-08).** The pending test
+order stayed "Procesando" indefinitely with the webhook blocked, which is what
+production would do if a webhook were ever lost. `reconcileOrder` (extracted
+from `refreshPayment`, unchanged for page renders) asks the provider and applies
+its answer through the webhook's own path; `reconcileInFlight` runs it over the
+in-flight orders (`OrderQuery` gained `payment` and `updatedBefore` filters in
+both repositories); `GET /api/cron/reconcile-payments` runs it on a schedule,
+closed without `CRON_SECRET`; the order page has "Revisar con el procesador".
+Never invents an outcome: a payment the provider still calls processing stays
+as it is, stock held. Details and the Hobby/production-only limits:
+`docs/OPERATIONS.md` §9a. New env var: `CRON_SECRET` (Production).
+
 **Behaviours confirmed as designed, worth knowing.** A paid order that predates a
 SKU's first count claims a unit the first time it changes, so counts are best
 entered before orders arrive. "Conteo (cantidad total)" never adds.

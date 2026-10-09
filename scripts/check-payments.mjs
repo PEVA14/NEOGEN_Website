@@ -913,6 +913,141 @@ __resetOutbox();
 }
 
 /* ======================================================================== */
+/* 8c. RECONCILE — in-flight payments the webhook never settled              */
+/* ======================================================================== */
+
+{
+  const { memoryInventoryStore: inv, __resetInventory: resetInv } =
+    await import("../src/domain/inventory/adapters/memory.ts");
+  const { reconcileInFlight } = await import("../src/server/reconcile.ts");
+  const { GET: cronRoute } = await import("../src/app/api/cron/reconcile-payments/route.ts");
+
+  /* A clean slate: earlier sections leave orders in flight on purpose. */
+  __resetOrderStore();
+  resetInv();
+  await inv.adjust({
+    id: "rc-count",
+    variantId: "v1",
+    mode: "count",
+    quantity: 10,
+    reason: "initial_count",
+    lotId: null,
+    actor: "t",
+    note: null,
+    at: "2026-09-19T09:00:00.000Z",
+  });
+  /* An hour on: well past the job's minimum age. */
+  const later = (extra = {}) => ({ now: new Date(Date.now() + 60 * 60 * 1000), ...extra });
+  const reserved = async () => (await inv.level("v1")).reserved;
+
+  /* A payment still processing at the provider is left exactly as it is. */
+  const a = await placed(12000);
+  eq((await submitPayment(a.id, card("CONT"))).kind, "processing", "a payment goes in flight");
+  const aRef = (await load(a.id)).providerRef;
+  eq(await reserved(), 1, "and holds a unit while it is");
+  const abandoned = await placed(9000);
+  eq(abandoned.state, "created", "an order that was only created, never paid");
+
+  const fresh = await reconcileInFlight();
+  eq(
+    fresh.checked,
+    0,
+    "an order changed seconds ago is not touched (a customer may be mid-payment)",
+  );
+
+  const idle = await reconcileInFlight(later());
+  eq(idle.checked, 1, "only the in-flight order is asked about, not the abandoned one");
+  eq(idle.unchanged, 1, "the provider still says processing: nothing is decided for it");
+  eq((await load(a.id)).state, "payment_processing", "so the order stays in flight");
+  eq(await reserved(), 1, "and its stock stays held — the payment may yet be taken");
+
+  const events = (await load(a.id)).events.length;
+  await reconcileInFlight(later());
+  eq((await load(a.id)).events.length, events, "asking again writes nothing");
+
+  /* The provider approves it later, and no webhook ever came. */
+  mp.set(aRef, "processed", "accredited");
+  const settled = await reconcileInFlight(later());
+  eq(settled.settled, 1, "an approval the webhook missed is applied");
+  const paid = await load(a.id);
+  eq(paid.state, "paid", "the order is paid");
+  eq(paid.fulfilment.state, "queued", "and joins the fulfilment queue, as it would by webhook");
+  eq(await reserved(), 1, "its stock stays reserved for the paid order");
+  eq((await reconcileInFlight(later())).checked, 0, "a settled order is not asked about again");
+
+  /* A failure releases what was held. */
+  const b = await placed(12000);
+  await submitPayment(b.id, card("CONT"));
+  eq(await reserved(), 2, "a second payment in flight holds a second unit");
+  mp.set((await load(b.id)).providerRef, "failed", "failed", "rejected_by_issuer");
+  const failedRun = await reconcileInFlight(later());
+  eq(failedRun.settled, 1, "a failure the webhook missed is applied");
+  eq((await load(b.id)).state, "payment_failed", "the order is failed");
+  eq(await reserved(), 1, "and its unit goes back on the shelf");
+
+  /* The provider cannot be reached, or has never heard of it. */
+  const c = await placed(12000);
+  await submitPayment(c.id, card("CONT"));
+  mp.orders.delete((await load(c.id)).providerRef);
+  const lost = await reconcileInFlight(later());
+  eq(lost.unreachable, 1, "an order the provider does not know is counted, not guessed at");
+  eq((await load(c.id)).state, "payment_processing", "and left exactly as it was");
+
+  /* An attempt that never reached the provider is released after its allowance. */
+  const d = await placed(12000);
+  const old = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  await mutate(memoryOrderRepository, d.id, (o) =>
+    beginAttempt(o, { provider: "mercadopago", at: old }),
+  );
+  const released = await reconcileInFlight(later());
+  eq(released.released, 1, "a stalled attempt that has no provider reference is closed");
+  eq((await load(d.id)).state, "payment_failed", "so the customer is not stuck");
+
+  /* A batch is bounded: by size, and by time. */
+  for (let i = 0; i < 3; i += 1) {
+    const extra = await placed(12000);
+    await submitPayment(extra.id, card("CONT"));
+  }
+  const small = await reconcileInFlight(later({ limit: 2 }));
+  eq(small.checked, 2, "a run looks at no more than its limit");
+  eq(small.moreRemaining, true, "and says there is more");
+  const outOfTime = await reconcileInFlight(later({ budgetMs: -1 }));
+  eq(outOfTime.checked, 0, "a run whose time is up asks about nothing");
+  eq(outOfTime.stoppedEarly, true, "and says it stopped early");
+
+  /* The scheduled route: closed by default, bearer only, counts only. */
+  const call = (headers = {}) =>
+    cronRoute(new Request("https://neogen.mx/api/cron/reconcile-payments", { headers }));
+  delete process.env.CRON_SECRET;
+  eq((await call()).status, 503, "with no CRON_SECRET the job is off");
+  process.env.CRON_SECRET = "too-short";
+  eq(
+    (await call({ authorization: "Bearer too-short" })).status,
+    503,
+    "a short secret is no secret",
+  );
+  const key = "cron-secret-for-the-checks-0123456789";
+  process.env.CRON_SECRET = key;
+  eq((await call()).status, 401, "no credential is refused");
+  eq((await call({ authorization: "Bearer nope" })).status, 401, "a wrong bearer is refused");
+  eq(
+    (await call({ authorization: key })).status,
+    401,
+    "the bare secret without 'Bearer' is refused",
+  );
+  const run = await call({ authorization: `Bearer ${key}` });
+  eq(run.status, 200, "the right bearer runs the job");
+  const text = await run.text();
+  ok(/"checked":\d+/.test(text), "and answers with counts");
+  ok(!/NG-|@|\$/.test(text), "and only counts: no order id, email or amount");
+  eq(run.headers.get("cache-control"), "no-store", "never cached");
+  delete process.env.CRON_SECRET;
+
+  __resetOrderStore();
+  resetInv();
+}
+
+/* ======================================================================== */
 /* 9. POSTGRES — the durable adapters on a real Postgres engine (PGlite)       */
 /* ======================================================================== */
 
@@ -1018,6 +1153,41 @@ __resetOutbox();
     order.id,
     "the old reference still finds the order",
   );
+
+  /* The reconcile job's listing, on the real engine: payment states and age. */
+  {
+    const mk = async (state, updatedAt) => {
+      const o = makeOrder(12000);
+      const made = await repo.create({ ...o, state, updatedAt });
+      if (!made.ok) throw new Error("fixture not created");
+      return made.order.id;
+    };
+    const hourAgo = "2026-09-19T09:00:00.000Z";
+    const justNow = "2026-09-19T12:00:00.000Z";
+    const oldProcessing = await mk("payment_processing", hourAgo);
+    const oldPending = await mk("pending_payment", hourAgo);
+    const youngProcessing = await mk("payment_processing", justNow);
+    const oldCreated = await mk("created", hourAgo);
+    const oldFailed = await mk("payment_failed", hourAgo);
+
+    const query = {
+      view: "awaiting_payment",
+      payment: ["pending_payment", "payment_processing"],
+      updatedBefore: "2026-09-19T11:00:00.000Z",
+      now: "2026-09-19T12:30:00.000Z",
+    };
+    const ids = (await repo.list(query)).orders.map((o) => o.id).sort();
+    eq(
+      JSON.stringify(ids),
+      JSON.stringify([oldProcessing, oldPending].sort()),
+      "Postgres lists only in-flight payments older than the cutoff",
+    );
+    ok(!ids.includes(youngProcessing), "a payment changed after the cutoff is left out");
+    ok(!ids.includes(oldCreated) && !ids.includes(oldFailed), "abandoned and failed orders too");
+    const everything = (await repo.list({ ...query, payment: undefined, updatedBefore: undefined }))
+      .orders.length;
+    ok(everything >= 5, "without the filters the same view holds them all");
+  }
 
   const drafts = createPostgresDraftStore(client, () => 1);
   await drafts.put({ id: "d1", orderId: null, snapshot: { lines: [] } });

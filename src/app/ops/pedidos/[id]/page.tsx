@@ -23,6 +23,7 @@ import {
   holdAction,
   noteAction,
   recordShipmentAction,
+  reconcileAction,
   requestRefundAction,
   resumeAction,
   shipmentStateAction,
@@ -722,6 +723,20 @@ export default async function OrderPage({
                 </>
               ) : null}
             </dl>
+            {order.state === "payment_processing" || order.state === "pending_payment" ? (
+              <form action={reconcileAction} className={`${styles.form} ${styles.noPrint}`}>
+                <Hidden order={order} />
+                <p className={styles.hint}>
+                  Pregunta al procesador cómo va este pago y aplica su respuesta. No cambia nada si
+                  el procesador sigue informando lo mismo.
+                </p>
+                <div>
+                  <button type="submit" className={styles.button} data-variant="quiet">
+                    Revisar con el procesador
+                  </button>
+                </div>
+              </form>
+            ) : null}
             {order.attempts.length > 0 ? (
               <div
                 className={styles.tableWrap}

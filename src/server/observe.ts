@@ -19,6 +19,7 @@ export type Signal =
   | "payment.webhook_rejected"
   | "payment.webhook_unsettled"
   | "payment.not_persisted"
+  | "payment.reconciled"
   | "inventory.hold_failed"
   | "inventory.sync_failed"
   | "inventory.short"
@@ -47,6 +48,10 @@ const SAFE_KEYS = new Set([
   "count",
   "attempt",
   "operator",
+  "settled",
+  "released",
+  "unreachable",
+  "failed",
 ]);
 
 export type SignalContext = Readonly<Record<string, string | number | boolean | null | undefined>>;

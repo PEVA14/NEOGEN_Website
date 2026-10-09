@@ -23,9 +23,9 @@ import {
 } from "@/domain/order";
 import { isOrderId } from "@/payments/instrument";
 import { MANUAL_SHIPPING } from "@/shipping";
-import { submitRefund } from "@/server/payments";
+import { reconcileOrder, submitRefund } from "@/server/payments";
 import { operate } from "@/server/orders";
-import { inventoryStore } from "@/server/persistence";
+import { inventoryStore, orderRepository } from "@/server/persistence";
 
 import { login, logout, OPS_PATH, requireOperator } from "./auth";
 
@@ -163,6 +163,20 @@ export async function requestRefundAction(form: FormData): Promise<void> {
   const reason = oneOf(field(form, "reason"), REFUND_REASONS);
   if (!reason) failed(orderId, "invalid_input", "#pago");
   await run(orderId, (o, at) => requestRefund(o, reason, actor, at), "refund_requested", "#pago");
+}
+
+/**
+ * ASK THE PROCESSOR WHERE THIS PAYMENT STANDS. Read-only toward the customer:
+ * it applies only an answer the processor itself gives, through the same path
+ * a webhook takes, and changes nothing when the processor still says what we
+ * already knew. Offered on any in-flight payment; the domain decides the rest.
+ */
+export async function reconcileAction(form: FormData): Promise<void> {
+  const { orderId } = await begin(form);
+  const order = await orderRepository().get(orderId);
+  if (!order) failed(orderId, "not_found");
+  const { outcome } = await reconcileOrder(order);
+  done(orderId, `reconcile_${outcome}`, "#pago");
 }
 
 export async function submitRefundAction(form: FormData): Promise<void> {

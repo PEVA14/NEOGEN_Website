@@ -185,9 +185,17 @@ export function createPostgresOrderRepository(sql: SqlClient): OrderRepository {
       return found.rows.length > 0;
     },
 
-    async list({ view, search, limit = 100, now }) {
+    async list({ view, search, limit = 100, now, payment, updatedBefore }) {
       const params: unknown[] = [];
       let where = viewClause(view, params, now);
+      if (payment) {
+        params.push([...payment]);
+        where += ` and state = any($${params.length}::text[])`;
+      }
+      if (updatedBefore) {
+        params.push(updatedBefore);
+        where += ` and updated_at < $${params.length}`;
+      }
       const q = search?.trim().toLowerCase();
       if (q) {
         params.push(`${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`, q);

@@ -116,10 +116,16 @@ export const memoryOrderRepository: OrderRepository = {
     return store().providerEvents.has(providerEventId);
   },
 
-  async list({ view, search, limit = 100, now }) {
+  async list({ view, search, limit = 100, now, payment, updatedBefore }) {
     const all = [...store().orders.values()]
       .map(clone)
-      .filter((o) => matchesView(orderColumns(o, now), view) && matchesSearch(o, search))
+      .filter(
+        (o) =>
+          matchesView(orderColumns(o, now), view) &&
+          matchesSearch(o, search) &&
+          (!payment || payment.includes(o.state)) &&
+          (!updatedBefore || o.updatedAt < updatedBefore),
+      )
       .sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
     return { orders: all.slice(0, limit), truncated: all.length > limit };
   },

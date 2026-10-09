@@ -1,5 +1,5 @@
 import type { OrderView } from "./attention";
-import type { Order } from "./types";
+import type { Order, PaymentState } from "./types";
 
 /**
  * THE PERSISTENCE BOUNDARY.
@@ -68,6 +68,14 @@ export interface OrderQuery {
   search?: string | null;
   limit?: number;
   now: string;
+  /**
+   * Narrow the view to these payment states. The reconcile job asks for the
+   * in-flight ones only: the "awaiting payment" view also holds every order
+   * that was created and abandoned, and those must not crowd it out.
+   */
+  payment?: readonly PaymentState[];
+  /** Only orders last changed before this instant (ISO). */
+  updatedBefore?: string;
 }
 
 /**

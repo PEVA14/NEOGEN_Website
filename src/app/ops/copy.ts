@@ -189,6 +189,14 @@ export const OPS = {
     refund_submitted:
       "Reembolso enviado al procesador. Se confirmará cuando el procesador lo reporte.",
     refund_confirmed: "El procesador confirmó el reembolso.",
+    reconcile_settled: "El procesador respondió y el pago se actualizó.",
+    reconcile_unchanged: "El procesador sigue informando el mismo estado. No se cambió nada.",
+    reconcile_released:
+      "El intento nunca llegó al procesador; se cerró como fallido y se liberó el inventario.",
+    reconcile_unreachable: "No se pudo consultar al procesador. Inténtalo de nuevo más tarde.",
+    reconcile_failed:
+      "El procesador respondió, pero la respuesta no se pudo guardar. Inténtalo de nuevo.",
+    reconcile_skipped: "Este pago ya no está en curso.",
     lot: "Lote actualizado.",
     shipment: "Envío registrado.",
     shipment_state: "Estado del envío actualizado.",

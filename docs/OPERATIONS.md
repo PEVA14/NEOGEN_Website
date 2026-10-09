@@ -321,6 +321,48 @@ Both now map to NEOGEN `refunded`.
 `disputed`). NEOGEN holds the work, and the dispute is resolved at the
 provider.
 
+## 9a. Payments that never settled
+
+A payment moves for two reasons only: the synchronous answer to our own
+charge, and a webhook. If the answer was "still processing" and no webhook
+arrives (wrong or protected notification URL, an outage, a provider that never
+sends one), nothing asks again: the order sits in "Procesando" with its stock
+held until someone opens its page. Two things ask on purpose:
+
+- **The console's "Revisar con el procesador"** (order page, Pago panel,
+  shown only while a payment is in flight). One order, on demand. This is the
+  way to settle a stuck order on a Preview deployment, where scheduled jobs do
+  not run.
+- **The scheduled job** `GET /api/cron/reconcile-payments`, listed in
+  `vercel.json` (daily, 14:00 UTC; Hobby allows no more often). It asks the
+  provider about every `pending_payment` / `payment_processing` order that has
+  not changed for 5 minutes, at most 50 per run and 45 seconds of work.
+
+**It never invents an outcome.** It applies only an answer the provider gave,
+through the same idempotent, version-locked path as a webhook
+(`applySnapshot`: reconcile, follow the other axes, bring stock and messages
+into line). If the provider still says "processing", the order and its held
+stock stay as they are, and the console's 30-minute flag keeps telling an
+operator. An attempt that never produced a provider reference is released as
+failed after 15 minutes (`recoverStalledAttempt`), as before.
+
+**Closed by default.** The route answers 503 without `CRON_SECRET` (32+
+characters) and 401 without `Authorization: Bearer <CRON_SECRET>`; it answers
+counts only (no order ids, names or amounts). Vercel sends the header itself
+once the variable exists. Set it on **Production** — scheduled jobs run on the
+production deployment only. To run it by hand against any deployment:
+
+    curl -H "Authorization: Bearer $CRON_SECRET" https://<host>/api/cron/reconcile-payments
+
+(add Vercel's protection-bypass header on a protected preview.)
+
+**Tests:** `check:payments` § 8c (35 assertions: stays put when the provider
+still processes, settles an approval or a failure the webhook missed, releases
+stock on a failure, leaves an unreachable or unknown order alone, skips orders
+changed in the last 5 minutes, ignores abandoned `created` orders, is bounded
+by size and by time, and the route's authentication), and the new `list`
+filters on the real Postgres engine.
+
 ## 10. Analytics and observability
 
 **Analytics** (`src/analytics/`) has six funnel events:

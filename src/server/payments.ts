@@ -234,36 +234,81 @@ const REFRESH_KEY = "__neogen_payment_refresh__";
 const REFRESH_EVERY_MS = 4_000;
 
 export async function refreshPayment(order: Order): Promise<Order> {
-  if (order.state !== "payment_processing" && order.state !== "pending_payment") return order;
+  if (!isInFlight(order)) return order;
 
+  /* An order with a provider reference is throttled; one without is not, so
+     a stalled attempt is released the first time anyone looks. */
+  if (order.providerRef) {
+    const globals = globalThis as typeof globalThis & { [REFRESH_KEY]?: Map<string, number> };
+    const seen = (globals[REFRESH_KEY] ??= new Map());
+    const last = seen.get(order.id) ?? 0;
+    if (Date.now() - last < REFRESH_EVERY_MS) return order;
+    seen.set(order.id, Date.now());
+  }
+
+  return (await reconcileOrder(order)).order;
+}
+
+/** A payment that has been started and not yet answered for good. */
+function isInFlight(order: Order): boolean {
+  return order.state === "payment_processing" || order.state === "pending_payment";
+}
+
+/**
+ * WHAT HAPPENED WHEN ONE IN-FLIGHT ORDER WAS CHECKED.
+ *
+ *   settled      the provider's answer moved the order to a new payment state
+ *   unchanged    the provider still says what we already knew — nothing to do,
+ *                and nothing is ever guessed or forced
+ *   released     an attempt that never reached the provider was closed as
+ *                failed after its allowance, so the customer is not stuck
+ *   unreachable  the provider could not be asked (down, unknown to it, not
+ *                configured here); the order is left exactly as it was
+ *   failed       the answer arrived but could not be saved; try again later
+ *   skipped      not an in-flight order
+ */
+export type ReconcileOutcome =
+  "settled" | "unchanged" | "released" | "unreachable" | "failed" | "skipped";
+
+/**
+ * ASK THE PROVIDER WHERE ONE PAYMENT STANDS, AND APPLY THE ANSWER.
+ *
+ * The same path a webhook takes (`applySnapshot`: reconcile, follow the other
+ * axes, bring stock and messages into line), so the payment rules cannot
+ * differ by how the answer arrived. No throttle: callers decide when to ask.
+ */
+export async function reconcileOrder(
+  order: Order,
+): Promise<{ order: Order; outcome: ReconcileOutcome }> {
+  if (!isInFlight(order)) return { order, outcome: "skipped" };
   const repository = orderRepository();
 
   /* An attempt that never produced a provider reference is released after a
      while, so the customer is not stuck (see `recoverStalledAttempt`). */
   if (!order.providerRef) {
     const now = new Date().toISOString();
-    if (!recoverStalledAttempt(order, now)) return order;
+    if (!recoverStalledAttempt(order, now)) return { order, outcome: "unchanged" };
     const released = await mutate(repository, order.id, (current) =>
       recoverStalledAttempt(current, now),
     );
-    return released.ok ? afterOrderChange(released.order) : order;
+    return released.ok
+      ? { order: await afterOrderChange(released.order), outcome: "released" }
+      : { order, outcome: "failed" };
   }
 
-  const globals = globalThis as typeof globalThis & { [REFRESH_KEY]?: Map<string, number> };
-  const seen = (globals[REFRESH_KEY] ??= new Map());
-  const last = seen.get(order.id) ?? 0;
-  if (Date.now() - last < REFRESH_EVERY_MS) return order;
-  seen.set(order.id, Date.now());
-
   const provider = providerById(order.provider);
-  if (!provider) return order;
+  if (!provider) return { order, outcome: "unreachable" };
   try {
     const status = await provider.fetchStatus(order.providerRef);
-    if (!status.ok) return order;
+    if (!status.ok) return { order, outcome: "unreachable" };
     const applied = await applySnapshot(repository, order.id, status.snapshot, provider);
-    return applied.ok ? applied.order : order;
+    if (!applied.ok) return { order, outcome: "failed" };
+    return {
+      order: applied.order,
+      outcome: applied.order.state !== order.state ? "settled" : "unchanged",
+    };
   } catch {
-    return order;
+    return { order, outcome: "unreachable" };
   }
 }
 
