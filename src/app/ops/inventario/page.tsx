@@ -238,8 +238,10 @@ export default async function InventoryPage({
                   <input name="note" className={styles.input} maxLength={300} />
                 </label>
                 <p className={styles.hint}>
-                  Un conteo fija la cantidad física; el primero empieza el control de ese SKU. No
-                  puede quedar menos existencia que la ya reservada para pedidos pagados.
+                  «Conteo» fija la cantidad total que hay en almacén; no se suma a la anterior.
+                  «Ajuste» suma o resta unidades a lo que ya hay. El primer conteo empieza el
+                  control de ese SKU. No puede quedar menos existencia que la ya reservada para
+                  pedidos pagados.
                 </p>
                 <div>
                   <button type="submit" className={styles.button}>

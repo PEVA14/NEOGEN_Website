@@ -6,6 +6,7 @@ import styles from "./PaymentSlot.module.css";
 import type { Money } from "@/data/commerce";
 import type { PaymentErrorCode } from "@/payments";
 import type { ReactNode } from "react";
+import { siteConfig } from "@/config/site";
 
 /**
  * THE PAYMENT STEP — every state a processor can put us in, and one of them live.
@@ -151,6 +152,7 @@ export function PaymentSlot({
               {new Intl.DateTimeFormat(localeTag, {
                 dateStyle: "medium",
                 timeStyle: "short",
+                timeZone: siteConfig.market.timeZone,
               }).format(new Date(view.expiresAt))}
             </dd>
           </div>

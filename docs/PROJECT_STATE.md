@@ -1,6 +1,8 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-10-08**: **the first Vercel Preview candidate — the
+Last updated **2026-10-08**: **staging validated end to end on Mercado Pago's
+sandbox, and the first fix batch** (§8bf). Before that, the same day: **the
+first Vercel Preview candidate — the
 UX/UI polish pass (homepage travel between sections and seams, a larger
 Section 05, catalogue search that shows its results, documentation stated as
 "available on request after purchase", the spec ribbon's lockup fixed), the
@@ -2626,6 +2628,64 @@ Evaluated on a production build in headless Chrome, at 1440×900 and 390×844,
 from the catalogue grid, the phone strip and by direct URL; reduced motion;
 GLOW's circle unchanged; at 4× CPU throttle on the phone there is no long task
 between the flight's start and the formation's end.
+
+## 8bf. Staging validated on the sandbox, and the first fix batch (2026-10-08)
+
+**Environment (per the owner).** Vercel Preview runs the `staging` branch against
+the Neon `staging` database; Production is Neon `main`, with no Mercado Pago
+credentials and commerce off. Preview has the four Mercado Pago TEST variables,
+`NEXT_PUBLIC_COMMERCE_ENABLED=true`, and the operations console
+(`OPS_ACCOUNTS`, `OPS_SESSION_SECRET`, `ORDER_ACCESS_SECRET`). Preview is behind
+Vercel Authentication, so Mercado Pago's webhook cannot reach it yet.
+
+**Walked through by the owner on staging, and confirmed against Mercado Pago's
+own order records** (`GET /v1/orders/{id}` with the test token): an approved
+payment (`processed/accredited`), a decline followed by a retry that went
+pending (`processing/in_process`), a stuck-payment attention flag after 30
+minutes, the research-use acknowledgement saved with each order and shown on
+the confirmation, a stock-tracked SKU (a hold, a refusal for lack of stock
+before any charge and with no processor order created, a release on cancel),
+cancel plus a full refund (`refunded/refunded`, confirmed by the processor,
+stock released), and the full lifecycle: preparing, ready, a manual shipment
+with tracking, and the customer's status page at each step. Every NEOGEN order
+number matched the `external_reference` and the `10900.00` amount at the
+processor.
+
+**Not yet exercised:** webhook settlement (needs the Vercel Protection Bypass for
+Automation on the notification URL, then "Simulate notification"); email
+delivery and the signed order link (no provider; the console's message preview
+omits the link by design, because it is a credential); orders below MX$10,000
+(still cannot be totalled); lot assignment (the lot registry is in code and
+empty).
+
+**Fixed in the first batch (no storefront design change):**
+
+- **Receipt time zone.** A server formats in UTC, so the confirmation printed an
+  8:07 p. m. order as "9 de octubre a las 2:07 a. m.", a different day from the
+  status page. Every customer-facing `Intl.DateTimeFormat` now uses
+  `siteConfig.market.timeZone` (`America/Mexico_City`). `check:checkout` scans for
+  any that does not, with a negative control.
+- **`/ops` payment date** now shows when the order reached its CURRENT state
+  (refunded shows the refund time, not the time it was first paid).
+- **`/ops` history** no longer says the processor answered an attempt that
+  NEOGEN refused for lack of stock ("Sin existencias: no se envió al
+  procesador"); the attempt row reads "Intento de pago".
+- **Tracking URL error** now says what is required: `https://` and a full domain.
+  The rule never accepted a host without a dot, which the old message did not
+  say.
+- **Stock form hint** says "Conteo" sets the total and "Ajuste" adds or subtracts.
+
+**Behaviours confirmed as designed, worth knowing.** A paid order that predates a
+SKU's first count claims a unit the first time it changes, so counts are best
+entered before orders arrive. "Conteo (cantidad total)" never adds.
+
+**Roadmap idea (owner, 2026-10-08): a "Rastrear mi pedido" page on the site.**
+There are no customer accounts, and the order reference alone must never open an
+order. Two safe shapes: (a) order number plus the email used, answering
+identically whether or not the order exists, throttled, and showing only a
+minimal status (headline, steps, tracking number and link, never the address or
+phone); (b) an emailed signed link, which needs the email provider. Either comes
+after checkout throttling. An owner decision between them is pending.
 
 ## 8be. UX/UI polish pass (2026-10-07; first Vercel Preview candidate, 2026-10-08)
 

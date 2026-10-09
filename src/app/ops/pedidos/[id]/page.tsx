@@ -60,6 +60,34 @@ const SHIPMENT_ACTIONS: Partial<Record<ShipmentState, string>> = {
   cancelled: "Cancelar reserva",
 };
 
+/**
+ * THE DATE UNDER THE PAYMENT STATE is the moment the order reached THAT state:
+ * "Reembolsado" shows when it was refunded, not when it was first paid. An
+ * order that was never paid (failed, cancelled, still in flight) shows none.
+ */
+function paymentDate(order: Order): string | null {
+  const reached =
+    order.state === "refunded"
+      ? order.milestones.refunded
+      : order.state === "disputed"
+        ? order.milestones.disputed
+        : order.milestones.paid;
+  return reached ?? null;
+}
+
+/**
+ * A history row's name. Almost every row names what happened as the table in
+ * `OPS.events` does. The exception is a payment refused for lack of stock:
+ * NEOGEN answered it itself, before the processor was ever contacted, so the
+ * row must not say the processor did.
+ */
+function eventLabel(event: OrderEvent): string {
+  if (event.kind === "payment_answered" && event.note === "out_of_stock") {
+    return OPS.paymentRefusedForStock;
+  }
+  return OPS.events[event.kind];
+}
+
 function stateLabel(event: OrderEvent, state: EventState | null): string {
   /* "Pedido creado" already says it; the stored `to: created` adds nothing. */
   if (state === null || event.kind === "created") return "";
@@ -280,9 +308,9 @@ export default async function OrderPage({
         <div className={styles.axis}>
           <span className={styles.labelText}>Pago</span>
           <p className={styles.axisValue}>{OPS.payment[order.state]}</p>
-          {order.milestones.paid ? (
+          {paymentDate(order) ? (
             <span className={styles.eventMeta}>
-              {dateTime.format(new Date(order.milestones.paid))}
+              {dateTime.format(new Date(paymentDate(order)!))}
             </span>
           ) : null}
         </div>
@@ -818,7 +846,7 @@ export default async function OrderPage({
                   data-rejected={e.kind === "payment_event_rejected" ? "true" : undefined}
                 >
                   <span className={styles.eventHead}>
-                    <strong>{OPS.events[e.kind]}</strong>
+                    <strong>{eventLabel(e)}</strong>
                     {e.from || e.to ? (
                       <span>
                         {stateLabel(e, e.from)}

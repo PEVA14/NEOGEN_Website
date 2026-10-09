@@ -13,6 +13,12 @@ export const siteConfig = {
   market: {
     country: "MX",
     currency: "MXN",
+    /**
+     * The clock customers read. A server renders in UTC (Vercel), so a time
+     * formatted without this prints six hours ahead of a customer in Mexico:
+     * 8:07 p. m. there is 2:07 a. m. of the NEXT day on the receipt.
+     */
+    timeZone: "America/Mexico_City",
   },
 
   locales,

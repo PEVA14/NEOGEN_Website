@@ -11,6 +11,7 @@ import { formatPhoneDisplay } from "@/domain/checkout";
 
 import type { Contact, MxAddress, DeliverySelection, PricedLine } from "@/domain/checkout";
 import type { OrderTotals } from "@/domain/order";
+import { siteConfig } from "@/config/site";
 
 export interface ReviewCopy {
   items: {
@@ -184,6 +185,7 @@ export function ReviewPanel({
           {new Intl.DateTimeFormat(localeTag, {
             dateStyle: "medium",
             timeStyle: "short",
+            timeZone: siteConfig.market.timeZone,
           }).format(new Date(pricedAt))}
         </Mono>
       </section>

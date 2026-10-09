@@ -10,6 +10,7 @@ import styles from "./OrderReceipt.module.css";
 import { formatPhoneDisplay } from "@/domain/checkout";
 
 import type { FulfilmentState, Order, PaymentState } from "@/domain/order";
+import { siteConfig } from "@/config/site";
 
 export interface ReceiptCopy {
   referenceLabel: string;
@@ -79,6 +80,7 @@ export function OrderReceipt({
   const placed = new Intl.DateTimeFormat(localeTag, {
     dateStyle: "long",
     timeStyle: "short",
+    timeZone: siteConfig.market.timeZone,
   }).format(new Date(order.createdAt));
 
   return (
@@ -239,6 +241,7 @@ export function OrderReceipt({
                       {new Intl.DateTimeFormat(localeTag, {
                         dateStyle: "long",
                         timeStyle: "short",
+                        timeZone: siteConfig.market.timeZone,
                       }).format(new Date(ack.acceptedAt))}
                     </Mono>
                   </li>

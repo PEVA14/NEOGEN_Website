@@ -153,7 +153,8 @@ export const OPS = {
     refund_state: "Ese reembolso no admite esta acción.",
     payment_disputed: "El cargo está en disputa; el banco resuelve el dinero.",
     nothing_to_refund: "No hay un pago que reembolsar.",
-    invalid_tracking_url: "La URL de rastreo debe ser https.",
+    invalid_tracking_url:
+      "La URL de rastreo debe empezar con https:// e incluir un dominio completo, por ejemplo https://www.ejemplo.com/rastreo/123.",
     invalid_input: "Revisa los datos.",
     stale: "Alguien guardó esta ficha mientras la editabas. Recarga para ver la versión actual.",
     approval_blocked: "No se puede aprobar todavía. Revisa los requisitos de aprobación.",
@@ -202,13 +203,15 @@ export const OPS = {
     tag_deleted: "Etiqueta eliminada.",
   },
 
+  /** A payment NEOGEN itself refused for lack of stock: the processor was never asked. */
+  paymentRefusedForStock: "Sin existencias: no se envió al procesador",
   events: {
     created: "Pedido creado",
     payment_intent: "Intención de pago",
     payment_event_applied: "Pago: estado aplicado",
     payment_event_duplicate: "Pago: evento repetido",
     payment_event_rejected: "Pago: evento rechazado",
-    payment_submitted: "Pago enviado al procesador",
+    payment_submitted: "Intento de pago",
     payment_answered: "Respuesta del procesador",
     status_changed: "Cambio de estado de pago",
     fulfilment_changed: "Preparación",

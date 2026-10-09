@@ -22,7 +22,7 @@
  *
  *   npm run check:checkout
  */
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 
 import {
   canEnter,
@@ -775,6 +775,50 @@ ok(
   !snapshotMatches(ready, { ...ready.snapshot, fingerprint: "different" }),
   "a changed fingerprint is detected — this is what stops a silent reprice",
 );
+
+/* ---- the clock customers read ------------------------------------------ */
+
+/*
+ * A SERVER FORMATS IN UTC. The receipt once printed an order placed at 8:07 p. m.
+ * in Mexico City as "9 de octubre a las 2:07 a. m." — six hours ahead, and a
+ * different DAY from the status page beside it. So every `Intl.DateTimeFormat`
+ * a customer can read must name the market's time zone, and this finds one
+ * that does not. (A time zone given as a bare literal is also refused: there
+ * is one, `siteConfig.market.timeZone`.)
+ */
+eq(siteConfig.market.timeZone, "America/Mexico_City", "the market time zone is Mexico City");
+{
+  const instant = new Date("2026-10-09T02:07:00Z");
+  const local = new Intl.DateTimeFormat("es-MX", {
+    dateStyle: "long",
+    timeStyle: "short",
+    timeZone: siteConfig.market.timeZone,
+  }).format(instant);
+  ok(
+    local.includes("8 de octubre") && /8:07/.test(local),
+    `02:07 UTC is the previous evening in Mexico City (got: ${local})`,
+  );
+
+  const dirs = ["src/components/checkout", "src/app/[locale]/checkout", "src/app/[locale]/pedido"];
+  const files = (dir) =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+      e.isDirectory()
+        ? files(`${dir}/${e.name}`)
+        : /\.tsx?$/.test(e.name)
+          ? [`${dir}/${e.name}`]
+          : [],
+    );
+  for (const file of dirs.flatMap(files)) {
+    const text = readFileSync(file, "utf8");
+    for (const match of text.matchAll(/new Intl\.DateTimeFormat\(/g)) {
+      const call = text.slice(match.index, match.index + 400).split(".format(")[0];
+      ok(
+        /timeZone:\s*siteConfig\.market\.timeZone/.test(call),
+        `${file}: a customer-facing date is formatted without the market time zone`,
+      );
+    }
+  }
+}
 
 /* ---- report ------------------------------------------------------------ */
 

@@ -4,6 +4,7 @@ import { formatPrice } from "@/data/commerce/format";
 import styles from "./OrderStatus.module.css";
 
 import type { CustomerView, Order, StepId } from "@/domain/order";
+import { siteConfig } from "@/config/site";
 
 export interface OrderStatusCopy {
   referenceLabel: string;
@@ -49,7 +50,7 @@ export function OrderStatus({
   const date = (iso: string) =>
     new Intl.DateTimeFormat(localeTag, {
       dateStyle: "medium",
-      timeZone: "America/Mexico_City",
+      timeZone: siteConfig.market.timeZone,
     }).format(new Date(iso));
   const units = order.lines.reduce((n, l) => n + l.quantity, 0);
   const tracking = view.shipment;
