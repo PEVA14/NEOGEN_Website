@@ -1,7 +1,12 @@
 import type { NextConfig } from "next";
 
+import { securityHeaders } from "./src/config/securityHeaders";
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+
+  /* Nothing is gained by announcing the framework to every response. */
+  poweredByHeader: false,
 
   /*
    * A branded 404 for URLs that match no route. With two root layouts
@@ -42,9 +47,11 @@ const nextConfig: NextConfig = {
 
   // Phase 2 will load .glb assets from /public/models. They are served as static
   // files, so no loader config is required — but they are large and immutable,
-  // so give them a long-lived cache header.
+  // so give them a long-lived cache header. Security headers: see
+  // `src/config/securityHeaders.ts`.
   async headers() {
     return [
+      ...securityHeaders(process.env.NODE_ENV !== "production"),
       {
         source: "/models/:path*",
         headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],

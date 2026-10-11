@@ -96,13 +96,13 @@ Events never carry tokens, payloads or addresses.
 
 A separate root layout: Spanish, no storefront chrome, Quiet Mode.
 
-| Page                        | What it does                                                                                                                                                                                                                                                                                                                         |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `/ops/pedidos`              | Views with counts: Requiere atención, Por preparar, En preparación, Listos para envío, En tránsito, Entregados, Pendientes de pago, En disputa, Reembolsados, Cancelados, Todos. Each row shows the order number, age, customer, destination, SKUs, total and the three axes. Search takes an order-number prefix or an exact email. |
-| `/ops/pedidos/[id]`         | Axes band, attention list (with "mark reviewed" for event reasons), items with SKU and lots, fulfilment actions, shipments, payment and refunds, history, customer, totals, stock holds, messages, notes and external references, and cancel. Only legal actions are offered, and the server refuses the rest anyway.                |
-| `/ops/pedidos/[id]/empaque` | A printable packing slip: order number, recipient, and per line SKU, product, presentation, quantity and lots, with a tick box. It has no prices and no invented warehouse bins.                                                                                                                                                     |
-| `/ops/inventario`           | Tracked stock levels, a count/adjust form (idempotent per form), the lot registry and the ledger.                                                                                                                                                                                                                                    |
-| `/ops/mensajes`             | The outbox, with honest status ("Pendiente — sin proveedor de correo; no se ha enviado") and a sandboxed preview of the exact email.                                                                                                                                                                                                 |
+| Page                        | What it does                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/ops/pedidos`              | Views with counts, grouped: Atención; Preparar y enviar (Por preparar, En preparación, Listos para envío); En camino; Completados; then Pagos y cierres (Pendientes de pago, En disputa, Reembolsados, Cancelados) and Todos. A selector on a phone. Each row shows the order number, customer, destination, items, age, the three states, and why it needs attention or its next step. Search takes an order-number prefix or an exact email.                                        |
+| `/ops/pedidos/[id]`         | The lifecycle (payment, preparation, shipping, delivery) and one "Qué sigue" block with the attention reasons ("mark reviewed" for event reasons) and the main action. Then items with lots, preparation, shipments, payment and refunds (raw provider detail folded away), history by day, customer, summary, stock holds, messages, notes, external references and cancellation. Every action states whether it can be undone, moves money, notifies the customer or changes stock. |
+| `/ops/pedidos/[id]/empaque` | A printable packing slip: order number, recipient, and per line SKU, product, presentation, quantity and lots, with a tick box. It has no prices and no invented warehouse bins.                                                                                                                                                                                                                                                                                                      |
+| `/ops/inventario`           | A status band (SKUs counted, sold out, units reserved), tracked stock levels, uncounted SKUs, a count/adjust form (idempotent per form), the ledger in words with links to orders, and the lot registry.                                                                                                                                                                                                                                                                              |
+| `/ops/mensajes`             | Provider and tracking-link status, the outbox with honest per-message status (why messages are pending is said once), and a sandboxed preview of the exact email.                                                                                                                                                                                                                                                                                                                     |
 
 ### Access
 
@@ -113,10 +113,12 @@ then every route is a 404.
   attributed.
 - **Session:** an HMAC-signed, httpOnly, SameSite=Strict cookie, scoped to
   `/ops`, lasting 12 hours.
-- **Lockout:** 5 failures per address or name locks for 15 minutes. The
-  lockout lives in each server instance's memory.
-- **Headers:** every `/ops` response carries noindex, no-store, no-referrer
-  and `X-Frame-Options: DENY`.
+- **Lockout:** 5 failures per address or name lock both for the rest of a
+  15-minute window. The counts are the shared rate-limit store's (§10a), so
+  every server instance sees the same failures.
+- **Headers:** every `/ops` response carries noindex, no-store, no-referrer,
+  `X-Frame-Options: DENY` and an enforced first-party Content-Security-Policy
+  (§10a).
 - **Server actions:** each one re-checks the session and validates every field
   against a closed list.
 
@@ -388,10 +390,59 @@ operational signal to the server log. Signals cover:
 - notification failures
 - refund errors
 - sign-in failures
+- rate-limit refusals and an unreachable limiter
+- CSP violations (directive and blocked host only)
 
 Context is an **allow-list** of scalar keys, so a secret, token, payload,
 email or address has no key to travel under. `check:payments` asserts none
 appear.
+
+## 10a. Rate limits and security headers
+
+**Rate limits** (`src/server/security/rateLimit.ts`) are fixed-window counters,
+shared by every server instance through Postgres (`neogen_rate_limits`), in
+memory without a database. A key is `rule:sha256(subject)`, so no address or
+name is stored. The client address is `x-vercel-forwarded-for`, which Vercel
+sets and a client cannot spoof.
+
+| Rule          | Limit                     | Where                                                     |
+| ------------- | ------------------------- | --------------------------------------------------------- |
+| `ops-login`   | 5 failures / 15 min       | per name and per address; a success clears both           |
+| `pay-order`   | 6 card attempts / 15 min  | per order — the card-testing brake                        |
+| `pay-address` | 15 card attempts / 15 min | per address, across orders                                |
+| `place-order` | 10 orders / hour          | per address; checked after every other gate, before write |
+| `atlas`       | 8 generations / 10 min    | per address                                               |
+| `csp-report`  | 30 reports / 10 min       | per address                                               |
+
+A refusal logs `security.rate_limited` with the rule. **The limiter fails
+open**: if the store cannot be reached (an outage, or a deploy before migration
+003), the request is allowed and `security.rate_limit_unavailable` is logged at
+error level. None of these limits is the only gate.
+
+**Headers** (`src/config/securityHeaders.ts`, applied by `next.config.ts`):
+
+- Everywhere: `Strict-Transport-Security: max-age=63072000`, `nosniff`,
+  `X-Frame-Options: DENY`, a Permissions-Policy without camera, microphone,
+  location, USB or topics, and an enforced CSP of `object-src 'none'`,
+  `base-uri 'self'`, `frame-ancestors 'none'`.
+- Storefront: `Referrer-Policy: strict-origin-when-cross-origin` and the full
+  policy as `Content-Security-Policy-Report-Only`, allowing Mercado Pago's
+  domain families for scripts, frames, connections, images and fonts.
+- `/ops`: the full first-party policy, enforced.
+
+`'unsafe-inline'` stays in `script-src`: Next streams page data as inline
+scripts, and a per-request nonce would make every static page render on demand.
+Origins are still restricted.
+
+**Reports** go to `POST /api/csp-report` (both the `report-uri` and Reporting
+API formats), logged as `security.csp_violation` with the directive, the
+disposition and the blocked **host** only. Browsers deliver them in batches,
+sometimes a minute later.
+
+**Promoting the storefront policy:** after a sandbox card payment on Preview
+produces no `security.csp_violation` from Mercado Pago's hosts, set
+`STOREFRONT_ENFORCED = true`. If a host is reported, add it to `MERCADO_PAGO`
+first.
 
 ## 11. Schema
 
@@ -405,11 +456,15 @@ appear.
 | `neogen_inventory_movements`             | Append-only ledger, idempotent by id.                                                                                                   |
 | `neogen_notification_outbox`             | The durable outbox.                                                                                                                     |
 
-Run `npm run db:migrate` once per database.
+`db/migrations/003_rate_limits.sql` adds `neogen_rate_limits` (key, window
+start, hits) for §10a. Rows older than a day are deleted as the limiter runs.
+
+Run `npm run db:migrate` once per database, and again after each new migration
+(every statement is idempotent).
 
 ## 12. Tests
 
-- **`npm run check:operations`** (313 assertions) covers:
+- **`npm run check:operations`** (352 assertions) covers:
   - the schema upgrade and backfill
   - fulfilment, lot and shipment transitions
   - cancellation, refund and dispute interactions
@@ -422,5 +477,7 @@ Run `npm run db:migrate` once per database.
   - operator auth
   - email escaping and copy
   - analytics privacy
+  - rate limits (memory, PGlite and concurrent hits, failing open), CSP report
+    parsing and the header sets
 - **`npm run check:payments`** adds stock holds around real submissions,
   signal redaction and the refund mapping.

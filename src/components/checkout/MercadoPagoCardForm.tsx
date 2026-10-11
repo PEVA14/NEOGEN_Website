@@ -94,7 +94,12 @@ export interface CardFormCopy {
   submitting: string;
   formSubmit: string;
   errors: Record<
-    "unavailable" | "not_found" | "invalid_state" | "provider_error" | "invalid_request",
+    | "unavailable"
+    | "not_found"
+    | "invalid_state"
+    | "provider_error"
+    | "invalid_request"
+    | "rate_limited",
     string
   >;
 }

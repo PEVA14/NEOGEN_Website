@@ -29,7 +29,10 @@ export type Signal =
   | "refund.provider_error"
   | "persistence.conflict"
   | "ops.login_failed"
-  | "ops.login_locked";
+  | "ops.login_locked"
+  | "security.rate_limited"
+  | "security.rate_limit_unavailable"
+  | "security.csp_violation";
 
 export type Severity = "info" | "warn" | "error";
 
@@ -52,6 +55,10 @@ const SAFE_KEYS = new Set([
   "released",
   "unreachable",
   "failed",
+  "rule",
+  "directive",
+  "blockedHost",
+  "disposition",
 ]);
 
 export type SignalContext = Readonly<Record<string, string | number | boolean | null | undefined>>;

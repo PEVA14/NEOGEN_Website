@@ -2629,6 +2629,64 @@ from the catalogue grid, the phone strip and by direct URL; reduced motion;
 GLOW's circle unchanged; at 4× CPU throttle on the phone there is no long task
 between the flight's start and the formation's end.
 
+## 8bh. Security hardening (2026-10-09)
+
+Owner-sequenced after the stuck-payment reconcile; the "Rastrear mi pedido" page
+comes next (§8bf). Details: `docs/OPERATIONS.md` §3 (access), §10a (rate limits
+and headers), §11 (schema).
+
+- **Shared rate limits** (`src/server/security/rateLimit.ts`). Fixed-window
+  counters in Postgres (`neogen_rate_limits`, migration **003**), in memory
+  without `DATABASE_URL`. Keys are `rule:sha256`, never an address or a name.
+  Rules: operator sign-in 5 failures / 15 min per name and per address (was
+  per-instance memory); card attempts 6 / 15 min per order and 15 per address;
+  order placement 10 / hour per address; Atlas 8 / 10 min (was per-instance);
+  CSP reports 30 / 10 min. The address is Vercel's `x-vercel-forwarded-for`,
+  which the platform sets and clients cannot spoof. **Fails open, loudly**:
+  an unreachable store allows the request and logs
+  `security.rate_limit_unavailable`, so a deploy before the migration degrades
+  protection, never checkout.
+- **Customer copy:** a throttled card attempt says so ("no se realizó ningún
+  cargo"); a throttled order placement returns to the review step with a notice.
+  Both dictionaries.
+- **Headers** (`src/config/securityHeaders.ts`, via `next.config.ts`): HSTS (no
+  `includeSubDomains`/`preload` — an owner decision for the domain), `nosniff`,
+  `X-Frame-Options: DENY`, Permissions-Policy, Referrer-Policy, no
+  `X-Powered-By`. CSP in three layers: a baseline that cannot break a page
+  (`object-src`, `base-uri`, `frame-ancestors`) enforced everywhere; the full
+  storefront policy **report-only**, because Mercado Pago publishes no list of
+  the hosts its card fields need; the console's first-party policy enforced.
+  Reports go to `POST /api/csp-report`, logged as `security.csp_violation`
+  with the directive and blocked host only.
+- **Verified locally** on a production build with a real Postgres engine: the
+  headers per surface; the lockout locking on the sixth attempt with hashed rows
+  in the table; Atlas refusing the ninth request; the report endpoint logging a
+  host and never a query. A report-only sweep caught the 3D viewer's `blob:`
+  texture fetches, now allowed; afterwards no page reported a violation and the
+  console worked under its enforced policy. 352 `check:operations` assertions.
+
+**Owner steps.** (1) `npm run db:migrate` against Neon `staging` (and `main`
+before Production). (2) On Preview, make a sandbox card payment and read the
+logs for `security.csp_violation`; if none come from Mercado Pago's hosts, set
+`STOREFRONT_ENFORCED = true` in `src/config/securityHeaders.ts`.
+**Not exercised at runtime:** the card-attempt and order-placement limits
+(they need a configured processor; covered by the limiter's tests) and the
+Mercado Pago card fields under the storefront policy.
+
+## 8bg. Operations console redesign (2026-10-09, `fcccc3e`)
+
+Presentation only; server actions, domain, payments, inventory and auth were
+not touched. Order views grouped by what an operator does (attention · prepare
+and ship · in transit · completed, with payment records on a quieter row; a
+selector on a phone); each row says why it needs attention or its next step.
+The order page leads with a four-step lifecycle and one "Qué sigue" block; every
+action states its consequences (reversible, money, customer notice, stock);
+payment results and history read in words, raw codes folded under "Detalle
+técnico"; the result of an action stays pinned at the top of the window.
+Inventory and Mensajes gained status bands and plain-language rows. Also fixed:
+the external-reference `pattern` attribute was an invalid regular expression in
+current browsers.
+
 ## 8bf. Staging validated on the sandbox, and the first fix batch (2026-10-08)
 
 **Environment (per the owner).** Vercel Preview runs the `staging` branch against

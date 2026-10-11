@@ -7,6 +7,7 @@ import {
 import { isLocale } from "@/i18n/config";
 import { generateAtlas } from "@/server/atlas/generate";
 import { atlasQuestionnaireView } from "@/server/atlas/questionnaire";
+import { clientAddress, consume, RULES } from "@/server/security/rateLimit";
 
 /**
  * ATLAS GENERATION — one POST, provider-independent.
@@ -24,9 +25,9 @@ import { atlasQuestionnaireView } from "@/server/atlas/questionnaire";
  *                anything over 4 KB is not a questionnaire.
  *   origin     — a cross-site POST is refused, so another page cannot drive
  *                generations from a visitor's browser.
- *   rate       — a best-effort per-address window. In-memory, so per instance:
- *                it blunts a loop, it is not a quota. A shared store is the
- *                upgrade if the endpoint is ever abused at scale.
+ *   rate       — eight generations per address in ten minutes, counted in
+ *                the shared rate-limit store (`RULES.atlas`), so every
+ *                instance counts together. It blunts a loop; it is not a quota.
  *   input      — `parseAtlasAnswers` rejects anything the questionnaire does
  *                not describe: an unknown question, a value of the wrong
  *                shape, an option outside the resolved list, a number out of
@@ -38,22 +39,6 @@ import { atlasQuestionnaireView } from "@/server/atlas/questionnaire";
 export const maxDuration = 60;
 
 const MAX_BODY = 4096;
-const WINDOW_MS = 10 * 60 * 1000;
-const LIMIT = 8;
-const hits = new Map<string, number[]>();
-
-function allow(key: string): boolean {
-  const now = Date.now();
-  const recent = (hits.get(key) ?? []).filter((t) => now - t < WINDOW_MS);
-  if (recent.length >= LIMIT) {
-    hits.set(key, recent);
-    return false;
-  }
-  recent.push(now);
-  hits.set(key, recent);
-  return true;
-}
-
 function json(body: unknown, status = 200): Response {
   return Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 }
@@ -76,8 +61,9 @@ export async function POST(request: Request): Promise<Response> {
   const text = await request.text();
   if (text.length > MAX_BODY) return json({ ok: false, error: "payload_too_large" }, 413);
 
-  const address = (request.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "local";
-  if (!allow(address)) return json({ ok: false, error: "rate_limited" }, 429);
+  if (!(await consume(RULES.atlas, [clientAddress(request.headers)]))) {
+    return json({ ok: false, error: "rate_limited" }, 429);
+  }
 
   let body: unknown;
   try {

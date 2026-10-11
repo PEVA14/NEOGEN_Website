@@ -2076,6 +2076,8 @@ const en: Dictionary = {
           already_placed: "This order has already been registered.",
           payment_unavailable:
             "Payment is not available right now, so the order cannot be registered yet.",
+          rate_limited:
+            "Too many orders were placed from this connection in a short time. Wait a few minutes and try again.",
           action: "Go to step",
         },
       },
@@ -2157,6 +2159,8 @@ const en: Dictionary = {
             provider_error:
               "We could not complete the operation with Mercado Pago. Nothing was charged; you can try again.",
             invalid_request: "The payment details arrived incomplete. Please enter them again.",
+            rate_limited:
+              "Too many payment attempts in a short time. Nothing was charged; wait a few minutes and try again.",
           },
         },
         retry: {

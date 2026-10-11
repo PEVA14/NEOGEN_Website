@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { routes } from "@/config/routes";
@@ -24,6 +25,7 @@ import { isLocale, type Locale } from "@/i18n/config";
 import { localizePath } from "@/i18n/routing";
 import { bagEnabled, paymentAvailable } from "@/payments";
 import { orderRepository } from "@/server/persistence";
+import { clientAddress, consume, RULES } from "@/server/security/rateLimit";
 
 import { clearDraft, currentDraft, ensureDraft, rememberOrder, saveDraft } from "./session";
 
@@ -250,7 +252,7 @@ export async function submitDelivery(form: FormData): Promise<void> {
  *      declaration is discarded rather than recorded.
  *   5. REFUSE WITHOUT A PROCESSOR. An order is only registered when it can
  *      be paid; the unpaid-order path existed only while no processor was
- *      integrated.
+ *      integrated. Then REFUSE A LOOP: ten orders an hour per address.
  *   6. CREATE and PERSIST, then send the customer to pay THAT order. Nothing
  *      is charged here: the charge happens on the payment step, against the
  *      order's frozen total, with a token from the provider's own fields.
@@ -290,6 +292,14 @@ export async function placeOrder(form: FormData): Promise<void> {
   if (!paymentAvailable()) {
     await saveDraft(withAcks);
     redirect(stepPath(locale, "review"));
+  }
+
+  /* Ten orders an hour per address (`RULES.placeOrder`): every order is a row
+     and a pending payment, so a script placing them in a loop is refused
+     here, before anything is written. The draft is kept as it is. */
+  if (!(await consume(RULES.placeOrder, [clientAddress(await headers())]))) {
+    await saveDraft(withAcks);
+    redirect(`${stepPath(locale, "review")}?limite=1`);
   }
 
   const order = createOrder(

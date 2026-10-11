@@ -6,6 +6,8 @@ import { cookies, headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 
 import { signal } from "@/server/observe";
+import { clientAddress, consume, exceeded, forget, RULES } from "@/server/security/rateLimit";
+import { __resetMemoryRateLimits } from "@/server/security/rateLimitStore";
 
 /**
  * WHO MAY OPEN THE OPERATIONS CONSOLE.
@@ -32,9 +34,10 @@ import { signal } from "@/server/observe";
  * rotating OPS_SESSION_SECRET revokes everyone's.
  *
  * NOT an identity provider, and not pretending to be one: no password reset,
- * no 2FA, no audit of reads. The lockout below lives in one server instance's
- * memory. For more than a handful of trusted operators, put the console behind
- * the host's access control (e.g. Vercel deployment protection) as well.
+ * no 2FA, no audit of reads. The lockout below is shared by every server
+ * instance (Postgres), but it is a brake, not a wall. For more than a handful
+ * of trusted operators, put the console behind the host's access control
+ * (e.g. Vercel deployment protection) as well.
  */
 const COOKIE = "neogen_ops";
 const SESSION_MS = 12 * 60 * 60 * 1000;
@@ -151,35 +154,27 @@ export async function requireOperator(): Promise<string> {
 
 /* ------------------------------------------------------------ the lockout */
 
-const LOCK_KEY = "__neogen_ops_lockout__";
-const WINDOW_MS = 15 * 60 * 1000;
-const MAX_FAILURES = 5;
-
-function failures(): Map<string, number[]> {
-  const g = globalThis as typeof globalThis & { [LOCK_KEY]?: Map<string, number[]> };
-  g[LOCK_KEY] ??= new Map();
-  return g[LOCK_KEY];
+/*
+ * Five failures for a name, or from an address, lock both for the rest of a
+ * 15-minute window. The counts are the shared rate-limit store's
+ * (`server/security/rateLimit.ts`) — in Postgres when deployed, so every
+ * server instance sees the same failures.
+ */
+export function isLocked(keys: readonly string[], now = Date.now()): Promise<boolean> {
+  return exceeded(RULES.opsLogin, keys, now);
 }
 
-function recent(key: string, now: number): number[] {
-  return (failures().get(key) ?? []).filter((t) => now - t < WINDOW_MS);
+export async function recordFailure(keys: readonly string[], now = Date.now()): Promise<void> {
+  await consume(RULES.opsLogin, keys, now);
 }
 
-export function isLocked(keys: readonly string[], now = Date.now()): boolean {
-  return keys.some((k) => recent(k, now).length >= MAX_FAILURES);
-}
-
-export function recordFailure(keys: readonly string[], now = Date.now()): void {
-  for (const k of keys) failures().set(k, [...recent(k, now), now]);
-}
-
-export function clearFailures(keys: readonly string[]): void {
-  for (const k of keys) failures().delete(k);
+export function clearFailures(keys: readonly string[]): Promise<void> {
+  return forget(RULES.opsLogin, keys);
 }
 
 /** Test-only. */
 export function __resetLockout(): void {
-  failures().clear();
+  __resetMemoryRateLimits();
 }
 
 export type LoginResult = "ok" | "invalid" | "locked" | "disabled";
@@ -190,21 +185,19 @@ export async function login(name: string, password: string): Promise<LoginResult
   const accounts = parseAccounts(process.env.OPS_ACCOUNTS);
   if (!key || accounts.length === 0) return "disabled";
 
-  const h = await headers();
-  const ip = (h.get("x-forwarded-for") ?? "").split(",")[0].trim() || "local";
-  const keys = [`ip:${ip}`, `name:${name.trim().toLowerCase()}`];
-  if (isLocked(keys)) {
+  const keys = [`ip:${clientAddress(await headers())}`, `name:${name.trim().toLowerCase()}`];
+  if (await isLocked(keys)) {
     signal("ops.login_locked", "warn", {});
     return "locked";
   }
 
   const operator = verifyPassword(accounts, name, password);
   if (!operator) {
-    recordFailure(keys);
+    await recordFailure(keys);
     signal("ops.login_failed", "warn", {});
     return "invalid";
   }
-  clearFailures(keys);
+  await clearFailures(keys);
 
   const jar = await cookies();
   jar.set(COOKIE, issueSession(operator, key), {

@@ -71,8 +71,16 @@ export async function generateMetadata({
  * other declaration (Terms, 18+) is still unpublishable because its policy
  * does not exist; see `domain/acknowledgements`.
  */
-export default async function ReviewStep({ params }: { params: Promise<{ locale: string }> }) {
+export default async function ReviewStep({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ limite?: string }>;
+}) {
   const { locale } = await params;
+  /* Set by `placeOrder` when this connection has placed too many orders. */
+  const limited = (await searchParams).limite === "1";
   const load = await loadStep(locale, "review");
   if (load.kind === "notice") return load.node;
 
@@ -175,6 +183,10 @@ export default async function ReviewStep({ params }: { params: Promise<{ locale:
 
         {!block && !payable ? (
           <BlockNotice title={copy.blocked.title} body={copy.blocked.payment_unavailable} />
+        ) : null}
+
+        {!block && payable && limited ? (
+          <BlockNotice title={copy.blocked.title} body={copy.blocked.rate_limited} />
         ) : null}
 
         <ReviewPanel

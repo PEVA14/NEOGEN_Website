@@ -2256,6 +2256,8 @@ const es = {
           already_placed: "Este pedido ya fue registrado.",
           payment_unavailable:
             "El pago no está disponible en este momento, así que el pedido no puede registrarse todavía.",
+          rate_limited:
+            "Se registraron demasiados pedidos desde esta conexión en poco tiempo. Espera unos minutos e inténtalo de nuevo.",
           action: "Ir al paso",
         },
       },
@@ -2343,6 +2345,8 @@ const es = {
             provider_error:
               "No pudimos completar la operación con Mercado Pago. No se realizó ningún cargo; puedes intentar de nuevo.",
             invalid_request: "Los datos de pago llegaron incompletos. Vuelve a escribirlos.",
+            rate_limited:
+              "Demasiados intentos de pago en poco tiempo. No se realizó ningún cargo; espera unos minutos e inténtalo de nuevo.",
           },
         },
         retry: {

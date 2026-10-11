@@ -1,10 +1,13 @@
 "use server";
 
+import { headers } from "next/headers";
+
 import { routes } from "@/config/routes";
 import { isLocale } from "@/i18n/config";
 import { localizePath } from "@/i18n/routing";
 import { isOrderId, readInstrument } from "@/payments/instrument";
 import { submitPayment } from "@/server/payments";
+import { clientAddress, consume, RULES } from "@/server/security/rateLimit";
 
 import { ownsOrder } from "./session";
 
@@ -25,6 +28,12 @@ import type { DeclineReason } from "@/payments";
  *   is the order's, read on the server, and the resulting state is the
  *   provider's answer.
  *
+ *   RATE. Six card attempts per order and fifteen per address in 15 minutes
+ *   (`RULES.payOrder`, `RULES.payAddress`). Each attempt is a fresh token
+ *   charged against a real card, so a loop here is card testing — the one
+ *   abuse a payment form most attracts. Counted only after ownership and
+ *   shape pass, so a malformed request costs nothing but also tests nothing.
+ *
  *   INSTALMENTS ARE 1. Whether to offer meses sin intereses is a business
  *   decision (fees, eligibility) nobody has made, so the card form is
  *   configured for a single payment and anything else is refused here too.
@@ -37,7 +46,13 @@ export type PayResult =
   | { kind: "declined"; reason: DeclineReason }
   | {
       kind: "error";
-      code: "unavailable" | "not_found" | "invalid_state" | "provider_error" | "invalid_request";
+      code:
+        | "unavailable"
+        | "not_found"
+        | "invalid_state"
+        | "provider_error"
+        | "invalid_request"
+        | "rate_limited";
       href?: string;
     };
 
@@ -55,6 +70,12 @@ export async function payOrder(input: {
 
   const instrument = readInstrument(input?.instrument);
   if (!instrument) return { kind: "error", code: "invalid_request" };
+
+  const [perOrder, perAddress] = await Promise.all([
+    consume(RULES.payOrder, [orderId]),
+    consume(RULES.payAddress, [clientAddress(await headers())]),
+  ]);
+  if (!perOrder || !perAddress) return { kind: "error", code: "rate_limited" };
 
   const confirmation = localizePath(routes.orderConfirmation(orderId), locale);
   const outcome = await submitPayment(orderId, instrument);

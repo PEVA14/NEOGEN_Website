@@ -9,6 +9,11 @@ import { memoryOutbox } from "@/domain/notifications/adapters/memoryOutbox";
 import { createPostgresOrderRepository } from "@/domain/order/adapters/postgres";
 import { memoryOrderRepository } from "@/domain/order/adapters/memory";
 import { postgresClient } from "@/server/db/postgres";
+import {
+  createPostgresRateLimitStore,
+  memoryRateLimitStore,
+  type RateLimitStore,
+} from "@/server/security/rateLimitStore";
 
 import type { DraftStore } from "@/domain/checkout/store";
 import type { InventoryStore } from "@/domain/inventory";
@@ -61,4 +66,13 @@ export function inventoryStore(): InventoryStore {
 export function notificationOutbox(): NotificationOutbox {
   const url = databaseUrl();
   return url ? createPostgresOutbox(postgresClient(url)) : memoryOutbox();
+}
+
+/**
+ * Rate-limit counters follow the same rule: shared in Postgres when there is
+ * one, so every instance counts together; in memory otherwise.
+ */
+export function rateLimitStore(): RateLimitStore {
+  const url = databaseUrl();
+  return url ? createPostgresRateLimitStore(postgresClient(url)) : memoryRateLimitStore;
 }

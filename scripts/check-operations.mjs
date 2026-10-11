@@ -1324,13 +1324,15 @@ const client = {
 
   auth.__resetLockout();
   const keys = ["ip:1.2.3.4", "name:ana"];
-  for (let i = 0; i < 4; i += 1) auth.recordFailure(keys, now);
-  ok(!auth.isLocked(keys, now), "four failures do not lock");
-  auth.recordFailure(keys, now);
-  ok(auth.isLocked(keys, now), "the fifth locks the name and the address");
-  ok(!auth.isLocked(keys, now + 16 * 60_000), "for 15 minutes");
-  auth.clearFailures(keys);
-  ok(!auth.isLocked(keys, now), "a successful sign-in clears the count");
+  for (let i = 0; i < 4; i += 1) await auth.recordFailure(keys, now);
+  ok(!(await auth.isLocked(keys, now)), "four failures do not lock");
+  await auth.recordFailure(keys, now);
+  ok(await auth.isLocked(keys, now), "the fifth locks the name and the address");
+  ok(await auth.isLocked(["name:ana"], now), "the name alone is locked");
+  ok(await auth.isLocked(["ip:1.2.3.4", "name:bea"], now), "so is the address, for any name");
+  ok(!(await auth.isLocked(keys, now + 16 * 60_000)), "for 15 minutes");
+  await auth.clearFailures(keys);
+  ok(!(await auth.isLocked(keys, now)), "a successful sign-in clears the count");
 
   delete process.env.OPS_ACCOUNTS;
   delete process.env.OPS_SESSION_SECRET;
@@ -1452,6 +1454,171 @@ const client = {
   eq((await noneInvoiceProvider.issue()).ok, false, "no invoicing provider is integrated");
 }
 
+/* ======================================================================== */
+/* 17. RATE LIMITS, CSP REPORTS AND HEADERS                                   */
+/* ======================================================================== */
+{
+  const rl = await import("../src/server/security/rateLimit.ts");
+  const stores = await import("../src/server/security/rateLimitStore.ts");
+  const rule = { name: "test", limit: 3, windowMs: 60_000 };
+  const t = Date.parse(T0);
+
+  ok(!rl.rateKey(rule, "203.0.113.9").includes("203.0.113.9"), "a key never holds the address");
+  ok(rl.rateKey(rule, "a") !== rl.rateKey(rule, "b"), "different subjects, different keys");
+  ok(
+    rl.rateKey(rule, "a") !== rl.rateKey({ ...rule, name: "other" }, "a"),
+    "the same subject under another rule is another key",
+  );
+
+  stores.__resetMemoryRateLimits();
+  const tries = [];
+  for (let i = 0; i < 4; i += 1) tries.push(await rl.consume(rule, ["x"], t));
+  eq(tries, [true, true, true, false], "memory: the limit is allowed, the next is refused");
+  ok(await rl.exceeded(rule, ["x"], t), "exceeded reports it");
+  ok(!(await rl.exceeded(rule, ["y"], t)), "without counting another subject");
+  ok(await rl.consume(rule, ["x"], t + 60_000), "the next window starts afresh");
+  stores.__resetMemoryRateLimits();
+  await rl.consume(rule, ["x"], t);
+  await rl.consume(rule, ["x"], t);
+  await rl.consume(rule, ["x"], t);
+  eq(await rl.consume(rule, ["x", "z"], t), false, "one subject over refuses the request");
+  eq(
+    await stores.memoryRateLimitStore.peek(rl.rateKey(rule, "z"), t - (t % 60_000)),
+    1,
+    "and the other subject was still counted",
+  );
+  await rl.forget(rule, ["x"]);
+  ok(!(await rl.exceeded(rule, ["x"], t)), "forget clears a subject");
+  ok(
+    signals.some((s) => s.signal === "security.rate_limited" && s.context.rule === "test"),
+    "a refusal is logged with its rule",
+  );
+
+  eq(rl.RULES.payOrder.limit, 6, "six card attempts per order");
+  eq(rl.RULES.payAddress.limit, 15, "fifteen per address");
+  eq(rl.RULES.placeOrder.limit, 10, "ten orders an hour per address");
+
+  const h = (o) => new Headers(o);
+  eq(
+    rl.clientAddress(
+      h({ "x-vercel-forwarded-for": "198.51.100.1", "x-forwarded-for": "10.0.0.1" }),
+    ),
+    "198.51.100.1",
+    "Vercel's own header first",
+  );
+  eq(
+    rl.clientAddress(h({ "x-forwarded-for": "198.51.100.2, 10.0.0.1" })),
+    "198.51.100.2",
+    "else the first forwarded address",
+  );
+  eq(rl.clientAddress(h({})), "unknown", "no header, one shared bucket");
+
+  /* Postgres: the same counters on a real engine, shared by every instance. */
+  const pgStore = stores.createPostgresRateLimitStore(client);
+  const start = t - (t % 60_000);
+  eq(
+    [await pgStore.hit("k", start), await pgStore.hit("k", start), await pgStore.peek("k", start)],
+    [1, 2, 2],
+    "postgres: hits count, peek reads",
+  );
+  eq(await pgStore.hit("k", start + 60_000), 1, "postgres: a new window resets the count");
+  eq(await pgStore.peek("k", start), 0, "and the old window is gone");
+  await pgStore.clear(["k"]);
+  eq(await pgStore.peek("k", start + 60_000), 0, "postgres: clear forgets the key");
+  const concurrent = await Promise.all(
+    Array.from({ length: 8 }, () => pgStore.hit("burst", start)),
+  );
+  eq(
+    [...concurrent].sort((a, b) => a - b),
+    [1, 2, 3, 4, 5, 6, 7, 8],
+    "postgres: concurrent hits are counted once each",
+  );
+
+  /* Fail open, loudly: an unreachable store lets the request through. */
+  process.env.DATABASE_URL = "postgres://127.0.0.1:1/none";
+  signals.length = 0;
+  ok(await rl.consume(rule, ["x"], t), "an unreachable store allows the request");
+  ok(
+    signals.some((s) => s.signal === "security.rate_limit_unavailable"),
+    "and says so in the log",
+  );
+  delete process.env.DATABASE_URL;
+
+  /* CSP reports: both formats, and only the host of what was blocked. */
+  const csp = await import("../src/server/security/cspReport.ts");
+  eq(
+    csp.readViolations({
+      "csp-report": {
+        "effective-directive": "script-src-elem",
+        "blocked-uri": "https://evil.example/x.js?token=secret",
+        disposition: "report",
+      },
+    }),
+    [
+      {
+        directive: "script-src-elem",
+        blocked: "https://evil.example/x.js?token=secret",
+        disposition: "report",
+      },
+    ],
+    "the report-uri format is read",
+  );
+  eq(
+    csp.readViolations([
+      {
+        type: "csp-violation",
+        body: {
+          effectiveDirective: "frame-src",
+          blockedURL: "https://a.mercadopago.com/f",
+          disposition: "report",
+        },
+      },
+      { type: "deprecation", body: {} },
+    ]).length,
+    1,
+    "the Reporting API format is read, other report types ignored",
+  );
+  eq(
+    csp.blockedHost("https://evil.example/x.js?token=secret"),
+    "evil.example",
+    "only the host is logged, never a path or query",
+  );
+  eq(csp.blockedHost("inline"), "inline", "a keyword stays a keyword");
+  eq(csp.readViolations("nonsense"), [], "anything else is nothing");
+
+  /* Headers: what is enforced, and what is only reported. */
+  const sh = await import("../src/config/securityHeaders.ts");
+  const prod = sh.securityHeaders(false);
+  const header = (source, key) =>
+    prod.find((e) => e.source === source)?.headers.find((x) => x.key === key)?.value ?? "";
+  ok(
+    /frame-ancestors 'none'/.test(header("/:path*", "Content-Security-Policy")),
+    "every response refuses to be framed",
+  );
+  ok(
+    !/script-src/.test(header("/:path*", "Content-Security-Policy")),
+    "the site-wide enforced policy cannot block a script",
+  );
+  const storefront = header("/((?!ops/|ops$).*)", "Content-Security-Policy-Report-Only");
+  ok(
+    /https:\/\/sdk\.mercadopago\.com/.test(storefront),
+    "the storefront policy allows the payment SDK",
+  );
+  ok(/report-uri \/api\/csp-report/.test(storefront), "and reports to the endpoint");
+  ok(!/unsafe-eval/.test(storefront), "no eval in production");
+  const consolePolicy = header("/ops/:path*", "Content-Security-Policy");
+  ok(
+    /script-src 'self' 'unsafe-inline';/.test(consolePolicy),
+    "the console allows first-party scripts only",
+  );
+  ok(!/mercadopago/.test(consolePolicy), "and no payment hosts");
+  const route = new RegExp(`^${"/((?!ops/|ops$).*)"}$`);
+  ok(
+    route.test("/es/checkout/pago/NG-1") && !route.test("/ops") && !route.test("/ops/pedidos"),
+    "the storefront source matches the site and not the console",
+  );
+}
+
 /* ---- report --------------------------------------------------------------- */
 
 await db.close();
@@ -1463,5 +1630,5 @@ if (failures.length) {
 }
 console.log(
   `operations check passed — ${passed} assertions: fulfilment, lots, shipments, cancellations, ` +
-    `refunds, disputes, attention, inventory (memory + Postgres), notifications`,
+    `refunds, disputes, attention, inventory (memory + Postgres), notifications, rate limits, CSP`,
 );
