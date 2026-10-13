@@ -131,6 +131,11 @@ export const routes = {
   orderStatus: (orderId: string) => `/pedido/${orderId}`,
   orderAccess: (orderId: string) => `/pedido/${orderId}/acceso`,
   /**
+   * "Rastrear mi pedido": order number and email, throttled. A match opens
+   * that order's status page in this browser, and nothing else.
+   */
+  orderLookup: "/rastrear",
+  /**
    * A policy document.
    *
    * The route exists; the documents do not. `publicPolicyBySlug` returns

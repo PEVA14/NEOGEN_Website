@@ -14,6 +14,18 @@ const ORDER_ID = /^NG-[A-Z0-9]{4,16}-[A-Z0-9]{3}$/;
 export function isOrderId(value: string): boolean {
   return ORDER_ID.test(value);
 }
+
+/**
+ * An order number as a customer types it: spaces, lower case, and without
+ * the `NG-` prefix are all accepted — "ng-mv0i 9pjd-fqd" and "MV0I9PJD-FQD"
+ * both become "NG-MV0I9PJD-FQD". Anything else is returned upper-cased, to
+ * fail `isOrderId`.
+ */
+export function normaliseOrderNumber(value: unknown): string {
+  if (typeof value !== "string") return "";
+  const compact = value.replace(/\s+/g, "").toUpperCase().slice(0, 40);
+  return /^[A-Z0-9]{4,16}-[A-Z0-9]{3}$/.test(compact) ? `NG-${compact}` : compact;
+}
 const TOKEN = /^[A-Za-z0-9-]{8,128}$/;
 const METHOD = /^[a-z0-9_]{2,40}$/;
 const TYPES = new Set<TokenizedInstrument["typeId"]>(["credit_card", "debit_card", "prepaid_card"]);

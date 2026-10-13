@@ -36,6 +36,10 @@ export const RULES = {
   payAddress: { name: "pay-address", limit: 15, windowMs: 15 * MINUTE },
   /** Orders registered from one address. */
   placeOrder: { name: "place-order", limit: 10, windowMs: 60 * MINUTE },
+  /** Order lookups ("Rastrear mi pedido") from one address. */
+  trackAddress: { name: "track-address", limit: 10, windowMs: 15 * MINUTE },
+  /** Lookups of one order number — the brake on guessing its email. */
+  trackOrder: { name: "track-order", limit: 5, windowMs: 15 * MINUTE },
   /** Atlas generations — each one costs a model call. */
   atlas: { name: "atlas", limit: 8, windowMs: 10 * MINUTE },
   /** CSP violation reports a browser may send. */

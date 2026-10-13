@@ -11,7 +11,7 @@ import { getDictionary } from "@/i18n/getDictionary";
 import { localizePath } from "@/i18n/routing";
 import { paymentAvailable } from "@/payments";
 import { isOrderId } from "@/payments/instrument";
-import { ownsOrder } from "@/server/checkout/session";
+import { canTrackOrder, ownsOrder } from "@/server/checkout/session";
 import { refreshPayment } from "@/server/payments";
 import { orderRepository } from "@/server/persistence";
 
@@ -33,7 +33,7 @@ export async function generateMetadata({
   const { locale, id } = await params;
   if (!isLocale(locale)) return {};
   const dict = await getDictionary(locale);
-  const owned = isOrderId(id) && (await ownsOrder(id));
+  const owned = isOrderId(id) && (await canTrackOrder(id));
   return {
     title: owned ? dict.checkout.status.title : dict.checkout.status.notFound.title,
     robots: { index: false, follow: false },
@@ -44,11 +44,16 @@ export async function generateMetadata({
 /**
  * 07 ORDER STATUS — where a customer follows an order after paying.
  *
- * ACCESS: the browser must own the order (the httpOnly cookie checkout sets),
- * or have arrived through a signed email link, which the `acceso` route
- * exchanges for that same cookie. An order id alone opens nothing, and an
- * unowned id gets the same "not found" as one that does not exist — checked
- * BEFORE the order is loaded, so the two cannot be told apart.
+ * ACCESS: the browser must own the order (the signed cookie checkout sets),
+ * have arrived through a signed email link, which the `acceso` route
+ * exchanges for that same cookie, or have looked it up by order number and
+ * email (`/rastrear`), which grants this page only. An order id alone opens
+ * nothing, and an unowned id gets the same "not found" as one that does not
+ * exist — checked BEFORE the order is loaded, so the two cannot be told apart.
+ *
+ * A browser that only LOOKED THE ORDER UP sees less: no postal code, and no
+ * payment action (the payment step needs ownership). The page never shows a
+ * street address, phone or email to anyone.
  */
 export default async function OrderStatusPage({
   params,
@@ -61,8 +66,9 @@ export default async function OrderStatusPage({
   const copy = dict.checkout.status;
   const path = (to: string) => localizePath(to, locale);
 
-  const owned = isOrderId(id) && (await ownsOrder(id));
-  const stored = owned ? await orderRepository().get(id) : null;
+  const owner = isOrderId(id) && (await ownsOrder(id));
+  const allowed = owner || (isOrderId(id) && (await canTrackOrder(id)));
+  const stored = allowed ? await orderRepository().get(id) : null;
   const order = stored ? await refreshPayment(stored) : null;
 
   if (!order) {
@@ -75,7 +81,8 @@ export default async function OrderStatusPage({
             title={copy.notFound.title}
             body={copy.notFound.body}
             actions={[
-              { href: path(routes.products), label: copy.notFound.catalogue, primary: true },
+              { href: path(routes.orderLookup), label: copy.notFound.track, primary: true },
+              { href: path(routes.products), label: copy.notFound.catalogue },
             ]}
           />
         </Container>
@@ -97,7 +104,7 @@ export default async function OrderStatusPage({
           as="h1"
           scale="record"
         />
-        {isPayable(order.state) && paymentAvailable() && view.headline === "unpaid" ? (
+        {owner && isPayable(order.state) && paymentAvailable() && view.headline === "unpaid" ? (
           <a href={path(routes.orderPayment(order.id))} className={styles.payAction}>
             {copy.pay} →
           </a>
@@ -106,6 +113,7 @@ export default async function OrderStatusPage({
           order={order}
           view={view}
           localeTag={localeTags[locale]}
+          showPostalCode={owner}
           helpPhone={{
             href: `tel:${siteConfig.contact.phone}`,
             display: siteConfig.contact.phoneDisplay,

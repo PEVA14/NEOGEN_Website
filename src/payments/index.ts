@@ -67,9 +67,22 @@ export function durableStoreConfigured(): boolean {
  * `live_without_database` is the safeguard that matters: LIVE credentials on
  * a deployment without a database would take real money into orders that can
  * vanish, so live mode refuses to run on memory storage.
+ *
+ * `order_access_unconfigured`: a deployment (a production build) without
+ * ORDER_ACCESS_SECRET cannot sign the cookie that lets a customer open their
+ * own confirmation (`server/orderAccess.ts`), so it takes no payments. A
+ * development server signs with a per-process key instead.
  */
 export type PaymentBlocker =
-  "commerce_disabled" | "provider_unconfigured" | "live_without_database";
+  | "commerce_disabled"
+  | "provider_unconfigured"
+  | "live_without_database"
+  | "order_access_unconfigured";
+
+/** The secret that signs order access, read here to keep this module server-agnostic. */
+export function orderAccessSecretConfigured(): boolean {
+  return (process.env.ORDER_ACCESS_SECRET ?? "").length >= 32;
+}
 
 export function paymentBlockers(): PaymentBlocker[] {
   const blockers: PaymentBlocker[] = [];
@@ -78,6 +91,8 @@ export function paymentBlockers(): PaymentBlocker[] {
   if (!provider.isConfigured()) blockers.push("provider_unconfigured");
   if (provider.mode() === "live" && !durableStoreConfigured())
     blockers.push("live_without_database");
+  if (process.env.NODE_ENV === "production" && !orderAccessSecretConfigured())
+    blockers.push("order_access_unconfigured");
   return blockers;
 }
 

@@ -9,6 +9,7 @@ import { routes } from "@/config/routes";
 import { siteConfig } from "@/config/site";
 import type { Locale } from "@/i18n/config";
 import { localizePath } from "@/i18n/routing";
+import { bagEnabled } from "@/payments";
 import type { Dictionary } from "@/i18n/types";
 
 import styles from "./SiteFooter.module.css";
@@ -73,6 +74,9 @@ export function SiteFooter({ locale, dict }: SiteFooterProps) {
         { label: dict.footer.links.peptides, href: routes.peptides },
         { label: dict.footer.links.handling, href: routes.handling },
         { label: dict.footer.links.faq, href: routes.faq },
+        /* Only while the store takes orders: with commerce off there is no
+           order to look up. */
+        ...(bagEnabled() ? [{ label: dict.footer.links.track, href: routes.orderLookup }] : []),
         { label: dict.cart.title, href: routes.cart },
       ],
     },

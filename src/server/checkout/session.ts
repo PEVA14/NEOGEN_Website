@@ -3,6 +3,7 @@ import "server-only";
 import { cookies } from "next/headers";
 
 import { createDraft, newDraftId } from "@/domain/checkout";
+import { orderProof, verifyOrderProof, type ProofPurpose } from "@/server/orderAccess";
 import { draftStore } from "@/server/persistence";
 
 import type { CheckoutDraft } from "@/domain/checkout";
@@ -86,29 +87,48 @@ export async function clearDraft(): Promise<void> {
  *
  * A confirmation page carries a name, a phone number and a home address, so
  * knowing an order id must not be enough to see it. Order ids are short and
- * partly time-derived on purpose — readable over the phone — which makes them
- * exactly the wrong thing to use as an access token.
+ * partly time-derived on purpose — readable over the phone, printed on the
+ * packing slip — which makes them exactly the wrong thing to use as an access
+ * token.
  *
- * So the ids this browser created are kept in their own httpOnly cookie and
- * the confirmation route checks membership. It is not an account system and
- * does not pretend to be one: it is the minimum that stops one customer's
- * address being served to anyone who guesses a reference. A real "look up my
- * order" flow needs identity, which V1 does not have.
+ * So the orders this browser may open are kept in httpOnly cookies, and each
+ * id carries a proof signed by the server (`orderProof` in
+ * `server/orderAccess.ts`). A cookie is still something the person at the
+ * browser can write; without the proof, an id they typed into it opens
+ * nothing. Two cookies, two levels:
  *
- * Capped at the last few, because a cookie is not a database and an unbounded
- * list would grow until the header was rejected.
+ *   OWNER  (`neogen.orders`)  — placed here, or arrived by the order's signed
+ *          email link. Opens the confirmation, the payment step and the
+ *          status page.
+ *   TRACK  (`neogen.tracked`) — looked up here by order number and email
+ *          (`/rastrear`). Opens the status page only, which shows no street
+ *          address, phone or email.
+ *
+ * It is not an account system and does not pretend to be one. Each cookie is
+ * capped at the last few orders, because a cookie is not a database and an
+ * unbounded list would grow until the header was rejected.
  */
-const ORDERS_COOKIE = "neogen.orders";
+const COOKIES: Record<ProofPurpose, string> = {
+  owner: "neogen.orders",
+  track: "neogen.tracked",
+};
 const REMEMBERED = 5;
 
-export async function rememberOrder(orderId: string): Promise<void> {
+async function entries(purpose: ProofPurpose): Promise<string[]> {
   const jar = await cookies();
-  const existing = (jar.get(ORDERS_COOKIE)?.value ?? "")
+  return (jar.get(COOKIES[purpose])?.value ?? "")
     .split(",")
     .map((v) => v.trim())
     .filter(Boolean);
-  const next = [orderId, ...existing.filter((id) => id !== orderId)].slice(0, REMEMBERED);
-  jar.set(ORDERS_COOKIE, next.join(","), {
+}
+
+async function remember(purpose: ProofPurpose, orderId: string): Promise<void> {
+  const proof = orderProof(purpose, orderId);
+  if (!proof) return;
+  const existing = (await entries(purpose)).filter((e) => e.split(".")[0] !== orderId);
+  const next = [`${orderId}.${proof}`, ...existing].slice(0, REMEMBERED);
+  const jar = await cookies();
+  jar.set(COOKIES[purpose], next.join(","), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -119,8 +139,28 @@ export async function rememberOrder(orderId: string): Promise<void> {
   });
 }
 
-export async function ownsOrder(orderId: string): Promise<boolean> {
-  const jar = await cookies();
-  const ids = (jar.get(ORDERS_COOKIE)?.value ?? "").split(",");
-  return ids.includes(orderId);
+async function holds(purpose: ProofPurpose, orderId: string): Promise<boolean> {
+  return (await entries(purpose)).some((entry) => {
+    const [id, proof] = entry.split(".");
+    return id === orderId && verifyOrderProof(purpose, orderId, proof);
+  });
+}
+
+/** This browser placed the order, or opened its signed email link. */
+export function rememberOrder(orderId: string): Promise<void> {
+  return remember("owner", orderId);
+}
+
+export function ownsOrder(orderId: string): Promise<boolean> {
+  return holds("owner", orderId);
+}
+
+/** This browser looked the order up by number and email. Status page only. */
+export function rememberTrackedOrder(orderId: string): Promise<void> {
+  return remember("track", orderId);
+}
+
+/** May this browser see the order's status page? Owners and trackers both. */
+export async function canTrackOrder(orderId: string): Promise<boolean> {
+  return (await holds("owner", orderId)) || (await holds("track", orderId));
 }

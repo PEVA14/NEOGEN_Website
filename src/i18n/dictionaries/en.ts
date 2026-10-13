@@ -2413,6 +2413,7 @@ const en: Dictionary = {
         title: "We could not find that order",
         body: "The reference does not match an order from this browser, or the link is no longer valid. If you have the reference in writing, keep it and contact us by phone.",
         catalogue: "Browse the catalogue",
+        track: "Track an order",
       },
       follow: "Follow my order",
     },
@@ -2864,6 +2865,32 @@ const en: Dictionary = {
     placeholder: "PLACEHOLDER",
   },
 
+  track: {
+    index: "08",
+    label: "Order // Tracking",
+    title: "Track my order",
+    intro:
+      "Enter your order number and the email you placed it with. You will see which step it is at and, once it ships, its carrier and tracking number.",
+    notesLabel: "About tracking",
+    where:
+      "Your order number starts with NG- and appears on the confirmation. If you received an email about your order, its link opens the full order without typing anything.",
+    privacy:
+      "For your privacy, this shows only the status and tracking. The full address appears only from the link in your emails or in the browser where you placed the order.",
+    help: "Can't find your order number? Call us:",
+    form: {
+      order: { label: "Order number", hint: "For example, NG-MV0I9PJD-FQD." },
+      email: { label: "Email", hint: "The same one you used to place the order." },
+      submit: "See status",
+      pending: "Looking…",
+      errors: {
+        invalid: "Check the order number (it starts with NG-) and the email.",
+        no_match:
+          "We could not find an order with that number and that email. Check both and try again.",
+        rate_limited: "Too many attempts in a short time. Wait a few minutes and try again.",
+      },
+    },
+  },
+
   footer: {
     tagline: "Research compounds. Built around evidence.",
     about: "Research compound laboratory. Documentation-first methodology.",
@@ -2886,6 +2913,7 @@ const en: Dictionary = {
       peptides: "What is a peptide",
       notes: "Short guides",
       faq: "Frequently asked questions",
+      track: "Track my order",
     },
   },
 

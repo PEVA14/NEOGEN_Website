@@ -2607,6 +2607,7 @@ const es = {
         title: "No encontramos ese pedido",
         body: "La referencia no corresponde a un pedido de este navegador, o el enlace ya no es válido. Si tienes la referencia por escrito, consérvala y comunícate por teléfono.",
         catalogue: "Ver catálogo",
+        track: "Rastrear un pedido",
       },
       follow: "Seguir mi pedido",
     },
@@ -3138,6 +3139,33 @@ const es = {
     placeholder: "PLACEHOLDER",
   },
 
+  track: {
+    index: "08",
+    label: "Pedido // Rastreo",
+    title: "Rastrear mi pedido",
+    intro:
+      "Escribe el número de tu pedido y el correo con el que lo hiciste. Verás en qué paso va y, cuando salga, su paquetería y número de rastreo.",
+    notesLabel: "Sobre el rastreo",
+    where:
+      "Tu número de pedido empieza con NG- y aparece en la confirmación. Si recibiste un correo de tu pedido, su enlace abre el pedido completo sin escribir nada.",
+    privacy:
+      "Por tu privacidad, aquí solo se muestra el estado y el rastreo. La dirección completa aparece únicamente desde el enlace de tus correos o en el navegador donde hiciste el pedido.",
+    help: "¿No encuentras tu número de pedido? Llámanos:",
+    form: {
+      order: { label: "Número de pedido", hint: "Por ejemplo, NG-MV0I9PJD-FQD." },
+      email: { label: "Correo", hint: "El mismo que usaste al hacer el pedido." },
+      submit: "Ver estado",
+      pending: "Buscando…",
+      errors: {
+        invalid: "Revisa el número de pedido (empieza con NG-) y el correo.",
+        no_match:
+          "No encontramos un pedido con ese número y ese correo. Revisa los dos datos e inténtalo de nuevo.",
+        rate_limited:
+          "Demasiados intentos en poco tiempo. Espera unos minutos e inténtalo de nuevo.",
+      },
+    },
+  },
+
   footer: {
     tagline: "Compuestos de investigación. Construidos sobre evidencia.",
     about: "Laboratorio de compuestos de investigación. Metodología orientada a la documentación.",
@@ -3160,6 +3188,7 @@ const es = {
       peptides: "Qué es un péptido",
       notes: "Guías breves",
       faq: "Preguntas frecuentes",
+      track: "Rastrear mi pedido",
     },
   },
 

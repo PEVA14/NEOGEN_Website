@@ -1,0 +1,31 @@
+/* The lookup form: the checkout's field grid and submit, one notice above. */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.fields {
+  display: grid;
+  gap: var(--space-md) var(--space-sm);
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.error {
+  border-inline-start: 2px solid var(--status-error);
+  color: var(--ink-primary);
+  line-height: var(--leading-normal);
+  margin: 0;
+  max-inline-size: 60ch;
+  padding-inline-start: var(--space-sm);
+}
+
+.submit {
+  composes: submit from "./Field.module.css";
+}
+
+.submit:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset-width);
+}

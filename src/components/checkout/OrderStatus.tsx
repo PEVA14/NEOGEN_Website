@@ -40,12 +40,15 @@ export function OrderStatus({
   copy,
   localeTag,
   helpPhone,
+  showPostalCode = true,
 }: {
   order: Order;
   view: CustomerView;
   copy: OrderStatusCopy;
   localeTag: string;
   helpPhone: { href: string; display: string };
+  /** False when the browser only looked the order up (`/rastrear`). */
+  showPostalCode?: boolean;
 }) {
   const date = (iso: string) =>
     new Intl.DateTimeFormat(localeTag, {
@@ -162,7 +165,8 @@ export function OrderStatus({
           <dd>{copy.paymentState}</dd>
           <dt>{copy.destination}</dt>
           <dd>
-            {order.shipping.city}, {order.shipping.state} · {order.shipping.postalCode}
+            {order.shipping.city}, {order.shipping.state}
+            {showPostalCode ? ` · ${order.shipping.postalCode}` : null}
           </dd>
         </dl>
       </section>

@@ -1231,7 +1231,7 @@ const client = {
 }
 
 /* ======================================================================== */
-/* 13. GUEST ACCESS — a link that cannot be guessed, forged or moved          */
+/* 13. GUEST ACCESS — links and cookies that cannot be guessed or forged     */
 /* ======================================================================== */
 
 {
@@ -1263,6 +1263,47 @@ const client = {
     !t.includes(a.id) && !t.includes(a.access.nonce),
     "the token reveals neither the order nor the nonce",
   );
+
+  /* Browser-held proofs: an order id in a cookie opens nothing without one. */
+  const { orderProof, verifyOrderProof } = await import("../src/server/orderAccess.ts");
+  const owner = orderProof("owner", a.id, KEY);
+  ok(verifyOrderProof("owner", a.id, owner, KEY), "an owner proof opens its own order");
+  ok(!verifyOrderProof("owner", b.id, owner, KEY), "and no other order");
+  ok(!verifyOrderProof("track", a.id, owner, KEY), "an owner proof is not a tracking proof");
+  ok(
+    !verifyOrderProof("owner", a.id, orderProof("track", a.id, KEY), KEY),
+    "and a tracking proof cannot be promoted to ownership",
+  );
+  ok(!verifyOrderProof("owner", a.id, owner, "x".repeat(40)), "another secret cannot verify it");
+  ok(
+    !verifyOrderProof("owner", a.id, "", KEY) && !verifyOrderProof("owner", a.id, undefined, KEY),
+    "a bare order id — the old cookie — opens nothing",
+  );
+  eq(orderProof("owner", a.id, null), null, "without a key, no proof is issued");
+
+  const { normaliseOrderNumber } = await import("../src/payments/instrument.ts");
+  eq(normaliseOrderNumber(" ng-mv0i 9pjd-fqd "), "NG-MV0I9PJD-FQD", "an order number as typed");
+  eq(normaliseOrderNumber("MV0I9PJD-FQD"), "NG-MV0I9PJD-FQD", "the NG- prefix may be left off");
+  eq(normaliseOrderNumber(42), "", "anything else is nothing");
+
+  /* Deployments refuse payment without the key that signs ownership. */
+  const payments = await import("../src/payments/index.ts");
+  const savedEnv = { node: process.env.NODE_ENV, secret: process.env.ORDER_ACCESS_SECRET };
+  process.env.NODE_ENV = "production";
+  delete process.env.ORDER_ACCESS_SECRET;
+  ok(
+    payments.paymentBlockers().includes("order_access_unconfigured"),
+    "a production build without ORDER_ACCESS_SECRET takes no payments",
+  );
+  process.env.ORDER_ACCESS_SECRET = KEY;
+  ok(
+    !payments.paymentBlockers().includes("order_access_unconfigured"),
+    "with it, that blocker clears",
+  );
+  if (savedEnv.node === undefined) delete process.env.NODE_ENV;
+  else process.env.NODE_ENV = savedEnv.node;
+  if (savedEnv.secret === undefined) delete process.env.ORDER_ACCESS_SECRET;
+  else process.env.ORDER_ACCESS_SECRET = savedEnv.secret;
 }
 
 /* ======================================================================== */
@@ -1497,6 +1538,7 @@ const client = {
   eq(rl.RULES.payOrder.limit, 6, "six card attempts per order");
   eq(rl.RULES.payAddress.limit, 15, "fifteen per address");
   eq(rl.RULES.placeOrder.limit, 10, "ten orders an hour per address");
+  eq(rl.RULES.trackOrder.limit, 5, "five lookups of one order number per 15 minutes");
 
   const h = (o) => new Headers(o);
   eq(
