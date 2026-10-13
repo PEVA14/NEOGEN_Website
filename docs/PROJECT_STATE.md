@@ -2654,8 +2654,9 @@ and headers), §11 (schema).
   `X-Frame-Options: DENY`, Permissions-Policy, Referrer-Policy, no
   `X-Powered-By`. CSP in three layers: a baseline that cannot break a page
   (`object-src`, `base-uri`, `frame-ancestors`) enforced everywhere; the full
-  storefront policy **report-only**, because Mercado Pago publishes no list of
-  the hosts its card fields need; the console's first-party policy enforced.
+  storefront policy, first **report-only** because Mercado Pago publishes no
+  list of the hosts its card fields need, enforced after the Preview round
+  below; the console's first-party policy enforced.
   Reports go to `POST /api/csp-report`, logged as `security.csp_violation`
   with the directive and blocked host only.
 - **Verified locally** on a production build with a real Postgres engine: the
@@ -2665,13 +2666,22 @@ and headers), §11 (schema).
   texture fetches, now allowed; afterwards no page reported a violation and the
   console worked under its enforced policy. 352 `check:operations` assertions.
 
-**Owner steps.** (1) `npm run db:migrate` against Neon `staging` (and `main`
-before Production). (2) On Preview, make a sandbox card payment and read the
-logs for `security.csp_violation`; if none come from Mercado Pago's hosts, set
-`STOREFRONT_ENFORCED = true` in `src/config/securityHeaders.ts`.
+**Preview round (2026-10-11).** Migration 003 applied to Neon `staging` by the
+owner. A sandbox card payment reported one Mercado Pago host,
+`www.mercadolivre.com` (img-src), now in the policy's Mercado Pago family, and
+Vercel's Preview toolbar (`vercel.live`), now allowed only in Preview builds
+(`VERCEL_ENV=preview`), following Vercel's CSP guidance. The storefront policy
+is then **enforced** (`STOREFRONT_ENFORCED = true`) and still reports; checked
+on a production build: pages and the 3D vials render, nothing blocked.
+
+**Owner steps.** (1) Confirm with one more sandbox card payment on Preview that
+the card fields load and no `security.csp_violation` names a Mercado Pago host.
+(2) `npm run db:migrate` against Neon `main` before Production. (3) Optional:
+`sslmode=verify-full` instead of `require` in the Neon URLs silences the `pg`
+driver's deprecation warning (logged at error level) and keeps today's
+behaviour after its next major version.
 **Not exercised at runtime:** the card-attempt and order-placement limits
-(they need a configured processor; covered by the limiter's tests) and the
-Mercado Pago card fields under the storefront policy.
+(they need a configured processor; covered by the limiter's tests).
 
 ## 8bg. Operations console redesign (2026-10-09, `fcccc3e`)
 

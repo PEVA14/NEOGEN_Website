@@ -1588,7 +1588,7 @@ const client = {
 
   /* Headers: what is enforced, and what is only reported. */
   const sh = await import("../src/config/securityHeaders.ts");
-  const prod = sh.securityHeaders(false);
+  const prod = sh.securityHeaders({ dev: false, preview: false });
   const header = (source, key) =>
     prod.find((e) => e.source === source)?.headers.find((x) => x.key === key)?.value ?? "";
   ok(
@@ -1597,9 +1597,9 @@ const client = {
   );
   ok(
     !/script-src/.test(header("/:path*", "Content-Security-Policy")),
-    "the site-wide enforced policy cannot block a script",
+    "the baseline under every response cannot block a script",
   );
-  const storefront = header("/((?!ops/|ops$).*)", "Content-Security-Policy-Report-Only");
+  const storefront = header("/((?!ops/|ops$).*)", "Content-Security-Policy");
   ok(
     /https:\/\/sdk\.mercadopago\.com/.test(storefront),
     "the storefront policy allows the payment SDK",
@@ -1612,6 +1612,16 @@ const client = {
     "the console allows first-party scripts only",
   );
   ok(!/mercadopago/.test(consolePolicy), "and no payment hosts");
+  ok(!/vercel\.live/.test(JSON.stringify(prod)), "production allows no Vercel toolbar host");
+  const preview = JSON.stringify(sh.securityHeaders({ dev: false, preview: true }));
+  ok(
+    /script-src[^;]*https:\/\/vercel\.live/.test(preview),
+    "a Preview build allows the Vercel toolbar's script",
+  );
+  ok(
+    /\*\.mercadolivre\.com/.test(storefront),
+    "the policy allows Mercado Libre's Portuguese-language domain",
+  );
   const route = new RegExp(`^${"/((?!ops/|ops$).*)"}$`);
   ok(
     route.test("/es/checkout/pago/NG-1") && !route.test("/ops") && !route.test("/ops/pedidos"),

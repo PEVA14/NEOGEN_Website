@@ -51,7 +51,10 @@ const nextConfig: NextConfig = {
   // `src/config/securityHeaders.ts`.
   async headers() {
     return [
-      ...securityHeaders(process.env.NODE_ENV !== "production"),
+      ...securityHeaders({
+        dev: process.env.NODE_ENV !== "production",
+        preview: process.env.VERCEL_ENV === "preview",
+      }),
       {
         source: "/models/:path*",
         headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],

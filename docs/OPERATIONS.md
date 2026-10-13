@@ -426,8 +426,10 @@ error level. None of these limits is the only gate.
   location, USB or topics, and an enforced CSP of `object-src 'none'`,
   `base-uri 'self'`, `frame-ancestors 'none'`.
 - Storefront: `Referrer-Policy: strict-origin-when-cross-origin` and the full
-  policy as `Content-Security-Policy-Report-Only`, allowing Mercado Pago's
-  domain families for scripts, frames, connections, images and fonts.
+  policy, enforced, allowing Mercado Pago's domain families (`mercadopago`,
+  `mercadolibre`, `mercadolivre`, `mlstatic`) for scripts, frames,
+  connections, images and fonts. Preview builds also allow Vercel's toolbar
+  hosts (`vercel.live` and the others Vercel documents); Production does not.
 - `/ops`: the full first-party policy, enforced.
 
 `'unsafe-inline'` stays in `script-src`: Next streams page data as inline
@@ -439,10 +441,10 @@ API formats), logged as `security.csp_violation` with the directive, the
 disposition and the blocked **host** only. Browsers deliver them in batches,
 sometimes a minute later.
 
-**Promoting the storefront policy:** after a sandbox card payment on Preview
-produces no `security.csp_violation` from Mercado Pago's hosts, set
-`STOREFRONT_ENFORCED = true`. If a host is reported, add it to `MERCADO_PAGO`
-first.
+**A new Mercado Pago host** shows up as a `security.csp_violation` naming it.
+Add it to `MERCADO_PAGO` in `src/config/securityHeaders.ts`. While
+investigating, `STOREFRONT_ENFORCED = false` sends the storefront policy as
+report-only again.
 
 ## 11. Schema
 
