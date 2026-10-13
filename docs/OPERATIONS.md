@@ -279,8 +279,29 @@ makes no delivery or legal promises, and `check:content` scans its copy.
 
 ## 8. Customer order status
 
-`/{locale}/pedido/{id}` opens only for the browser that placed the order (the
-existing httpOnly cookie), or through the signed link in emails.
+`/{locale}/pedido/{id}` opens for three kinds of browser, and an order id alone
+opens nothing:
+
+| Access                                | How                                                                  | Opens                                                      |
+| ------------------------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------- |
+| **Owner** (`neogen.orders` cookie)    | placed the order here, or followed the order's signed email link     | status page (with postal code), confirmation, payment step |
+| **Tracker** (`neogen.tracked` cookie) | `/{locale}/rastrear`: order number plus the email it was placed with | status page only: no postal code, no payment action        |
+| Anyone else                           | —                                                                    | the same "not found" as a missing order                    |
+
+Both cookies are httpOnly, last a day and keep the last five orders. **Every
+order id in them carries a proof**, `HMAC-SHA256(ORDER_ACCESS_SECRET,
+"order-<owner|track>:v1:<id>")`, so a cookie written by hand opens nothing and a
+tracking proof cannot be used as ownership. Without the secret, a development
+server signs with a per-process key; a production build takes no payments
+(`order_access_unconfigured`). Cookies issued before 2026-10-12 carried no
+proof and no longer open anything.
+
+**"Rastrear mi pedido"** (`server/orderLookup.ts`) accepts the number as typed
+(lower case, spaces, without `NG-`). A missing order and a wrong email give the
+same answer, compared as hashes in constant time. Throttled: 10 lookups per 15
+minutes per address, and 5 per order number (§10a). The status page never shows
+a street address, phone or email to anyone. The footer links to it only while
+commerce is on, and the status page's "not found" offers it.
 
 **The signed link:**
 
@@ -405,14 +426,16 @@ memory without a database. A key is `rule:sha256(subject)`, so no address or
 name is stored. The client address is `x-vercel-forwarded-for`, which Vercel
 sets and a client cannot spoof.
 
-| Rule          | Limit                     | Where                                                     |
-| ------------- | ------------------------- | --------------------------------------------------------- |
-| `ops-login`   | 5 failures / 15 min       | per name and per address; a success clears both           |
-| `pay-order`   | 6 card attempts / 15 min  | per order — the card-testing brake                        |
-| `pay-address` | 15 card attempts / 15 min | per address, across orders                                |
-| `place-order` | 10 orders / hour          | per address; checked after every other gate, before write |
-| `atlas`       | 8 generations / 10 min    | per address                                               |
-| `csp-report`  | 30 reports / 10 min       | per address                                               |
+| Rule            | Limit                     | Where                                                     |
+| --------------- | ------------------------- | --------------------------------------------------------- |
+| `ops-login`     | 5 failures / 15 min       | per name and per address; a success clears both           |
+| `pay-order`     | 6 card attempts / 15 min  | per order — the card-testing brake                        |
+| `pay-address`   | 15 card attempts / 15 min | per address, across orders                                |
+| `place-order`   | 10 orders / hour          | per address; checked after every other gate, before write |
+| `track-address` | 10 lookups / 15 min       | "Rastrear mi pedido", per address                         |
+| `track-order`   | 5 lookups / 15 min        | per order number — the brake on guessing its email        |
+| `atlas`         | 8 generations / 10 min    | per address                                               |
+| `csp-report`    | 30 reports / 10 min       | per address                                               |
 
 A refusal logs `security.rate_limited` with the rule. **The limiter fails
 open**: if the store cannot be reached (an outage, or a deploy before migration

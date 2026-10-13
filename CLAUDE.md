@@ -106,10 +106,11 @@ Do not silently expand scope.
 ## Current state
 
 **Read `docs/PROJECT_STATE.md` before doing anything else.** It records
-where the phases stand (Phase 11 complete at `b6032c3`; Phase 12 not
-started or approved), how the owner runs each phase, rules given only
+where the work stands, how the owner runs each phase, rules given only
 in conversation (supplier confidentiality, RUO label, no dosing or
 reconstitution tools), confirmed business facts, and open decisions.
+**What is left before launch, and in what order, is
+`docs/LAUNCH_PLAN.md`** — read it next.
 
 ## Git and GitHub
 

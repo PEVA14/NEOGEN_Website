@@ -1,7 +1,15 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-10-08**: **staging validated end to end on Mercado Pago's
-sandbox, and the first fix batch** (§8bf). Before that, the same day: **the
+Last updated **2026-10-12**: **the launch audit and plan** —
+`docs/LAUNCH_PLAN.md` is now the authoritative list of what is left before
+NEOGEN takes real orders, and the order to do it in (§8bj). The same day:
+**"Rastrear mi pedido" and signed order cookies** (§8bi; a forgeable
+ownership cookie fixed). 2026-10-09 to 10-11: **security hardening** —
+shared rate limits, security headers, a Content-Security-Policy enforced after
+a Preview card payment (§8bh) — and **the operations console redesign**
+(§8bg). 2026-10-08: **staging validated end to end on Mercado Pago's
+sandbox, the first fix batch and the stuck-payment reconcile** (§8bf). Before
+that, the same day: **the
 first Vercel Preview candidate — the
 UX/UI polish pass (homepage travel between sections and seams, a larger
 Section 05, catalogue search that shows its results, documentation stated as
@@ -130,6 +138,15 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 
 ### Start here: handoff of 2026-09-20
 
+- **Latest (2026-10-12): read `docs/LAUNCH_PLAN.md` first.** It holds what is
+  done, every open item with an id (A1–A3 gate, B owner decisions, C
+  configuration, D development, E testing), and the five-stage plan the owner
+  follows. Work since 2026-10-07 is on the `staging` branch (pushed to
+  `origin/staging`, deployed as Vercel Preview against Neon `staging` and
+  Mercado Pago's sandbox); `main` is still at `9042109`. The owner merges.
+  Development items that need no decision (D7 inventory double-apply, D10
+  health check, D11 migration tracking) can start when the owner says "do the
+  ready items".
 - **Latest (2026-09-23, overnight brief): commerce + operations pass
   (§8ab).** Committed in logical commits, not pushed, not deployed. The
   NEOGEN order now has separate payment / fulfilment / shipment axes, an
@@ -269,6 +286,14 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 | `ae3c8af`   | Peptide guide, editorial notes, FAQ, shipping facts, and the blocking research-use declaration (§8y)                            |
 | _this_      | RETA V3, with its mock-up label replaced at build time (§8z)                                                                    |
 | `48ce261`   | StudiedFor summaries and Simple Effects: the owner-authored layer, its editor, bulk status, the owner's 75 entries (§8bc, §8bd) |
+| `9042109`   | Simple Effects documented end to end — **`origin/main` is here**                                                                |
+| `67f4977` … | On `staging`: `.gitignore` for env files, Simple Effects copy, the UX polish pass (§8be)                                        |
+| `4cec72b`   | Fix batch after the sandbox walk-through: receipt time zone, ops wording, tracking URL and stock hints (§8bf)                   |
+| `e8d8828`   | Stuck-payment reconcile: scheduled job, operator button, listing filters (§8bf)                                                 |
+| `fcccc3e`   | Operations console redesign (§8bg)                                                                                              |
+| `f89e1e6`   | Security hardening: shared rate limits, headers, CSP report-only, violation reports, migration 003 (§8bh)                       |
+| `3047100`   | Storefront CSP enforced after the Preview card payment — **`origin/staging` is here** (§8bh)                                    |
+| _this_      | "Rastrear mi pedido", signed order cookies (§8bi); the launch audit and plan, `docs/LAUNCH_PLAN.md` (§8bj)                      |
 
 **Current priority (owner, 2026-09-17): V1 completion.** Make NEOGEN V1 as
 complete, polished and commercially effective as possible with the
@@ -393,12 +418,29 @@ also encoded in `src/config/site.ts`; anything undecided there is `null`.
   purchase. Never say documentation does not exist; say it is provided on
   request after purchase. HOW a customer requests it (channel, timing, what
   exactly is sent) has not been stated — do not invent it.
+  **Clarified 2026-10-07:** the documents are the supplier's certificates,
+  associated with an ORDER after purchase — never published per product
+  before. The architecture for attaching one to a paid order and serving it to
+  that customer only is in §8bj; whether a certificate is shown as received
+  (lab named) or only redacted is open (`LAUNCH_PLAN.md` B9).
+- **Environments (2026-10-08):** Vercel Preview builds the `staging` branch,
+  against Neon branch `staging`, with Mercado Pago TEST credentials, the
+  commerce flag on, and the console configured; it is behind Vercel
+  Authentication. Production builds `main`, against Neon `main`, with no
+  Mercado Pago credentials and commerce off.
 - **Age:** a simple 18+ statement, probably inside the Terms.
 - **Photography priority:** P0 is the three flagships (RETA, GLOW, GHK-Cu).
 - **Language (Q34):** "Spanish only for now". The English locale exists in
   code; confirm with the owner whether it ships at launch.
 
 ## 6. Open decisions and blockers
+
+**Superseded as the working list by `docs/LAUNCH_PLAN.md` (2026-10-12)**, which
+gives every open item an id, an owner and a dependency. This section keeps the
+background behind each blocker; where the two differ, the plan is current.
+Since this list was written: Neon is provisioned and isolated per environment
+(item 7), the console and `ORDER_ACCESS_SECRET` are configured on Preview
+(8b), and the sandbox checkout has run end to end (§8bf).
 
 **Launch blockers**
 
@@ -2628,6 +2670,104 @@ Evaluated on a production build in headless Chrome, at 1440×900 and 390×844,
 from the catalogue grid, the phone strip and by direct URL; reduced motion;
 GLOW's circle unchanged; at 4× CPU throttle on the phone there is no long task
 between the flight's start and the formation's end.
+
+## 8bj. Audits, analyses and the launch plan (2026-10-07 → 10-12)
+
+Work done in conversation that changed no code, recorded here so it is not
+re-derived. The live list of what is left is `docs/LAUNCH_PLAN.md`.
+
+**Ecommerce-readiness audit (2026-10-07).** Every subsystem was rated on code,
+configuration and operability. Code was largely complete; nothing was
+configured or deployed. Top blockers: lawful sale and processor acceptance; no
+approved legal texts; no shipping price below MX$10,000 (84 of 147 variants);
+nothing deployed (database, email, domain, credentials); no stock counts, no
+email, and draft injectable label art on public assets. Its recommended order
+(gate → accounts → staging infrastructure → commerce completion → operations
+data → testing → launch) is what happened next: staging, the sandbox walk, the
+reconcile job, throttling, the CSP and the order lookup closed its Phase 2 and
+part of Phase 3. Its remaining items are carried into `LAUNCH_PLAN.md`.
+
+**Secrets hygiene (2026-10-07).** Two stray lines were removed from
+`.env.example`. A pattern scan of all commits on every ref, and of the working
+tree, found no real credential ever committed: the only matches are fixture
+values in `scripts/check-commerce.mjs` and `scripts/check-payments.mjs`
+(fixture words, an `example` host). `.env.local` and `references/private/`
+were never tracked. Nothing needed rotating. `.gitignore` now ignores every
+`.env*` file except `.env.example`, and `.vercel/` (`67f4977`).
+
+**Order certificates — architecture, not built (2026-10-07).** After the owner
+clarified that certificates are the supplier's and belong to an order after
+purchase (§5), the analysis found the public evidence system (`DOCUMENTS`,
+`LOTS`, files under `public/`) is the wrong home: it is per product,
+world-readable, edited in code, and lot assignment closes at dispatch. The
+recommended design, all inside orders and operations:
+
+- an order-certificate record (line, file name, size, type, content hash, who,
+  when), with an audit event, stored as Postgres `bytea` in a new migration
+  (object storage later, if volume grows);
+- "attach certificate" per line on `/ops/pedidos/[id]`, PDF only, size and
+  content checks, allowed on any paid order including after dispatch, with a
+  three-point operator checklist (matches the product, strength and batch
+  shipped; no supplier identity, contacts, pricing or terms; nothing NEOGEN
+  restates as its own claim);
+- a customer download route gated exactly like the status page (owner cookie
+  or signed link — after §8bi, not the tracking cookie unless the owner
+  decides otherwise), `private, no-store`, as an attachment, shown only while
+  the order is paid; per-document retraction.
+
+Open: shown as received (issuing lab named) or redacted only (`LAUNCH_PLAN.md`
+B9, D5).
+
+**Neon review (2026-10-08).** Runtime reads only `DATABASE_URL`, which should
+be the pooled string (the code uses no session state). Migrations should run
+with the direct (unpooled) URL mapped onto `DATABASE_URL` for one process — the
+hidden-prompt command used on 2026-10-11. Migrations are idempotent and
+untracked; the first non-idempotent one needs a tracking table
+(`LAUNCH_PLAN.md` D11). PGlite showed no SQL divergence but cannot exercise
+real concurrency; it hid one real defect, the inventory `adjust` checking its
+idempotency key before taking the row lock (D7, still open). Preview and
+Production were isolated onto separate Neon branches before any real data
+existed, as recommended. Vercel returns `[SENSITIVE]` placeholders for the
+integration's variables, so `vercel env pull` cannot supply a working
+connection string; enter it by hand, hidden.
+
+**Preview operations notes.** Preview's `OPS_ACCOUNTS` once differed from the
+local one (re-pasted by the owner); the console worked after. Pasting a Neon
+connection string with quotes or a `psql`/`DATABASE_URL=` prefix makes `pg`
+fall back to host `base` (`ENOTFOUND base`); the hidden-prompt command given to the owner strips those. The `pg` driver logs a deprecation warning at error level for
+`sslmode=require` (`LAUNCH_PLAN.md` C8).
+
+## 8bi. "Rastrear mi pedido", and signed order cookies (2026-10-12)
+
+Owner decision (2026-10-11): both ways in — the signed link in the order's
+emails (already built, waits on an email provider) and an order-number-plus-email
+lookup. Details: `docs/OPERATIONS.md` §8.
+
+- **Fixed first, a real exposure.** The ownership cookie that opens a
+  confirmation (name, phone, street address) was a plain list of order
+  numbers, so anyone could write it by hand for an order number they had seen
+  — on a packing slip, a screenshot, read over the phone. Each id now carries an
+  HMAC proof from `ORDER_ACCESS_SECRET`; a hand-written cookie opens nothing.
+  A production build without that secret takes no payments.
+- **`/{locale}/rastrear`.** Order number (as typed) and email, throttled per
+  address and per order number, one answer for a missing order and a wrong
+  email. A match grants a separate, signed, view-only cookie: the status page
+  only — steps, carrier, tracking, items — with no postal code and no payment
+  action; never the confirmation.
+- **Links in:** footer "Ayuda" (only while commerce is on) and the status
+  page's "not found" screen. Both dictionaries.
+- **Verified** on a production build with a seeded Postgres: a wrong email
+  answered generically with the typed values kept; the right one (different
+  case, no `NG-`) opened the status page without postal code or street; the
+  tracker could not open the confirmation; a hand-written ownership cookie
+  opened neither page; a signed email link opened both, with postal code; the
+  sixth guess on one order number was throttled; no overflow on a phone. 368
+  `check:operations` assertions.
+
+**Owner notes.** `ORDER_ACCESS_SECRET` must be set in Production before payments
+open there (it already is on Preview). Test orders placed on Preview before
+this deploy will show "not found" in the browser that placed them (their
+cookie has no proof); that is expected.
 
 ## 8bh. Security hardening (2026-10-09)
 

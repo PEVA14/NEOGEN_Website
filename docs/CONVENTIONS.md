@@ -797,7 +797,32 @@ made-up value.
 **The console** (`/ops`) is its own root layout, Spanish, off until
 configured. Every action is a server action that re-checks the session.
 Customer order status is `/{locale}/pedido/{id}`: owner cookie or signed
-link, token stripped by redirect.
+link, token stripped by redirect, or a view-only tracking cookie from
+`/{locale}/rastrear`.
+
+## 12c. Security boundaries
+
+Full reference: `docs/OPERATIONS.md` §8 and §10a.
+
+**A browser-held id carries a proof.** Any cookie that grants access to an
+order holds `id.proof`, where the proof is an HMAC under
+`ORDER_ACCESS_SECRET` with a purpose prefix (`order-owner:v1:`,
+`order-track:v1:`). Never trust a bare id from a cookie, a URL or a form; add a
+new purpose rather than reuse one. A production build without the secret takes
+no payments.
+
+**Every endpoint a stranger can loop is rate-limited** through
+`server/security/rateLimit.ts`: a named rule (limit, window), subjects hashed
+before storage, counters shared in Postgres. It fails open and logs, so
+protection degrades rather than checkout. A new public action or route gets a
+rule here, not its own in-memory map.
+
+**Headers live in one file**, `src/config/securityHeaders.ts`, applied by
+`next.config.ts`: a baseline CSP that cannot break a page everywhere, the full
+storefront policy enforced and reporting to `/api/csp-report`, and the
+console's first-party policy. A new third-party host is added there, with the
+violation that proved it was needed. `'unsafe-inline'` stays in `script-src`
+because a nonce would make every static page dynamic.
 
 ## 13. Trust and content (Phase 11)
 

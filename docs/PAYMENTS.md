@@ -185,20 +185,22 @@ behaviour is undocumented.
 
 See `.env.example`.
 
-| Variable                       | Secret  | Notes                                                                                                                                 |
-| ------------------------------ | ------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_COMMERCE_ENABLED` | no      | Business switch. Build-time. `true` to open the bag and checkout                                                                      |
-| `MERCADOPAGO_MODE`             | no      | `test` or `live`. Explicit: test and production tokens share the `APP_USR-` prefix                                                    |
-| `MERCADOPAGO_ACCESS_TOKEN`     | **yes** | Server only                                                                                                                           |
-| `MERCADOPAGO_PUBLIC_KEY`       | no      | Passed to the Brick at render time (runtime, not inlined)                                                                             |
-| `MERCADOPAGO_WEBHOOK_SECRET`   | **yes** | Without it the adapter refuses to configure                                                                                           |
-| `DATABASE_URL`                 | **yes** | Postgres. Optional in test mode; **required in live mode**: `paymentBlockers()` returns `live_without_database` and payment stays off |
+| Variable                       | Secret  | Notes                                                                                                                                                                                          |
+| ------------------------------ | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_COMMERCE_ENABLED` | no      | Business switch. Build-time. `true` to open the bag and checkout                                                                                                                               |
+| `MERCADOPAGO_MODE`             | no      | `test` or `live`. Explicit: test and production tokens share the `APP_USR-` prefix                                                                                                             |
+| `MERCADOPAGO_ACCESS_TOKEN`     | **yes** | Server only                                                                                                                                                                                    |
+| `MERCADOPAGO_PUBLIC_KEY`       | no      | Passed to the Brick at render time (runtime, not inlined)                                                                                                                                      |
+| `MERCADOPAGO_WEBHOOK_SECRET`   | **yes** | Without it the adapter refuses to configure                                                                                                                                                    |
+| `DATABASE_URL`                 | **yes** | Postgres. Optional in test mode; **required in live mode**: `paymentBlockers()` returns `live_without_database` and payment stays off                                                          |
+| `ORDER_ACCESS_SECRET`          | **yes** | 32+ characters. Signs emailed order links and the order cookies (`OPERATIONS.md` §8). **Required in any production build**: without it `paymentBlockers()` returns `order_access_unconfigured` |
 
-Payment is available when all three hold:
+Payment is available when all four hold:
 
 1. The commerce flag is on.
 2. All four Mercado Pago variables are valid.
 3. For live mode, a database is configured.
+4. In a production build, `ORDER_ACCESS_SECRET` is set.
 
 Otherwise the review step says payment is unavailable and no order is created.
 
@@ -279,13 +281,17 @@ scripted Orders API and PGlite. It runs inside `npm run check`.
 
 ## 12. What still blocks accepting a real payment
 
+The live, ordered list is `docs/LAUNCH_PLAN.md`; this section keeps the
+payment-specific background.
+
 1. **Merchant eligibility.** Mercado Pago must accept NEOGEN's business and
    catalogue (see §6 of PROJECT_STATE: its policy restricts medicamentos
    without registro sanitario). Classification review first.
 2. **Production credentials** activated by the owner (industry, website,
    terms), and an **SSL** production domain (mandatory per Mercado Pago).
 3. **Durable database** provisioned and migrated. Live mode refuses to run
-   without one.
+   without one. _Neon is provisioned (`staging` for Preview, `main` for
+   Production); `main` still needs its migrations (`LAUNCH_PLAN.md` C3)._
 4. **Regulatory classification review**, which also gates the commerce flag.
 5. **Final prices**, and with them tax handling (IVA is to be included in
    displayed prices).
