@@ -1671,6 +1671,105 @@ const client = {
   );
 }
 
+/* ======================================================================== */
+/* 18. INVENTORY ADJUST — idempotent under concurrency                        */
+/* ======================================================================== */
+{
+  /* PGlite runs one transaction at a time, so it cannot reproduce two
+     overlapping submits of one stock form. Guard the fix at its source: the
+     adjust must lock the stock row BEFORE it asks whether the form's movement
+     was already recorded (LAUNCH_PLAN D7). */
+  const source = readFileSync(
+    path.resolve(import.meta.dirname, "../src/domain/inventory/adapters/postgres.ts"),
+    "utf8",
+  );
+  const body = source.slice(source.indexOf("async adjust(input)"), source.indexOf("async hold("));
+  const lock = body.indexOf("for update");
+  const seen = body.indexOf("from neogen_inventory_movements where id");
+  ok(lock > 0 && seen > lock, "adjust locks the stock row before its idempotency check");
+}
+
+/* ======================================================================== */
+/* 19. MIGRATIONS — recorded, run once, legacy files re-runnable              */
+/* ======================================================================== */
+{
+  const { migrate, LEGACY } = await import("./lib/migrate.mjs");
+  const mdb = new PGlite();
+  const mclient = {
+    async query(text, params) {
+      if (params) return { rows: (await mdb.query(text, [...params])).rows };
+      const results = await mdb.exec(text);
+      return { rows: results.at(-1)?.rows ?? [] };
+    },
+  };
+  const dir = path.resolve(import.meta.dirname, "../db/migrations");
+  const files = readdirSync(dir)
+    .filter((f) => f.endsWith(".sql"))
+    .sort()
+    .map((name) => ({ name, sql: readFileSync(path.join(dir, name), "utf8") }));
+  const quiet = { log: () => {} };
+
+  ok(
+    files.every((f) => LEGACY.has(f.name) || f.name > "003"),
+    "every file is either a known legacy file or numbered after 003",
+  );
+  eq(
+    await migrate(mclient, files, quiet),
+    files.map((f) => f.name),
+    "a fresh database applies every file",
+  );
+  eq(
+    (await mclient.query("select count(*)::int as n from neogen_schema_migrations", [])).rows[0].n,
+    files.length,
+    "and records each one",
+  );
+  eq(await migrate(mclient, files, quiet), [], "a second run applies nothing");
+
+  const legacyEdited = files.map((f) =>
+    f.name === "002_operations.sql" ? { ...f, sql: `${f.sql}\n-- edited\n` } : f,
+  );
+  eq(
+    await migrate(mclient, legacyEdited, quiet),
+    ["002_operations.sql"],
+    "an edited legacy file (written to be re-run) runs again",
+  );
+
+  const next = { name: "999_check.sql", sql: "create table neogen_check_probe (id int);" };
+  eq(
+    await migrate(mclient, [...legacyEdited, next], quiet),
+    ["999_check.sql"],
+    "a new file runs once",
+  );
+  let refused = false;
+  try {
+    await migrate(mclient, [...legacyEdited, { ...next, sql: `${next.sql} -- changed` }], quiet);
+  } catch {
+    refused = true;
+  }
+  ok(refused, "editing a later file after it ran is refused");
+
+  const broken = { name: "998_broken.sql", sql: "create table neogen_half (id int); select nope;" };
+  let failed = false;
+  try {
+    await migrate(mclient, [broken], quiet);
+  } catch {
+    failed = true;
+  }
+  const half = await mclient.query(
+    "select count(*)::int as n from information_schema.tables where table_name = 'neogen_half'",
+    [],
+  );
+  const recordedBroken = await mclient.query(
+    "select count(*)::int as n from neogen_schema_migrations where name = '998_broken.sql'",
+    [],
+  );
+  ok(
+    failed && half.rows[0].n === 0 && recordedBroken.rows[0].n === 0,
+    "a failing file leaves no table and no record",
+  );
+  await mdb.close();
+}
+
 /* ---- report --------------------------------------------------------------- */
 
 await db.close();
@@ -1682,5 +1781,5 @@ if (failures.length) {
 }
 console.log(
   `operations check passed — ${passed} assertions: fulfilment, lots, shipments, cancellations, ` +
-    `refunds, disputes, attention, inventory (memory + Postgres), notifications, rate limits, CSP`,
+    `refunds, disputes, attention, inventory (memory + Postgres), notifications, rate limits, CSP, migrations`,
 );

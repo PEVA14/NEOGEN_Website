@@ -1,34 +1,41 @@
 /**
- * APPLY THE ORDER SCHEMA to the database in DATABASE_URL.
+ * APPLY THE SCHEMA to a Postgres database.
  *
  *   DATABASE_URL=postgres://… npm run db:migrate
  *
- * Every statement in db/migrations is idempotent, so this is safe to run on
- * every deploy. Prints table names only — never the connection string.
+ * Uses DATABASE_URL_UNPOOLED when it is set (Neon's direct connection, which
+ * is what schema changes should use), otherwise DATABASE_URL. Prints which
+ * variable it used, the migrations applied or skipped, and the table names —
+ * never a connection string.
+ *
+ * Each file runs once and is recorded in `neogen_schema_migrations`; see
+ * `scripts/lib/migrate.mjs` for the rules.
  */
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import pg from "pg";
 
-const url = process.env.DATABASE_URL?.trim();
+import { migrate } from "./lib/migrate.mjs";
+
+const unpooled = process.env.DATABASE_URL_UNPOOLED?.trim();
+const url = unpooled || process.env.DATABASE_URL?.trim();
 if (!url) {
-  console.error("DATABASE_URL is not set — nothing to migrate.");
+  console.error("Neither DATABASE_URL_UNPOOLED nor DATABASE_URL is set — nothing to migrate.");
   process.exit(1);
 }
+console.log(`using ${unpooled ? "DATABASE_URL_UNPOOLED" : "DATABASE_URL"}`);
 
 const dir = path.resolve(import.meta.dirname, "../db/migrations");
 const files = readdirSync(dir)
   .filter((f) => f.endsWith(".sql"))
-  .sort();
+  .sort()
+  .map((name) => ({ name, sql: readFileSync(path.join(dir, name), "utf8") }));
 
 const client = new pg.Client({ connectionString: url });
 await client.connect();
 try {
-  for (const file of files) {
-    await client.query(readFileSync(path.join(dir, file), "utf8"));
-    console.log(`applied ${file}`);
-  }
+  await migrate(client, files);
   const { rows } = await client.query(
     `select table_name from information_schema.tables where table_name like 'neogen_%' order by 1`,
   );

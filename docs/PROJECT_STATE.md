@@ -1,6 +1,8 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-10-12**: **the launch audit and plan** —
+Last updated **2026-10-13**: **the ready items D7, D10 and D11 are done** — the
+inventory double-apply fixed, a health route, migration tracking (§8bk).
+2026-10-12: **the launch audit and plan** —
 `docs/LAUNCH_PLAN.md` is now the authoritative list of what is left before
 NEOGEN takes real orders, and the order to do it in (§8bj). The same day:
 **"Rastrear mi pedido" and signed order cookies** (§8bi; a forgeable
@@ -144,9 +146,8 @@ Read order for a fresh session: `CLAUDE.md` → this file →
   follows. Work since 2026-10-07 is on the `staging` branch (pushed to
   `origin/staging`, deployed as Vercel Preview against Neon `staging` and
   Mercado Pago's sandbox); `main` is still at `9042109`. The owner merges.
-  Development items that need no decision (D7 inventory double-apply, D10
-  health check, D11 migration tracking) can start when the owner says "do the
-  ready items".
+  The development items that needed no decision (D7, D10, D11) are done
+  (§8bk); everything else in Part 2 waits on an owner decision.
 - **Latest (2026-09-23, overnight brief): commerce + operations pass
   (§8ab).** Committed in logical commits, not pushed, not deployed. The
   NEOGEN order now has separate payment / fulfilment / shipment axes, an
@@ -293,7 +294,9 @@ Read order for a fresh session: `CLAUDE.md` → this file →
 | `fcccc3e`   | Operations console redesign (§8bg)                                                                                              |
 | `f89e1e6`   | Security hardening: shared rate limits, headers, CSP report-only, violation reports, migration 003 (§8bh)                       |
 | `3047100`   | Storefront CSP enforced after the Preview card payment — **`origin/staging` is here** (§8bh)                                    |
-| _this_      | "Rastrear mi pedido", signed order cookies (§8bi); the launch audit and plan, `docs/LAUNCH_PLAN.md` (§8bj)                      |
+| `b8ae3e0`   | "Rastrear mi pedido", signed order cookies (§8bi)                                                                               |
+| `e9ba311`   | The launch audit and plan, `docs/LAUNCH_PLAN.md`; documentation brought up to date for hand-off (§8bj)                          |
+| _this_      | The ready items: inventory double-apply, health route, migration tracking (§8bk)                                                |
 
 **Current priority (owner, 2026-09-17): V1 completion.** Make NEOGEN V1 as
 complete, polished and commercially effective as possible with the
@@ -2670,6 +2673,35 @@ Evaluated on a production build in headless Chrome, at 1440×900 and 390×844,
 from the catalogue grid, the phone strip and by direct URL; reduced motion;
 GLOW's circle unchanged; at 4× CPU throttle on the phone there is no long task
 between the flight's start and the formation's end.
+
+## 8bk. The ready items: D7, D10, D11 (2026-10-13)
+
+The three `LAUNCH_PLAN.md` development items that needed no decision.
+
+- **D7 — inventory adjust is idempotent under concurrency.** The Postgres
+  adapter now takes the stock row lock BEFORE asking whether the form's movement
+  id was already recorded, so a double-submitted stock form applies once. A
+  SKU's first count has no row to lock; two overlapping first counts write the
+  same absolute number and keep one ledger row. PGlite cannot run two
+  transactions at once, so `check:operations` guards the order at its source,
+  proven with a negative control (the old order fails it).
+- **D10 — `GET /api/health`** for uptime monitoring: 200 or 503, storage kind,
+  database reachability (3-second limit), the newest recorded migration, and
+  payment availability; nothing else (`OPERATIONS.md` §11a). Checked on a
+  production build against a local Postgres: 200 with
+  `schema: "003_rate_limits.sql"`; database stopped → 503 `unreachable`.
+- **D11 — migration tracking.** `neogen_schema_migrations` records each applied
+  file with its checksum; 001–003 stay re-runnable, later files run once and
+  refuse edits; each file and its record commit together. `db:migrate` prefers
+  `DATABASE_URL_UNPOOLED`. Rehearsed against a database migrated the old way
+  (as Neon `staging` is): the first tracked run re-applied 001–003 safely and
+  recorded them, the second skipped all three. 377 `check:operations`
+  assertions.
+
+**Owner step.** Re-run `npm run db:migrate` once on Neon `staging` (same
+hidden-prompt command) so it starts recording; `main` records from its first
+run (`LAUNCH_PLAN.md` C3). Optionally point an uptime monitor at
+`/api/health` (C9).
 
 ## 8bj. Audits, analyses and the launch plan (2026-10-07 → 10-12)
 

@@ -484,8 +484,23 @@ report-only again.
 `db/migrations/003_rate_limits.sql` adds `neogen_rate_limits` (key, window
 start, hits) for §10a. Rows older than a day are deleted as the limiter runs.
 
-Run `npm run db:migrate` once per database, and again after each new migration
-(every statement is idempotent).
+**Running migrations.** `npm run db:migrate` (`scripts/db-migrate.mjs`, rules
+in `scripts/lib/migrate.mjs`) uses `DATABASE_URL_UNPOOLED` when set, otherwise
+`DATABASE_URL`, and records every file it applies in `neogen_schema_migrations`
+(name, checksum, time), each file and its record in one transaction. A recorded
+file is skipped. 001–003 predate tracking and were written to be re-run: a
+database migrated before 2026-10-13 re-applies them once, safely, and records
+them. Every later file runs exactly once; editing one after it ran is refused —
+write a new migration. Run it after each deploy that adds a file.
+
+## 11a. Health check
+
+`GET /api/health` answers 200 with `{status, storage, database, schema,
+payments}` when the site is serving and its database (if any) answers, and 503
+when a configured database does not answer within 3 seconds. `schema` is the
+newest migration the database has recorded — compare it with the newest file in
+`db/migrations`. No host, role, error text or variable name is ever included;
+the route is public and never cached.
 
 ## 12. Tests
 

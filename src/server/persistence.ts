@@ -76,3 +76,41 @@ export function rateLimitStore(): RateLimitStore {
   const url = databaseUrl();
   return url ? createPostgresRateLimitStore(postgresClient(url)) : memoryRateLimitStore;
 }
+
+export interface DatabaseProbe {
+  storage: "postgres" | "memory";
+  /** "ok" when a trivial query answered; null for memory storage. */
+  database: "ok" | "unreachable" | null;
+  /** The newest migration recorded by `npm run db:migrate`, or null. */
+  schema: string | null;
+}
+
+/**
+ * For the health route: does the database answer, and how far is its schema?
+ * Never throws, never returns a host, a role or an error message.
+ */
+export async function probeDatabase(timeoutMs = 3000): Promise<DatabaseProbe> {
+  const url = databaseUrl();
+  if (!url) return { storage: "memory", database: null, schema: null };
+  const sql = postgresClient(url);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error("timeout")), timeoutMs);
+  });
+  try {
+    await Promise.race([sql.query("select 1"), timeout]);
+  } catch {
+    return { storage: "postgres", database: "unreachable", schema: null };
+  } finally {
+    clearTimeout(timer);
+  }
+  try {
+    const { rows } = await sql.query<{ name: string | null }>(
+      `select max(name) as name from neogen_schema_migrations`,
+    );
+    return { storage: "postgres", database: "ok", schema: rows[0]?.name ?? null };
+  } catch {
+    /* No tracking table yet: migrated before tracking existed. */
+    return { storage: "postgres", database: "ok", schema: null };
+  }
+}

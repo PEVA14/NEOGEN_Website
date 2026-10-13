@@ -110,14 +110,26 @@ export function createPostgresInventoryStore(sql: SqlClient): InventoryStore {
     async adjust(input) {
       if (!validAdjustment(input.mode, input.quantity)) return { ok: false, reason: "invalid" };
       return sql.transaction(async (tx) => {
-        const seen = await tx.query(`select 1 from neogen_inventory_movements where id = $1`, [
-          input.id,
-        ]);
+        /*
+         * LOCK FIRST, THEN ASK WHETHER THIS FORM WAS ALREADY APPLIED. In the
+         * other order, two overlapping submits of the same form both saw "not
+         * applied", then ran one after the other under the lock: the second
+         * applied the adjustment again and its ledger row was silently dropped
+         * as a duplicate. Under the lock, the second waits for the first to
+         * commit and then finds its movement.
+         *
+         * A SKU's FIRST count has no row to lock yet. Two overlapping first
+         * counts both write it, but a count is absolute, so the second writes
+         * the same number and the ledger keeps one row.
+         */
         const current = await tx.query<LevelRow>(
           `select variant_id, on_hand, reserved, updated_at from neogen_inventory
             where variant_id = $1 for update`,
           [input.variantId],
         );
+        const seen = await tx.query(`select 1 from neogen_inventory_movements where id = $1`, [
+          input.id,
+        ]);
         const row = current.rows[0] ? toLevel(current.rows[0]) : null;
         if (seen.rows.length) {
           return row
