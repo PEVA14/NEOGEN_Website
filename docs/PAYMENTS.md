@@ -175,9 +175,12 @@ behaviour is undocumented.
 | Mercado Pago order id(s) per attempt, attempt outcome, idempotency key, NEOGEN payment state, decline reason code, audit events (fact ids, from → to, note), plus the order itself: lines, totals, contact, address | Card number, expiry, security code, cardholder name, the card token after use, issuer, tax id (passed through from the Brick, never stored), bank responses |
 
 - **Sent to Mercado Pago:** the total, the order id, the payer email, the
-  optional tax id from the Brick, and the token.
-- **Not sent:** line items, product names, phone and address. Whether to
-  send items (it may help Mercado Pago's risk scoring) is an owner decision.
+  optional tax id from the Brick, the token, and `NEOGEN` as the card
+  statement text (`statement_descriptor`).
+- **Not sent:** line items, product names, names, phone, address and the
+  device id. **Owner decision, 2026-10-13:** order and customer details are
+  not shared with Mercado Pago, even though its quality checklist asks for
+  them (LAUNCH_PLAN D8).
 - **Logging:** nothing in the payment path logs a request body, a token or a
   secret.
 

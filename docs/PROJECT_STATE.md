@@ -1,6 +1,8 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-10-13**: **the ready items D7, D10 and D11 are done** — the
+Last updated **2026-10-13**: **Mercado Pago quality checklist read (D8);
+no customer or order details are shared with Mercado Pago, by owner
+decision** (§8bl). The same day: **the ready items D7, D10 and D11 are done** — the
 inventory double-apply fixed, a health route, migration tracking (§8bk).
 2026-10-12: **the launch audit and plan** —
 `docs/LAUNCH_PLAN.md` is now the authoritative list of what is left before
@@ -4789,3 +4791,23 @@ vendor and counsel questions are answered.
 - **Session scratch** (the Playwright screenshot, axe and overflow scripts,
   and before/after screenshots) lived in a per-session temp directory and is
   gone. The method is described in "Start here", above.
+
+## 8bl. Mercado Pago quality checklist — and what is not shared (2026-10-13)
+
+The owner connected the Mercado Pago MCP (application **NEOGEN**,
+`2107697494236035`) and a Vercel MCP (project `neogen-website`). The quality
+checklist was read through the MCP and compared with the adapter.
+
+- **Met:** payer email, external reference, the JS SDK and its secure card
+  fields (Card Payment Brick), HTTPS/TLS, signed webhooks, result messages,
+  refunds, order lookup, chargebacks (→ disputed).
+- **Added:** `NEOGEN` as `statement_descriptor` (owner).
+- **Owner decision — not shared:** the checklist also asks for payer name,
+  phone and address, line items (with category), and the device id. A
+  version sending them was built and then **reverted before any commit**:
+  "I don't want details shared with Mercado Pago." Data minimisation stays
+  (`PAYMENTS.md` §7). Do not reintroduce any of these without the owner
+  asking.
+- **Open:** Mercado Pago's automatic evaluation (`quality_evaluation`) on a
+  sandbox order placed within 7 days, to learn whether the omissions block
+  go-live or only lower the score.

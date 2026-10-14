@@ -515,7 +515,14 @@ __resetOutbox();
     "test mode sends Mercado Pago's sandbox payer email",
   );
   eq(post.body.transactions.payments[0].payment_method.installments, 1, "one instalment");
+  eq(
+    post.body.transactions.payments[0].payment_method.statement_descriptor,
+    "NEOGEN",
+    "the card statement reads NEOGEN",
+  );
   ok(!("items" in post.body), "no line items are sent (data minimisation)");
+  ok(!("first_name" in post.body.payer), "no name is sent (data minimisation)");
+  ok(!("phone" in post.body.payer), "no phone is sent (data minimisation)");
   ok(!JSON.stringify(post.body).includes(order.shipping.street), "no address is sent");
   ok(!JSON.stringify(after).includes("tok-APRO"), "the card token is not stored on the order");
 

@@ -32,7 +32,8 @@ import type { MpOrder } from "./vocabulary";
  * how a payment can be traced back even when its id was never stored.
  *
  * WHAT IS SENT: the order's own total, the order id as external reference, the
- * payer's email (and the tax id the Brick may collect), and the card token.
+ * payer's email (and the tax id the Brick may collect), the card token, and
+ * "NEOGEN" as the text on the customer's card statement.
  * Line items, names, phone and address are NOT sent — they are not required
  * by the API, and sending product names to a processor is a decision for the
  * owner, not a default (docs/PAYMENTS.md, "Data minimisation").
@@ -41,6 +42,8 @@ import type { MpOrder } from "./vocabulary";
  * dependency is one less thing holding a secret.
  */
 const API = "https://api.mercadopago.com";
+/* What the customer's card statement shows (owner, 2026-10-13). */
+const STATEMENT_DESCRIPTOR = "NEOGEN";
 /* Mercado Pago's own notification timeout is 22 s; a charge answered slower
    than this is treated as unanswered rather than held open indefinitely. */
 const CHARGE_TIMEOUT_MS = 20_000;
@@ -125,6 +128,7 @@ export function createMercadoPagoProvider(
                 type: instrument.typeId,
                 token: instrument.token,
                 installments: instrument.installments,
+                statement_descriptor: STATEMENT_DESCRIPTOR,
               },
             },
           ],
