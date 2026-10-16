@@ -4825,3 +4825,16 @@ so its signature cannot match. Proposed to the owner: Preview uses the
 NEOGEN application's own test credentials, so charge, webhook and secret
 come from one app (and the MCP's `quality_evaluation`, which refused the
 other app's order on ownership, can run).
+
+**C1/E1 closed, 2026-10-15.** The test credentials turned out to belong to
+Mercado Pago's own test account for the app (`739441805860620`), which signs
+its orders' notifications; NEOGEN's app secret could never verify them.
+Configured as Mercado Pago's documentation says: signed in as the test
+account, webhook in its "Modo productivo" tab (Preview URL with the bypass,
+Order topic), its secret in Preview's `MERCADOPAGO_WEBHOOK_SECRET`, redeploy.
+Order `NG-MVADR557-9IR` (`ORDTST01M51AFNRZH7T6YXZKV2NR9DHH`): Mercado Pago's
+log shows **200**. Correction to the earlier plan: no "Pago: evento repetido"
+appears for this case — the card answer already recorded the same payment
+fact, so the notification is deduplicated before the order is loaded and the
+history is untouched. LAUNCH_PLAN 1.3 rewritten with the working setup.
+Runtime logs: the Vercel MCP now has the team scope; Hobby keeps one hour.

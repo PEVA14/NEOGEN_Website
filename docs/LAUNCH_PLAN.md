@@ -75,7 +75,7 @@ means a real order should not be taken without it.
 
 | Id  | Item                                                                                                                                                                                                                                                                                                                                                                      | Blocks launch | Waits on   |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | ---------- |
-| C1  | **Webhook test on Preview** (pending since 2026-10-09): Protection Bypass for Automation, the bypass in Mercado Pago's test webhook URL, "Simulate notification" (expect 200 `unknown_payment`), then a real `APRO` order shows "Pago: evento repetido" in `/ops`.                                                                                                        | Yes           | —          |
+| C1  | ✅ **Done 2026-10-15** (step 1.3). **Webhook test on Preview** (pending since 2026-10-09): Protection Bypass for Automation, the bypass in Mercado Pago's test webhook URL, "Simulate notification" (expect 200 `unknown_payment`), then a real `APRO` order shows "Pago: evento repetido" in `/ops`.                                                                     | Yes           | —          |
 | C2  | **Production environment variables** (Production scope only, never shared with Preview): `DATABASE_URL` (Neon `main`, pooled), `ORDER_ACCESS_SECRET`, `OPS_ACCOUNTS`, `OPS_SESSION_SECRET`, `CRON_SECRET`, `NEXT_PUBLIC_SITE_URL`, the email provider's key, Mercado Pago **live** credentials and `MERCADOPAGO_MODE=live`, and last `NEXT_PUBLIC_COMMERCE_ENABLED=true`. | Yes           | A2, B6, B7 |
 | C3  | **Migrate Neon `main`:** `npm run db:migrate` with its direct (unpooled) URL, entered hidden — the same command used for `staging`. Also re-run it once on `staging` so that database starts recording its migrations (it was migrated before tracking existed; the re-run is safe).                                                                                      | Yes           | —          |
 | C4  | **Production webhook** in Mercado Pago's production tab: `https://<domain>/api/payments/webhook` (no bypass parameter), Order topic, and its own secret in `MERCADOPAGO_WEBHOOK_SECRET`.                                                                                                                                                                                  | Yes           | A2, C5     |
@@ -109,7 +109,7 @@ means a real order should not be taken without it.
 
 | Id  | Item                                                                                                                                                                                                     | Owner         |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
-| E1  | Webhook end to end on Preview (C1).                                                                                                                                                                      | Owner         |
+| E1  | ✅ **Done 2026-10-15.** Webhook end to end on Preview (C1).                                                                                                                                              | Owner         |
 | E2  | **Full rehearsal on Preview** once D1–D4 and D7 are in: decline, pending, approved, duplicate webhook, cancel with refund, a shipment to delivered, emails received, the lookup page, an operator alert. | Claude, owner |
 | E3  | **Restore drill:** restore Neon `staging` from its history to a branch and confirm orders read back.                                                                                                     | Owner, Claude |
 | E4  | **First real order:** a low-value live order end to end (payment, order, stock, email, shipment, tracking), then a live refund.                                                                          | Owner         |
@@ -144,27 +144,27 @@ Get the answer in writing. If counsel advises waiting for A1, start with an
 informal question to your account contact.
 _Done when_ you have a written yes or no (or a date for one).
 
-1.3 **Run the webhook test on Preview** (C1, E1):
+1.3 ✅ **Webhook test on Preview** (C1, E1) — **done 2026-10-15**. How it
+works on staging, for a re-run:
 
-1. In Vercel → the project → Settings → Deployment Protection → **Protection
-   Bypass for Automation**, add a bypass secret and copy it.
-2. In Mercado Pago's **test-mode** webhook settings, set the URL to
-   `https://neogen-website-git-staging-pablo-astorgas-projects.vercel.app/api/payments/webhook?x-vercel-protection-bypass=<the bypass secret>`,
-   keep the **Order** topic, and save. Reveal the signing secret; if it
-   differs from Preview's `MERCADOPAGO_WEBHOOK_SECRET`, update that variable
-   and redeploy `staging`. (The bypass secret then sits in Mercado Pago's
-   panel in plain text — acceptable for staging only; never reuse it, and
-   rotate it afterwards.)
-3. Click **Simulate notification**. Healthy: HTTP 200 with
-   `"outcome":"unknown_payment"`. A 401 `invalid_signature` means the secret
-   does not match; a Vercel sign-in page means the bypass was not accepted.
-4. Place a fresh order with the `APRO` test card. Mercado Pago's delivery log
-   should show 200, and the order's history in `/ops` should gain "Pago:
-   evento repetido" from the processor (a duplicate, because the card answer
-   already settled it — which proves both the signature check and the
-   duplicate guard).
-
-_Tell Claude_: the exact response from step 3, and what step 4 showed.
+1. Vercel → Settings → Deployment Protection → **Protection Bypass for
+   Automation** gives a bypass secret (rotate it after testing: it sits in
+   Mercado Pago's panel in plain text).
+2. **Test credentials belong to a test account Mercado Pago creates for the
+   app** (here application `739441805860620`, not NEOGEN's
+   `2107697494236035`). Its orders are signed by that account, so the webhook
+   is configured **signed in as the test account** (its username and password
+   are under NEOGEN → Credenciales de prueba), in its **Modo productivo** tab:
+   the Preview URL with `?x-vercel-protection-bypass=<secret>`, topic
+   **Order**. That account's secret is Preview's
+   `MERCADOPAGO_WEBHOOK_SECRET`. (NEOGEN's own "Simular notificación" then
+   answers 401 on Preview — expected; production uses NEOGEN's secret, C4.)
+3. Place an `APRO` order (MX$10,000 or more while D1 is open). Healthy: the
+   test account's webhook log shows **200**. The order's history does not
+   change: the card answer already recorded that payment state, and the
+   notification is recognised as the same fact before the order is loaded
+   (`server/payments.ts`). Nothing in the history is the expected result.
+4. A simulated notification (id `123456`) answers 200 `unknown_payment`.
 
 1.4 **Choose the email provider** and set up the sending domain and support
 mailbox (B6). Decide where "new paid order" alerts go.
