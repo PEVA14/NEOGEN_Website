@@ -4889,3 +4889,15 @@ availability state such as Agotado / Sold out." Built:
   now "Agotado" / "Sold out".
 - Tests: `check:operations` (the rule, 9) and `check:checkout` (a sold-out
   line is removed and disclosed, 3).
+
+## 8bo. B14 — watching production with Vercel logs (2026-10-15)
+
+Owner: Vercel logs, no paid monitoring service, don't overengineer.
+`OPERATIONS.md` §10b: where to look, a 5-minute daily routine and a table
+of every signal (meaning, what to do). The key fact: **Hobby keeps runtime
+logs one hour**, so the durable record is `/ops` → "Requiere atención",
+`/ops/mensajes` and the uptime monitor; logs are for diagnosing something
+happening now. One gap found and closed: a webhook failing its signature
+(401) logged nothing — the cause of an hour's search on 2026-10-15 — and now
+emits `payment.webhook_unauthenticated` (`check:payments`). A dedicated tool
+later is a new `Sink` in `observe.ts`. D9 is covered by this.

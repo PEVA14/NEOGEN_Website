@@ -17,6 +17,7 @@ import "server-only";
 export type Signal =
   | "payment.provider_error"
   | "payment.webhook_rejected"
+  | "payment.webhook_unauthenticated"
   | "payment.webhook_unsettled"
   | "payment.not_persisted"
   | "payment.reconciled"

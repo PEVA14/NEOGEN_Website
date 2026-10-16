@@ -779,6 +779,10 @@ __resetOutbox();
     body: await retargeted.text(),
   });
   eq((await webhook(moved)).status, 401, "a valid signature cannot be moved to another payment");
+  ok(
+    signals.some((r) => r.signal === "payment.webhook_unauthenticated"),
+    "a failed signature is signalled, so a mismatched secret shows in the logs",
+  );
 
   const other = await webhook(signedWebhook("12345", { type: "payment" }));
   eq(other.status, 200, "an authentic event for another topic is acknowledged");

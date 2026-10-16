@@ -434,6 +434,54 @@ Context is an **allow-list** of scalar keys, so a secret, token, payload,
 email or address has no key to travel under. `check:payments` asserts none
 appear.
 
+## 10b. Watching production (owner decision B14, 2026-10-15)
+
+**No monitoring service.** Production failures are watched with what already
+exists: Vercel's logs and the console. The code keeps one seam for a
+dedicated tool later — `observe.ts` writes every signal through a list of
+sinks, so adding one (a log drain, an error service) is a new `Sink`, not a
+change to any call site.
+
+**Vercel keeps runtime logs for one hour on the Hobby plan** (one day on
+Pro). A daily look at the logs therefore sees almost nothing. The durable
+record is the console:
+
+| Where                                | What it shows                                                                                                                                                                                                                                 | How long it lasts                               |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `/ops` → **Requiere atención**       | Every order that needs a person: disputed charge, payment stuck over 30 minutes, an approved payment on an earlier attempt (possible double charge), an amount mismatch, an open or unconfirmed refund, a parcel incident, a stock shortfall. | In the database, until resolved or acknowledged |
+| `/ops/mensajes`                      | Customer and operator emails: sent, pending, failed.                                                                                                                                                                                          | In the database                                 |
+| Uptime monitor on `/api/health` (C9) | The site is down, or the database is unreachable.                                                                                                                                                                                             | The monitor's own history                       |
+| Vercel → project → **Logs**          | The signals below, for diagnosing something happening now.                                                                                                                                                                                    | 1 hour (Hobby)                                  |
+
+**Daily routine (5 minutes):** open `/ops` → **Requiere atención** and clear
+or acknowledge each row; open **Mensajes** and check nothing is `failed`;
+glance at the uptime monitor. When something looks wrong, reproduce or wait
+for it to recur and read Vercel's logs within the hour.
+
+**Reading the logs.** Vercel → **neogen-website** → **Logs**, environment
+**Production**, level **Warning** and **Error**, and search for `neogen` (each
+signal is one JSON line `{"neogen":{"signal":…,"severity":…,"context":…}}`).
+Context never carries a customer's name, email, address, token or secret.
+
+| Signal                                                                | Severity   | Means                                                                                        | Do                                                                                                                             |
+| --------------------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `payment.provider_error`                                              | warn/error | Mercado Pago did not answer or refused a request                                             | If repeated: Mercado Pago's status page; check credentials                                                                     |
+| `payment.webhook_unauthenticated`                                     | warn       | A notification failed its signature (answered 401)                                           | Many in a row: the webhook secret in Vercel does not match the account that charges (see LAUNCH_PLAN 1.3 for the test account) |
+| `payment.webhook_rejected`                                            | warn       | A payment answer was refused: wrong amount, another order's reference, or an earlier attempt | The order is in "Requiere atención"; reconcile in Mercado Pago's panel                                                         |
+| `payment.webhook_unsettled`                                           | warn       | A verified notification could not be applied yet (`provider_unreachable`)                    | Mercado Pago retries; if it persists, use "Revisar con el procesador"                                                          |
+| `payment.not_persisted`                                               | error      | A payment answer could not be saved                                                          | Check the database (`/api/health`); the reconcile repairs it once it is back                                                   |
+| `payment.expired` / `payment.expiry_refused`                          | info/warn  | D12: an hour-old payment was cancelled / Mercado Pago refused to cancel                      | Refused: the order stays in "Requiere atención"; reconcile in Mercado Pago's panel                                             |
+| `inventory.short` / `inventory.hold_failed` / `inventory.sync_failed` | warn       | Stock could not be held, or the store could not be read                                      | The order is flagged "Faltaron existencias"; recount in `/ops/inventario`                                                      |
+| `notification.send_failed` / `notification.enqueue_failed`            | warn       | An email could not be sent or queued                                                         | `/ops/mensajes`; retries are automatic, a permanent failure stays visible there                                                |
+| `persistence.conflict`                                                | warn       | Two writes raced on one order                                                                | Usually harmless (one won); repeated on one order: look at it                                                                  |
+| `ops.login_failed` / `ops.login_locked`                               | warn       | Console sign-in failures / a locked account                                                  | Unexpected names or volume: rotate `OPS_SESSION_SECRET` and passwords                                                          |
+| `security.rate_limit_unavailable`                                     | error      | The shared rate limiter is down; limits fall back                                            | Check the database                                                                                                             |
+| `security.csp_violation`                                              | warn       | The browser blocked a resource                                                               | A new third-party host needs adding to the CSP, or something injected                                                          |
+
+**When to add a tool.** If an incident is missed because it happened more
+than an hour before anyone looked, add a log drain or an error service as a
+new sink, or move to Vercel Pro for a day of logs.
+
 ## 10a. Rate limits and security headers
 
 **Rate limits** (`src/server/security/rateLimit.ts`) are fixed-window counters,

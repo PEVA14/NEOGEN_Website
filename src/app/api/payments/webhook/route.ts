@@ -1,4 +1,5 @@
 import { activeProvider, paymentAvailable } from "@/payments";
+import { signal } from "@/server/observe";
 import { settleFromProvider } from "@/server/payments";
 
 /**
@@ -56,6 +57,9 @@ export async function POST(request: Request): Promise<Response> {
 
   switch (verdict.kind) {
     case "unauthenticated":
+      /* No detail: who sent it is exactly what is unknown. Repeated, it
+         means the webhook secret here and at the provider differ. */
+      signal("payment.webhook_unauthenticated", "warn");
       return json({ error: "invalid_signature" }, 401);
     case "malformed":
       return json({ error: "invalid_payload" }, 400);
