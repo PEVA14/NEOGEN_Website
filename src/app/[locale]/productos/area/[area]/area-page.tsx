@@ -133,6 +133,7 @@ export async function renderAreaPage({
   };
   const cardFor = (product: Product): ProductCardProps => ({
     slug: product.slug,
+    locale,
     world: product.world,
     worldLabel: product.world ? dict.home.products.worldLabels[product.world] : undefined,
     areaId: area.id,

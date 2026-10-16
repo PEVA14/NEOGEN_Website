@@ -129,7 +129,7 @@ export async function generateMetadata({
       path: routes.product(product.slug),
       title: product.name,
       description,
-      image: productMedia(product.slug).primary,
+      image: productMedia(product.slug, locale).primary,
     }),
     alternates: alternates(locale, routes.product(product.slug)),
   };
@@ -173,7 +173,7 @@ export default async function ProductPage({
      3D viewer is a MEDIA question, not a world question: GLOW and GHK-Cu have
      worlds and no model, and open in their environment with the static plate. */
   const world = product.world ? getWorld(product.world) : null;
-  const media = productMedia(product.slug);
+  const media = productMedia(product.slug, locale);
   /* Approved areas — 83 of 85 products have at least one. */
   const areas = publicAreasFor(product.slug);
   const gallery = galleryImages(media);
@@ -621,7 +621,7 @@ export default async function ProductPage({
       ? {
           kind: "render",
           specimen: benchRender,
-          alt: commerceStill(product.slug)?.alt ?? product.name,
+          alt: commerceStill(product.slug, locale)?.alt ?? product.name,
         }
       : { kind: "drawn", name: product.name, annotation: presentationRange(product) };
 

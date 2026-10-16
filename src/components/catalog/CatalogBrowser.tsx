@@ -15,6 +15,7 @@ import { ProductCard, type CardDetailsCopy } from "@/components/ui";
 import { AreaIcon } from "@/components/ui/AreaIcon";
 import { AreaScope, type AreaScopeLink } from "@/components/ui/AreaSignet";
 import type { DiscoveryAreaId } from "@/data/discovery";
+import { localeTags, type Locale } from "@/i18n/config";
 
 import {
   activeFilterCount,
@@ -215,6 +216,9 @@ export function CatalogBrowser({
       }),
     [localeTag],
   );
+  /* The page's language, for the card images' alt text. */
+  const cardLocale: Locale =
+    (Object.keys(localeTags) as Locale[]).find((l) => localeTags[l] === localeTag) ?? "es";
   const categoryOrder = useMemo(() => [...new Set(products.map((p) => p.category))], [products]);
 
   const listFacets: { facet: ListFacet; legend: string; order?: readonly string[] }[] = [
@@ -625,6 +629,7 @@ export function CatalogBrowser({
                     <ProductCard
                       format={variant === "store" && product.world ? "flagship" : "standard"}
                       slug={product.slug}
+                      locale={cardLocale}
                       world={product.world}
                       worldLabel={product.worldLabel}
                       areaId={product.areaId as never}

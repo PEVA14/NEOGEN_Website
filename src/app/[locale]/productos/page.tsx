@@ -98,7 +98,7 @@ export default async function ProductsPage({ params }: { params: Promise<{ local
       worldLabel: entry.worldLabel ?? "",
       range: entry.range,
       price: entry.price,
-      image: commerceStill(entry.slug),
+      image: commerceStill(entry.slug, locale),
     }));
 
   /* Each area as a compact door: its name, its count, its capped vial. */

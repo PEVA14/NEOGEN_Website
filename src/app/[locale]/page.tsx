@@ -423,6 +423,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       {/* Into GLOW: the explorer dims, and GLOW comes up out of the dark. */}
       <Passage leave="dusk">
         <AreaExplorer
+          locale={locale}
           copy={{ ...home.explorer, cta: home.products.cta }}
           areas={data.areas.map((area) => ({
             id: area.id,

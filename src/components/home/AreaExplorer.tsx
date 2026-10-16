@@ -13,6 +13,7 @@ import { ProductCard } from "@/components/ui/ProductCard";
 
 import styles from "./AreaExplorer.module.css";
 
+import type { Locale } from "@/i18n/config";
 import type { WorldId } from "@/config/worlds";
 import type { DiscoveryAreaId } from "@/data/discovery";
 
@@ -78,9 +79,12 @@ const pad = (n: number) => String(n).padStart(2, "0");
 export function AreaExplorer({
   copy,
   areas,
+  locale = "es",
 }: {
   copy: ExplorerCopy;
   areas: readonly ExplorerArea[];
+  /** The page's language, for the card images' alt text. */
+  locale?: Locale;
 }) {
   const [active, setActive] = useState(0);
   /* Which way the shelf moves: toward the tab chosen, along the row of tabs. */
@@ -216,6 +220,7 @@ export function AreaExplorer({
                     >
                       <ProductCard
                         slug={product.slug}
+                        locale={locale}
                         world={product.world}
                         areaId={area.id}
                         areaLabel={area.short}

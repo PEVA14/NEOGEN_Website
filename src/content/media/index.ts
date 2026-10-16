@@ -1,8 +1,9 @@
 import { MEDIA } from "./registry";
 
-import type { ProductImage, ProductMedia } from "./types";
+import type { Locale } from "@/i18n/config";
+import type { ProductImage, ProductMedia, SourceImage } from "./types";
 
-export type { ProductImage, ProductMedia } from "./types";
+export type { ProductImage, ProductMedia, SourceImage, SourceMedia } from "./types";
 export { MEDIA } from "./registry";
 
 /**
@@ -36,9 +37,21 @@ export const NO_MEDIA: ProductMedia = {
  * Always returns a complete `ProductMedia`, so callers branch on the FIELD
  * they need rather than on whether the product has an entry.
  */
-export function productMedia(slug: string): ProductMedia {
+export function productMedia(slug: string, locale: Locale = "es"): ProductMedia {
   const declared = MEDIA[slug];
-  return declared ? { ...NO_MEDIA, ...declared } : NO_MEDIA;
+  if (!declared) return NO_MEDIA;
+  const one = (image: SourceImage | null | undefined): ProductImage | null =>
+    image ? { ...image, alt: image.alt[locale] } : null;
+  return {
+    ...NO_MEDIA,
+    model: declared.model ?? null,
+    primary: one(declared.primary),
+    alternates: (declared.alternates ?? []).map((image) => one(image)!),
+    detail: one(declared.detail),
+    packaging: one(declared.packaging),
+    poster: one(declared.poster),
+    studio: one(declared.studio),
+  };
 }
 
 /**
@@ -56,8 +69,8 @@ export function productMedia(slug: string): ProductMedia {
 export type StillMedia =
   { kind: "image"; image: ProductImage } | { kind: "diagram"; reason: "no-photography" };
 
-export function stillMedia(slug: string): StillMedia {
-  const image = productMedia(slug).primary;
+export function stillMedia(slug: string, locale: Locale = "es"): StillMedia {
+  const image = productMedia(slug, locale).primary;
   return image ? { kind: "image", image } : { kind: "diagram", reason: "no-photography" };
 }
 
@@ -114,7 +127,7 @@ export function galleryImages(
  * exists, otherwise a studio render of the product's own model, otherwise
  * nothing — and the caller draws the product object.
  */
-export function commerceStill(slug: string): ProductImage | null {
-  const media = productMedia(slug);
+export function commerceStill(slug: string, locale: Locale = "es"): ProductImage | null {
+  const media = productMedia(slug, locale);
   return media.primary ?? media.studio;
 }

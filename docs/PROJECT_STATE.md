@@ -4936,3 +4936,53 @@ into the existing outbox, not a parallel system.
   (DNS, waits on B7); choose `EMAIL_FROM`, `EMAIL_OPERATIONS_TO`,
   `EMAIL_REPLY_TO`; then `EMAIL_SENDING=enabled`. The privacy notice must
   name Resend as a processor.
+
+## 8bq. B11 — English ships in V1: the purchase journey audited (2026-10-15)
+
+Owner: "English DOES ship in V1 … do not hide, remove, disable, or defer the
+English experience"; audit the English purchase journey, fix plain
+implementation omissions, never invent translations for scientific content.
+
+**How it was audited.** (1) A static scan of every customer-facing
+component, page, checkout, payment and order module for Spanish string
+literals outside the dictionaries; (2) a scan of `en.ts` for Spanish
+values (it is typed against `es.ts`, so no key can be missing); (3) a
+browser walk in English on an isolated copy (commerce on, in-memory
+storage, dummy Mercado Pago values, nothing charged): catalogue → product →
+bag → contact (with validation errors) → shipping → delivery → review and
+declaration → payment page → order status; plus "Track my order", FAQ, the
+homepage, Research hub, a compound record, the three flagships, an area
+page and 404s, reading visible text and `aria-label`/`alt`/`placeholder`/
+`title`; (4) every English email kind rendered and scanned.
+
+**Found and fixed (implementation omissions):**
+
+- **Product image alt text was Spanish on English pages** (the four studio
+  stills — read aloud by screen readers). The media registry now declares
+  `alt: { es, en }` (`SourceImage`), `productMedia/stillMedia/commerceStill`
+  take the locale, and `ProductCard`, the catalogue, area, home and product
+  pages pass it. `check:media` requires both languages.
+- **404s ignored the address's language**: `/en/…` unknown pages answered
+  in Spanish. Both 404s stay **static** (a first attempt that read request
+  headers made every page under `[locale]` dynamic and was reverted).
+  `[locale]/not-found.tsx` carries both languages and CSS shows the one
+  matching the layout's `<html lang>`; `global-not-found.tsx` (no layout)
+  renders Spanish on the server and switches by the path in the browser
+  through `useSyncExternalStore` — no hydration mismatch (verified on a
+  production build: correct language, `lang` and no console errors). Without
+  JavaScript it stays bilingual, Spanish first, as before.
+- Test added: every English email kind, rendered, carries no Spanish
+  (`check:operations`).
+
+**Clean:** the checkout (labels, validation, delivery, declaration, payment
+page, test-mode notice), the Mercado Pago card form (`en-US`), the order
+status and lookup pages, Simple Effects and StudiedFor in English, Research
+and the flagship pages. Remaining Spanish on English pages is by design:
+the language switch ("ESPAÑOL"), Mexican state names, author surnames, and
+the Spanish route segments of the URL scheme (`/en/productos`, `/pedido/`),
+which are architecture, kept as asked.
+
+**Not audited because it does not exist yet:** the legal pages (B1 —
+English versions needed from counsel if English ships), and a paid order's
+confirmation as seen after a real charge (the status page was audited for
+an unpaid order; its paid-state strings are dictionary entries, scanned).

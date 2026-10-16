@@ -22,6 +22,7 @@ import styles from "./ProductCard.module.css";
 import type { PublicSimpleEffects } from "@/content/effects";
 import type { WorldId } from "@/config/worlds";
 import type { DiscoveryAreaId } from "@/data/discovery";
+import type { Locale } from "@/i18n/config";
 
 /**
  * THREE FORMATS, ONE ARCHITECTURE.
@@ -72,6 +73,8 @@ export interface CardDetailsCopy {
 export interface ProductCardProps {
   /** Identity key: the link, the media lookup and the plate all read it. */
   slug: string;
+  /** The page's language — the image's alt text is read in it. */
+  locale?: Locale;
   /** The Experience world, for the three flagships. Null for the other 82. */
   world: WorldId | null;
   /** Short world character label — "PRECISIÓN". Only where a world exists. */
@@ -163,6 +166,7 @@ export interface ProductCardProps {
  */
 export function ProductCard({
   slug,
+  locale = "es",
   world,
   worldLabel,
   areaId = null,
@@ -192,7 +196,7 @@ export function ProductCard({
   /* The feature card's plate changes shape at 64rem; the reveal is sized to the
      4:5 plate, so it belongs to the formats that always have one. */
   const reveals = Boolean(details && detailsCopy) && format !== "feature";
-  const still = stillMedia(slug);
+  const still = stillMedia(slug, locale);
   /*
    * The store card may also show a STUDIO STILL — a render of the product's
    * own model — where no photograph exists. Other card variants still show
@@ -200,7 +204,11 @@ export function ProductCard({
    * catalogue.
    */
   const image =
-    variant === "store" ? commerceStill(slug) : still.kind === "image" ? still.image : null;
+    variant === "store"
+      ? commerceStill(slug, locale)
+      : still.kind === "image"
+        ? still.image
+        : null;
   const Heading = `h${headingLevel}` as "h2" | "h3";
   /* A studio still that has been split into set + object. Never a
      photograph: only renders are split. */

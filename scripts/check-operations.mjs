@@ -1455,6 +1455,21 @@ const client = {
   for (const kind of Object.keys(EMAIL_COPY.es.kinds)) {
     ok(kind in EMAIL_COPY.en.kinds, `${kind} exists in English too`);
   }
+
+  /* B11: an English email, rendered, carries no Spanish — every kind, both parts. */
+  const SPANISH =
+    /\b(el|los|las|del|para|tu|tus|pedido|pago|envío|gracias|hola|aquí|más|sin|una|que|por|entrega|dirección|correo|referencia|estado)\b|[¿¡ñ]/i;
+  const enOrder = pay(upgradeOrder({ ...legacyOrder(), locale: "en" }));
+  for (const kind of Object.keys(EMAIL_COPY.en.kinds)) {
+    const [message] = messagesOwed(enOrder, () => "Street 1");
+    const asKind = { ...message, kind, locale: "en" };
+    const r = renderEmail(asKind, ctx);
+    /* URLs keep their route segments (`/pedido/…`) in both languages. */
+    const clean = (t) =>
+      t.replace(/https?:\/\/\S+/g, "").replace(/Mercado Pago|NEOGEN|Ciudad de México/g, "");
+    const found = clean(r.subject + " " + r.text).match(SPANISH);
+    ok(!found, `English ${kind} has no Spanish text${found ? ` (found "${found[0]}")` : ""}`);
+  }
 }
 
 /* ======================================================================== */

@@ -205,7 +205,7 @@ export async function homeData(locale: Locale): Promise<HomeData> {
       range: presentationRange(product),
       presentations: product.variants.length,
       price: price ? formatPrice(price, tag) : null,
-      image: commerceStill(product.slug),
+      image: commerceStill(product.slug, locale),
     };
   };
 

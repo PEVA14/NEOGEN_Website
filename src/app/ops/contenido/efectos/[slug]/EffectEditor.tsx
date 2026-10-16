@@ -248,6 +248,7 @@ export function EffectEditor({
             <div className={local.cardFrame} inert>
               <ProductCard
                 {...cards[locale]}
+                locale={locale}
                 areaId={cards[locale].areaId as DiscoveryAreaId | null}
                 href="#"
                 variant="store"

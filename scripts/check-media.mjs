@@ -98,8 +98,12 @@ function checkImage(slug, role, image) {
   // Alt is typed as required, which stops it being forgotten but not being
   // emptied. An empty alt is valid ONLY as a deliberate decorative marker, and
   // a product photograph is never decorative.
-  if (typeof image.alt !== "string" || image.alt.trim() === "") {
-    fail("product image has no alt text", where);
+  // Both languages (B11): the English site must not read Spanish alt text.
+  for (const locale of ["es", "en"]) {
+    const alt = image.alt?.[locale];
+    if (typeof alt !== "string" || alt.trim() === "") {
+      fail(`product image has no ${locale} alt text`, where);
+    }
   }
 
   if (!Number.isInteger(image.width) || !Number.isInteger(image.height)) {

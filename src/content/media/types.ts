@@ -1,3 +1,5 @@
+import type { Locale } from "@/i18n/config";
+
 /**
  * THE PRODUCT MEDIA MODEL.
  *
@@ -46,18 +48,18 @@ export interface ProductImage {
  * be added when a real photograph is genuinely off-centre in the frame —
  * which is a thing to observe, not to predict.
  */
-export interface ProductMedia {
+export interface ProductMediaOf<Image> {
   /**
    * The lead image: the catalogue card, the PDP plate, and the social card.
    * If a product has exactly one photograph, this is it.
    */
-  primary: ProductImage | null;
+  primary: Image | null;
   /** Further angles of the same object, in display order. */
-  alternates: readonly ProductImage[];
+  alternates: readonly Image[];
   /** Label or macro detail — the closest read on the product itself. */
-  detail: ProductImage | null;
+  detail: Image | null;
   /** The product as it ships. A different subject from `primary`. */
-  packaging: ProductImage | null;
+  packaging: Image | null;
   /**
    * A rendered still of the 3D scene.
    *
@@ -66,7 +68,7 @@ export interface ProductMedia {
    * motion. NOT a substitute for `primary` — a viewport render is not
    * photography.
    */
-  poster: ProductImage | null;
+  poster: Image | null;
   /**
    * A STUDIO STILL: the product's own 3D model, rendered as a product
    * photograph by the studio rig (`components/experience/studio`) and captured
@@ -77,7 +79,7 @@ export interface ProductMedia {
    * `primary`, never counts toward "with photography", and needs a `model`
    * behind it, so nothing is depicted that the GLB does not contain.
    */
-  studio: ProductImage | null;
+  studio: Image | null;
   /**
    * Path to a lightweight `.glb` under `public/models/`.
    *
@@ -89,3 +91,14 @@ export interface ProductMedia {
    */
   model: string | null;
 }
+
+/** What every surface receives: one language, already resolved. */
+export type ProductMedia = ProductMediaOf<ProductImage>;
+
+/**
+ * AN IMAGE AS DECLARED — its alt text in both languages (B11, 2026-10-15).
+ * A screen reader on the English site must not read Spanish; `productMedia`
+ * resolves the alt for the page's locale.
+ */
+export type SourceImage = Omit<ProductImage, "alt"> & { alt: Readonly<Record<Locale, string>> };
+export type SourceMedia = ProductMediaOf<SourceImage>;

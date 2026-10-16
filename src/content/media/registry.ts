@@ -1,4 +1,4 @@
-import type { ProductMedia } from "./types";
+import type { SourceMedia } from "./types";
 
 /**
  * THE MEDIA REGISTRY — every declared asset, keyed by product slug.
@@ -14,7 +14,7 @@ import type { ProductMedia } from "./types";
  *
  * See `public/images/README.md` for where the files go.
  */
-export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
+export const MEDIA: Readonly<Record<string, Partial<SourceMedia>>> = {
   /*
    * RETA — the fourth-generation vial (owner export `RETA_VIAL_V4.glb`,
    * 2026-09-21), served as `reta-v7.glb`.
@@ -92,7 +92,10 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
      */
     studio: {
       src: "/images/products/reta/studio-v10.jpg",
-      alt: "Vial RETA de NEOGEN: render de estudio del modelo 3D, etiqueta al frente, sobre fondo azul oscuro.",
+      alt: {
+        es: "Vial RETA de NEOGEN: render de estudio del modelo 3D, etiqueta al frente, sobre fondo azul oscuro.",
+        en: "NEOGEN RETA vial: studio render of the 3D model, label facing forward, on a dark blue background.",
+      },
       width: 1600,
       height: 2000,
     },
@@ -138,7 +141,10 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
   semaglutide: {
     studio: {
       src: "/images/products/semaglutide/studio-v10.jpg",
-      alt: "Vial de Semaglutide de NEOGEN: render de estudio del envase NEOGEN, etiqueta al frente, sobre fondo neutro.",
+      alt: {
+        es: "Vial de Semaglutide de NEOGEN: render de estudio del envase NEOGEN, etiqueta al frente, sobre fondo neutro.",
+        en: "NEOGEN Semaglutide vial: studio render of the NEOGEN container, label facing forward, on a neutral background.",
+      },
       width: 1600,
       height: 2000,
     },
@@ -162,7 +168,10 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
        stays true, and copper laid down the right edge of the glass. */
     studio: {
       src: "/images/products/ghk-cu/studio-v5.jpg",
-      alt: "Vial GHK-Cu de NEOGEN: render de estudio del modelo 3D, etiqueta al frente, sobre fondo cobre oscuro.",
+      alt: {
+        es: "Vial GHK-Cu de NEOGEN: render de estudio del modelo 3D, etiqueta al frente, sobre fondo cobre oscuro.",
+        en: "NEOGEN GHK-Cu vial: studio render of the 3D model, label facing forward, on a dark copper background.",
+      },
       width: 1600,
       height: 2000,
     },
@@ -186,7 +195,10 @@ export const MEDIA: Readonly<Record<string, Partial<ProductMedia>>> = {
        it from behind, and the cap takes the world's gold. */
     studio: {
       src: "/images/products/glow/studio-v5.jpg",
-      alt: "Vial GLOW de NEOGEN: render de estudio del modelo 3D, etiqueta al frente, sobre fondo ámbar oscuro.",
+      alt: {
+        es: "Vial GLOW de NEOGEN: render de estudio del modelo 3D, etiqueta al frente, sobre fondo ámbar oscuro.",
+        en: "NEOGEN GLOW vial: studio render of the 3D model, label facing forward, on a dark amber background.",
+      },
       width: 1600,
       height: 2000,
     },
