@@ -16,10 +16,12 @@ import { orderRepository } from "@/server/persistence";
  * same path a webhook takes.
  *
  * WHAT IT NEVER DOES. It never invents an outcome. If the provider still says
- * "processing", the order stays exactly as it is (the console's 30-minute flag
- * keeps telling an operator); it does not fail an order the provider has not
- * failed, and it does not release stock for a payment that may yet be taken.
- * An order is only ever moved by an answer the provider gave.
+ * "processing", the order stays as it is (the console's 30-minute flag keeps
+ * telling an operator) — until PAYMENT_EXPIRY_MS: then the provider is asked
+ * to CANCEL the payment, and only a cancellation it accepts releases the
+ * stock (`expirePayment`, LAUNCH_PLAN D12). It never fails an order the
+ * provider has not failed, and never releases stock for a payment that may
+ * yet be taken. An order is only ever moved by an answer the provider gave.
  *
  * SAFE TO RUN OFTEN AND TWICE AT ONCE. Every answer is applied by the same
  * idempotent, version-locked path as a webhook, so a duplicate writes nothing
@@ -46,6 +48,8 @@ export interface ReconcileSummary {
   settled: number;
   unchanged: number;
   released: number;
+  /** Unresolved past their allowance, cancelled at the provider, stock back. */
+  expired: number;
   unreachable: number;
   failed: number;
   /** More in-flight orders exist than this run looked at. */
@@ -80,6 +84,7 @@ export async function reconcileInFlight(options: ReconcileOptions = {}): Promise
     settled: 0,
     unchanged: 0,
     released: 0,
+    expired: 0,
     unreachable: 0,
     failed: 0,
     moreRemaining: truncated,
@@ -92,10 +97,11 @@ export async function reconcileInFlight(options: ReconcileOptions = {}): Promise
       summary.moreRemaining = true;
       break;
     }
-    const { outcome } = await reconcileOrder(order);
+    const { outcome } = await reconcileOrder(order, { now });
     summary.checked += 1;
     if (outcome === "settled") summary.settled += 1;
     else if (outcome === "released") summary.released += 1;
+    else if (outcome === "expired") summary.expired += 1;
     else if (outcome === "unreachable") summary.unreachable += 1;
     else if (outcome === "failed") summary.failed += 1;
     else summary.unchanged += 1;
@@ -106,6 +112,7 @@ export async function reconcileInFlight(options: ReconcileOptions = {}): Promise
     count: summary.checked,
     settled: summary.settled,
     released: summary.released,
+    expired: summary.expired,
     unreachable: summary.unreachable,
     failed: summary.failed,
   });

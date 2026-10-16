@@ -69,6 +69,9 @@ const mp = {
   orders: new Map(),
   byKey: new Map(),
   posts: [],
+  cancels: [],
+  refuseCancel: new Set(),
+  cancelDown: false,
   gets: 0,
   counter: 0,
   /** Change an order's state at "Mercado Pago", as time passing would. */
@@ -180,6 +183,22 @@ globalThis.fetch = async (input, init = {}) => {
       default:
         return json(400, { errors: [{ code: "property_value" }] });
     }
+  }
+
+  const cancel = url.match(
+    /^https:\/\/api\.mercadopago\.com\/v1\/orders\/([A-Za-z0-9_-]+)\/cancel$/,
+  );
+  if (cancel && init.method === "POST") {
+    mp.cancels.push({ id: cancel[1], key: headers.get("x-idempotency-key") });
+    const order = mp.orders.get(cancel[1]);
+    if (!order) return json(404, { errors: [{ code: "order_not_found" }] });
+    if (mp.cancelDown) return json(503, {});
+    /* An order already settling or settled cannot be cancelled. */
+    if (mp.refuseCancel.has(order.id) || order.status === "processed") {
+      return json(409, { errors: [{ code: "cannot_cancel_order" }] });
+    }
+    mp.set(order.id, "canceled", "canceled");
+    return json(200, order);
   }
 
   const get = url.match(/^https:\/\/api\.mercadopago\.com\/v1\/orders\/([A-Za-z0-9_-]+)$/);
@@ -953,8 +972,9 @@ __resetOutbox();
     note: null,
     at: "2026-09-19T09:00:00.000Z",
   });
-  /* An hour on: well past the job's minimum age. */
-  const later = (extra = {}) => ({ now: new Date(Date.now() + 60 * 60 * 1000), ...extra });
+  /* Half an hour on: past the job's minimum age, inside the payment's
+     one-hour allowance (D12 is exercised separately below). */
+  const later = (extra = {}) => ({ now: new Date(Date.now() + 30 * 60 * 1000), ...extra });
   const reserved = async () => (await inv.level("v1")).reserved;
 
   /* A payment still processing at the provider is left exactly as it is. */
@@ -1019,6 +1039,71 @@ __resetOutbox();
   const released = await reconcileInFlight(later());
   eq(released.released, 1, "a stalled attempt that has no provider reference is closed");
   eq((await load(d.id)).state, "payment_failed", "so the customer is not stuck");
+
+  /* D12 — a payment unresolved past its hour is cancelled at the provider,
+     and only an accepted cancellation gives the stock back. */
+  const hoursLater = (h, extra = {}) => ({
+    now: new Date(Date.now() + h * 60 * 60 * 1000),
+    ...extra,
+  });
+  const e = await placed(12000);
+  await submitPayment(e.id, card("CONT"));
+  const eRef = (await load(e.id)).providerRef;
+  const heldBefore = await reserved();
+  const cancelsBefore = mp.cancels.length;
+  await reconcileInFlight(later());
+  eq(mp.cancels.length, cancelsBefore, "inside the hour, nothing is cancelled");
+  eq((await load(e.id)).state, "payment_processing", "and the payment stays in flight");
+
+  const expiredRun = await reconcileInFlight(hoursLater(2));
+  ok(expiredRun.expired >= 1, "past the hour, the payment is expired");
+  eq(mp.cancels.at(-1)?.id, eRef, "by cancelling it at Mercado Pago");
+  eq(mp.cancels.at(-1)?.key, `${e.id}:cancel:1`, "under a stable idempotency key per attempt");
+  eq(
+    (await load(e.id)).state,
+    "payment_failed",
+    "the attempt is failed, so the customer can pay again",
+  );
+  ok((await reserved()) < heldBefore, "and its stock goes back on the shelf");
+  eq(mp.orders.get(eRef).status, "canceled", "Mercado Pago can no longer take the money");
+
+  /* Mercado Pago refuses: the payment is settling. Nothing is released. */
+  const f = await placed(12000);
+  await submitPayment(f.id, card("CONT"));
+  const fRef = (await load(f.id)).providerRef;
+  mp.refuseCancel.add(fRef);
+  const heldF = await reserved();
+  const refusedRun = await reconcileInFlight(hoursLater(2));
+  eq(refusedRun.expired, 0, "a refused cancellation expires nothing");
+  eq((await load(f.id)).state, "payment_processing", "the order keeps waiting for the provider");
+  eq(await reserved(), heldF, "and keeps its stock — the money may still be taken");
+  ok(
+    signals.some((s) => s.signal === "payment.expiry_refused"),
+    "the refusal is signalled for an operator",
+  );
+  /* …and if it is then approved, it is paid as usual. */
+  mp.set(fRef, "processed", "accredited");
+  await reconcileInFlight(hoursLater(3));
+  eq((await load(f.id)).state, "paid", "a refused-then-approved payment is paid");
+
+  /* Mercado Pago is down: nothing is released, the next run tries again. */
+  const g = await placed(12000);
+  await submitPayment(g.id, card("CONT"));
+  mp.cancelDown = true;
+  const heldG = await reserved();
+  const downRun = await reconcileInFlight(hoursLater(2));
+  eq(downRun.expired, 0, "a cancellation that got no answer expires nothing");
+  eq(await reserved(), heldG, "and releases nothing");
+  mp.cancelDown = false;
+  await reconcileInFlight(hoursLater(3));
+  eq((await load(g.id)).state, "payment_failed", "the next run completes the expiry");
+
+  /* The operator's button takes the same path. */
+  const h = await placed(12000);
+  await submitPayment(h.id, card("CONT"));
+  const { reconcileOrder } = await import("../src/server/payments.ts");
+  const button = await reconcileOrder(await load(h.id), hoursLater(2));
+  eq(button.outcome, "expired", "the console's check expires an overdue payment too");
 
   /* A batch is bounded: by size, and by time. */
   for (let i = 0; i < 3; i += 1) {

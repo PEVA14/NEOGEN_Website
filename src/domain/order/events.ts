@@ -347,6 +347,24 @@ export function answerAttempt(
  */
 export const STALLED_ATTEMPT_MS = 15 * 60 * 1000;
 
+/**
+ * HOW LONG A PAYMENT MAY STAY UNRESOLVED BEFORE ITS STOCK IS RECLAIMED
+ * (owner, 2026-10-15; LAUNCH_PLAN D12). After this, the reconcile asks the
+ * provider to cancel the payment; only a cancellation the provider accepts —
+ * so the money can never be taken later — releases the hold. A refusal
+ * leaves the order as it is, flagged for an operator (`payment_stalled`).
+ */
+export const PAYMENT_EXPIRY_MS = 60 * 60 * 1000;
+
+/** An in-flight payment, at the provider, older than its allowance. */
+export function paymentExpired(order: Order, now: string): boolean {
+  if (order.state !== "payment_processing" && order.state !== "pending_payment") return false;
+  if (order.providerRef === null) return false;
+  const last = order.attempts.at(-1);
+  if (!last) return false;
+  return Date.parse(now) - Date.parse(last.at) >= PAYMENT_EXPIRY_MS;
+}
+
 export function recoverStalledAttempt(order: Order, now: string): Order | null {
   if (order.state !== "payment_processing" || order.providerRef !== null) return null;
   const last = order.attempts.at(-1);

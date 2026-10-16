@@ -193,6 +193,8 @@ export const OPS = {
     reconcile_unchanged: "El procesador sigue informando el mismo estado. No se cambió nada.",
     reconcile_released:
       "El intento nunca llegó al procesador; se cerró como fallido y se liberó el inventario.",
+    reconcile_expired:
+      "El pago llevaba más de una hora sin resolverse: se canceló en el procesador y las existencias se liberaron. El cliente puede volver a pagar.",
     reconcile_unreachable: "No se pudo consultar al procesador. Inténtalo de nuevo más tarde.",
     reconcile_failed:
       "El procesador respondió, pero la respuesta no se pudo guardar. Inténtalo de nuevo.",

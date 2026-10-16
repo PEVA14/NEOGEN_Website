@@ -20,6 +20,8 @@ export type Signal =
   | "payment.webhook_unsettled"
   | "payment.not_persisted"
   | "payment.reconciled"
+  | "payment.expired"
+  | "payment.expiry_refused"
   | "inventory.hold_failed"
   | "inventory.sync_failed"
   | "inventory.short"
@@ -53,6 +55,7 @@ const SAFE_KEYS = new Set([
   "operator",
   "settled",
   "released",
+  "expired",
   "unreachable",
   "failed",
   "rule",

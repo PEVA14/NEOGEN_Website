@@ -369,6 +369,22 @@ stock stay as they are, and the console's 30-minute flag keeps telling an
 operator. An attempt that never produced a provider reference is released as
 failed after 15 minutes (`recoverStalledAttempt`), as before.
 
+**After one hour, the payment is cancelled at the provider** (owner,
+2026-10-15; LAUNCH_PLAN D12; `PAYMENT_EXPIRY_MS`). When a check — the job,
+the console's button, or the customer reopening their order — finds a
+payment still unresolved an hour after its attempt, it asks Mercado Pago to
+cancel it (`POST /v1/orders/{id}/cancel`, one idempotency key per attempt),
+then reads and applies the result. Only an accepted cancellation releases
+the stock: the attempt becomes "failed", the customer may pay again, and the
+money can no longer be taken late. If Mercado Pago refuses (the payment is
+already settling), nothing is released, the order keeps its stock and its
+"Pago atascado" flag, and the refusal is logged as `payment.expiry_refused`.
+If Mercado Pago cannot be reached, the next check tries again.
+
+**Timing.** The hour is a minimum. On Vercel Hobby the job runs once a day,
+so an abandoned payment's stock comes back at the next daily run, or sooner
+when the customer or an operator opens the order.
+
 **Closed by default.** The route answers 503 without `CRON_SECRET` (32+
 characters) and 401 without `Authorization: Bearer <CRON_SECRET>`; it answers
 counts only (no order ids, names or amounts). Vercel sends the header itself

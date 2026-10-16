@@ -308,6 +308,41 @@ export function createMercadoPagoProvider(
         return { ok: false, error: error("provider_error", "No answer from Mercado Pago.") };
       }
     },
+
+    /**
+     * `POST /v1/orders/{id}/cancel` ("Reservar, capturar y cancelar fondos",
+     * read 2026-10-15). Any 2xx is an accepted request, and so is a reused
+     * idempotency key (the same cancellation, sent before). Another 4xx is a
+     * refusal — Mercado Pago will not cancel an order that is settling or
+     * settled. A 5xx, 429 or no answer is an outage: try again later.
+     */
+    async cancel(providerRef: string, idempotencyKey: string) {
+      const cfg = config();
+      if (!cfg || !/^[A-Za-z0-9_-]{1,64}$/.test(providerRef))
+        return { ok: false, reason: "provider_error" };
+      try {
+        const response = await http(`${API}/v1/orders/${encodeURIComponent(providerRef)}/cancel`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${cfg.accessToken}`,
+            "X-Idempotency-Key": idempotencyKey,
+          },
+          signal: AbortSignal.timeout(CHARGE_TIMEOUT_MS),
+          cache: "no-store",
+        });
+        if (response.ok) return { ok: true };
+        if (response.status === 409) {
+          const body = (await readJson(response)) as { errors?: { code?: unknown }[] } | null;
+          if (body?.errors?.[0]?.code === "idempotency_key_already_used") return { ok: true };
+        }
+        if (response.status === 429 || response.status >= 500) {
+          return { ok: false, reason: "provider_error" };
+        }
+        return { ok: false, reason: "refused" };
+      } catch {
+        return { ok: false, reason: "provider_error" };
+      }
+    },
   };
 }
 

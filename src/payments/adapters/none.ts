@@ -38,4 +38,8 @@ export const noneProvider: PaymentProvider = {
   async refund() {
     return { ok: false, error: unavailable };
   },
+
+  async cancel() {
+    return { ok: false, reason: "provider_error" };
+  },
 };

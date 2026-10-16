@@ -8,6 +8,7 @@ import {
   markRefundSubmitted,
   mutate,
   openAttempt,
+  paymentExpired,
   recoverStalledAttempt,
 } from "@/domain/order";
 import { trackServer } from "@/analytics/server";
@@ -262,13 +263,16 @@ function isInFlight(order: Order): boolean {
  *                and nothing is ever guessed or forced
  *   released     an attempt that never reached the provider was closed as
  *                failed after its allowance, so the customer is not stuck
+ *   expired      a payment unresolved past PAYMENT_EXPIRY_MS was cancelled AT
+ *                THE PROVIDER, and the provider's resulting state applied — so
+ *                its stock is back and the money can never be taken late
  *   unreachable  the provider could not be asked (down, unknown to it, not
  *                configured here); the order is left exactly as it was
  *   failed       the answer arrived but could not be saved; try again later
  *   skipped      not an in-flight order
  */
 export type ReconcileOutcome =
-  "settled" | "unchanged" | "released" | "unreachable" | "failed" | "skipped";
+  "settled" | "unchanged" | "released" | "expired" | "unreachable" | "failed" | "skipped";
 
 /**
  * ASK THE PROVIDER WHERE ONE PAYMENT STANDS, AND APPLY THE ANSWER.
@@ -279,14 +283,15 @@ export type ReconcileOutcome =
  */
 export async function reconcileOrder(
   order: Order,
+  options: { now?: Date } = {},
 ): Promise<{ order: Order; outcome: ReconcileOutcome }> {
   if (!isInFlight(order)) return { order, outcome: "skipped" };
   const repository = orderRepository();
+  const now = (options.now ?? new Date()).toISOString();
 
   /* An attempt that never produced a provider reference is released after a
      while, so the customer is not stuck (see `recoverStalledAttempt`). */
   if (!order.providerRef) {
-    const now = new Date().toISOString();
     if (!recoverStalledAttempt(order, now)) return { order, outcome: "unchanged" };
     const released = await mutate(repository, order.id, (current) =>
       recoverStalledAttempt(current, now),
@@ -303,13 +308,48 @@ export async function reconcileOrder(
     if (!status.ok) return { order, outcome: "unreachable" };
     const applied = await applySnapshot(repository, order.id, status.snapshot, provider);
     if (!applied.ok) return { order, outcome: "failed" };
-    return {
-      order: applied.order,
-      outcome: applied.order.state !== order.state ? "settled" : "unchanged",
-    };
+    if (applied.order.state !== order.state) return { order: applied.order, outcome: "settled" };
+    if (!paymentExpired(applied.order, now)) return { order: applied.order, outcome: "unchanged" };
+    return await expirePayment(repository, applied.order, provider);
   } catch {
     return { order, outcome: "unreachable" };
   }
+}
+
+/**
+ * RECLAIM THE STOCK OF A PAYMENT THAT NEVER RESOLVED (LAUNCH_PLAN D12).
+ *
+ * The stock is never released on a guess. The provider is asked to CANCEL the
+ * payment; only if it accepts is the payment's state fetched again and applied
+ * through the usual path — a cancelled payment is a failed attempt, which
+ * releases its hold and lets the customer pay again. If the provider refuses
+ * (the payment is settling), nothing changes: the order keeps its stock and
+ * the console's `payment_stalled` flag keeps it in front of an operator.
+ */
+async function expirePayment(
+  repository: OrderRepository,
+  order: Order,
+  provider: PaymentProvider,
+): Promise<{ order: Order; outcome: ReconcileOutcome }> {
+  const ref = order.providerRef!;
+  const attempt = order.attempts.at(-1)?.seq ?? 0;
+  const cancelled = await provider.cancel(ref, `${order.id}:cancel:${attempt}`);
+  if (!cancelled.ok) {
+    signal("payment.expiry_refused", "warn", { orderId: order.id, reason: cancelled.reason });
+    return { order, outcome: cancelled.reason === "refused" ? "unchanged" : "unreachable" };
+  }
+  const status = await provider.fetchStatus(ref);
+  if (!status.ok) return { order, outcome: "unreachable" };
+  const applied = await applySnapshot(repository, order.id, status.snapshot, provider);
+  if (!applied.ok) return { order, outcome: "failed" };
+  /* The cancellation was accepted but the provider still reports the payment
+     in flight (it may take a moment): the next run will see the result. */
+  if (applied.order.state === order.state) return { order: applied.order, outcome: "unchanged" };
+  signal("payment.expired", "info", { orderId: order.id, state: applied.order.state });
+  return {
+    order: applied.order,
+    outcome: applied.order.state === "payment_failed" ? "expired" : "settled",
+  };
 }
 
 /**

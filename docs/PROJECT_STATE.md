@@ -1,6 +1,10 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-10-13**: **Mercado Pago quality checklist read (D8);
+Last updated **2026-10-15**: **D12 — an unresolved payment is cancelled at
+Mercado Pago after an hour, and only an accepted cancellation releases its
+stock**; the webhook test on Preview passed; the owner states the legal
+review is done; the domains are held up at NIC México / Cloudflare (§8bm).
+2026-10-13: **Mercado Pago quality checklist read (D8);
 no customer or order details are shared with Mercado Pago, by owner
 decision** (§8bl). The same day: **the ready items D7, D10 and D11 are done** — the
 inventory double-apply fixed, a health route, migration tracking (§8bk).
@@ -4838,3 +4842,27 @@ appears for this case — the card answer already recorded the same payment
 fact, so the notification is deduplicated before the order is loaded and the
 history is untouched. LAUNCH_PLAN 1.3 rewritten with the working setup.
 Runtime logs: the Vercel MCP now has the team scope; Hobby keeps one hour.
+
+## 8bm. D12, legal, domains (2026-10-15)
+
+- **Owner:** "Legally we're good, let's do what's left of the coding." A1 is
+  recorded as closed on the owner's word; the legal texts (B1) are still
+  needed as content for the policy pages (D3).
+- **Domains (B7):** the owner's domains have a problem at NIC México /
+  Cloudflare, both "working on it". Blocks C5 (domain on Vercel, HTTPS) and
+  the production webhook (C4), not development.
+- **D12 built.** The owner approved the proposal ("release after 60
+  minutes"); built in a safer form: past `PAYMENT_EXPIRY_MS` (1 hour since
+  the attempt) a check asks Mercado Pago to **cancel** the order
+  (`PaymentProvider.cancel`, `POST /v1/orders/{id}/cancel`, key
+  `<order>:cancel:<attempt>`), then fetches and applies the resulting state.
+  Accepted → `payment_failed` (decline "cancelled"), stock released by the
+  usual hold policy, customer can pay again, and no late payment can arrive.
+  Refused (settling) → nothing changes, `payment_stalled` stays, signal
+  `payment.expiry_refused`. Unreachable → the next check retries. Runs from
+  every reconcile path (daily job, console button with a new
+  `reconcile_expired` message, the customer's page refresh); summary counts
+  gain `expired`. `check:payments`: 269 assertions, with a negative control
+  (expiry disabled → the D12 tests fail).
+- **Limit:** on Vercel Hobby the job runs once a day, so an abandoned
+  payment's stock can stay held up to a day unless someone opens the order.

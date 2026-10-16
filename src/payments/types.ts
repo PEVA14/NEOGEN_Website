@@ -206,4 +206,14 @@ export interface PaymentProvider {
     providerRef: string,
     idempotencyKey: string,
   ): Promise<{ ok: boolean; error?: PaymentError }>;
+  /**
+   * Ask the provider to cancel a payment that has not been taken, so it can
+   * never be taken later. `ok` means the provider accepted the request; the
+   * resulting state is still read with `fetchStatus`, never assumed.
+   * `refused` means the provider will not cancel it (it is already settling,
+   * or settled) — nothing may be released on that basis.
+   */
+  cancel(providerRef: string, idempotencyKey: string): Promise<CancelResult>;
 }
+
+export type CancelResult = { ok: true } | { ok: false; reason: "refused" | "provider_error" };

@@ -46,6 +46,8 @@ export {
   beginAttempt,
   lastDecline,
   openAttempt,
+  PAYMENT_EXPIRY_MS,
+  paymentExpired,
   recoverStalledAttempt,
   STALLED_ATTEMPT_MS,
   type ApplyOutcome,
