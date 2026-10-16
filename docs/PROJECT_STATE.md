@@ -1,6 +1,8 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-10-15**: **D12 — an unresolved payment is cancelled at
+Last updated **2026-10-16**: **D1 — Skydropx shipping built**: quoted
+rates at checkout, one label per paid order, tracking webhooks, labels and
+cancellations in `/ops`, ES/EN customer states (§8br). 2026-10-15: **D12 — an unresolved payment is cancelled at
 Mercado Pago after an hour, and only an accepted cancellation releases its
 stock**; the webhook test on Preview passed; the owner states the legal
 review is done; the domains are held up at NIC México / Cloudflare (§8bm).
@@ -4986,3 +4988,63 @@ which are architecture, kept as asked.
 English versions needed from counsel if English ships), and a paid order's
 confirmation as seen after a real charge (the status page was audited for
 an unpaid order; its paid-state strings are dictionary entries, scanned).
+
+## 8br. D1 — Skydropx shipping (2026-10-15/16; `27d5e19`)
+
+Owner B2: Skydropx is NEOGEN's V1 shipping aggregator, domestic Mexico; no
+temporary flat rate. Built against Skydropx's official OpenAPI reference
+(`pro.skydropx.com/es-MX/api-docs.json`, "Skydropx API v1", fetched
+2026-10-15): OAuth client credentials (2 h token), quotations polled until
+`is_completed`, rates valid 24 h, `POST /shipments` with `unique_shipment`
+(replay per rate for 96 h, 409 while in progress), labels from the
+shipment's package `label_url`, cancellations, webhooks signed HMAC-SHA512
+over the raw body.
+
+**Architecture kept.** The existing `ShippingProvider` contract was
+extended (address-based quote, shipment snapshot, verified webhook) rather
+than replaced; checkout, order totals, payments, inventory holds,
+notifications and the console all extended in place. No migration: the
+order is JSONB; shipment ids are indexed in `neogen_order_provider_refs` as
+`shipment:<provider>:<id>` (`indexedRefs`, both adapters) and tracking
+events dedupe in `neogen_provider_events`.
+
+**One design extension, stated:** labels are bought on PAYMENT, before an
+operator packs — so provider-created shipments exist from fulfilment
+`queued`, and a carrier pickup fulfils the order from `queued`/`preparing`/
+`ready_to_ship` (`updateShipment(..., fromCarrier)`). Manual shipments keep
+the `ready_to_ship` rule.
+
+**Guarantees and where they live:** customer price and free shipping —
+`domain/checkout/shipping.ts` (server-only rule, stored quote is the only
+source); stale/expired rate — `currentDelivery` in checkout actions
+(re-quote same service, reprice → review notice); paid-only, single label —
+`needsBooking` + `requestBooking` (version-locked record) + `unique_shipment`
+
+- compare-and-set `rebook`; failure after payment — booking `failed`,
+  order stays paid, stock held, `shipping_failed` / `shipping_unbooked`
+  attention; tracking — `applyTracking` (dedupe, transition table, walk
+  through `in_transit`); cancellation — `cancelOrder` marks
+  `cancelRequestedAt`, operator cancels at Skydropx (`cancelLabel`),
+  refusal recorded; customer — `exceptionDetail` (ES/EN) and the
+  `order.delivery_issue.customer` email (once per shipment).
+
+**Data to Skydropx:** destination postal code/state/city/colonia for quotes;
+recipient name, street, colonia, notes and phone for labels; NOT the
+customer's email (the label uses `SHIPPING_ORIGIN_EMAIL`). The privacy
+notice must name Skydropx and the carrier.
+
+**Carrier estimates** are shown as the carrier's ("N días, estimado de la
+paquetería"), never as business days, and omitted when Skydropx gives none.
+
+**Tests:** `check:shipping`, 144 assertions against a fake Skydropx. Negative
+controls (each made the suite fail): removing the booking-record guard,
+turning off `unique_shipment`, skipping the webhook signature, breaking the
+free-shipping rule. "No label before payment" survives the removal of any
+single guard — the payment state, the fulfilment state and the service
+check each enforce it.
+
+**Not verified live:** no Skydropx sandbox credentials exist yet; the
+sandbox API host is to be confirmed with Skydropx (the reference names only
+production). The quoted delivery step was type-checked and unit-tested but
+not walked in a browser against Skydropx; do it in the staging test
+(`OPERATIONS.md` §6a).

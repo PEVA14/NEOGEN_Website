@@ -232,16 +232,115 @@ The supplier batch reference never leaves the registry.
 **Whether a lot is required before dispatch is an owner decision.** It is not
 enforced today, because no lot has been received.
 
-## 6. Shipping
+## 6. Shipping (Skydropx — owner decision B2, 2026-10-15; D1)
 
-`src/shipping/` defines `ShippingProvider`: `quote`, `createShipment`,
-`getLabel`, `getTracking`, `cancelShipment`. The only adapter is `none`, which
-answers `unconfigured`.
+`src/shipping/` defines `ShippingProvider`; the adapters are `skydropx`
+(Skydropx PRO API v1, read from its official OpenAPI reference) and `none`.
+With no complete Skydropx configuration the provider is `none` and checkout
+keeps its old free-threshold-only rule; operators can always record a
+`manual` shipment.
 
-- **Today:** operators record the parcel they booked, with carrier, service,
-  tracking number and tracking URL (HTTPS only), as a `manual` shipment.
-- **Later:** a carrier adapter maps its statuses to `ShipmentState` and feeds
-  `updateShipment` with its own event ids.
+**Checkout.** After the address, the delivery step asks Skydropx for rates
+for that address (origin and parcel from configuration) and keeps them on
+the server-side draft. The customer chooses a rate by id; carrier, cost and
+price are read from the stored quote. Customer price: **0 at a merchandise
+subtotal of MX$10,000 or more**, otherwise the rate. The real cost is kept
+on the order (`delivery.quote.cost`, then `booking.cost`). A quote is
+offered for 60 minutes; at placement a stale rate is re-quoted for the same
+carrier and service — same price continues, a new price goes back to
+review with a notice, a vanished service back to delivery. Failures (bad
+address, no coverage, timeout, outage, too many quotes) show a message in
+the customer's language with "quote again" or "correct the address". Quotes
+count against `RULES.shippingQuote` (20 per 15 minutes per address).
+
+**Labels — only after payment, once.** When an order becomes paid the label
+is bought after the response (`after()`), and the reconcile and the console
+can repeat it safely:
+
+1. a booking record is saved under the order's version lock before Skydropx
+   is called — a second process finds it and joins it;
+2. Skydropx `unique_shipment` replays the first answer for the same rate
+   (96 h) and answers 409 while it is still running — a lost answer,
+   repeated, returns the same shipment;
+3. if Skydropx refuses the rate (expired), the same carrier and service is
+   re-quoted once and booked on the new rate (compare-and-set).
+
+A refusal marks the booking `failed`: the order stays **paid**, its stock
+stays **held**, and "Requiere atención" shows "Guía no comprada". A paid
+order without a label after 30 minutes shows "Sin guía".
+
+**In `/ops`, per order** (section Envío): the carrier and service chosen at
+checkout, the booking state and last error, the logistics cost against what
+the customer paid, the provider's raw status, and:
+
+- **Comprar la guía ahora / Reintentar la compra** — the same idempotent
+  path; it never buys a second label.
+- **Descargar guía (PDF)** — fetched from Skydropx at that moment and passed
+  through by the server (`/ops/pedidos/<id>/guia`); the provider's URL never
+  reaches the browser or a customer.
+- **Actualizar desde la paquetería** — reads the shipment and applies it.
+- **Cancelar la guía en la paquetería** — confirmed; separate from cancelling
+  the order.
+
+**Tracking.** Skydropx webhooks (`/api/shipping/webhook`, HMAC-SHA512 over
+the raw body) and refreshes go through `applyTracking`. Statuses map:
+created → pending; picked_up / in_transit / last_mile → in transit;
+delivery_attempt, delivered_to_branch, exception, in_return → exception
+(with the reason); delivered → delivered; in_return with returned_status
+delivered → returned; canceled → cancelled. Anything else is ignored and
+kept as the raw status. Duplicates (`skydropx:<shipment>:<status>`) and
+out-of-order facts change nothing. A carrier pickup fulfils the order and
+consumes its stock even if nobody pressed "ready to ship" (the label was
+bought on payment).
+
+**Cancelling.** Cancelling an order that has a label no longer cancels the
+shipment locally: the shipment is marked, "Cancelar guía" is flagged, and an
+operator cancels it at Skydropx. A refusal (already collected) is recorded
+and the flag stays. The refund never waits for the carrier.
+
+**Customers** see carrier, tracking number and the carrier's tracking link
+on their order page, and an explanation of a delivery problem in their
+language. Emails: shipped, tracking, delivered, and one "delivery problem"
+email per shipment — through the outbox, each once.
+
+**Scheduled job.** `/api/cron/reconcile-payments` also books labels still
+owed and refreshes parcels not yet delivered (`shipping` in its answer).
+
+**What Skydropx receives:** origin and parcel (configuration); for quotes,
+the destination's postal code, state, city and colonia; for a label, the
+recipient's name, street and number, colonia, notes and phone. **Not** the
+customer's email — the label's contact email is `SHIPPING_ORIGIN_EMAIL`. The
+Aviso de Privacidad (B1) must name Skydropx and the carrier as recipients.
+
+### 6a. Setting it up
+
+1. Skydropx sandbox (`sb-pro.skydropx.com`) → Conexiones > API: client id and
+   secret. Set in Vercel **Preview**: `SKYDROPX_MODE=sandbox`,
+   `SKYDROPX_CLIENT_ID`, `SKYDROPX_CLIENT_SECRET`, and `SKYDROPX_API_URL` —
+   the sandbox API host Skydropx gives you (the API reference names only
+   production, `https://api-pro.skydropx.com`; confirm the sandbox host with
+   Skydropx).
+2. The origin (`SHIPPING_ORIGIN_NAME`, `_COMPANY`, `_PHONE`, `_EMAIL`,
+   `_STREET` (street and number, ≤45), `_REFERENCE` (≤30), `_POSTAL_CODE`,
+   `_STATE` (name), `_CITY`, `_NEIGHBORHOOD`), the packed order
+   (`SHIPPING_PARCEL_LENGTH_CM`, `_WIDTH_CM`, `_HEIGHT_CM`, `_WEIGHT_KG`, at
+   least 1 kg), and the Carta Porte codes (`SKYDROPX_CONSIGNMENT_NOTE`,
+   `SKYDROPX_PACKAGE_TYPE`, from Skydropx's code lists). Optional:
+   `SKYDROPX_ORIGIN_TEMPLATE_ID`, `SKYDROPX_CARRIERS_ALLOW` /
+   `SKYDROPX_CARRIERS_DENY` (`fedex` or `fedex:express_saver`),
+   `SKYDROPX_PRINTING_FORMAT` (`standard`/`thermal`),
+   `SKYDROPX_SANDBOX_AUTO_ADVANCE=true` (sandbox moves parcels every minute).
+3. Skydropx → Conexiones > Webhooks: URL
+   `https://<host>/api/shipping/webhook` (on a protected Preview add
+   `?x-vercel-protection-bypass=<secret>`), **HMAC** authentication, header
+   `Authorization` (or set `SKYDROPX_WEBHOOK_HEADER`), the shipment
+   ("Envíos") events. The HMAC key goes in `SKYDROPX_WEBHOOK_SECRET`.
+4. Production: the same with production credentials, `SKYDROPX_MODE=live`,
+   no `SKYDROPX_API_URL` (defaults to `https://api-pro.skydropx.com`), and —
+   only when ready to buy real labels — `SKYDROPX_LIVE_LABELS=enabled`. Live
+   mode is refused on any deployment whose `VERCEL_ENV` is not `production`.
+
+Tests: `check:shipping` (144 assertions against a fake Skydropx).
 
 ## 7. Notifications
 
