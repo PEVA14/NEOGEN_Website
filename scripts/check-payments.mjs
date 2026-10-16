@@ -185,6 +185,8 @@ globalThis.fetch = async (input, init = {}) => {
   const get = url.match(/^https:\/\/api\.mercadopago\.com\/v1\/orders\/([A-Za-z0-9_-]+)$/);
   if (get && (!init.method || init.method === "GET")) {
     mp.gets += 1;
+    /* An id that is not an order id at all, as the panel's simulation sends. */
+    if (/^\d+$/.test(get[1])) return json(400, { message: "Invalid order id" });
     const order = mp.orders.get(get[1]);
     return order ? json(200, order) : json(404, { errors: [{ code: "order_not_found" }] });
   }
@@ -771,6 +773,14 @@ __resetOutbox();
     unknown.outcome,
     "unknown_payment",
     "a payment Mercado Pago does not know is acknowledged, not retried",
+  );
+
+  const simulated = await webhook(signedWebhook("123456"));
+  eq(simulated.status, 200, "the panel's simulated notification is acknowledged, not a 503");
+  eq(
+    (await simulated.json()).outcome,
+    "unknown_payment",
+    "an id Mercado Pago calls invalid is an unknown payment",
   );
 
   const huge = await webhook(

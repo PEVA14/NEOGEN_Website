@@ -210,7 +210,13 @@ export function createMercadoPagoProvider(
           signal: AbortSignal.timeout(READ_TIMEOUT_MS),
           cache: "no-store",
         });
-        if (response.status === 404) return { ok: false, reason: "not_found" };
+        /* 404 (no such order) and 400 (not an order id at all — e.g. the
+           "123456" of the panel's "Simular notificación") are permanent:
+           asking again cannot help, so neither is treated as an outage.
+           401/403/429/5xx still are, and the caller answers 503 for a retry. */
+        if (response.status === 404 || response.status === 400) {
+          return { ok: false, reason: "not_found" };
+        }
         if (!response.ok) return { ok: false, reason: "provider_error" };
         const snapshot = snapshotOf(((await readJson(response)) ?? {}) as MpOrder);
         return snapshot ? { ok: true, snapshot } : { ok: false, reason: "provider_error" };

@@ -4811,3 +4811,17 @@ checklist was read through the MCP and compared with the adapter.
 - **Open:** Mercado Pago's automatic evaluation (`quality_evaluation`) on a
   sandbox order placed within 7 days, to learn whether the omissions block
   go-live or only lower the score.
+
+**Webhook test on Preview (C1), first run, 2026-10-15.** The panel's
+"Simular notificación" reached the app and passed the signature check (so
+the bypass and the NEOGEN app's secret are right) but answered 503: Mercado
+Pago calls the simulated id `123456` invalid (400), which `fetchStatus` read
+as an outage. Fixed: 400 joins 404 as "not found" → 200 `unknown_payment`
+(`check:payments`). A real APRO order (`NG-MVAC9ZDH-5QZ`,
+`ORDTST01M51869R72KTCSVAFWQSAQ5EK`) then got **401**: it was charged with
+test credentials of a different Mercado Pago application (`739441805860620`)
+than the one whose webhook secret Preview holds (NEOGEN, `2107697494236035`),
+so its signature cannot match. Proposed to the owner: Preview uses the
+NEOGEN application's own test credentials, so charge, webhook and secret
+come from one app (and the MCP's `quality_evaluation`, which refused the
+other app's order on ownership, can run).
