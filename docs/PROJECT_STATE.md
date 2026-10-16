@@ -4866,3 +4866,26 @@ Runtime logs: the Vercel MCP now has the team scope; Hobby keeps one hour.
   (expiry disabled → the D12 tests fail).
 - **Limit:** on Vercel Hobby the job runs once a day, so an abandoned
   payment's stock can stay held up to a day unless someone opens the order.
+
+## 8bn. B4/D4 — stock shown as a state, never a number (2026-10-15)
+
+Owner: "Customers should NOT see exact inventory quantities. Only show
+availability state such as Agotado / Sold out." Built:
+
+- `customerAvailability(curated, level)` (`domain/inventory`): the curated
+  map (`data/commerce/availability.ts`) is the base; a **counted** variant
+  with nothing available becomes `unavailable`, unless curated
+  `made-to-order`; an uncounted variant is never called sold out.
+- `availabilityFor(ids)` (`server/availability.ts`) combines it with the
+  inventory store's levels; if the store cannot be read it falls back to the
+  curated map (signal `inventory.sync_failed`, view `availability`). Used by
+  the catalogue, the product page, Atlas subjects and checkout pricing
+  (`priceLines`/`reprice` take the source as a parameter, so
+  `check:checkout` stays free of server modules).
+- Catalogue, area and product pages: `revalidate = 300` (ISR), so
+  "Agotado" follows the counts without a rebuild; checkout reads live stock,
+  so a stale page can never sell a sold-out variant.
+- Labels: `commerce.availability.unavailable` and `commerceUi.soldOut` are
+  now "Agotado" / "Sold out".
+- Tests: `check:operations` (the rule, 9) and `check:checkout` (a sold-out
+  line is removed and disclosed, 3).

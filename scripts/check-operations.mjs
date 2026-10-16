@@ -73,7 +73,8 @@ const {
   ORDER_VIEWS,
 } = order$;
 const { applyPaymentEvent } = await import("../src/domain/order/events.ts");
-const { desiredHold, holdLines } = await import("../src/domain/inventory/index.ts");
+const { desiredHold, holdLines, customerAvailability } =
+  await import("../src/domain/inventory/index.ts");
 const { memoryInventoryStore, __resetInventory } =
   await import("../src/domain/inventory/adapters/memory.ts");
 const { createPostgresInventoryStore } =
@@ -1768,6 +1769,29 @@ const client = {
     "a failing file leaves no table and no record",
   );
   await mdb.close();
+}
+
+/* ---- B4: what a customer is told about stock ----------------------------- */
+{
+  const level = (onHand, reserved = 0) => ({ variantId: "v", onHand, reserved, updatedAt: "" });
+  eq(customerAvailability(null, null), null, "uncounted and uncurated: nothing is claimed");
+  eq(customerAvailability(null, level(3)), null, "stock left: no line, and never a number");
+  eq(customerAvailability(null, level(0)), "unavailable", "counted and empty: sold out");
+  eq(customerAvailability(null, level(2, 2)), "unavailable", "everything reserved: sold out");
+  eq(customerAvailability(null, level(-1)), "unavailable", "below zero: sold out");
+  eq(
+    customerAvailability("made-to-order", level(0)),
+    "made-to-order",
+    "made-to-order is sold with an empty shelf",
+  );
+  eq(customerAvailability("unavailable", level(10)), "unavailable", "curated unavailable wins");
+  eq(
+    customerAvailability("in-stock", null),
+    "in-stock",
+    "an uncounted variant keeps its curated state",
+  );
+  const surface = JSON.stringify(customerAvailability(null, level(7)));
+  ok(!surface.includes("7"), "a quantity never reaches the customer");
 }
 
 /* ---- report --------------------------------------------------------------- */

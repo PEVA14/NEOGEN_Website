@@ -69,6 +69,9 @@ export async function generateMetadata({
 
 export const dynamicParams = false;
 
+/* Re-rendered at most every 5 minutes so "Agotado" follows the stock counts (B4). */
+export const revalidate = 300;
+
 export async function generateStaticParams() {
   return publicAreas().map((area) => ({ area: area.slug }));
 }

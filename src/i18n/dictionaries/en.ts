@@ -2486,7 +2486,7 @@ const en: Dictionary = {
   commerceUi: {
     add: "Add to bag",
     added: "Added",
-    soldOut: "Currently unavailable",
+    soldOut: "Sold out",
     unavailable: "Purchasing opens once the regulatory review is complete.",
     decrease: "Decrease quantity",
     increase: "Increase quantity",
@@ -2503,7 +2503,7 @@ const en: Dictionary = {
     availability: {
       "in-stock": "In stock",
       "made-to-order": "Made to order",
-      unavailable: "Currently unavailable",
+      unavailable: "Sold out",
     },
   },
 

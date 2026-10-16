@@ -53,13 +53,14 @@ import {
   products,
   publishedProducts,
 } from "@/data/catalog";
-import { formatPrice, getAvailability, getPrices } from "@/data/commerce";
+import { formatPrice, getPrices } from "@/data/commerce";
 import { productsInArea, publicAreasFor, type DiscoveryAreaId } from "@/data/discovery";
 import { isLocale, localeTags } from "@/i18n/config";
 import { getDictionary } from "@/i18n/getDictionary";
 import { localizePath } from "@/i18n/routing";
 import { alternates } from "@/lib/alternates";
 import { bagEnabled } from "@/payments";
+import { availabilityFor } from "@/server/availability";
 import { shopProducts } from "@/server/storefront";
 import { fillTemplate, presentationSummary, socialMetadata } from "@/lib/meta";
 import { count, fill } from "@/server/knowledge";
@@ -140,6 +141,13 @@ export async function generateMetadata({
  * answers HTTP 200, which search engines index as a valid page.
  */
 export const dynamicParams = false;
+
+/*
+ * Re-rendered at most every 5 minutes, so "Agotado" follows the stock counts
+ * without a rebuild (B4). Checkout reads live stock regardless, so a page a
+ * few minutes old can show a variant as available, never sell one that isn't.
+ */
+export const revalidate = 300;
 
 export async function generateStaticParams() {
   return publishedProducts.map((product) => ({ slug: product.slug }));
@@ -226,7 +234,7 @@ export default async function ProductPage({
 
   const variantIds = product.variants.map((v) => v.id);
   const commerce = await getPrices(variantIds);
-  const availability = await getAvailability(variantIds);
+  const availability = await availabilityFor(variantIds);
   /*
    * THE SPECIMEN IN ITS PLACE (finishing pass). "Related" was three picks —
    * the first names alphabetically among the products sharing an area — set

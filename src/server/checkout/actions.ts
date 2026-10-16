@@ -20,6 +20,7 @@ import {
 } from "@/domain/checkout";
 import { trackServer } from "@/analytics/server";
 import { priceLines, reprice } from "@/domain/checkout/pricing";
+import { availabilityFor } from "@/server/availability";
 import { createOrder } from "@/domain/order";
 import { isLocale, type Locale } from "@/i18n/config";
 import { localizePath } from "@/i18n/routing";
@@ -124,7 +125,7 @@ export async function beginCheckout(
     .filter((line) => line.variantId.length > 0);
 
   const draft = await ensureDraft();
-  const { snapshot, adjustments } = await priceLines(clean);
+  const { snapshot, adjustments } = await priceLines(clean, undefined, availabilityFor);
 
   /* Nothing survived repricing — every line was unknown, unpriced or
      withdrawn. Back to the bag, which reconciles and explains. */
@@ -263,7 +264,7 @@ export async function placeOrder(form: FormData): Promise<void> {
 
   if (draft.orderId) redirect(localizePath(routes.orderConfirmation(draft.orderId), locale));
 
-  const fresh = await reprice(draft.snapshot);
+  const fresh = await reprice(draft.snapshot, availabilityFor);
   if (!snapshotMatches(draft, fresh.snapshot)) {
     /* Store the new prices and the disclosure, then send them back to read
        it. The order is NOT created. */
@@ -363,7 +364,7 @@ function blockedStep(
 export async function refreshSnapshot(form: FormData): Promise<void> {
   const locale = localeOf(form);
   const draft = await requireDraft(locale);
-  const fresh = await reprice(draft.snapshot);
+  const fresh = await reprice(draft.snapshot, availabilityFor);
   await saveDraft(withSnapshot(draft, fresh.snapshot, fresh.adjustments));
   redirect(stepPath(locale, "review"));
 }

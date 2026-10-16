@@ -190,6 +190,19 @@ ok(
   "a price mismatch is disclosed as `repriced`",
 );
 
+/* B4: a sold-out variant (from a count-aware source) is removed at checkout. */
+{
+  const soldOut = async (ids) => new Map(ids.map((id) => [id, "unavailable"]));
+  const out = await priceLines([{ variantId: A.variant.id, quantity: 1 }], undefined, soldOut);
+  eq(out.snapshot.lines.length, 0, "a sold-out variant cannot be bought");
+  ok(
+    out.adjustments.some((a) => a.kind === "removed_unavailable"),
+    "and the customer is told it was removed",
+  );
+  const again = await reprice(one.snapshot, soldOut);
+  eq(again.snapshot.lines.length, 0, "a bag repriced after the shelf empties loses the line");
+}
+
 /* An honest claim produces no noise. */
 const honest = await priceLines([
   { variantId: A.variant.id, quantity: 1, claimedUnitPrice: priceA },

@@ -3,7 +3,8 @@ import "server-only";
 import { publicFunctions, publicStatementRefs } from "@/content/overview";
 import { referencesForProduct } from "@/content/research";
 import { publishedProducts } from "@/data/catalog";
-import { getAvailability, getPrices } from "@/data/commerce";
+import { getPrices } from "@/data/commerce";
+import { availabilityFor } from "@/server/availability";
 import { publicAreasFor } from "@/data/discovery";
 import { atlasSubjectsFrom, type AtlasSubject } from "@/domain/atlas";
 import { publicEvidenceIndex } from "@/domain/quality";
@@ -23,7 +24,7 @@ export async function atlasSubjects(): Promise<readonly AtlasSubject[]> {
   const variantIds = publishedProducts.flatMap((p) => p.variants.map((v) => v.id));
   const [prices, availability] = await Promise.all([
     getPrices(variantIds),
-    getAvailability(variantIds),
+    availabilityFor(variantIds),
   ]);
 
   return atlasSubjectsFrom(publishedProducts, {

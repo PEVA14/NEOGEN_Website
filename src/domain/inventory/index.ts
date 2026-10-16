@@ -1,7 +1,10 @@
 import { activeShipment } from "@/domain/order/operations";
 
+import { available } from "./types";
+
+import type { Availability } from "@/data/commerce/types";
 import type { Order } from "@/domain/order/types";
-import type { HoldRequest } from "./types";
+import type { HoldRequest, StockLevel } from "./types";
 
 export * from "./types";
 
@@ -53,4 +56,25 @@ export function holdLines(order: Order): HoldRequest[] {
 export function validAdjustment(mode: "count" | "adjustment", quantity: number): boolean {
   if (!Number.isInteger(quantity) || Math.abs(quantity) > 100_000) return false;
   return mode === "count" ? quantity >= 0 : quantity !== 0;
+}
+
+/**
+ * WHAT A CUSTOMER IS TOLD ABOUT ONE VARIANT'S STOCK (owner, 2026-10-15; B4).
+ *
+ * A state, never a number: customers never see quantities. The curated map
+ * (`data/commerce/availability.ts`) is the base; a COUNTED variant with
+ * nothing left to sell becomes "unavailable" (shown as "Agotado") — unless
+ * the owner marked it made-to-order, which can be sold with an empty shelf.
+ * An uncounted variant (no stock level) is never called sold out: absence of
+ * a count is not absence of stock.
+ */
+export function customerAvailability(
+  curated: Availability | null,
+  level: StockLevel | null,
+): Availability | null {
+  if (curated === "unavailable") return "unavailable";
+  if (level !== null && available(level) <= 0 && curated !== "made-to-order") {
+    return "unavailable";
+  }
+  return curated;
 }

@@ -4,12 +4,13 @@ import { publicSimpleEffects } from "@/content/effects";
 import { stillMedia } from "@/content/media";
 import { OVERVIEWS, publicCopy, publicStudiedFor, type ProductOverview } from "@/content/overview";
 import { formatStrength, presentationRange, productType, type Product } from "@/data/catalog";
-import { formatPrice, getAvailability, getPrices, type Money } from "@/data/commerce";
+import { formatPrice, getPrices, type Money } from "@/data/commerce";
 import { publicAreasFor } from "@/data/discovery";
 import { resolveEvidence, type QualityRegistries } from "@/domain/quality";
 import { perVial } from "@/domain/storefront";
 import { localeTags, type Locale } from "@/i18n/config";
 import { localizePath } from "@/i18n/routing";
+import { availabilityFor } from "@/server/availability";
 import { routes } from "@/config/routes";
 
 import type { AvailabilityValue, CatalogProduct, StrengthKind } from "@/components/catalog/filters";
@@ -49,7 +50,7 @@ export async function catalogEntries(
   const variantIds = items.flatMap((p) => p.variants.map((v) => v.id));
   const [prices, availability] = await Promise.all([
     getPrices(variantIds),
-    getAvailability(variantIds),
+    availabilityFor(variantIds),
   ]);
   const tag = localeTags[locale];
 

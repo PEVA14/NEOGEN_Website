@@ -2680,7 +2680,7 @@ const es = {
   commerceUi: {
     add: "Añadir a la bag",
     added: "Añadido",
-    soldOut: "No disponible por ahora",
+    soldOut: "Agotado",
     unavailable: "La compra se activará al concluir la revisión regulatoria.",
     decrease: "Reducir cantidad",
     increase: "Aumentar cantidad",
@@ -2697,7 +2697,7 @@ const es = {
     availability: {
       "in-stock": "En existencia",
       "made-to-order": "Sobre pedido",
-      unavailable: "No disponible por ahora",
+      unavailable: "Agotado",
     },
   },
 

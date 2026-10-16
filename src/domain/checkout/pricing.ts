@@ -83,13 +83,17 @@ function merge(requested: readonly RequestedLine[]): RequestedLine[] {
  * unavailable — and every drop is reported so the customer is told what
  * happened instead of finding one fewer item at the end.
  */
+/** Where stock states come from. The server passes the count-aware source. */
+export type AvailabilitySource = typeof getAvailability;
+
 export async function priceLines(
   requested: readonly RequestedLine[],
   now: () => string = () => new Date().toISOString(),
+  availabilityOf: AvailabilitySource = getAvailability,
 ): Promise<PricingResult> {
   const merged = merge(requested);
   const ids = merged.map((l) => l.variantId);
-  const [prices, availability] = await Promise.all([getPrices(ids), getAvailability(ids)]);
+  const [prices, availability] = await Promise.all([getPrices(ids), availabilityOf(ids)]);
 
   const lines: PricedLine[] = [];
   const adjustments: LineAdjustment[] = [];
@@ -174,13 +178,18 @@ export async function priceLines(
 }
 
 /** Reprice an existing snapshot — the freshness check before an order is made. */
-export async function reprice(snapshot: PriceSnapshot): Promise<PricingResult> {
+export async function reprice(
+  snapshot: PriceSnapshot,
+  availabilityOf: AvailabilitySource = getAvailability,
+): Promise<PricingResult> {
   return priceLines(
     snapshot.lines.map((l) => ({
       variantId: l.variantId,
       quantity: l.quantity,
       claimedUnitPrice: l.unitPrice.amount,
     })),
+    undefined,
+    availabilityOf,
   );
 }
 

@@ -70,6 +70,9 @@ const PAGE_SIZE = 24;
  * (paged cards are `hidden`, not absent), so it is indexable and works before
  * hydration.
  */
+/* Re-rendered at most every 5 minutes so "Agotado" follows the stock counts (B4). */
+export const revalidate = 300;
+
 export default async function ProductsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
