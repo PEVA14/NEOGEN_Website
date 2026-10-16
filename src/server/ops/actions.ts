@@ -19,13 +19,16 @@ import {
   resumeFulfilment,
   setTracking,
   unassignLot,
+  retryBooking,
   updateShipment,
 } from "@/domain/order";
 import { isOrderId } from "@/payments/instrument";
 import { MANUAL_SHIPPING } from "@/shipping";
 import { retryNotifications } from "@/server/notifications";
+import { bookShipment, cancelLabel } from "@/server/shipping/booking";
+import { refreshOrderShipment } from "@/server/shipping/tracking";
 import { reconcileOrder, submitRefund } from "@/server/payments";
-import { operate } from "@/server/orders";
+import { afterOrderChange, operate } from "@/server/orders";
 import { inventoryStore, orderRepository } from "@/server/persistence";
 
 import { login, logout, OPS_PATH, requireOperator } from "./auth";
@@ -255,6 +258,49 @@ export async function trackingAction(form: FormData): Promise<void> {
     trackingUrl: field(form, "trackingUrl") || null,
   };
   await run(orderId, (o, at) => setTracking(o, shipmentId, input, actor, at), "tracking", "#envio");
+}
+
+/* ------------------------------------------- provider labels (D1, Skydropx) */
+
+/**
+ * BUY THE LABEL — or try a failed one again. The same idempotent path the
+ * payment uses (`bookShipment`): an order that already has its label gets
+ * it back, never a second one. A failed booking is sent back to `requested`
+ * first, by the operator, so the attempt is on the record.
+ */
+export async function bookLabelAction(form: FormData): Promise<void> {
+  const { actor, orderId } = await begin(form);
+  const shipmentId = field(form, "shipmentId");
+  if (shipmentId) {
+    const retried = await operate(orderId, (o, at) => retryBooking(o, shipmentId, actor, at));
+    if (!retried.ok && retried.reason !== "booking_settled")
+      failed(orderId, retried.reason, "#envio");
+  }
+  const outcome = await bookShipment(orderId, { afterChange: afterOrderChange });
+  done(orderId, `label_${outcome}`, "#envio");
+}
+
+/** Ask the provider where the label and the parcel stand, now. */
+export async function refreshShipmentAction(form: FormData): Promise<void> {
+  const { orderId } = await begin(form);
+  const outcome = await refreshOrderShipment(orderId);
+  done(orderId, `shipment_${outcome}`, "#envio");
+}
+
+/**
+ * CANCEL THE LABEL AT THE PROVIDER — separate from cancelling the order,
+ * and confirmed by the operator. A refusal is recorded and the console
+ * keeps asking; the order's money is never decided here.
+ */
+export async function cancelLabelAction(form: FormData): Promise<void> {
+  const { actor, orderId } = await begin(form);
+  if (form.get("confirm") !== "yes") failed(orderId, "confirm_required", "#envio");
+  const outcome = await cancelLabel(orderId, field(form, "shipmentId"), actor);
+  if (outcome === "cancelled") {
+    const order = await orderRepository().get(orderId);
+    if (order) await afterOrderChange(order);
+  }
+  done(orderId, `label_cancel_${outcome}`, "#envio");
 }
 
 /* ------------------------------------------------------ notes and refs */

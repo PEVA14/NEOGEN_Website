@@ -1,5 +1,6 @@
 import { canTransition } from "./types";
 
+import type { Money } from "@/data/commerce/types";
 import type { Lot } from "@/data/quality";
 import type {
   CancellationReason,
@@ -17,6 +18,7 @@ import type {
   Refund,
   RefundReason,
   Shipment,
+  ShipmentException,
   ShipmentState,
   ShipmentSummary,
 } from "./types";
@@ -83,7 +85,15 @@ export type OpRefusal =
   | "nothing_to_refund"
   | "invalid_tracking_url"
   | "invalid_input"
-  | "duplicate";
+  | "duplicate"
+  /** D1: the order has no quoted rate to book. */
+  | "no_quote"
+  /** D1: the order is not in a state a label may be bought for. */
+  | "not_bookable"
+  /** D1: the booking already has its label, or is not the one being acted on. */
+  | "booking_settled"
+  /** D1: no label cancellation was requested for this shipment. */
+  | "carrier_cancel_not_requested";
 
 export type OpResult = { ok: true; order: Order } | { ok: false; reason: OpRefusal };
 
@@ -450,6 +460,7 @@ export function updateShipment(
   actor: Actor,
   at: string,
   providerEventId: string | null = null,
+  fromCarrier = false,
 ): OpResult {
   if (providerEventId && order.events.some((e) => e.providerEventId === providerEventId)) {
     return refuse("duplicate");
@@ -461,7 +472,16 @@ export function updateShipment(
   const dispatching = shipment.state === "pending" && to === "in_transit";
   if (dispatching) {
     if (order.state !== "paid") return refuse("not_paid");
-    if (order.fulfilment.state !== "ready_to_ship") return refuse("not_ready_to_ship");
+    /*
+     * An operator dispatches a packed order. A CARRIER reporting that it
+     * collected a provider-booked parcel is a fact, not a request: the label
+     * was bought on payment (D1), so the parcel can leave before anyone
+     * pressed "ready to ship" — the order is fulfilled by the pickup itself.
+     */
+    const packed = fromCarrier
+      ? ["queued", "preparing", "ready_to_ship"].includes(order.fulfilment.state)
+      : order.fulfilment.state === "ready_to_ship";
+    if (!packed) return refuse("not_ready_to_ship");
   }
 
   const updated: Shipment = {
@@ -538,6 +558,398 @@ export function setTracking(
         axis: "shipment",
         ref: shipment.id,
         meta: { carrier: updated.carrier, tracking: updated.trackingNumber },
+      },
+      actor,
+      at,
+    ),
+  };
+}
+
+/* ------------------------------------------- provider bookings (D1, labels) */
+
+/** The provider booking on the active shipment, if the order has one. */
+export function activeBooking(order: Order): Shipment | null {
+  const active = activeShipment(order);
+  return active && active.booking ? active : null;
+}
+
+/**
+ * DOES THIS PAID ORDER STILL NEED A LABEL? Paid, quoted, not cancelled, not
+ * disputed or held, not already fulfilled, and no active shipment. The one
+ * question the booking service, the reconcile and the console all ask.
+ */
+export function needsBooking(order: Order): boolean {
+  if (order.state !== "paid" || !order.delivery.quote) return false;
+  if (order.cancellation) return false;
+  if (!["queued", "preparing", "ready_to_ship"].includes(order.fulfilment.state)) return false;
+  const active = activeShipment(order);
+  return !active || active.state === "returned";
+}
+
+/**
+ * REQUEST A LABEL — written under the order's version lock BEFORE the
+ * provider is called. Two processes racing for one paid order both read "no
+ * shipment"; only one save wins, and the loser re-reads a shipment that
+ * already has a booking. That record, plus the provider's own per-rate
+ * deduplication, is what makes one paid order buy one label.
+ */
+export function requestBooking(order: Order, at: string): OpResult {
+  if (!order.delivery.quote) return refuse("no_quote");
+  if (!needsBooking(order)) {
+    return activeBooking(order) ? refuse("booking_settled") : refuse("not_bookable");
+  }
+  const q = order.delivery.quote;
+  const shipment: Shipment = {
+    id: `${order.id}-S${order.shipments.length + 1}`,
+    provider: q.provider,
+    providerRef: null,
+    carrier: q.carrier,
+    service: q.service,
+    trackingNumber: null,
+    trackingUrl: null,
+    labelRef: null,
+    state: "pending",
+    createdAt: at,
+    shippedAt: null,
+    deliveredAt: null,
+    cancelledAt: null,
+    trackingAddedAt: null,
+    booking: {
+      status: "requested",
+      rateId: q.rateId,
+      quotationId: q.quotationId,
+      cost: q.cost,
+      attempts: 0,
+      lastError: null,
+      requestedAt: at,
+      updatedAt: at,
+    },
+    providerStatus: null,
+    exception: null,
+    exceptionAt: null,
+    cancelRequestedAt: null,
+  };
+  return {
+    ok: true,
+    order: record(
+      { ...order, shipments: [...order.shipments, shipment] },
+      {
+        kind: "shipment_booking",
+        axis: "shipment",
+        to: "pending",
+        ref: shipment.id,
+        note: "requested",
+        meta: { carrier: q.carrier, service: q.service },
+      },
+      SYSTEM,
+      at,
+    ),
+  };
+}
+
+function withShipment(order: Order, id: string, change: (s: Shipment) => Shipment): Order {
+  return { ...order, shipments: order.shipments.map((s) => (s.id === id ? change(s) : s)) };
+}
+
+/** The provider's answer to a booking: its id, tracking and label, as far as it has them. */
+export function answerBooking(
+  order: Order,
+  shipmentId: string,
+  answer: {
+    providerRef: string;
+    created: boolean;
+    carrier: string | null;
+    trackingNumber: string | null;
+    trackingUrl: string | null;
+    labelAvailable: boolean;
+    cost: Money | null;
+    providerStatus: string | null;
+  },
+  at: string,
+): OpResult {
+  const shipment = order.shipments.find((s) => s.id === shipmentId);
+  if (!shipment?.booking) return refuse("shipment_not_found");
+  if (shipment.providerRef && shipment.providerRef !== answer.providerRef) {
+    return refuse("booking_settled");
+  }
+  const url = safeTrackingUrl(answer.trackingUrl);
+  const firstAnswer = shipment.booking.status !== "created" && answer.created;
+  const next = withShipment(order, shipmentId, (s) => ({
+    ...s,
+    providerRef: answer.providerRef,
+    carrier: answer.carrier ?? s.carrier,
+    trackingNumber: answer.trackingNumber ?? s.trackingNumber,
+    trackingUrl: url || s.trackingUrl,
+    labelRef: answer.labelAvailable ? "provider" : s.labelRef,
+    providerStatus: answer.providerStatus ?? s.providerStatus ?? null,
+    booking: {
+      ...s.booking!,
+      status: answer.created ? "created" : s.booking!.status,
+      cost: answer.cost ?? s.booking!.cost,
+      lastError: answer.created ? null : s.booking!.lastError,
+      updatedAt: at,
+    },
+  }));
+  return {
+    ok: true,
+    order: firstAnswer
+      ? record(
+          next,
+          {
+            kind: "shipment_booking",
+            axis: "shipment",
+            ref: shipmentId,
+            note: "created",
+            meta: { tracking: answer.trackingNumber },
+          },
+          SYSTEM,
+          at,
+        )
+      : next,
+  };
+}
+
+/**
+ * A booking attempt that did not produce a label. `retryable` (no answer,
+ * still in progress, a provider outage, labels switched off) keeps it
+ * `requested` — the reconcile and the console try again under the same
+ * rate. Otherwise it is `failed`, and an operator decides. The order stays
+ * paid and its stock stays held either way: this is an operations problem,
+ * not an unpaid order.
+ */
+export function failBooking(
+  order: Order,
+  shipmentId: string,
+  code: string,
+  retryable: boolean,
+  at: string,
+): OpResult {
+  const shipment = order.shipments.find((s) => s.id === shipmentId);
+  if (!shipment?.booking) return refuse("shipment_not_found");
+  if (shipment.booking.status === "created") return refuse("booking_settled");
+  const status = retryable ? "requested" : "failed";
+  const next = withShipment(order, shipmentId, (s) => ({
+    ...s,
+    booking: {
+      ...s.booking!,
+      status,
+      attempts: s.booking!.attempts + 1,
+      lastError: code.slice(0, 40),
+      updatedAt: at,
+    },
+  }));
+  return {
+    ok: true,
+    order: record(
+      next,
+      {
+        kind: "shipment_booking",
+        axis: "shipment",
+        ref: shipmentId,
+        note: retryable ? `retry:${code}` : `failed:${code}`,
+      },
+      SYSTEM,
+      at,
+    ),
+  };
+}
+
+/**
+ * A NEW RATE for a booking whose rate the provider refused (expired): the
+ * same carrier and service, re-quoted. Compare-and-set on the old rate, so
+ * a second process holding the old one cannot apply a different change.
+ */
+export function rebook(
+  order: Order,
+  shipmentId: string,
+  expectedRateId: string,
+  rate: { rateId: string; quotationId: string; cost: Money },
+  at: string,
+): OpResult {
+  const shipment = order.shipments.find((s) => s.id === shipmentId);
+  if (!shipment?.booking) return refuse("shipment_not_found");
+  if (shipment.providerRef || shipment.booking.rateId !== expectedRateId) {
+    return refuse("booking_settled");
+  }
+  const next = withShipment(order, shipmentId, (s) => ({
+    ...s,
+    booking: { ...s.booking!, ...rate, status: "requested", updatedAt: at },
+  }));
+  return {
+    ok: true,
+    order: record(
+      next,
+      {
+        kind: "shipment_booking",
+        axis: "shipment",
+        ref: shipmentId,
+        note: "requoted",
+        meta: { cost: rate.cost.amount },
+      },
+      SYSTEM,
+      at,
+    ),
+  };
+}
+
+/** An operator sends a failed booking back to be tried again. */
+export function retryBooking(order: Order, shipmentId: string, actor: Actor, at: string): OpResult {
+  const shipment = order.shipments.find((s) => s.id === shipmentId);
+  if (!shipment?.booking) return refuse("shipment_not_found");
+  if (shipment.booking.status !== "failed") return refuse("booking_settled");
+  if (order.state !== "paid" || order.cancellation) return refuse("not_bookable");
+  const next = withShipment(order, shipmentId, (s) => ({
+    ...s,
+    booking: { ...s.booking!, status: "requested", updatedAt: at },
+  }));
+  return {
+    ok: true,
+    order: record(
+      next,
+      { kind: "shipment_booking", axis: "shipment", ref: shipmentId, note: "retry_requested" },
+      actor,
+      at,
+    ),
+  };
+}
+
+/**
+ * A VERIFIED TRACKING FACT from the provider. Deduplicated by its event id;
+ * an older fact arriving after a newer one is refused by the transition
+ * table and changes nothing. A parcel the carrier reports beyond the next
+ * step (pending → delivered, when the pickup scan never came) passes
+ * through `in_transit` first, so dispatch, fulfilment and stock follow.
+ */
+export function applyTracking(
+  order: Order,
+  shipmentId: string,
+  event: {
+    eventId: string;
+    state: ShipmentState;
+    exception: ShipmentException | null;
+    trackingNumber: string | null;
+    trackingUrl: string | null;
+    providerStatus: string;
+  },
+  at: string,
+): OpResult {
+  if (order.events.some((e) => e.providerEventId === event.eventId)) return refuse("duplicate");
+  const shipment = order.shipments.find((s) => s.id === shipmentId);
+  if (!shipment) return refuse("shipment_not_found");
+  const actor: Actor = { source: "provider", name: shipment.provider };
+
+  /* Tracking details first: they are true whatever the state does. */
+  const url = safeTrackingUrl(event.trackingUrl);
+  let next = withShipment(order, shipmentId, (s) => ({
+    ...s,
+    trackingNumber: event.trackingNumber ?? s.trackingNumber,
+    trackingUrl: url || s.trackingUrl,
+    providerStatus: event.providerStatus.slice(0, 60),
+  }));
+
+  let current = next.shipments.find((s) => s.id === shipmentId)!;
+  const path: ShipmentState[] =
+    current.state === event.state
+      ? []
+      : SHIPMENT_TRANSITIONS[current.state].includes(event.state)
+        ? [event.state]
+        : current.state === "pending" &&
+            SHIPMENT_TRANSITIONS.in_transit.includes(event.state)
+          ? ["in_transit", event.state]
+          : [];
+  if (current.state !== event.state && path.length === 0) {
+    /* Out of order or impossible: keep the newer truth, record nothing. */
+    return refuse("illegal_transition");
+  }
+  for (const [i, to] of path.entries()) {
+    const last = i === path.length - 1;
+    const moved = updateShipment(
+      next,
+      shipmentId,
+      to,
+      actor,
+      at,
+      last ? event.eventId : null,
+      true,
+    );
+    if (!moved.ok) return moved;
+    next = moved.order;
+  }
+  if (path.length === 0) {
+    next = record(
+      next,
+      {
+        kind: "tracking_updated",
+        axis: "shipment",
+        ref: shipmentId,
+        providerEventId: event.eventId,
+        note: event.providerStatus.slice(0, 60),
+      },
+      actor,
+      at,
+    );
+  }
+
+  /* The first time a parcel needs the customer (an attempt, a branch), say so once. */
+  current = next.shipments.find((s) => s.id === shipmentId)!;
+  const customerIssue = event.exception === "delivery_attempt" || event.exception === "at_branch";
+  const shipped = current.shippedAt !== null;
+  next = withShipment(next, shipmentId, (s) => ({
+    ...s,
+    exception: s.state === "exception" ? event.exception : null,
+    exceptionAt: s.exceptionAt ?? (customerIssue && s.state === "exception" ? at : null),
+    trackingAddedAt:
+      s.trackingAddedAt ??
+      (!shipment.trackingNumber && s.trackingNumber && shipped && shipment.shippedAt ? at : null),
+  }));
+  return { ok: true, order: next };
+}
+
+/** The provider confirmed the label is cancelled. */
+export function carrierCancelled(
+  order: Order,
+  shipmentId: string,
+  actor: Actor,
+  at: string,
+): OpResult {
+  const shipment = order.shipments.find((s) => s.id === shipmentId);
+  if (!shipment) return refuse("shipment_not_found");
+  let next = order;
+  if (shipment.state !== "cancelled") {
+    const moved = updateShipment(order, shipmentId, "cancelled", actor, at);
+    if (!moved.ok) return moved;
+    next = moved.order;
+  }
+  return {
+    ok: true,
+    order: record(
+      next,
+      { kind: "carrier_cancel", axis: "shipment", ref: shipmentId, note: "confirmed" },
+      actor,
+      at,
+    ),
+  };
+}
+
+/** The provider refused to cancel the label (collected, or past its window). */
+export function carrierCancelRefused(
+  order: Order,
+  shipmentId: string,
+  detail: string,
+  actor: Actor,
+  at: string,
+): OpResult {
+  const shipment = order.shipments.find((s) => s.id === shipmentId);
+  if (!shipment) return refuse("shipment_not_found");
+  return {
+    ok: true,
+    order: record(
+      order,
+      {
+        kind: "carrier_cancel",
+        axis: "shipment",
+        ref: shipmentId,
+        note: `refused:${detail.slice(0, 40)}`,
       },
       actor,
       at,
@@ -632,8 +1044,29 @@ export function cancelOrder(
   }
 
   if (active && active.state === "pending") {
-    const moved = updateShipment(next, active.id, "cancelled", actor, at);
-    if (moved.ok) next = moved.order;
+    if (active.provider !== "manual" && (active.providerRef || active.booking)) {
+      /*
+       * A label bought from a provider is NOT cancelled by cancelling the
+       * order: that is a separate act at the provider, which may refuse.
+       * Mark it, and an operator cancels it at the provider (D1). The
+       * refund does not wait for it.
+       */
+      next = {
+        ...next,
+        shipments: next.shipments.map((s) =>
+          s.id === active.id ? { ...s, cancelRequestedAt: s.cancelRequestedAt ?? at } : s,
+        ),
+      };
+      next = record(
+        next,
+        { kind: "carrier_cancel", axis: "shipment", ref: active.id, note: "requested" },
+        actor,
+        at,
+      );
+    } else {
+      const moved = updateShipment(next, active.id, "cancelled", actor, at);
+      if (moved.ok) next = moved.order;
+    }
   }
 
   next = {

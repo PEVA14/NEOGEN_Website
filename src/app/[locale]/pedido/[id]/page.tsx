@@ -126,6 +126,7 @@ export default async function OrderStatusPage({
             steps: copy.steps,
             refund: copy.refund,
             tracking: copy.tracking,
+            exceptionDetail: copy.exceptionDetail,
             destination: copy.destination,
             items: copy.items,
             total: copy.total,

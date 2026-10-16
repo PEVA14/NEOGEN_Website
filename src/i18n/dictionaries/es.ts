@@ -2209,6 +2209,10 @@ const es = {
           estimate: "Estimado",
           /* Spanish agrees in number, and every priority delivery is one day. */
           estimateDays: { one: "{n} día hábil", many: "{n} días hábiles" },
+          carrierDays: {
+            one: "{n} día (estimado de la paquetería)",
+            many: "{n} días (estimado de la paquetería)",
+          },
           cost: "Costo",
           free: "Gratis",
           /* Not "$0" and not a made-up figure: genuinely unknown. */
@@ -2218,6 +2222,26 @@ const es = {
           handlingPending:
             "El manejo especial (cadena de frío) está pendiente de determinación y no se aplica todavía.",
           none: "No hay servicio disponible para esta dirección.",
+          /* Tarifas reales de paquetería (D1, Skydropx). */
+          quoted: {
+            note: "Opciones de paquetería para tu dirección, con su precio de envío.",
+            freeNote:
+              "Tu pedido tiene envío gratis por superar $10,000 MXN: no pagas ninguna de estas opciones.",
+            errors: {
+              invalid_address:
+                "No pudimos cotizar el envío para esta dirección. Revisa el código postal, la colonia y la ciudad.",
+              no_coverage: "Por ahora ninguna paquetería da servicio a esta dirección.",
+              timeout: "La cotización tardó demasiado. Intenta de nuevo en un momento.",
+              provider_error:
+                "No pudimos obtener tarifas de envío en este momento. Intenta de nuevo.",
+              rate_limited:
+                "Pediste muchas cotizaciones seguidas. Espera unos minutos e intenta de nuevo.",
+            },
+            retry: "Volver a cotizar",
+            editAddress: "Corregir dirección",
+            unavailable:
+              "El servicio de envío que habías elegido ya no está disponible. Elige otra opción.",
+          },
         },
         submit: "Continuar a revisión",
         back: "Volver a envío",
@@ -2260,6 +2284,9 @@ const es = {
             "Se registraron demasiados pedidos desde esta conexión en poco tiempo. Espera unos minutos e inténtalo de nuevo.",
           action: "Ir al paso",
         },
+        /* La tarifa elegida venció y se volvió a cotizar, o cruzó el umbral de envío gratis. */
+        shippingRepriced:
+          "El costo de envío cambió desde que lo elegiste (la tarifa se volvió a cotizar o cambió el subtotal). Revisa el total antes de continuar.",
       },
 
       payment: {
@@ -2394,6 +2421,10 @@ const es = {
       totalPending: "Por confirmar",
       estimate: "Entrega estimada",
       estimateDays: { one: "{n} día hábil", many: "{n} días hábiles" },
+      carrierDays: {
+        one: "{n} día (estimado de la paquetería)",
+        many: "{n} días (estimado de la paquetería)",
+      },
       freeShippingRemaining: "{amount} más para envío gratis",
       freeShippingReached: "Envío gratis alcanzado",
       note: "Los precios incluirán IVA cuando queden confirmados. No se añade impuesto por separado.",
@@ -2515,6 +2546,10 @@ const es = {
       shipping: { title: "Envío", estimate: "Estimado" },
       totals: { subtotal: "Subtotal", shipping: "Envío", free: "Gratis", total: "Total" },
       estimateDays: { one: "{n} día hábil", many: "{n} días hábiles" },
+      carrierDays: {
+        one: "{n} día (estimado de la paquetería)",
+        many: "{n} días (estimado de la paquetería)",
+      },
       acknowledgedLabel: "Declaraciones aceptadas",
       actions: {
         catalogue: "Seguir explorando",
@@ -2595,6 +2630,17 @@ const es = {
         link: "Rastrear en la página de la paquetería",
         none: "Los datos de rastreo aparecerán aquí cuando existan.",
       },
+      /* Qué significa una incidencia de la paquetería para el cliente (D1). */
+      exceptionDetail: {
+        delivery_attempt:
+          "La paquetería intentó entregar tu pedido y no pudo. Consulta el rastreo de la paquetería o llama al teléfono de NEOGEN para coordinar la entrega.",
+        at_branch:
+          "Tu pedido está en una sucursal de la paquetería, esperando a que lo recojas. Consulta el rastreo de la paquetería para los detalles.",
+        returning:
+          "Tu pedido va de regreso a NEOGEN. Llama al teléfono de NEOGEN para resolverlo.",
+        carrier:
+          "La paquetería reportó una incidencia con tu envío. Consulta el rastreo o llama al teléfono de NEOGEN.",
+      },
       destination: "Destino",
       items: "Artículos",
       total: "Total",
@@ -2649,6 +2695,10 @@ const es = {
       },
       edit: "Editar",
       estimateDays: { one: "{n} día hábil", many: "{n} días hábiles" },
+      carrierDays: {
+        one: "{n} día (estimado de la paquetería)",
+        many: "{n} días (estimado de la paquetería)",
+      },
       snapshotLabel: "Precios consultados",
     },
   },

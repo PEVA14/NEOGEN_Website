@@ -1,4 +1,5 @@
 import { ORDER_VIEWS, orderColumns, STALLED_PAYMENT_MS, VIEW_PREDICATES } from "../attention";
+import { indexedRefs } from "../repository";
 import { upgradeOrder } from "../upgrade";
 
 import type { SqlClient } from "@/lib/sql";
@@ -75,10 +76,7 @@ function payload(order: Order): string {
 
 export function createPostgresOrderRepository(sql: SqlClient): OrderRepository {
   async function indexOrder(tx: SqlClient, order: Order): Promise<void> {
-    const refs = new Set<string>();
-    if (order.providerRef) refs.add(order.providerRef);
-    for (const attempt of order.attempts) if (attempt.providerRef) refs.add(attempt.providerRef);
-    for (const ref of refs) {
+    for (const ref of indexedRefs(order)) {
       await tx.query(
         `insert into neogen_order_provider_refs (provider_ref, order_id) values ($1, $2)
          on conflict (provider_ref) do nothing`,

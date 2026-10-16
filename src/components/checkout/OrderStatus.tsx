@@ -14,6 +14,8 @@ export interface OrderStatusCopy {
   steps: Record<StepId | "label" | "done" | "current" | "upcoming", string>;
   refund: { open: string; confirmed: string };
   tracking: { title: string; carrier: string; number: string; link: string; none: string };
+  /** What a carrier exception means for the customer (D1), by reason. */
+  exceptionDetail: Record<"delivery_attempt" | "at_branch" | "returning" | "carrier", string>;
   destination: string;
   items: string;
   total: string;
@@ -75,6 +77,9 @@ export function OrderStatus({
       <section className={styles.now} data-headline={view.headline} aria-live="polite">
         {/* The headline is the page's h1; this block says what it means. */}
         <p className={styles.body}>{copy.body[view.headline]}</p>
+        {view.headline === "exception" && view.shipment?.exception ? (
+          <p className={styles.body}>{copy.exceptionDetail[view.shipment.exception]}</p>
+        ) : null}
         {view.refund ? (
           <p className={styles.body}>
             {view.refund.status === "confirmed"

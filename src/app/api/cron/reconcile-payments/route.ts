@@ -1,8 +1,10 @@
 import { timingSafeEqual } from "node:crypto";
 
 import { paymentAvailable } from "@/payments";
+import { activeShippingProvider } from "@/shipping";
 import { retryNotifications } from "@/server/notifications";
 import { reconcileInFlight } from "@/server/reconcile";
+import { reconcileShipments } from "@/server/shipping/tracking";
 
 /**
  * SCHEDULED RECONCILE OF IN-FLIGHT PAYMENTS (`vercel.json` → `crons`).
@@ -49,5 +51,7 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   const summary = await reconcileInFlight();
-  return json({ ok: true, ...summary, emails }, 200);
+  /* Labels for paid orders, and tracking for parcels on the way (D1). */
+  const shipping = activeShippingProvider().isConfigured() ? await reconcileShipments() : null;
+  return json({ ok: true, ...summary, emails, shipping }, 200);
 }

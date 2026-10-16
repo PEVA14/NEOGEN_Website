@@ -29,7 +29,13 @@ export type AttentionReason =
   | "fulfilment_on_hold"
   | "shipment_exception"
   | "refunded_after_dispatch"
-  | "stock_short";
+  | "stock_short"
+  /** D1: the label could not be bought (refused, or keeps failing). */
+  | "shipping_failed"
+  /** D1: a paid, quoted order with no label after `STALLED_BOOKING_MS`. */
+  | "shipping_unbooked"
+  /** D1: the order was cancelled but its label still exists at the provider. */
+  | "carrier_cancel_pending";
 
 export const ACKNOWLEDGEABLE: readonly AttentionReason[] = [
   "paid_on_earlier_attempt",
@@ -40,6 +46,9 @@ export const ACKNOWLEDGEABLE: readonly AttentionReason[] = [
 
 /** A payment answered by the provider but still unsettled after this long needs a look. */
 export const STALLED_PAYMENT_MS = 30 * 60 * 1000;
+
+/** A paid order still without a label after this long needs a look (D1). */
+export const STALLED_BOOKING_MS = 30 * 60 * 1000;
 
 function lastAck(order: Order, reason: string): string | null {
   const acks = order.acks.filter((a) => a.reason === reason).map((a) => a.at);
@@ -94,6 +103,28 @@ export function attentionReasons(order: Order, now?: string): AttentionReason[] 
   if (refund && refund.status === "submitted") reasons.push("refund_unconfirmed");
   if (order.fulfilment.state === "on_hold") reasons.push("fulfilment_on_hold");
   if (activeShipment(order)?.state === "exception") reasons.push("shipment_exception");
+  const booked = activeShipment(order);
+  if (
+    booked?.booking &&
+    booked.booking.status !== "created" &&
+    (booked.booking.status === "failed" || booked.booking.lastError !== null)
+  ) {
+    reasons.push("shipping_failed");
+  }
+  if (
+    now &&
+    order.state === "paid" &&
+    order.delivery.quote &&
+    !order.cancellation &&
+    (!booked?.booking || booked.booking.status === "requested") &&
+    !booked?.providerRef &&
+    Date.parse(now) - Date.parse(order.milestones.paid ?? order.updatedAt) > STALLED_BOOKING_MS
+  ) {
+    reasons.push("shipping_unbooked");
+  }
+  if (order.shipments.some((s) => s.cancelRequestedAt && s.state !== "cancelled")) {
+    reasons.push("carrier_cancel_pending");
+  }
   if (order.state === "refunded" && order.fulfilment.state === "fulfilled") {
     const ack = lastAck(order, "refunded_after_dispatch");
     if (ack === null || (order.milestones.refunded ?? "") > ack) {

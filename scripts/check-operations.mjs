@@ -1150,7 +1150,7 @@ const client = {
 
 {
   eq(noneShippingProvider.isConfigured(), false, "no carrier is integrated");
-  for (const call of ["quote", "createShipment", "getLabel", "getTracking", "cancelShipment"]) {
+  for (const call of ["quote", "createShipment", "getShipment", "getLabel", "cancelShipment"]) {
     const r = await noneShippingProvider[call](fresh(), {}, "", "");
     eq(
       [r.ok, r.error?.code],

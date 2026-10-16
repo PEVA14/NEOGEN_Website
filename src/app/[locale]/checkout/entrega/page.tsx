@@ -1,7 +1,10 @@
 import { BlockNotice, DeliveryOptions, StepActions } from "@/components/checkout";
 import { routes } from "@/config/routes";
-import { methodsFor, normaliseAddress, validateAddress } from "@/domain/checkout";
-import { submitDelivery } from "@/server/checkout/actions";
+import { siteConfig } from "@/config/site";
+import { methodsFor, normaliseAddress, quotedMethods, validateAddress } from "@/domain/checkout";
+import { refreshShippingQuote, submitDelivery } from "@/server/checkout/actions";
+import { saveDraft } from "@/server/checkout/session";
+import { quoteForDraft, shippingQuotesEnabled } from "@/server/shipping/quote";
 
 import { CheckoutShell, StepHead, loadStep, stepMetadata } from "../shared";
 import styles from "../page.module.css";
@@ -59,22 +62,67 @@ export default async function DeliveryStep({ params }: { params: Promise<{ local
   if (load.kind === "notice") return load.node;
 
   const { ctx } = load;
-  const { dict, draft, tag, path } = ctx;
+  const { dict, tag, path } = ctx;
   const copy = dict.checkout.steps.delivery;
+  const quoted = copy.options.quoted;
 
   /* `canEnter` has already proved the address is valid, so this cannot fail —
      but normalising through the validator keeps one definition of "valid". */
   const address =
-    validateAddress(draft.address).length === 0 ? normaliseAddress(draft.address) : null;
-  const methods = address ? methodsFor(address, draft.snapshot.subtotal) : [];
-  const unquotable = methods.length > 0 && methods.every((m) => m.price === null);
+    validateAddress(ctx.draft.address).length === 0 ? normaliseAddress(ctx.draft.address) : null;
+
+  /*
+   * QUOTED SHIPPING (D1). With a shipping provider configured, the options
+   * are the carrier rates for this address, fetched and kept on the server
+   * (`quoteForDraft`). Without one, the free-threshold rule below stands.
+   */
+  const quoting = shippingQuotesEnabled();
+  const { draft, stored } = quoting
+    ? await quoteForDraft(ctx.draft, async (d) => void (await saveDraft(d)))
+    : { draft: ctx.draft, stored: null };
+  const subtotal = draft.snapshot.subtotal;
+  const methods = !address
+    ? []
+    : quoting
+      ? stored
+        ? quotedMethods(stored, address, subtotal)
+        : []
+      : methodsFor(address, subtotal);
+  const unquotable = !quoting && methods.length > 0 && methods.every((m) => m.price === null);
+  const quoteError = quoting ? (stored?.error ?? null) : null;
+  const free = subtotal.amount >= siteConfig.fulfilment.freeShippingThreshold;
 
   return (
     <CheckoutShell ctx={ctx} step="delivery">
       <form action={submitDelivery} className={styles.step} noValidate>
         <input type="hidden" name="locale" value={ctx.locale} />
 
-        <StepHead index={copy.index} title={copy.title} note={copy.note} id="step-delivery" />
+        <StepHead
+          index={copy.index}
+          title={copy.title}
+          note={quoting ? quoted.note : copy.note}
+          id="step-delivery"
+        />
+
+        {draft.deliveryNotice === "unavailable" ? (
+          <BlockNotice title={copy.title} body={quoted.unavailable} />
+        ) : null}
+
+        {quoteError ? (
+          <BlockNotice
+            title={copy.title}
+            body={quoted.errors[quoteError]}
+            action={
+              quoteError === "invalid_address" || quoteError === "no_coverage"
+                ? { href: path(routes.checkoutStep("shipping")), label: quoted.editAddress }
+                : undefined
+            }
+          />
+        ) : null}
+
+        {quoting && free && methods.length > 0 ? (
+          <BlockNotice title={copy.options.free} body={quoted.freeNote} />
+        ) : null}
 
         {/*
          * Stated BEFORE the options, because it changes what the customer
@@ -91,7 +139,7 @@ export default async function DeliveryStep({ params }: { params: Promise<{ local
 
         <DeliveryOptions
           methods={methods}
-          selected={draft.delivery?.methodId ?? null}
+          selected={draft.delivery?.quote?.rateId ?? draft.delivery?.methodId ?? null}
           copy={copy.options}
           localeTag={tag}
         />
@@ -101,6 +149,14 @@ export default async function DeliveryStep({ params }: { params: Promise<{ local
           back={{ href: path(routes.checkoutStep("shipping")), label: copy.back }}
         />
       </form>
+
+      {/* Outside the step's form: asking again is its own action. */}
+      {quoteError && quoteError !== "invalid_address" && quoteError !== "no_coverage" ? (
+        <form action={refreshShippingQuote} className={styles.step}>
+          <input type="hidden" name="locale" value={ctx.locale} />
+          <StepActions submit={quoted.retry} />
+        </form>
+      ) : null}
     </CheckoutShell>
   );
 }

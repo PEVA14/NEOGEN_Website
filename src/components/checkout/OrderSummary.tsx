@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { deliveryEstimate } from "./days";
 import { Mono } from "@/components/typography";
 import { formatPrice } from "@/data/commerce/format";
 import { siteConfig } from "@/config/site";
@@ -23,6 +24,7 @@ export interface SummaryCopy {
   estimate: string;
   /** "{n} día hábil" / "{n} días hábiles". */
   estimateDays: { one: string; many: string };
+  carrierDays: { one: string; many: string };
   /** "{amount} más para envío gratis" */
   freeShippingRemaining: string;
   freeShippingReached: string;
@@ -172,16 +174,13 @@ export function OrderSummary({
           </Mono>
         </div>
 
-        {delivery ? (
+        {delivery && deliveryEstimate(delivery, copy) !== null ? (
           <div className={styles.row}>
             <Mono as="dt" size="2xs" className={styles.key}>
               {copy.estimate}
             </Mono>
             <Mono as="dd" size="2xs" className={styles.value}>
-              {(delivery.estimateDays === 1
-                ? copy.estimateDays.one
-                : copy.estimateDays.many
-              ).replace("{n}", String(delivery.estimateDays))}
+              {deliveryEstimate(delivery, copy)}
             </Mono>
           </div>
         ) : null}

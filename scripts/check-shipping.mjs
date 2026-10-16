@@ -1,0 +1,991 @@
+/**
+ * SHIPPING (D1) — Skydropx behind NEOGEN's shipping contract.
+ *
+ *   npm run check:shipping
+ *
+ * Never calls Skydropx: a deterministic fake answers its documented API
+ * (OpenAPI "Skydropx API v1", 2026-10-15) — OAuth, quotations with polling,
+ * shipments with `unique_shipment` replay, labels, cancellations — and every
+ * webhook is signed here with HMAC-SHA512 as Skydropx signs it.
+ *
+ * What is proven: quotes are normalised and filtered; the customer's price
+ * comes only from NEOGEN's rule and the stored quote; a tampered or stale
+ * rate selects nothing; a label is bought only for a PAID order, exactly
+ * once through duplicates, races, retries and lost answers; a failure after
+ * payment is an operations flag, never an unpaid order; tracking is
+ * verified, deduplicated and order-safe; cancelling an order does not
+ * pretend to cancel a label; the customer sees and is told about a
+ * delivery problem once, in their language.
+ */
+
+/* ---- environment: before any application module ------------------------ */
+
+const SECRET = "whsec-skydropx-test-0123456789";
+Object.assign(process.env, {
+  SKYDROPX_MODE: "sandbox",
+  SKYDROPX_CLIENT_ID: "client-test",
+  SKYDROPX_CLIENT_SECRET: "secret-test-not-real",
+  SKYDROPX_API_URL: "https://skydropx.test",
+  SKYDROPX_WEBHOOK_SECRET: SECRET,
+  SKYDROPX_CONSIGNMENT_NOTE: "00000000",
+  SKYDROPX_PACKAGE_TYPE: "4G",
+  SHIPPING_ORIGIN_NAME: "Bodega",
+  SHIPPING_ORIGIN_COMPANY: "Empresa de prueba",
+  SHIPPING_ORIGIN_PHONE: "3300000000",
+  SHIPPING_ORIGIN_EMAIL: "ops@example.test",
+  SHIPPING_ORIGIN_STREET: "Calle Origen 1",
+  SHIPPING_ORIGIN_REFERENCE: "Bodega",
+  SHIPPING_ORIGIN_POSTAL_CODE: "44100",
+  SHIPPING_ORIGIN_STATE: "Jalisco",
+  SHIPPING_ORIGIN_CITY: "Guadalajara",
+  SHIPPING_ORIGIN_NEIGHBORHOOD: "Centro",
+  SHIPPING_PARCEL_LENGTH_CM: "20",
+  SHIPPING_PARCEL_WIDTH_CM: "15",
+  SHIPPING_PARCEL_HEIGHT_CM: "10",
+  SHIPPING_PARCEL_WEIGHT_KG: "1",
+});
+delete process.env.DATABASE_URL;
+delete process.env.VERCEL_ENV;
+const signals = [];
+globalThis.__neogen_signal_sinks__ = [{ write: (r) => signals.push(r) }];
+
+const failures = [];
+let passed = 0;
+const eq = (actual, expected, what) => {
+  const a = JSON.stringify(actual);
+  const e = JSON.stringify(expected);
+  if (a !== e) failures.push(`${what}: expected ${e}, got ${a}`);
+  else passed += 1;
+};
+const ok = (cond, what) => {
+  if (!cond) failures.push(`${what}: expected true`);
+  else passed += 1;
+};
+
+/* ---- the fake Skydropx --------------------------------------------------- */
+
+const API = "https://skydropx.test";
+const sky = {
+  tokens: 0,
+  quotations: new Map(),
+  shipments: new Map(),
+  /** rate id → shipment id: `unique_shipment` replay. */
+  byRate: new Map(),
+  creates: [],
+  cancels: [],
+  /** Scripted behaviour. */
+  rates: null,
+  quoteStatus: 201,
+  quotePolls: 1,
+  createMode: "ok",
+  refuseRates: new Set(),
+  cancelMode: "ok",
+  rejectToken: false,
+};
+let seq = 0;
+const json = (status, body) =>
+  new Response(body === undefined ? null : JSON.stringify(body), {
+    status,
+    headers: { "content-type": "application/json" },
+  });
+const defaultRates = () => [
+  {
+    id: `rate-${++seq}`,
+    success: true,
+    status: "approved",
+    currency_code: "MXN",
+    total: "184.20",
+    days: 2,
+    provider_name: "fedex",
+    provider_display_name: "FedEx",
+    provider_service_name: "Express Saver",
+    provider_service_code: "express_saver",
+  },
+  {
+    id: `rate-${++seq}`,
+    success: true,
+    status: "price_found_external",
+    currency_code: "MXN",
+    total: "106.19",
+    days: null,
+    provider_name: "sendex",
+    provider_display_name: "Sendex",
+    provider_service_name: "Regular",
+    provider_service_code: "reg",
+  },
+  {
+    id: `rate-${++seq}`,
+    success: false,
+    status: "no_coverage",
+    total: null,
+    provider_name: "dhl",
+    provider_service_code: "standard",
+  },
+];
+function shipmentBody(s) {
+  return {
+    data: {
+      id: s.id,
+      type: "shipments",
+      attributes: {
+        workflow_status: s.workflow,
+        carrier_name: s.carrier,
+        master_tracking_number: s.tracking,
+        total: s.total,
+      },
+    },
+    included: [
+      {
+        id: `pkg-${s.id}`,
+        type: "packages",
+        attributes: {
+          tracking_number: s.tracking,
+          tracking_status: s.trackingStatus,
+          tracking_url_provider: s.tracking ? `https://track.example.test/${s.tracking}` : null,
+          label_url: s.workflow === "success" ? `https://labels.example.test/${s.id}.pdf` : null,
+        },
+      },
+    ],
+  };
+}
+
+globalThis.fetch = async (input, init = {}) => {
+  const url = String(input);
+  const method = init.method ?? "GET";
+  if (url.startsWith("https://labels.example.test/")) {
+    return new Response(new Uint8Array([37, 80, 68, 70]), { status: 200 });
+  }
+  if (!url.startsWith(API)) return json(404, {});
+  const path = url.slice(API.length);
+  if (path === "/api/v1/oauth/token") {
+    sky.tokens += 1;
+    return sky.rejectToken
+      ? json(401, {})
+      : json(200, { access_token: `tok-${sky.tokens}`, expires_in: 7200 });
+  }
+  const auth = new Headers(init.headers).get("authorization") ?? "";
+  if (!auth.startsWith("Bearer tok-")) return json(401, {});
+  const body = init.body ? JSON.parse(init.body) : null;
+
+  if (path === "/api/v1/quotations" && method === "POST") {
+    if (sky.quoteStatus === "throw") throw new TypeError("fetch failed");
+    if (sky.quoteStatus !== 201) return json(sky.quoteStatus, { error: "unprocessable_entity" });
+    const id = `quo-${++seq}`;
+    sky.quotations.set(id, {
+      id,
+      polls: sky.quotePolls,
+      rates: sky.rates ?? defaultRates(),
+      request: body,
+    });
+    return json(201, { id, is_completed: false, rates: [] });
+  }
+  const quo = path.match(/^\/api\/v1\/quotations\/([^/]+)$/);
+  if (quo && method === "GET") {
+    const q = sky.quotations.get(quo[1]);
+    if (!q) return json(404, {});
+    q.polls -= 1;
+    return json(200, { id: q.id, is_completed: q.polls <= 0, rates: q.polls <= 0 ? q.rates : [] });
+  }
+  if (path === "/api/v1/shipments" && method === "POST") {
+    const s = body.shipment;
+    sky.creates.push(s);
+    if (sky.refuseRates.has(s.rate_id)) return json(422, { error: "rate_expired" });
+    if (sky.createMode === "refuse") return json(422, { error: "unprocessable_entity" });
+    if (sky.createMode === "in_progress") return json(409, {});
+    if (sky.createMode === "down") return json(503, {});
+    /* unique_shipment: the same rate is the same shipment, replayed. */
+    const existing = s.unique_shipment ? sky.byRate.get(s.rate_id) : null;
+    if (existing) return json(200, shipmentBody(sky.shipments.get(existing)));
+    const shipment = {
+      id: `shp-${++seq}`,
+      workflow: "success",
+      carrier: "fedex",
+      tracking: `TRK${seq}`,
+      trackingStatus: "created",
+      total: "184.20",
+    };
+    sky.shipments.set(shipment.id, shipment);
+    if (s.unique_shipment) sky.byRate.set(s.rate_id, shipment.id);
+    if (sky.createMode === "lost") throw new TypeError("fetch failed");
+    return json(202, shipmentBody(shipment));
+  }
+  const shp = path.match(/^\/api\/v1\/shipments\/([^/]+)$/);
+  if (shp && method === "GET") {
+    const s = sky.shipments.get(shp[1]);
+    return s ? json(200, shipmentBody(s)) : json(404, {});
+  }
+  const cancel = path.match(/^\/api\/v1\/shipments\/([^/]+)\/cancellations$/);
+  if (cancel && method === "POST") {
+    sky.cancels.push(cancel[1]);
+    if (sky.cancelMode === "refuse") return json(422, { error: "unprocessable_entity" });
+    const s = sky.shipments.get(cancel[1]);
+    if (s) s.workflow = "cancelled";
+    return json(201, { id: "can-1", success: true, status: "approved" });
+  }
+  return json(404, {});
+};
+
+/* ---- application ---------------------------------------------------------- */
+
+const { readSkydropxConfig, carrierAllowed, missingSkydropxEnv } =
+  await import("../src/shipping/adapters/skydropx/config.ts");
+const { createSkydropxProvider, __resetSkydropxTokens, destinationFor } =
+  await import("../src/shipping/adapters/skydropx/index.ts");
+const { signSkydropxBody, verifySkydropxSignature } =
+  await import("../src/shipping/adapters/skydropx/signature.ts");
+const { trackingState } = await import("../src/shipping/adapters/skydropx/vocabulary.ts");
+const shipping = await import("../src/domain/checkout/shipping.ts");
+const {
+  quote: orderTotals,
+  cancelOrder,
+  attentionReasons,
+  customerView,
+  upgradeOrder,
+  needsBooking,
+} = await import("../src/domain/order/index.ts");
+const { desiredHold } = await import("../src/domain/inventory/index.ts");
+const { memoryOrderRepository, __resetOrderStore } =
+  await import("../src/domain/order/adapters/memory.ts");
+const { memoryOutbox, __resetOutbox } =
+  await import("../src/domain/notifications/adapters/memoryOutbox.ts");
+const { messagesOwed } = await import("../src/domain/notifications/index.ts");
+const { bookShipment, cancelLabel } = await import("../src/server/shipping/booking.ts");
+const { refreshOrderShipment, reconcileShipments } =
+  await import("../src/server/shipping/tracking.ts");
+const { afterOrderChange } = await import("../src/server/orders.ts");
+const { POST: shippingWebhook } = await import("../src/app/api/shipping/webhook/route.ts");
+const es = (await import("../src/i18n/dictionaries/es.ts")).default;
+const en = (await import("../src/i18n/dictionaries/en.ts")).default;
+const { EMAIL_COPY } = await import("../src/domain/notifications/copy.ts");
+
+const provider = createSkydropxProvider({ sleep: async () => {} });
+const mxn = (amount) => ({ amount, currency: "MXN" });
+const ADDRESS = {
+  recipient: "Cliente Prueba",
+  street: "Avenida Siempre Viva",
+  numeroExterior: "742",
+  numeroInterior: null,
+  colonia: "Centro",
+  postalCode: "44100",
+  city: "Guadalajara",
+  state: "JAL",
+  country: "MX",
+  notes: null,
+};
+
+/* ======================================================================== */
+/* 1. CONFIGURATION — off unless complete; live gated                        */
+/* ======================================================================== */
+
+ok(readSkydropxConfig() !== null, "a complete sandbox configuration is configured");
+eq(readSkydropxConfig({ ...process.env, SKYDROPX_MODE: "" }), null, "no mode, no provider");
+eq(
+  readSkydropxConfig({ ...process.env, SHIPPING_ORIGIN_POSTAL_CODE: "" }),
+  null,
+  "no origin, no provider — never an invented one",
+);
+eq(
+  readSkydropxConfig({ ...process.env, SHIPPING_PARCEL_WEIGHT_KG: "0" }),
+  null,
+  "no parcel, no provider",
+);
+eq(
+  readSkydropxConfig({ ...process.env, SKYDROPX_MODE: "live", VERCEL_ENV: "preview" }),
+  null,
+  "live credentials are refused on a Preview deployment",
+);
+eq(
+  readSkydropxConfig({ ...process.env, SKYDROPX_MODE: "live", SKYDROPX_API_URL: "" })
+    ?.labelsAllowed,
+  false,
+  "live labels are off until SKYDROPX_LIVE_LABELS=enabled",
+);
+eq(
+  readSkydropxConfig({
+    ...process.env,
+    SKYDROPX_MODE: "live",
+    SKYDROPX_API_URL: "",
+    SKYDROPX_LIVE_LABELS: "enabled",
+  })?.apiUrl,
+  "https://api-pro.skydropx.com",
+  "live defaults to the documented host",
+);
+ok(
+  !JSON.stringify(missingSkydropxEnv({ SKYDROPX_CLIENT_SECRET: "s3cr3t" })).includes("s3cr3t"),
+  "missing-configuration names never carry a value",
+);
+ok(
+  !carrierAllowed({ allow: [], deny: ["sendex"] }, "sendex", "reg"),
+  "a denied carrier is dropped",
+);
+ok(
+  !carrierAllowed({ allow: [], deny: ["fedex:express_saver"] }, "fedex", "express_saver"),
+  "a denied service is dropped",
+);
+ok(carrierAllowed({ allow: ["fedex"], deny: [] }, "fedex", "x"), "an allowed carrier passes");
+ok(!carrierAllowed({ allow: ["fedex"], deny: [] }, "dhl", "x"), "allow-listing excludes the rest");
+
+/* ======================================================================== */
+/* 2. QUOTES — normalised, filtered, honest about failure                     */
+/* ======================================================================== */
+
+const destination = destinationFor({ shipping: ADDRESS });
+eq(destination.state, "Jalisco", "the destination carries the state's name, not its code");
+const parcel = provider.parcel();
+{
+  sky.quotePolls = 2;
+  const q = await provider.quote(destination, parcel);
+  ok(q.ok, "a valid address quotes");
+  eq(q.value.options.length, 2, "only successful, priced rates are offered (no_coverage dropped)");
+  eq(q.value.options[0].cost, mxn(185), "a rate's centavos round up once, never down");
+  eq(
+    q.value.options[1].estimateDays,
+    null,
+    "no days from the provider → no estimate, never guessed",
+  );
+  const sent = [...sky.quotations.values()].at(-1).request.quotation;
+  eq(sent.address_to.area_level1, "Jalisco", "the quote is for the customer's state");
+  eq(sent.parcels[0].weight, 1, "the configured parcel is quoted");
+  ok(!JSON.stringify(sent).includes("Cliente Prueba"), "a quote carries no customer name");
+  ok(
+    Date.parse(q.value.expiresAt) - Date.parse(q.value.quotedAt) === 24 * 3600 * 1000,
+    "rates expire 24 hours after the quote, as documented",
+  );
+  sky.quotePolls = 1;
+}
+{
+  sky.rates = [];
+  eq(
+    (await provider.quote(destination, parcel)).error?.code,
+    "no_coverage",
+    "no rates is no coverage",
+  );
+  sky.rates = null;
+  sky.quoteStatus = 422;
+  eq(
+    (await provider.quote(destination, parcel)).error?.code,
+    "invalid_address",
+    "a refused address is reported as such",
+  );
+  sky.quoteStatus = "throw";
+  eq(
+    (await provider.quote(destination, parcel)).error?.code,
+    "timeout",
+    "no answer is a timeout, not a crash",
+  );
+  sky.quoteStatus = 201;
+  sky.quotePolls = Number.MAX_SAFE_INTEGER;
+  let fakeTime = 0;
+  const slow = createSkydropxProvider({
+    sleep: async (ms) => void (fakeTime += ms),
+    now: () => fakeTime,
+  });
+  eq(
+    (await slow.quote(destination, parcel)).error?.code,
+    "timeout",
+    "a quote that never completes times out",
+  );
+  sky.quotePolls = 1;
+  sky.rejectToken = true;
+  __resetSkydropxTokens();
+  eq(
+    (await provider.quote(destination, parcel)).error?.code,
+    "provider_error",
+    "bad credentials are a provider error",
+  );
+  sky.rejectToken = false;
+  const denied = createSkydropxProvider({
+    sleep: async () => {},
+    config: () => ({ ...readSkydropxConfig(), deny: ["fedex", "sendex"] }),
+  });
+  eq(
+    (await denied.quote(destination, parcel)).error?.code,
+    "no_coverage",
+    "a deny list can empty the options",
+  );
+}
+
+/* ======================================================================== */
+/* 3. CHECKOUT RULES — server price, tampering, expiry, re-quote             */
+/* ======================================================================== */
+
+const NOW = Date.parse("2026-10-16T12:00:00.000Z");
+const iso = (t) => new Date(t).toISOString();
+function stored(at = NOW, options) {
+  return {
+    destinationKey: shipping.destinationKey(ADDRESS),
+    quotedAt: iso(at),
+    quote: {
+      provider: "skydropx",
+      quotationId: "quo-x",
+      expiresAt: iso(at + 24 * 3600 * 1000),
+      options: options ?? [
+        {
+          rateId: "r-fedex",
+          carrier: "FedEx",
+          carrierCode: "fedex",
+          service: "Express Saver",
+          serviceCode: "express_saver",
+          cost: mxn(184),
+          estimateDays: 2,
+        },
+        {
+          rateId: "r-sendex",
+          carrier: "Sendex",
+          carrierCode: "sendex",
+          service: "Regular",
+          serviceCode: "reg",
+          cost: mxn(106),
+          estimateDays: null,
+        },
+      ],
+    },
+    error: null,
+  };
+}
+{
+  const free = shipping.selectQuoted(stored(), "r-fedex", ADDRESS, mxn(12500), NOW);
+  eq(free.price, mxn(0), "≥ MX$10,000: the customer pays no shipping");
+  eq(free.quote.cost, mxn(184), "…and NEOGEN's real logistics cost is kept");
+  const lines = [
+    {
+      variantId: "v1",
+      slug: "x",
+      name: "X",
+      presentation: "1",
+      unitPrice: mxn(12500),
+      quantity: 1,
+      lineTotal: mxn(12500),
+    },
+  ];
+  eq(
+    orderTotals(lines, free).total,
+    mxn(12500),
+    "the order total is products + the customer's shipping",
+  );
+
+  const paid = shipping.selectQuoted(stored(), "r-sendex", ADDRESS, mxn(5000), NOW);
+  eq(paid.price, mxn(106), "< MX$10,000: the customer pays the selected rate");
+  const smallLines = [{ ...lines[0], unitPrice: mxn(5000), lineTotal: mxn(5000) }];
+  eq(orderTotals(smallLines, paid).total, mxn(5106), "…and it is in the total charged");
+
+  eq(
+    shipping.selectQuoted(stored(), "r-forged", ADDRESS, mxn(5000), NOW),
+    null,
+    "a rate id not in the stored quote selects nothing",
+  );
+  eq(
+    shipping.selectQuoted(
+      stored(),
+      "r-sendex",
+      { ...ADDRESS, postalCode: "01000" },
+      mxn(5000),
+      NOW,
+    ),
+    null,
+    "a quote for another address selects nothing",
+  );
+  eq(
+    shipping.selectQuoted(stored(NOW - 2 * 3600 * 1000), "r-sendex", ADDRESS, mxn(5000), NOW),
+    null,
+    "a stale quote selects nothing",
+  );
+  eq(
+    shipping.selectionCurrent(paid, ADDRESS, mxn(11000), NOW),
+    "reprice",
+    "crossing the threshold reprices shipping before placement",
+  );
+  eq(shipping.repriceSelection(paid, mxn(11000)).price, mxn(0), "…to free, from the frozen cost");
+  eq(
+    shipping.selectionCurrent(paid, ADDRESS, mxn(5000), NOW + 2 * 3600 * 1000),
+    "stale",
+    "an old selection must be re-quoted",
+  );
+  const requoted = shipping.requoteSelection(
+    paid,
+    stored(NOW + 2 * 3600 * 1000, [
+      {
+        rateId: "r-sendex-2",
+        carrier: "Sendex",
+        carrierCode: "sendex",
+        service: "Regular",
+        serviceCode: "reg",
+        cost: mxn(120),
+        estimateDays: 3,
+      },
+    ]),
+    ADDRESS,
+    mxn(5000),
+    NOW + 2 * 3600 * 1000,
+  );
+  eq(
+    [requoted?.quote.rateId, requoted?.price],
+    ["r-sendex-2", mxn(120)],
+    "a re-quote keeps the carrier and service, at the new price",
+  );
+  eq(
+    shipping.requoteSelection(
+      paid,
+      stored(NOW + 2 * 3600 * 1000, []),
+      ADDRESS,
+      mxn(5000),
+      NOW + 2 * 3600 * 1000,
+    ),
+    null,
+    "a service that disappeared is not silently replaced",
+  );
+  const methods = shipping.quotedMethods(stored(), ADDRESS, mxn(5000));
+  eq(
+    methods.map((m) => m.id),
+    ["r-sendex", "r-fedex"],
+    "options are cheapest first",
+  );
+  ok(
+    methods.every((m) => !("cost" in m)),
+    "a customer-facing option carries no logistics cost",
+  );
+}
+
+/* ======================================================================== */
+/* 4. BOOKING — only paid orders, exactly one label                           */
+/* ======================================================================== */
+
+let orderSeq = 0;
+async function order(state = "paid", { subtotal = 12500, quote = true } = {}) {
+  orderSeq += 1;
+  const at = "2026-10-16T10:00:00.000Z";
+  const q = await provider.quote(destination, parcel);
+  const rate = q.value.options[0];
+  const delivery = shipping.selectQuoted(
+    {
+      destinationKey: shipping.destinationKey(ADDRESS),
+      quotedAt: q.value.quotedAt,
+      quote: {
+        provider: "skydropx",
+        quotationId: q.value.quotationId,
+        expiresAt: q.value.expiresAt,
+        options: q.value.options,
+      },
+      error: null,
+    },
+    rate.rateId,
+    ADDRESS,
+    mxn(subtotal),
+    Date.now(),
+  );
+  const o = upgradeOrder({
+    id: `NG-SHIP${String(orderSeq).padStart(4, "0")}-A${String(orderSeq).padStart(2, "0")}`,
+    createdAt: at,
+    updatedAt: at,
+    version: 1,
+    state,
+    lines: [
+      {
+        variantId: "v1",
+        slug: "fixture",
+        name: "Fixture",
+        presentation: "10 mg",
+        unitPrice: mxn(subtotal),
+        quantity: 1,
+        lineTotal: mxn(subtotal),
+      },
+    ],
+    totals: {
+      subtotal: mxn(subtotal),
+      shipping: delivery.price,
+      total: mxn(subtotal + delivery.price.amount),
+    },
+    contact: { email: "cliente@example.mx", name: "Cliente", phone: "523300000000" },
+    shipping: ADDRESS,
+    delivery: quote
+      ? delivery
+      : { methodId: "local-priority", route: "priority", estimateDays: 1, price: mxn(0) },
+    route: "priority",
+    acknowledged: [],
+    locale: "es",
+    providerRef: state === "paid" ? "ORD01PAID" + orderSeq : null,
+    provider: "mercadopago",
+    attempts: [],
+    milestones: state === "paid" ? { paid: at } : {},
+    events: [
+      { seq: 1, at, kind: "created", providerEventId: null, from: null, to: "created", note: null },
+    ],
+  });
+  const created = await memoryOrderRepository.create(o);
+  return created.order;
+}
+const load = (id) => memoryOrderRepository.get(id);
+
+__resetOrderStore();
+__resetOutbox();
+{
+  for (const state of [
+    "payment_failed",
+    "payment_processing",
+    "pending_payment",
+    "created",
+    "cancelled",
+  ]) {
+    const o = await order(state);
+    const before = sky.creates.length;
+    eq(await bookShipment(o.id), "skipped", `a ${state} order buys no label`);
+    eq(sky.creates.length, before, `…and Skydropx is never called for it`);
+    eq((await load(o.id)).shipments.length, 0, `…and no booking is recorded for it`);
+  }
+  const legacy = await order("paid", { quote: false });
+  eq(await bookShipment(legacy.id), "skipped", "an order without a quoted rate buys no label");
+}
+{
+  const o = await order("paid");
+  const before = sky.creates.length;
+  eq(
+    await bookShipment(o.id, { afterChange: afterOrderChange }),
+    "booked",
+    "an approved payment buys the label",
+  );
+  eq(sky.creates.length - before, 1, "exactly one creation request");
+  const after = await load(o.id);
+  eq(after.shipments.length, 1, "one shipment on the order");
+  const s = after.shipments[0];
+  eq(
+    [s.booking.status, s.provider, s.state],
+    ["created", "skydropx", "pending"],
+    "booked, provider-owned, awaiting pickup",
+  );
+  ok(
+    s.providerRef?.startsWith("shp-") && s.trackingNumber?.startsWith("TRK"),
+    "the shipment id and tracking are kept",
+  );
+  eq(s.booking.cost, mxn(185), "the logistics cost is kept on the booking");
+  eq(after.totals.shipping, mxn(0), "…while the customer paid none (free shipping)");
+  const sent = sky.creates.at(-1);
+  eq(sent.unique_shipment, true, "Skydropx's own duplicate protection is requested");
+  eq(sent.address_to.email, "ops@example.test", "the customer's email is not sent to Skydropx");
+  eq(sent.packages[0].consignment_note, "00000000", "Carta Porte codes come from configuration");
+
+  /* Duplicate payment webhooks, duplicate reconciles, customer refreshes. */
+  const again = sky.creates.length;
+  await afterOrderChange(after);
+  await afterOrderChange(await load(o.id));
+  eq(await bookShipment(o.id), "booked", "a second run finds the label");
+  await reconcileShipments();
+  eq(sky.creates.length, again, "no further creation request, whatever repeats");
+  eq((await load(o.id)).shipments.length, 1, "still one shipment");
+
+  /* The label, for operations. */
+  const label = await provider.getLabel(s.providerRef);
+  ok(
+    label.ok && label.value.url.startsWith("https://labels.example.test/"),
+    "the label is retrievable for operators",
+  );
+}
+{
+  /* Simultaneous runs for one newly paid order. */
+  const o = await order("paid");
+  const results = await Promise.all([bookShipment(o.id), bookShipment(o.id), bookShipment(o.id)]);
+  ok(
+    results.every((r) => r === "booked" || r === "skipped"),
+    "concurrent runs all settle",
+  );
+  const after = await load(o.id);
+  eq(after.shipments.length, 1, "three simultaneous runs record one shipment");
+  const ids = new Set(
+    sky.creates
+      .filter((c) => c.rate_id === after.shipments[0].booking.rateId)
+      .map((c) => c.rate_id),
+  );
+  eq(ids.size, 1, "…all on one rate");
+  eq(
+    new Set([...sky.byRate.entries()].filter(([r]) => ids.has(r)).map(([, id]) => id)).size,
+    1,
+    "…and Skydropx holds one shipment for it",
+  );
+}
+{
+  /* Accepted, then the answer is lost. */
+  const o = await order("paid");
+  sky.createMode = "lost";
+  eq(await bookShipment(o.id), "retry_later", "a lost answer is a retry, not a failure");
+  const lost = await load(o.id);
+  eq(
+    [lost.shipments[0].booking.status, lost.shipments[0].providerRef],
+    ["requested", null],
+    "the booking stays requested, id unknown",
+  );
+  ok(desiredHold(lost) === "held", "the paid order keeps its stock");
+  sky.createMode = "ok";
+  const shipmentsAtSky = sky.shipments.size;
+  eq(await bookShipment(o.id), "booked", "the retry recovers it");
+  eq(sky.shipments.size, shipmentsAtSky, "Skydropx replayed the first shipment — no second label");
+  ok(
+    (await load(o.id)).shipments[0].providerRef?.startsWith("shp-"),
+    "the replayed id is recorded",
+  );
+}
+{
+  /* Still in progress, then a provider outage. */
+  const o = await order("paid");
+  sky.createMode = "in_progress";
+  eq(await bookShipment(o.id), "retry_later", "409 (in progress) waits");
+  sky.createMode = "down";
+  eq(await bookShipment(o.id), "retry_later", "an outage waits");
+  ok(
+    attentionReasons(await load(o.id)).includes("shipping_failed"),
+    "repeated trouble is flagged in the console",
+  );
+  sky.createMode = "ok";
+  eq(await bookShipment(o.id), "booked", "and books once the provider is back");
+  ok(!attentionReasons(await load(o.id)).includes("shipping_failed"), "the flag clears");
+}
+{
+  /* The rate expired: one re-quote of the same carrier and service. */
+  const o = await order("paid");
+  sky.refuseRates.add(o.delivery.quote.rateId);
+  eq(await bookShipment(o.id), "booked", "an expired rate is re-quoted and booked");
+  const s = (await load(o.id)).shipments[0];
+  ok(s.booking.rateId !== o.delivery.quote.rateId, "on a fresh rate of the same service");
+  ok(
+    (await load(o.id)).events.some((e) => e.note === "requoted"),
+    "and the re-quote is on the record",
+  );
+}
+{
+  /* Refused for good after payment: an operations exception, never unpaid. */
+  const o = await order("paid");
+  sky.createMode = "refuse";
+  eq(await bookShipment(o.id), "failed", "a refused label is a failed booking");
+  const failed = await load(o.id);
+  eq(failed.state, "paid", "the order stays paid");
+  eq(desiredHold(failed), "held", "and keeps its stock held");
+  ok(attentionReasons(failed).includes("shipping_failed"), "the console flags it");
+  const before = sky.creates.length;
+  eq(await bookShipment(o.id), "failed", "a failed booking is not retried by itself");
+  eq(sky.creates.length, before, "…no further request until an operator says so");
+  sky.createMode = "ok";
+}
+
+/* ======================================================================== */
+/* 5. TRACKING — verified, deduplicated, order-safe                           */
+/* ======================================================================== */
+
+const hook = (payload, signature) => {
+  const body = JSON.stringify(payload);
+  return shippingWebhook(
+    new Request("https://neogen.mx/api/shipping/webhook", {
+      method: "POST",
+      headers: {
+        authorization: signature ?? signSkydropxBody(SECRET, body),
+        "content-type": "application/json",
+      },
+      body,
+    }),
+  );
+};
+const packageEvent = (shipmentId, status, extra = {}) => ({
+  data: {
+    id: `pkg-${shipmentId}`,
+    type: "packages",
+    attributes: {
+      status,
+      tracking_number: "TRK-HOOK",
+      tracking_url_provider: "https://track.example.test/x",
+      returned: false,
+      returned_status: null,
+      ...extra,
+    },
+    relationships: { shipment: { data: { id: shipmentId, type: "shipments" } } },
+  },
+});
+{
+  ok(
+    verifySkydropxSignature({ secret: SECRET, header: signSkydropxBody(SECRET, "{}"), body: "{}" }),
+    "a correct HMAC verifies",
+  );
+  ok(
+    !verifySkydropxSignature({
+      secret: SECRET,
+      header: signSkydropxBody(SECRET, "{}"),
+      body: "{ }",
+    }),
+    "the raw body is what is signed",
+  );
+  ok(
+    !verifySkydropxSignature({ secret: SECRET, header: "Bearer x", body: "{}" }),
+    "the bearer mode is not accepted",
+  );
+  eq(
+    trackingState("in_return", "delivered"),
+    { state: "returned", exception: null },
+    "a completed return is returned",
+  );
+  eq(
+    trackingState("delivered_to_branch"),
+    { state: "exception", exception: "at_branch" },
+    "waiting at a branch needs the customer",
+  );
+  eq(trackingState("something_new"), null, "an unlisted status is never guessed");
+
+  const o = await order("paid");
+  await bookShipment(o.id, { afterChange: afterOrderChange });
+  const ref = (await load(o.id)).shipments[0].providerRef;
+
+  eq(
+    (await hook(packageEvent(ref, "in_transit"), "HMAC " + "0".repeat(128))).status,
+    401,
+    "an invalid signature is refused",
+  );
+  eq(
+    (await (await hook({ data: { type: "orders", id: "x" } })).json()).outcome,
+    "ignored",
+    "an order event is acknowledged and ignored",
+  );
+  eq((await hook({ nope: true })).status, 400, "a signed malformed body is refused");
+
+  const picked = await (await hook(packageEvent(ref, "picked_up"))).json();
+  eq(picked.outcome, "applied", "a pickup is applied");
+  let after = await load(o.id);
+  eq(
+    [after.shipments[0].state, after.fulfilment.state],
+    ["in_transit", "fulfilled"],
+    "the pickup ships and fulfils the order",
+  );
+  eq(desiredHold(after), "consumed", "and its stock leaves the shelf");
+  eq(
+    (await (await hook(packageEvent(ref, "picked_up"))).json()).outcome,
+    "duplicate",
+    "a duplicate event changes nothing",
+  );
+
+  const attempt = await (await hook(packageEvent(ref, "delivery_attempt"))).json();
+  eq(attempt.outcome, "applied", "a failed delivery attempt is applied");
+  after = await load(o.id);
+  eq(
+    [after.shipments[0].state, after.shipments[0].exception],
+    ["exception", "delivery_attempt"],
+    "as an exception the customer can act on",
+  );
+  const view = customerView(after);
+  eq(view.headline, "exception", "the customer sees a delivery problem");
+  ok(
+    es.checkout.status.exceptionDetail.delivery_attempt &&
+      en.checkout.status.exceptionDetail.delivery_attempt,
+    "explained in Spanish and English",
+  );
+
+  await hook(packageEvent(ref, "delivered"));
+  eq((await load(o.id)).shipments[0].state, "delivered", "delivery is applied");
+  eq(
+    (await (await hook(packageEvent(ref, "in_transit"))).json()).outcome,
+    "stale",
+    "an older event after delivery changes nothing",
+  );
+  eq((await load(o.id)).shipments[0].state, "delivered", "the newer truth stands");
+
+  const owed = messagesOwed(await load(o.id), () => "").map((m) => m.kind);
+  eq(
+    owed.filter((k) => k === "order.delivery_issue.customer").length,
+    1,
+    "one delivery-problem email per shipment",
+  );
+  ok(
+    owed.includes("order.shipped.customer") && owed.includes("order.delivered.customer"),
+    "shipped and delivered are owed",
+  );
+  const box = await memoryOutbox().forOrder(o.id);
+  eq(
+    new Set(box.map((e) => e.message.id)).size,
+    box.length,
+    "the outbox holds each message once, through duplicate events",
+  );
+
+  const unknown = await (await hook(packageEvent("shp-unknown", "in_transit"))).json();
+  eq(
+    unknown.outcome,
+    "unknown_shipment",
+    "a shipment NEOGEN has not recorded is acknowledged, not guessed",
+  );
+}
+{
+  /* Refresh: a webhook that never came. */
+  const o = await order("paid");
+  await bookShipment(o.id);
+  const ref = (await load(o.id)).shipments[0].providerRef;
+  sky.shipments.get(ref).trackingStatus = "in_transit";
+  eq(await refreshOrderShipment(o.id), "refreshed", "a refresh applies what the webhook missed");
+  eq((await load(o.id)).shipments[0].state, "in_transit", "the parcel is in transit");
+}
+
+/* ======================================================================== */
+/* 6. CANCELLATION — the order and the label are separate acts               */
+/* ======================================================================== */
+
+{
+  const o = await order("paid");
+  await bookShipment(o.id);
+  const booked = await load(o.id);
+  const cancelled = cancelOrder(
+    booked,
+    "customer_request",
+    { source: "operator", name: "ana" },
+    "2026-10-16T11:00:00.000Z",
+  );
+  ok(cancelled.ok, "a paid order with a label can be cancelled");
+  const c = cancelled.order;
+  eq(c.shipments[0].state, "pending", "cancelling the order does not pretend to cancel the label");
+  ok(c.shipments[0].cancelRequestedAt, "the label is marked for cancellation");
+  ok(attentionReasons(c).includes("carrier_cancel_pending"), "and the console asks for it");
+  ok(c.refunds.length === 1, "the refund is owed regardless of the carrier");
+  await memoryOrderRepository.save(c);
+  ok(!needsBooking(await load(o.id)), "a cancelled order never buys another label");
+
+  sky.cancelMode = "refuse";
+  eq(
+    await cancelLabel(o.id, c.shipments[0].id, { source: "operator", name: "ana" }),
+    "refused",
+    "a carrier refusal is reported",
+  );
+  ok(attentionReasons(await load(o.id)).includes("carrier_cancel_pending"), "and the flag stays");
+  sky.cancelMode = "ok";
+  eq(
+    await cancelLabel(o.id, c.shipments[0].id, { source: "operator", name: "ana" }),
+    "cancelled",
+    "a confirmed cancellation",
+  );
+  const done = await load(o.id);
+  eq(done.shipments[0].state, "cancelled", "cancels the shipment");
+  ok(!attentionReasons(done).includes("carrier_cancel_pending"), "and clears the flag");
+}
+
+/* ======================================================================== */
+/* 7. CUSTOMER WORDS — both languages                                        */
+/* ======================================================================== */
+
+for (const reason of ["delivery_attempt", "at_branch", "returning", "carrier"]) {
+  ok(es.checkout.status.exceptionDetail[reason], `ES explains ${reason}`);
+  ok(en.checkout.status.exceptionDetail[reason], `EN explains ${reason}`);
+}
+ok(
+  EMAIL_COPY.es.kinds["order.delivery_issue.customer"] &&
+    EMAIL_COPY.en.kinds["order.delivery_issue.customer"],
+  "the delivery-problem email exists in both languages",
+);
+ok(
+  es.checkout.steps.delivery.options.quoted.errors.no_coverage &&
+    en.checkout.steps.delivery.options.quoted.errors.no_coverage,
+  "quote failures have customer copy in both languages",
+);
+ok(
+  !signals.some((s) => JSON.stringify(s).includes("Siempre Viva")),
+  "no customer address in any signal",
+);
+
+/* ---- report --------------------------------------------------------------- */
+
+if (failures.length) {
+  console.error(`\nshipping check FAILED — ${failures.length} problem(s)\n`);
+  for (const f of failures) console.error(`  ${f}`);
+  process.exit(1);
+}
+console.log(
+  `shipping check passed — ${passed} assertions: Skydropx quotes, checkout rules, paid-only idempotent labels, tracking webhooks, cancellation, customer copy`,
+);

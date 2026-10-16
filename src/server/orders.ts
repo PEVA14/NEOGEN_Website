@@ -2,8 +2,11 @@ import "server-only";
 
 import { lotsForVariant, LOTS } from "@/data/quality";
 import { desiredHold, holdLines } from "@/domain/inventory";
-import { attentionReasons, mutate, record, SYSTEM } from "@/domain/order";
+import { after } from "next/server";
+
+import { attentionReasons, mutate, needsBooking, record, SYSTEM } from "@/domain/order";
 import { notifyOrder } from "@/server/notifications";
+import { bookShipment } from "@/server/shipping/booking";
 import { signal } from "@/server/observe";
 import { inventoryStore, orderRepository } from "@/server/persistence";
 
@@ -92,7 +95,30 @@ async function syncInventory(order: Order): Promise<Order> {
 export async function afterOrderChange(order: Order): Promise<Order> {
   const synced = await syncInventory(order);
   await notifyOrder(synced);
+  if (needsBooking(synced)) await scheduleBooking(synced.id);
   return synced;
+}
+
+/**
+ * Buy the label for a newly paid order — AFTER the response (D1), so a
+ * payment webhook or the customer's card answer is never held up by the
+ * shipping provider. Only for an order that needs a booking and has none:
+ * retries of a booking that failed are the reconcile's and the console's,
+ * never a loop here. Outside a request (tests, scripts) it runs inline.
+ */
+async function scheduleBooking(orderId: string): Promise<void> {
+  const run = async () => {
+    try {
+      await bookShipment(orderId, { afterChange: afterOrderChange });
+    } catch {
+      signal("shipping.provider_error", "error", { orderId, view: "booking_crash" });
+    }
+  };
+  try {
+    after(run);
+  } catch {
+    await run();
+  }
 }
 
 /**

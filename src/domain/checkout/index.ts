@@ -20,11 +20,13 @@ export {
   type DeliveryMethod,
   type DeliveryMethodId,
   type DeliverySelection,
+  type FrozenQuote,
   type IssueCode,
   type LineAdjustment,
   type MxAddress,
   type PriceSnapshot,
   type PricedLine,
+  type StoredQuote,
   type ValidationIssue,
 } from "./types";
 
@@ -51,6 +53,18 @@ export {
   routeForAddress,
   select,
 } from "./delivery";
+
+export {
+  customerShipping,
+  destinationKey,
+  QUOTE_FRESH_MS,
+  quotedMethods,
+  quoteUsable,
+  repriceSelection,
+  requoteSelection,
+  selectionCurrent,
+  selectQuoted,
+} from "./shipping";
 
 export {
   canEnter,

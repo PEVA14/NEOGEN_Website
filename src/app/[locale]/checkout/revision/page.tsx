@@ -185,6 +185,10 @@ export default async function ReviewStep({
           <BlockNotice title={copy.blocked.title} body={copy.blocked.payment_unavailable} />
         ) : null}
 
+        {draft.deliveryNotice === "repriced" ? (
+          <BlockNotice title={dict.checkout.steps.delivery.title} body={copy.shippingRepriced} />
+        ) : null}
+
         {!block && payable && limited ? (
           <BlockNotice title={copy.blocked.title} body={copy.blocked.rate_limited} />
         ) : null}

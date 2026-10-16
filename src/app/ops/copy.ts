@@ -127,6 +127,12 @@ export const OPS = {
     shipment_exception: "La paquetería reportó una incidencia.",
     refunded_after_dispatch: "Se reembolsó un pedido ya despachado.",
     stock_short: "Faltaron existencias al reservar este pedido.",
+    shipping_failed:
+      "No se pudo comprar la guía de paquetería. El pedido sigue pagado y con sus existencias apartadas: revisa el motivo y reintenta, o envía por fuera y regístralo.",
+    shipping_unbooked:
+      "El pedido está pagado desde hace más de 30 minutos y aún no tiene guía. Reintenta la compra de la guía.",
+    carrier_cancel_pending:
+      "El pedido se canceló, pero su guía sigue activa en la paquetería. Cancélala allí desde este pedido.",
   } satisfies Record<AttentionReason, string>,
 
   refusals: {
@@ -168,6 +174,10 @@ export const OPS = {
     tag_in_use: "Esa etiqueta está en uso. Quítala de las fichas antes de eliminarla.",
     bulk_empty: "No seleccionaste ninguna ficha.",
     duplicate: "Ya estaba registrado.",
+    no_quote: "Este pedido no tiene una tarifa de paquetería cotizada.",
+    not_bookable: "El pedido no está en un estado en el que se pueda comprar una guía.",
+    booking_settled: "La guía ya está comprada o la solicitud cambió. Recarga la página.",
+    carrier_cancel_not_requested: "No hay una cancelación de guía pendiente para este envío.",
     not_found: "No existe ese pedido.",
     conflict: "El pedido cambió mientras tanto. Vuelve a intentarlo.",
     no_provider: "El pedido no tiene un pago en un procesador configurado.",
@@ -199,6 +209,22 @@ export const OPS = {
     reconcile_failed:
       "El procesador respondió, pero la respuesta no se pudo guardar. Inténtalo de nuevo.",
     reconcile_skipped: "Este pago ya no está en curso.",
+    label_booked: "La guía está comprada.",
+    label_creating: "La paquetería está generando la guía. Actualiza el estado en un momento.",
+    label_retry_later:
+      "La paquetería no respondió o sigue procesando. No se compró una segunda guía; se reintentará.",
+    label_failed: "La paquetería rechazó la guía. Revisa el motivo en el historial.",
+    label_skipped: "Este pedido no necesita una guía ahora.",
+    label_unconfigured: "La paquetería no está configurada en este entorno.",
+    shipment_refreshed: "Estado del envío actualizado desde la paquetería.",
+    shipment_unchanged: "La paquetería informa lo mismo. No se cambió nada.",
+    shipment_unreachable: "No se pudo consultar a la paquetería. Inténtalo más tarde.",
+    shipment_skipped: "Este envío no tiene guía de paquetería.",
+    label_cancel_cancelled: "La paquetería canceló la guía.",
+    label_cancel_refused:
+      "La paquetería no permitió cancelar la guía (puede que ya la hayan recolectado). Quedó en el historial.",
+    label_cancel_unreachable: "No se pudo contactar a la paquetería. Inténtalo más tarde.",
+    label_cancel_skipped: "Este envío no tiene una guía que cancelar.",
     lot: "Lote actualizado.",
     shipment: "Envío registrado.",
     shipment_state: "Estado del envío actualizado.",
@@ -230,6 +256,8 @@ export const OPS = {
     shipment_recorded: "Envío registrado",
     shipment_changed: "Envío",
     tracking_updated: "Rastreo",
+    shipment_booking: "Guía de paquetería",
+    carrier_cancel: "Cancelación de guía en la paquetería",
     order_cancelled: "Pedido cancelado",
     refund_requested: "Reembolso solicitado",
     refund_submitted: "Reembolso enviado",
@@ -254,6 +282,7 @@ export const OPS = {
     "order.shipped.customer": "Cliente · pedido enviado",
     "order.tracking.customer": "Cliente · rastreo disponible",
     "order.delivered.customer": "Cliente · entregado",
+    "order.delivery_issue.customer": "Cliente · problema de entrega",
     "order.cancelled.customer": "Cliente · cancelado",
     "order.refunded.customer": "Cliente · reembolso confirmado",
     "order.disputed.internal": "Operaciones · disputa",
@@ -285,7 +314,8 @@ export const OPS = {
   } as Record<string, string>,
 
   outboxReason: {
-    noProvider: "El correo no está activado: no salió y no saldrá hasta completar la configuración.",
+    noProvider:
+      "El correo no está activado: no salió y no saldrá hasta completar la configuración.",
     queued: "En cola: se enviará con el proveedor configurado.",
   },
 
@@ -325,6 +355,14 @@ export const OPS = {
     all: "Todavía no hay pedidos. Un pedido aparece en cuanto un cliente lo confirma en el checkout.",
   } satisfies Record<OrderView, string>,
 
+  /* Why a parcel is in exception (D1), as the provider reported it. */
+  shipmentException: {
+    delivery_attempt: "intento de entrega fallido",
+    at_branch: "esperando en sucursal",
+    returning: "en devolución",
+    carrier: "incidencia de la paquetería",
+  } as Record<string, string>,
+
   /* The attention reasons, short enough for a list row. */
   attentionShort: {
     payment_disputed: "Disputa abierta",
@@ -337,6 +375,9 @@ export const OPS = {
     shipment_exception: "Incidencia de envío",
     refunded_after_dispatch: "Reembolsado tras despachar",
     stock_short: "Faltaron existencias",
+    shipping_failed: "Guía no comprada",
+    shipping_unbooked: "Sin guía",
+    carrier_cancel_pending: "Cancelar guía",
   } satisfies Record<AttentionReason, string>,
 
   /* Why a payment attempt was declined, in words a person can repeat. */

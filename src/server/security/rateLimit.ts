@@ -40,6 +40,8 @@ export const RULES = {
   trackAddress: { name: "track-address", limit: 10, windowMs: 15 * MINUTE },
   /** Lookups of one order number — the brake on guessing its email. */
   trackOrder: { name: "track-order", limit: 5, windowMs: 15 * MINUTE },
+  /** Shipping quotes requested from one address — each one is a provider call. */
+  shippingQuote: { name: "shipping-quote", limit: 20, windowMs: 15 * MINUTE },
   /** Atlas generations — each one costs a model call. */
   atlas: { name: "atlas", limit: 8, windowMs: 10 * MINUTE },
   /** CSP violation reports a browser may send. */

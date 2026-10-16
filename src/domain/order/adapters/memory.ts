@@ -1,4 +1,5 @@
 import { matchesView, ORDER_VIEWS, orderColumns } from "../attention";
+import { indexedRefs } from "../repository";
 import { upgradeOrder } from "../upgrade";
 
 import type { OrderView } from "../attention";
@@ -79,7 +80,7 @@ export const memoryOrderRepository: OrderRepository = {
     if (s.orders.has(order.id)) return { ok: false, reason: "exists" };
     const stored = clone({ ...order, version: 1 });
     s.orders.set(stored.id, stored);
-    if (stored.providerRef) s.byProviderRef.set(stored.providerRef, stored.id);
+    for (const ref of indexedRefs(stored)) s.byProviderRef.set(ref, stored.id);
     return { ok: true, order: clone(stored) };
   },
 
@@ -97,7 +98,7 @@ export const memoryOrderRepository: OrderRepository = {
 
     const stored = clone({ ...order, version: current.version + 1 });
     s.orders.set(stored.id, stored);
-    if (stored.providerRef) s.byProviderRef.set(stored.providerRef, stored.id);
+    for (const ref of indexedRefs(stored)) s.byProviderRef.set(ref, stored.id);
     /* Every provider event id the order has recorded becomes globally known,
        so a redelivery is recognised even before the order is loaded. */
     for (const event of stored.events) {

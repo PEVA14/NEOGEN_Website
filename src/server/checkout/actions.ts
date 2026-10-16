@@ -20,6 +20,13 @@ import {
 } from "@/domain/checkout";
 import { trackServer } from "@/analytics/server";
 import { priceLines, reprice } from "@/domain/checkout/pricing";
+import {
+  repriceSelection,
+  requoteSelection,
+  selectionCurrent,
+  selectQuoted,
+} from "@/domain/checkout/shipping";
+import { quoteForDraft, shippingQuotesEnabled } from "@/server/shipping/quote";
 import { availabilityFor } from "@/server/availability";
 import { createOrder } from "@/domain/order";
 import { isLocale, type Locale } from "@/i18n/config";
@@ -213,6 +220,27 @@ export async function submitDelivery(form: FormData): Promise<void> {
   const address = normaliseAddress(draft.address);
 
   /*
+   * QUOTED SHIPPING (D1). The posted value is a rate id and nothing else; it
+   * selects only if it is in the quote this server stored on the draft, for
+   * this address, still fresh. Carrier, cost and the customer's price are
+   * read from that copy — never from the form.
+   */
+  if (shippingQuotesEnabled()) {
+    const rateId = field(form, "method").slice(0, 100);
+    const selection = /^[A-Za-z0-9_-]{1,100}$/.test(rateId)
+      ? selectQuoted(draft.shippingQuote, rateId, address, draft.snapshot.subtotal, Date.now())
+      : null;
+    const quoted = markAttempted(
+      touch(draft, { delivery: selection, deliveryNotice: null }),
+      "delivery",
+    );
+    await saveDraft(quoted);
+    if (!selection) redirect(stepPath(locale, "delivery"));
+    trackServer({ name: "checkout_progressed", step: "delivery" });
+    redirect(stepPath(locale, "review"));
+  }
+
+  /*
    * The method is RE-DERIVED from the address and the subtotal, and the posted
    * id is only matched against the result. Its price never comes from the
    * form: a posted `price=0` would otherwise buy free shipping.
@@ -232,6 +260,68 @@ export async function submitDelivery(form: FormData): Promise<void> {
   if (!method) redirect(stepPath(locale, "delivery"));
   trackServer({ name: "checkout_progressed", step: "delivery" });
   redirect(stepPath(locale, "review"));
+}
+
+/** Ask the provider again for this address — the delivery step's retry. */
+export async function refreshShippingQuote(form: FormData): Promise<void> {
+  const locale = localeOf(form);
+  const draft = await requireDraft(locale);
+  await quoteForDraft(draft, async (d) => void (await saveDraft(d)), { force: true });
+  redirect(stepPath(locale, "delivery"));
+}
+
+/**
+ * A QUOTED SELECTION AT PLACEMENT (D1). Still for this address, still fresh,
+ * still priced by the rule for the current subtotal — or it is fixed here,
+ * and the customer is shown why before anything is created:
+ *
+ *   reprice  the subtotal crossed the free-shipping threshold: the price is
+ *            recomputed from the frozen cost and the review shown again.
+ *   stale    the quote aged out: the provider is asked again for the SAME
+ *            carrier and service. Same price → it continues silently on the
+ *            fresh rate; a new price → back to review with a notice; gone →
+ *            back to delivery with a notice.
+ *
+ * Returns the draft to place, or redirects.
+ */
+async function currentDelivery(locale: Locale, draft: CheckoutDraft): Promise<CheckoutDraft> {
+  if (!shippingQuotesEnabled()) return draft;
+  const selection = draft.delivery;
+  if (!selection?.quote) {
+    /* A route selection made before quoting was switched on is not a rate. */
+    await saveDraft(touch(draft, { delivery: null }));
+    redirect(stepPath(locale, "delivery"));
+  }
+  const address = normaliseAddress(draft.address);
+  const subtotal = draft.snapshot.subtotal;
+  const now = Date.now();
+  const status = selectionCurrent(selection, address, subtotal, now);
+  if (status === "ok") return draft;
+
+  if (status === "reprice") {
+    await saveDraft(
+      touch(draft, { delivery: repriceSelection(selection, subtotal), deliveryNotice: "repriced" }),
+    );
+    redirect(stepPath(locale, "review"));
+  }
+
+  const { draft: requoted, stored } = await quoteForDraft(
+    draft,
+    async (d) => void (await saveDraft(d)),
+    { force: true, now },
+  );
+  const fresh = stored ? requoteSelection(selection, stored, address, subtotal, now) : null;
+  if (!fresh) {
+    await saveDraft(touch(requoted, { delivery: null, deliveryNotice: "unavailable" }));
+    redirect(stepPath(locale, "delivery"));
+  }
+  if (fresh.price?.amount !== selection.price?.amount) {
+    await saveDraft(touch(requoted, { delivery: fresh, deliveryNotice: "repriced" }));
+    redirect(stepPath(locale, "review"));
+  }
+  const next = touch(requoted, { delivery: fresh, deliveryNotice: null });
+  await saveDraft(next);
+  return next;
 }
 
 /**
@@ -272,10 +362,11 @@ export async function placeOrder(form: FormData): Promise<void> {
     redirect(stepPath(locale, "review"));
   }
 
+  const delivered = await currentDelivery(locale, draft);
   const accepted = accept(
     form.getAll("acknowledge").filter((v): v is string => typeof v === "string"),
   );
-  const withAcks = touch(draft, { acknowledged: accepted });
+  const withAcks = touch(delivered, { acknowledged: accepted });
 
   const block = placementBlock(withAcks);
   if (block) {

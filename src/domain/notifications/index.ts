@@ -266,6 +266,18 @@ export function messagesOwed(
         ),
       );
     }
+    /* Once per shipment, the first time it needs the customer (D1). */
+    if (s.exceptionAt) {
+      owed.push(
+        customerMessage(
+          order,
+          "order.delivery_issue.customer",
+          `${order.id}:${s.id}:order.delivery_issue.customer`,
+          s.exceptionAt,
+          facts,
+        ),
+      );
+    }
     if (s.deliveredAt) {
       owed.push(
         customerMessage(

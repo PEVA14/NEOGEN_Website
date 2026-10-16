@@ -9,10 +9,12 @@ import type { DeliveryMethod, DeliveryMethodId } from "@/domain/checkout";
 
 export interface DeliveryCopy {
   legend: string;
-  methods: Record<DeliveryMethodId, { title: string; detail: string }>;
+  methods: Record<Exclude<DeliveryMethodId, "quoted">, { title: string; detail: string }>;
   estimate: string;
   /** Singular and plural — see `formatDays`. */
   estimateDays: DayCount;
+  /** A carrier's own day count — not promised as business days. */
+  carrierDays: DayCount;
   cost: string;
   free: string;
   ratePending: string;
@@ -53,7 +55,7 @@ export function DeliveryOptions({
   localeTag,
 }: {
   methods: readonly DeliveryMethod[];
-  selected: DeliveryMethodId | null;
+  selected: string | null;
   copy: DeliveryCopy;
   localeTag: string;
 }) {
@@ -72,7 +74,9 @@ export function DeliveryOptions({
       </legend>
 
       {methods.map((method) => {
-        const name = copy.methods[method.id];
+        const name = method.label
+          ? { title: `${method.label.carrier} · ${method.label.service}`, detail: null }
+          : copy.methods[method.kind as Exclude<DeliveryMethodId, "quoted">];
         return (
           <label
             key={method.id}
@@ -107,13 +111,21 @@ export function DeliveryOptions({
                 </Mono>
               </span>
 
-              <Mono size="2xs" className={styles.meta}>
-                {copy.estimate} — {formatDays(method.estimateDays, copy.estimateDays)}
-              </Mono>
+              {method.estimateDays !== null ? (
+                <Mono size="2xs" className={styles.meta}>
+                  {copy.estimate} —{" "}
+                  {formatDays(
+                    method.estimateDays,
+                    method.kind === "quoted" ? copy.carrierDays : copy.estimateDays,
+                  )}
+                </Mono>
+              ) : null}
 
-              <Body size="sm" tone="muted" className={styles.detail}>
-                {name.detail}
-              </Body>
+              {name.detail ? (
+                <Body size="sm" tone="muted" className={styles.detail}>
+                  {name.detail}
+                </Body>
+              ) : null}
 
               {/* Only where it is true, and it is true for every method today. */}
               {method.price === null ? (

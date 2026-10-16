@@ -19,3 +19,19 @@ export interface DayCount {
 export function formatDays(days: number, copy: DayCount): string {
   return (days === 1 ? copy.one : copy.many).replace("{n}", String(days));
 }
+
+/**
+ * A selection's estimate as words, or null when there is none to state. A
+ * quoted rate carries the CARRIER's day count, which is not promised as
+ * business days — so it reads "días (estimado de la paquetería)".
+ */
+export function deliveryEstimate(
+  selection: { methodId: string; estimateDays: number | null },
+  copy: { estimateDays: DayCount; carrierDays: DayCount },
+): string | null {
+  if (selection.estimateDays === null) return null;
+  return formatDays(
+    selection.estimateDays,
+    selection.methodId === "quoted" ? copy.carrierDays : copy.estimateDays,
+  );
+}

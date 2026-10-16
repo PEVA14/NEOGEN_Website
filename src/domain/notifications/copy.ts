@@ -27,6 +27,8 @@ export interface EmailCopy {
   contactLine: string;
   footer: string;
   estimate: (days: number) => string;
+  /** A carrier's quoted day count — not promised as business days. */
+  carrierEstimate: (days: number) => string;
   carrier: string;
   service: string;
   tracking: string;
@@ -50,6 +52,7 @@ const es: EmailCopy = {
   contactLine: "Para cualquier pregunta, el canal directo de NEOGEN es su teléfono:",
   footer: "Recibes este correo porque realizaste un pedido en NEOGEN.",
   estimate: (days) => `Estimado de entrega: ${days} ${days === 1 ? "día hábil" : "días hábiles"}.`,
+  carrierEstimate: (days) => `Estimado de la paquetería: ${days} ${days === 1 ? "día" : "días"}.`,
   carrier: "Paquetería",
   service: "Servicio",
   tracking: "Número de rastreo",
@@ -79,6 +82,11 @@ const es: EmailCopy = {
       subject: (id) => `Pedido entregado · ${id}`,
       heading: "Tu pedido fue entregado",
       body: "La paquetería reporta tu pedido como entregado.",
+    },
+    "order.delivery_issue.customer": {
+      subject: (id) => `Tu envío necesita atención · ${id}`,
+      heading: "La paquetería no pudo completar la entrega",
+      body: "La paquetería reportó que no pudo entregar tu pedido o que lo tiene en una sucursal. Consulta el rastreo de la paquetería o llama al teléfono de NEOGEN para resolverlo.",
     },
     "order.cancelled.customer": {
       subject: (id) => `Pedido cancelado · ${id}`,
@@ -111,6 +119,7 @@ const en: EmailCopy = {
   contactLine: "For any question, NEOGEN's direct channel is its phone line:",
   footer: "You are receiving this email because you placed an order with NEOGEN.",
   estimate: (days) => `Delivery estimate: ${days} business ${days === 1 ? "day" : "days"}.`,
+  carrierEstimate: (days) => `Carrier's estimate: ${days} ${days === 1 ? "day" : "days"}.`,
   carrier: "Carrier",
   service: "Service",
   tracking: "Tracking number",
@@ -140,6 +149,11 @@ const en: EmailCopy = {
       subject: (id) => `Order delivered · ${id}`,
       heading: "Your order was delivered",
       body: "The carrier reports your order as delivered.",
+    },
+    "order.delivery_issue.customer": {
+      subject: (id) => `Your shipment needs attention · ${id}`,
+      heading: "The carrier could not complete the delivery",
+      body: "The carrier reported that it could not deliver your order, or that it is holding it at a branch. Check the carrier's tracking or call NEOGEN's phone line to sort it out.",
     },
     "order.cancelled.customer": {
       subject: (id) => `Order cancelled · ${id}`,

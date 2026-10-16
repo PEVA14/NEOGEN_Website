@@ -90,8 +90,10 @@ export function methodsFor(
   /* One definition of the threshold rule, shared with the summary. */
   const price = provisionalShipping(subtotal);
 
+  const id = route === "priority" ? "local-priority" : "national-standard";
   const method: DeliveryMethod = {
-    id: route === "priority" ? "local-priority" : "national-standard",
+    id,
+    kind: id,
     route,
     estimateDays: siteConfig.fulfilment.estimateDays[route],
     /* The ONLY rate this system knows. Everything else is null. */
@@ -122,7 +124,7 @@ export function methodById(
  */
 export function select(method: DeliveryMethod): DeliverySelection {
   return {
-    methodId: method.id,
+    methodId: method.kind,
     route: method.route,
     estimateDays: method.estimateDays,
     price: method.price,

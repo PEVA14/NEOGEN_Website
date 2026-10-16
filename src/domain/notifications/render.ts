@@ -74,6 +74,14 @@ export function renderEmail(message: NotificationMessage, ctx: RenderContext): R
   const internal = message.recipient.role === "internal";
   const name = message.recipient.role === "customer" ? message.recipient.name : "";
   const subject = kind.subject(f.orderId);
+  /* No estimate is stated when the provider gave none; a carrier's count is
+     labelled as the carrier's, not promised as business days. */
+  const estimate =
+    f.estimateDays === null
+      ? null
+      : f.deliveryMethod === "quoted"
+        ? copy.carrierEstimate(f.estimateDays)
+        : copy.estimate(f.estimateDays);
 
   const showItems =
     message.kind === "order.placed.customer" || message.kind === "order.placed.internal";
@@ -97,7 +105,7 @@ export function renderEmail(message: NotificationMessage, ctx: RenderContext): R
       `${copy.shipping}: ${f.shipping.amount === 0 ? copy.shippingFree : money(f.shipping.amount, message.locale)}`,
       `${copy.total}: ${money(f.total.amount, message.locale)}`,
     );
-    if (!internal) text.push("", copy.estimate(f.estimateDays));
+    if (!internal && estimate) text.push("", estimate);
   }
   if (f.refunded) text.push("", `${copy.total}: ${money(f.refunded.amount, message.locale)}`);
   if (showShipment && f.shipment) {
@@ -144,9 +152,9 @@ export function renderEmail(message: NotificationMessage, ctx: RenderContext): R
       ) +
       row(copy.total, money(f.total.amount, message.locale), true) +
       `</table>` +
-      (internal
+      (internal || !estimate
         ? ""
-        : `<p style="margin:16px 0 0;font-family:${SANS};font-size:13px;color:${MUTED};">${e(copy.estimate(f.estimateDays))}</p>`)
+        : `<p style="margin:16px 0 0;font-family:${SANS};font-size:13px;color:${MUTED};">${e(estimate)}</p>`)
     : "";
 
   const refunded = f.refunded

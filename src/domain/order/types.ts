@@ -171,6 +171,39 @@ export type ShipmentState =
 /** The order-level summary of its shipments: the active one's state, or none. */
 export type ShipmentSummary = ShipmentState | "not_shipped";
 
+/**
+ * WHY A PARCEL IS IN `exception` — the part a customer may need to act on.
+ *   delivery_attempt  the carrier tried and could not deliver
+ *   at_branch         waiting at a carrier branch for the customer to collect
+ *   returning         on its way back to NEOGEN
+ *   carrier           the carrier reported a problem it did not explain
+ */
+export type ShipmentException = "delivery_attempt" | "at_branch" | "returning" | "carrier";
+
+/**
+ * A PROVIDER BOOKING — the record written BEFORE a label is bought, which is
+ * what makes buying one at most once (D1).
+ *
+ * `requested` is saved under the order's version lock before the provider is
+ * called, so two processes racing for one paid order cannot both reach it,
+ * and a booking whose answer was lost is retried under the SAME rate — which
+ * the provider deduplicates (`unique_shipment`). `failed` is a refusal an
+ * operator must look at; the order stays paid and its stock stays held.
+ */
+export interface ShipmentBooking {
+  status: "requested" | "created" | "failed";
+  /** The provider's rate the label is bought on. Changes only on a re-quote. */
+  rateId: string;
+  quotationId: string;
+  /** What the provider quoted NEOGEN for this parcel. */
+  cost: Money;
+  attempts: number;
+  /** Error code of the last refusal, never a provider message. */
+  lastError: string | null;
+  requestedAt: string;
+  updatedAt: string;
+}
+
 export interface Shipment {
   /** NEOGEN's id, `<order>-S<n>`. The carrier's id is `providerRef`. */
   id: string;
@@ -196,6 +229,19 @@ export interface Shipment {
   cancelledAt: string | null;
   /** Set when tracking arrives AFTER the parcel shipped — a message is owed. */
   trackingAddedAt: string | null;
+  /** Provider shipments only: the booking that bought the label. */
+  booking?: ShipmentBooking | null;
+  /** The provider's last raw status words, for operators. Never shown to a customer. */
+  providerStatus?: string | null;
+  /** Why the parcel is in `exception`, when the provider says. */
+  exception?: ShipmentException | null;
+  /** When the parcel first entered a customer-relevant exception — a message is owed. */
+  exceptionAt?: string | null;
+  /**
+   * The order was cancelled while this provider label existed. Cancelling
+   * the label at the provider is a separate, operator-confirmed act.
+   */
+  cancelRequestedAt?: string | null;
 }
 
 /** Why an order was cancelled. */
@@ -380,6 +426,10 @@ export type OrderEventKind =
   | "shipment_recorded"
   | "shipment_changed"
   | "tracking_updated"
+  /** D1: a label booking requested, answered, failed, re-quoted or retried. */
+  | "shipment_booking"
+  /** D1: a label cancellation at the provider requested, refused or confirmed. */
+  | "carrier_cancel"
   | "order_cancelled"
   | "refund_requested"
   | "refund_submitted"

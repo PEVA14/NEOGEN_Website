@@ -54,7 +54,14 @@ export {
   type ApplyResult,
   type NormalisedPaymentEvent,
 } from "./events";
-export { mutate, type OrderQuery, type OrderRepository, type SaveResult } from "./repository";
+export {
+  indexedRefs,
+  mutate,
+  shipmentRefKey,
+  type OrderQuery,
+  type OrderRepository,
+  type SaveResult,
+} from "./repository";
 export { initialFulfilment, upgradeOrder } from "./upgrade";
 export * from "./operations";
 export {
@@ -72,6 +79,7 @@ export {
   matchesView,
   ORDER_VIEWS,
   orderColumns,
+  STALLED_BOOKING_MS,
   STALLED_PAYMENT_MS,
   VIEW_PREDICATES,
   type AttentionReason,

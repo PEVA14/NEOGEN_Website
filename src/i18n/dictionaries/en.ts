@@ -2037,6 +2037,10 @@ const en: Dictionary = {
           },
           estimate: "Estimate",
           estimateDays: { one: "{n} business day", many: "{n} business days" },
+          carrierDays: {
+            one: "{n} day (carrier's estimate)",
+            many: "{n} days (carrier's estimate)",
+          },
           cost: "Cost",
           free: "Free",
           ratePending: "To be confirmed",
@@ -2045,6 +2049,24 @@ const en: Dictionary = {
           handlingPending:
             "Special handling (cold chain) has not been determined and is not applied yet.",
           none: "No service is available for this address.",
+          /* Real carrier rates (D1, Skydropx). */
+          quoted: {
+            note: "Carrier options for your address, with their shipping price.",
+            freeNote:
+              "Your order ships free because it is over MX$10,000: you pay for none of these options.",
+            errors: {
+              invalid_address:
+                "We could not quote shipping for this address. Check the postal code, neighbourhood and city.",
+              no_coverage: "No carrier serves this address at the moment.",
+              timeout: "The quote took too long. Please try again in a moment.",
+              provider_error: "We could not get shipping rates right now. Please try again.",
+              rate_limited: "You asked for many quotes in a row. Wait a few minutes and try again.",
+            },
+            retry: "Quote again",
+            editAddress: "Correct the address",
+            unavailable:
+              "The shipping service you had chosen is no longer available. Choose another option.",
+          },
         },
         submit: "Continue to review",
         back: "Back to shipping",
@@ -2080,6 +2102,9 @@ const en: Dictionary = {
             "Too many orders were placed from this connection in a short time. Wait a few minutes and try again.",
           action: "Go to step",
         },
+        /* The chosen rate expired and was re-quoted, or the subtotal crossed the free-shipping threshold. */
+        shippingRepriced:
+          "The shipping cost changed since you chose it (the rate was re-quoted or the subtotal changed). Check the total before continuing.",
       },
 
       payment: {
@@ -2206,6 +2231,7 @@ const en: Dictionary = {
       totalPending: "To be confirmed",
       estimate: "Delivery estimate",
       estimateDays: { one: "{n} business day", many: "{n} business days" },
+      carrierDays: { one: "{n} day (carrier's estimate)", many: "{n} days (carrier's estimate)" },
       freeShippingRemaining: "{amount} more for free shipping",
       freeShippingReached: "Free shipping reached",
       note: "Prices will include IVA once confirmed. No tax is added separately.",
@@ -2321,6 +2347,7 @@ const en: Dictionary = {
       shipping: { title: "Shipping", estimate: "Estimate" },
       totals: { subtotal: "Subtotal", shipping: "Shipping", free: "Free", total: "Total" },
       estimateDays: { one: "{n} business day", many: "{n} business days" },
+      carrierDays: { one: "{n} day (carrier's estimate)", many: "{n} days (carrier's estimate)" },
       acknowledgedLabel: "Declarations accepted",
       actions: {
         catalogue: "Keep exploring",
@@ -2401,6 +2428,16 @@ const en: Dictionary = {
         link: "Track on the carrier's site",
         none: "Tracking details will appear here once they exist.",
       },
+      /* What a carrier exception means for the customer (D1). */
+      exceptionDetail: {
+        delivery_attempt:
+          "The carrier tried to deliver your order and could not. Check the carrier's tracking or call NEOGEN's phone line to arrange delivery.",
+        at_branch:
+          "Your order is at a carrier branch, waiting for you to collect it. Check the carrier's tracking for the details.",
+        returning: "Your order is on its way back to NEOGEN. Call NEOGEN's phone line to sort it out.",
+        carrier:
+          "The carrier reported an issue with your shipment. Check the tracking or call NEOGEN's phone line.",
+      },
       destination: "Destination",
       items: "Items",
       total: "Total",
@@ -2455,6 +2492,7 @@ const en: Dictionary = {
       },
       edit: "Edit",
       estimateDays: { one: "{n} business day", many: "{n} business days" },
+      carrierDays: { one: "{n} day (carrier's estimate)", many: "{n} days (carrier's estimate)" },
       snapshotLabel: "Prices retrieved",
     },
   },

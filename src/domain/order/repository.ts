@@ -110,3 +110,23 @@ export async function mutate(
   }
   return { ok: false, reason: "version_conflict" };
 }
+
+/**
+ * THE KEY A SHIPMENT IS FOUND BY — `shipment:<provider>:<provider's id>`.
+ * Prefixed so a carrier's id can never collide with a payment reference in
+ * the same index (`neogen_order_provider_refs`).
+ */
+export function shipmentRefKey(provider: string, providerRef: string): string {
+  return `shipment:${provider}:${providerRef}`;
+}
+
+/** Every external reference an order can be found by: payments and shipments. */
+export function indexedRefs(order: Order): string[] {
+  const refs = new Set<string>();
+  if (order.providerRef) refs.add(order.providerRef);
+  for (const attempt of order.attempts) if (attempt.providerRef) refs.add(attempt.providerRef);
+  for (const s of order.shipments) {
+    if (s.providerRef && s.provider !== "manual") refs.add(shipmentRefKey(s.provider, s.providerRef));
+  }
+  return [...refs];
+}

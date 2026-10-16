@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Body, Mono } from "@/components/typography";
 import { formatPrice } from "@/data/commerce/format";
 
-import { formatDays, type DayCount } from "./days";
+import { deliveryEstimate, type DayCount } from "./days";
 
 import styles from "./OrderReceipt.module.css";
 
@@ -28,6 +28,7 @@ export interface ReceiptCopy {
   totals: { subtotal: string; shipping: string; free: string; total: string };
   /** Singular and plural — see `formatDays`. */
   estimateDays: DayCount;
+  carrierDays: DayCount;
   actions: { catalogue: string; research: string };
   /** Printed only when a declaration was actually accepted. */
   acknowledgedLabel: string;
@@ -195,10 +196,11 @@ export function OrderReceipt({
             <Body size="sm" tone="muted" className={styles.address}>
               {addressLine}
             </Body>
-            <Mono size="2xs" className={styles.lineMeta}>
-              {copy.shipping.estimate} —{" "}
-              {formatDays(order.delivery.estimateDays, copy.estimateDays)}
-            </Mono>
+            {deliveryEstimate(order.delivery, copy) !== null ? (
+              <Mono size="2xs" className={styles.lineMeta}>
+                {copy.shipping.estimate} — {deliveryEstimate(order.delivery, copy)}
+              </Mono>
+            ) : null}
           </section>
 
           <section className={styles.section} aria-labelledby="receipt-contact">

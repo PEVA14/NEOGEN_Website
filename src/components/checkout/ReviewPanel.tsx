@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Body, Mono } from "@/components/typography";
 import { formatPrice } from "@/data/commerce/format";
 
-import { formatDays, type DayCount } from "./days";
+import { deliveryEstimate, type DayCount } from "./days";
 
 import styles from "./ReviewPanel.module.css";
 
@@ -32,11 +32,12 @@ export interface ReviewCopy {
     free: string;
     pending: string;
   };
-  methodNames: Record<DeliverySelection["methodId"], string>;
+  methodNames: Record<Exclude<DeliverySelection["methodId"], "quoted">, string>;
   totals: { subtotal: string; shipping: string; total: string; pending: string; note: string };
   edit: string;
   /** Singular and plural — see `formatDays`. */
   estimateDays: DayCount;
+  carrierDays: DayCount;
   snapshotLabel: string;
 }
 
@@ -230,11 +231,17 @@ export function ReviewPanel({
           />
           <Rows
             rows={[
-              { key: copy.delivery.method, value: copy.methodNames[delivery.methodId] },
               {
-                key: copy.delivery.estimate,
-                value: formatDays(delivery.estimateDays, copy.estimateDays),
+                key: copy.delivery.method,
+                value: delivery.quote
+                  ? `${delivery.quote.carrier} · ${delivery.quote.service}`
+                  : copy.methodNames[
+                      delivery.methodId as Exclude<typeof delivery.methodId, "quoted">
+                    ],
               },
+              ...(deliveryEstimate(delivery, copy) !== null
+                ? [{ key: copy.delivery.estimate, value: deliveryEstimate(delivery, copy)! }]
+                : []),
               {
                 key: copy.delivery.cost,
                 value: delivery.price

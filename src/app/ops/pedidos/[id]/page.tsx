@@ -9,6 +9,7 @@ import {
   FULFILMENT_TRANSITIONS,
   lastDecline,
   openRefund,
+  needsBooking,
   SHIPMENT_TRANSITIONS,
   shipmentSummary,
 } from "@/domain/order";
@@ -18,12 +19,15 @@ import {
   ackAction,
   advanceAction,
   assignLotAction,
+  bookLabelAction,
   cancelAction,
+  cancelLabelAction,
   externalRefAction,
   holdAction,
   noteAction,
   recordShipmentAction,
   reconcileAction,
+  refreshShipmentAction,
   requestRefundAction,
   resumeAction,
   shipmentStateAction,
@@ -650,8 +654,24 @@ export default async function OrderPage({
               <EmptyState compact>
                 {f === "cancelled"
                   ? "No se envió: el pedido está cancelado."
-                  : "El envío aún no empieza. Se registra cuando el pedido esté «Listo para envío»."}
+                  : order.delivery.quote
+                    ? `Paquetería elegida en el checkout: ${order.delivery.quote.carrier} · ${order.delivery.quote.service}. La guía se compra sola al confirmarse el pago.`
+                    : "El envío aún no empieza. Se registra cuando el pedido esté «Listo para envío»."}
               </EmptyState>
+            ) : null}
+            {needsBooking(order) ? (
+              <div className={`${styles.actionList} ${styles.noPrint}`}>
+                <ActionRow
+                  action={bookLabelAction}
+                  order={order}
+                  label="Comprar la guía ahora"
+                  effects={[
+                    "Compra la guía en la paquetería con la tarifa elegida",
+                    "Nunca compra una segunda guía para este pedido",
+                    E.noNotice,
+                  ]}
+                />
+              </div>
             ) : null}
             {order.shipments.map((s: Shipment) => (
               <article key={s.id} className={styles.shipment} data-state={s.state}>
@@ -693,8 +713,132 @@ export default async function OrderPage({
                   <dd className={styles.muted}>
                     {s.provider === "manual" ? "Registrado a mano" : s.provider} ·{" "}
                     <span className={styles.mono}>{s.id}</span>
+                    {s.providerRef ? (
+                      <>
+                        {" · "}
+                        <span className={styles.mono}>{s.providerRef}</span>
+                      </>
+                    ) : null}
                   </dd>
+                  {s.booking ? (
+                    <>
+                      <dt>Guía</dt>
+                      <dd>
+                        <State
+                          tone={
+                            s.booking.status === "created"
+                              ? "good"
+                              : s.booking.status === "failed"
+                                ? "bad"
+                                : "warn"
+                          }
+                          label="Guía"
+                        >
+                          {s.booking.status === "created"
+                            ? "Comprada"
+                            : s.booking.status === "failed"
+                              ? "No se pudo comprar"
+                              : "En proceso"}
+                        </State>
+                        {s.booking.lastError ? (
+                          <span className={styles.muted}>
+                            {" "}
+                            · último error:{" "}
+                            <span className={styles.mono}>{s.booking.lastError}</span> (
+                            {s.booking.attempts} intento{s.booking.attempts === 1 ? "" : "s"})
+                          </span>
+                        ) : null}
+                      </dd>
+                      <dt>Costo de paquetería</dt>
+                      <dd>
+                        {money(s.booking.cost.amount)}{" "}
+                        <span className={styles.muted}>
+                          · cobrado al cliente {money(order.totals.shipping.amount)}
+                        </span>
+                      </dd>
+                    </>
+                  ) : null}
+                  {s.providerStatus ? (
+                    <>
+                      <dt>Estado en la paquetería</dt>
+                      <dd className={styles.mono}>
+                        {s.providerStatus}
+                        {s.exception ? ` · ${OPS.shipmentException[s.exception]}` : ""}
+                      </dd>
+                    </>
+                  ) : null}
                 </dl>
+                {s.booking ? (
+                  <div className={`${styles.actionList} ${styles.noPrint}`}>
+                    {s.providerRef && s.labelRef ? (
+                      <a
+                        className={styles.button}
+                        data-variant="quiet"
+                        href={`/ops/pedidos/${encodeURIComponent(order.id)}/guia?envio=${encodeURIComponent(s.id)}`}
+                        target="_blank"
+                        rel="noopener"
+                      >
+                        Descargar guía (PDF)
+                      </a>
+                    ) : null}
+                    {s.booking.status !== "created" &&
+                    !s.providerRef &&
+                    paid &&
+                    !order.cancellation ? (
+                      <ActionRow
+                        action={bookLabelAction}
+                        order={order}
+                        fields={{ shipmentId: s.id }}
+                        label={
+                          s.booking.status === "failed"
+                            ? "Reintentar la compra de la guía"
+                            : "Volver a pedir la guía"
+                        }
+                        effects={[
+                          "Repite la solicitud con la misma tarifa: la paquetería no crea una segunda guía",
+                          "Si la tarifa venció, cotiza la misma paquetería otra vez",
+                        ]}
+                      />
+                    ) : null}
+                    {s.providerRef ? (
+                      <ActionRow
+                        action={refreshShipmentAction}
+                        order={order}
+                        label="Actualizar desde la paquetería"
+                        effects={[
+                          "Consulta la guía y el rastreo",
+                          "Solo aplica lo que responda la paquetería",
+                        ]}
+                      />
+                    ) : null}
+                  </div>
+                ) : null}
+                {s.providerRef && s.state === "pending" ? (
+                  <details
+                    className={`${styles.details} ${styles.noPrint}`}
+                    open={Boolean(s.cancelRequestedAt)}
+                  >
+                    <summary>Cancelar la guía en la paquetería…</summary>
+                    <form action={cancelLabelAction} className={styles.form}>
+                      <Hidden order={order} />
+                      <input type="hidden" name="shipmentId" value={s.id} />
+                      <p className={styles.muted}>
+                        Cancelar la guía no cancela el pedido ni mueve dinero. Úsalo si el pedido se
+                        canceló o si la guía no se va a usar. La paquetería puede negarse si ya
+                        recolectó el paquete.
+                      </p>
+                      <label className={styles.check}>
+                        <input type="checkbox" name="confirm" value="yes" required />
+                        Confirmo cancelar esta guía en la paquetería
+                      </label>
+                      <div>
+                        <button type="submit" className={styles.button} data-variant="danger">
+                          Cancelar guía
+                        </button>
+                      </div>
+                    </form>
+                  </details>
+                ) : null}
                 {SHIPMENT_TRANSITIONS[s.state].length > 0 ? (
                   <div className={`${styles.actionList} ${styles.noPrint}`}>
                     {SHIPMENT_TRANSITIONS[s.state].map((to) => {
@@ -1143,9 +1287,22 @@ export default async function OrderPage({
               </dd>
               <dt>Ruta</dt>
               <dd>
-                {order.route === "priority" ? "Prioritaria" : "Nacional"} · entrega estimada en{" "}
-                {order.delivery.estimateDays}{" "}
-                {order.delivery.estimateDays === 1 ? "día hábil" : "días hábiles"}
+                {order.delivery.quote
+                  ? `${order.delivery.quote.carrier} · ${order.delivery.quote.service}`
+                  : order.route === "priority"
+                    ? "Prioritaria"
+                    : "Nacional"}
+                {order.delivery.estimateDays !== null
+                  ? ` · entrega estimada en ${order.delivery.estimateDays} ${
+                      order.delivery.quote
+                        ? order.delivery.estimateDays === 1
+                          ? "día (paquetería)"
+                          : "días (paquetería)"
+                        : order.delivery.estimateDays === 1
+                          ? "día hábil"
+                          : "días hábiles"
+                    }`
+                  : ""}
               </dd>
               <dt>Declaraciones</dt>
               <dd>

@@ -26,6 +26,8 @@ export type NotificationKind =
   /** Tracking arrived after the parcel shipped. */
   | "order.tracking.customer"
   | "order.delivered.customer"
+  /** D1: the carrier could not deliver, or holds the parcel at a branch. Once per shipment. */
+  | "order.delivery_issue.customer"
   /** Cancelled after the customer paid. An unpaid, abandoned order sends nothing. */
   | "order.cancelled.customer"
   /** The provider confirmed the money went back — never on a request alone. */
@@ -39,6 +41,7 @@ export const NOTIFICATION_KINDS: readonly NotificationKind[] = [
   "order.shipped.customer",
   "order.tracking.customer",
   "order.delivered.customer",
+  "order.delivery_issue.customer",
   "order.cancelled.customer",
   "order.refunded.customer",
   "order.disputed.internal",
@@ -75,7 +78,8 @@ export interface OrderFacts {
   shipping: Money;
   total: Money;
   deliveryMethod: string;
-  estimateDays: number;
+  /** Null when the provider gave no estimate — the email then states none. */
+  estimateDays: number | null;
   /** Shipping messages only. */
   shipment?: ShipmentFacts;
   /** Refund messages only: the amount the provider confirmed. */

@@ -109,30 +109,91 @@ export const MX_STATES: readonly { code: string; name: string }[] = [
  * question nobody has answered, and a method that quietly claimed "standard"
  * would be answering it.
  */
-export type DeliveryMethodId = "local-priority" | "national-standard";
+export type DeliveryMethodId = "local-priority" | "national-standard" | "quoted";
+
+/**
+ * A QUOTED RATE FROZEN INTO A SELECTION (D1, Skydropx). Everything the
+ * label will be bought on, and what it costs NEOGEN — kept even when the
+ * customer pays nothing for shipping. Built on the server from the stored
+ * quote; nothing in it ever comes from a form.
+ */
+export interface FrozenQuote {
+  provider: string;
+  quotationId: string;
+  rateId: string;
+  carrier: string;
+  carrierCode: string;
+  service: string;
+  serviceCode: string;
+  /** What the provider quoted NEOGEN — the logistics cost. */
+  cost: Money;
+  quotedAt: string;
+  expiresAt: string;
+  /** Which address the rate was quoted for (`destinationKey`). */
+  destinationKey: string;
+}
+
+/** A quote kept on the draft — the server's copy, which a selection is checked against. */
+export interface StoredQuote {
+  destinationKey: string;
+  quotedAt: string;
+  /** Present when the quote succeeded. */
+  quote: {
+    provider: string;
+    quotationId: string;
+    expiresAt: string;
+    options: readonly {
+      rateId: string;
+      carrier: string;
+      carrierCode: string;
+      service: string;
+      serviceCode: string;
+      cost: Money;
+      estimateDays: number | null;
+    }[];
+  } | null;
+  /** Present when it did not: why, for the customer's message. */
+  error:
+    | "invalid_address"
+    | "no_coverage"
+    | "timeout"
+    | "provider_error"
+    | "rate_limited"
+    | null;
+}
 
 export interface DeliveryMethod {
-  id: DeliveryMethodId;
+  /** A route id, or — for a quoted option — the provider's rate id. */
+  id: string;
+  kind: DeliveryMethodId;
   /** Matches `Order["route"]`, so fulfilment and pricing agree by construction. */
   route: "priority" | "national";
-  /** Business days, from `siteConfig.fulfilment.estimateDays`. */
-  estimateDays: number;
   /**
-   * Cost for THIS order. Null when no rate model applies and the free
-   * threshold has not been met — genuinely unknown, never rendered as a number.
+   * Business days: the route's from `siteConfig`, or the provider's own
+   * estimate for a quoted rate — null when it gave none, never guessed.
+   */
+  estimateDays: number | null;
+  /**
+   * What the CUSTOMER pays for THIS order. Null when no rate applies and the
+   * free threshold has not been met — genuinely unknown, never a number.
    */
   price: Money | null;
   /** Why the price is what it is, for honest UI copy. Never a marketing claim. */
-  basis: "free-threshold" | "rate-model-pending";
+  basis: "free-threshold" | "rate-model-pending" | "quoted";
   /** Special handling. Null = not determined. */
   handling: null;
+  /** A quoted rate's carrier and service, as the provider names them. */
+  label?: { carrier: string; service: string };
 }
 
 export interface DeliverySelection {
   methodId: DeliveryMethodId;
   route: "priority" | "national";
-  estimateDays: number;
+  estimateDays: number | null;
+  /** What the customer pays for shipping. */
   price: Money | null;
+  /** The quoted rate behind a `quoted` selection. Absent on route selections. */
+  quote?: FrozenQuote;
 }
 
 /**
@@ -241,6 +302,13 @@ export interface CheckoutDraft {
   contact: Partial<Contact>;
   address: Partial<MxAddress>;
   delivery: DeliverySelection | null;
+  /** The last shipping quote for this draft's address (D1). Server-side only. */
+  shippingQuote?: StoredQuote | null;
+  /**
+   * Why the customer is back at delivery or review: their rate expired and
+   * was re-quoted at a new price, or is no longer offered.
+   */
+  deliveryNotice?: "repriced" | "unavailable" | null;
   acknowledged: readonly AcceptedAcknowledgement[];
   snapshot: PriceSnapshot;
   adjustments: readonly LineAdjustment[];
