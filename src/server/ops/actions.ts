@@ -23,6 +23,7 @@ import {
 } from "@/domain/order";
 import { isOrderId } from "@/payments/instrument";
 import { MANUAL_SHIPPING } from "@/shipping";
+import { retryNotifications } from "@/server/notifications";
 import { reconcileOrder, submitRefund } from "@/server/payments";
 import { operate } from "@/server/orders";
 import { inventoryStore, orderRepository } from "@/server/persistence";
@@ -316,4 +317,13 @@ export async function stockAction(form: FormData): Promise<void> {
   });
   if (!result.ok) back(`error=${result.reason}`);
   back("ok=stock");
+}
+
+/* ------------------------------------------------------------ messages */
+
+/** Send every owed email now, instead of waiting for the daily job (B6). */
+export async function retryEmailsAction(): Promise<void> {
+  await requireOperator();
+  const { sent, failed } = await retryNotifications();
+  redirect(`${OPS_PATH}/mensajes?sent=${sent}&failed=${failed}`);
 }

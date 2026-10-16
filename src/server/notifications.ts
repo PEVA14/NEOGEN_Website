@@ -2,8 +2,8 @@ import "server-only";
 
 import { siteConfig } from "@/config/site";
 import { formatAddress } from "@/domain/checkout/validate";
-import { dispatch, messagesOwed } from "@/domain/notifications";
-import { noneChannel } from "@/domain/notifications/adapters/none";
+import { dispatch, messagesOwed, retryOwed } from "@/domain/notifications";
+import { createResendChannel, readResendConfig } from "@/domain/notifications/adapters/resend";
 import { signal } from "@/server/observe";
 import { statusUrl } from "@/server/orderAccess";
 import { notificationOutbox, orderRepository } from "@/server/persistence";
@@ -15,15 +15,39 @@ import type { Order } from "@/domain/order/types";
 /**
  * WHERE THE NOTIFICATION ADAPTERS ARE CHOSEN — the one file that knows.
  *
- * TODO(owner): choose an email provider and an operations destination (inbox
- * or chat). Then register a channel adapter in `activeChannel`; it receives
- * each message and renders it with `renderEmail` (`domain/notifications/
- * render.ts`). Nothing else changes. Until then every owed message is written
- * to the outbox as `pending` — and the console says "not sent", because it
- * was not.
+ * Resend (owner decision B6, 2026-10-15). It sends only when its
+ * configuration is complete AND `EMAIL_SENDING=enabled`
+ * (`readResendConfig`); until then it reports itself unconfigured and every
+ * owed message stays `pending` in the outbox — and the console says "not
+ * sent", because it was not. Read on every call, so a deployment's variables
+ * decide, and a test can configure it.
  */
+const resendChannel = createResendChannel({
+  config: () => readResendConfig(),
+  context: (orderId) => renderContextFor(orderId),
+});
+
 export function activeChannel(): NotificationChannel {
-  return noneChannel;
+  return resendChannel;
+}
+
+/**
+ * Send what is still owed — the scheduled job and the console's
+ * "Reintentar envíos". Never throws; counts only.
+ */
+export async function retryNotifications(): Promise<{
+  sent: number;
+  failed: number;
+  skipped: number;
+}> {
+  try {
+    const summary = await retryOwed(notificationOutbox(), activeChannel());
+    if (summary.failed > 0) signal("notification.send_failed", "warn", { count: summary.failed });
+    return summary;
+  } catch {
+    signal("notification.send_failed", "error", { reason: "retry" });
+    return { sent: 0, failed: 0, skipped: 0 };
+  }
 }
 
 /**

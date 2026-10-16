@@ -270,12 +270,39 @@ outbox is idempotent on message id, and in Postgres it is a table
 styles, system fonts, no images and no trackers, plus a plain-text part. It
 makes no delivery or legal promises, and `check:content` scans its copy.
 
-**Nothing is sent: no email provider is approved.** Every entry stays
-`pending`, and the console says "not sent". To add a provider:
+**Sending: Resend** (owner decision B6, 2026-10-15;
+`domain/notifications/adapters/resend.ts`). One channel inside the same
+outbox — the outbox still decides what is owed and records every attempt.
 
-1. Write one `NotificationChannel` adapter that calls `renderEmail` with
-   `renderContextFor(orderId)`.
-2. Register it in `server/notifications.ts`.
+- **Off until switched on.** It sends only with `RESEND_API_KEY`,
+  `EMAIL_FROM` and `EMAIL_SENDING=enabled` all set. Until then every message
+  stays `pending` and `/ops/mensajes` names what is missing (names, never
+  values). Set `EMAIL_SENDING=enabled` only once the sending domain is
+  verified in Resend; the messages still pending then go out on the next
+  retry.
+- **Who gets what.** Customer emails go to the order's email, in the
+  order's language (ES/EN). Operations emails ("new paid order", "dispute")
+  go to `EMAIL_OPERATIONS_TO` (comma-separated), in Spanish; without it they
+  are not sent and stay retryable.
+- **Testing on Preview.** `EMAIL_REDIRECT_TO` sends every email to one
+  test address instead, with `[TEST · customer|internal]` in the subject.
+  On the Production deployment a redirect makes the channel refuse to send
+  at all, so it cannot silently divert customers' email.
+- **Failures never touch an order.** A send runs after the order is saved,
+  never throws, and is recorded on the outbox entry: `unconfigured` (key,
+  permission or unverified domain — retried), `provider_error` (outage or
+  rate limit — retried), `rejected` (the message itself — not retried).
+  After 8 recorded failures a message is no longer retried on its own and
+  stays visible as failed.
+- **Retries are safe.** Resend's idempotency key is `<message id>:<attempt>`:
+  a send that reached Resend but was never recorded is deduplicated by
+  Resend for 24 hours; a recorded failure is retried under the next key. A
+  message recorded as sent is never sent again. Retries run on every order
+  change, in the daily job (`/api/cron/reconcile-payments`, which now also
+  reports `emails`), and with "Reintentar envíos" in `/ops/mensajes`.
+- **Privacy.** Resend receives the customer's name, email, order lines and
+  totals (that is the email). The Aviso de Privacidad (B1) must name it as a
+  processor.
 
 ## 8. Customer order status
 

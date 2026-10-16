@@ -1,12 +1,15 @@
 import type { Order } from "@/domain/order/types";
 import type { Locale } from "@/i18n/config";
 import type { Shipment } from "@/domain/order/types";
+import { MAX_SEND_ATTEMPTS } from "./types";
+
 import type {
   NotificationChannel,
   NotificationKind,
   NotificationMessage,
   NotificationOutbox,
   OrderFacts,
+  OutboxEntry,
   ShipmentFacts,
 } from "./types";
 
@@ -23,7 +26,7 @@ export type {
   SendResult,
   ShipmentFacts,
 } from "./types";
-export { NOTIFICATION_KINDS } from "./types";
+export { MAX_SEND_ATTEMPTS, NOTIFICATION_KINDS } from "./types";
 
 function factsFor(order: Order): OrderFacts {
   return {
@@ -110,25 +113,83 @@ export async function dispatch(
         results.push({ id: message.id, status: "duplicate" });
         continue;
       }
-      if (!channel.isConfigured()) {
-        /* Left pending, deliberately. When a channel is registered, the
-           pending entries are exactly the emails that are owed. */
+      if (!channel.isConfigured() || !worthSending(entry)) {
+        /* Left as it is, deliberately. When a channel is registered, the
+           pending entries are exactly the emails that are owed; a message
+           given up on stays visible as failed in the console. */
         results.push({ id: message.id, status: "queued" });
         continue;
       }
-      const sent = await channel.send(message);
-      if (sent.ok) {
-        await outbox.markSent(message.id, sent.providerMessageId, now());
-        results.push({ id: message.id, status: "sent" });
-      } else {
-        await outbox.markFailed(message.id, sent.error.code, now());
-        results.push({ id: message.id, status: "failed" });
-      }
+      results.push({ id: message.id, status: await sendOne(entry, channel, outbox, now) });
     } catch {
       results.push({ id: message.id, status: "failed" });
     }
   }
   return results;
+}
+
+/**
+ * Should this unsent entry be tried (again)? Not once the provider rejected
+ * the message itself — the same message would be rejected again — and not
+ * after MAX_SEND_ATTEMPTS recorded failures. Configuration failures (a bad
+ * key, an unverified domain) and outages stay retryable: fixing them should
+ * let the owed email go out.
+ */
+export function worthSending(entry: OutboxEntry): boolean {
+  if (entry.status === "sent") return false;
+  if (entry.status === "failed" && entry.lastError === "rejected") return false;
+  return entry.attempts < MAX_SEND_ATTEMPTS;
+}
+
+async function sendOne(
+  entry: OutboxEntry,
+  channel: NotificationChannel,
+  outbox: NotificationOutbox,
+  now: () => string,
+): Promise<"sent" | "failed"> {
+  const sent = await channel.send(entry.message, { attempt: entry.attempts });
+  if (sent.ok) {
+    await outbox.markSent(entry.message.id, sent.providerMessageId, now());
+    return "sent";
+  }
+  await outbox.markFailed(entry.message.id, sent.error.code, now());
+  return "failed";
+}
+
+/**
+ * RETRY WHAT IS STILL OWED — every unsent entry worth sending, oldest first.
+ *
+ * Run by the scheduled job and the console's "Reintentar envíos". The same
+ * idempotent path as `dispatch`: an entry sent meanwhile is skipped, and the
+ * provider's idempotency key covers a send that was never recorded. Never
+ * throws; a failure is recorded on the entry and counted.
+ */
+export async function retryOwed(
+  outbox: NotificationOutbox,
+  channel: NotificationChannel,
+  now: () => string = () => new Date().toISOString(),
+  limit = 50,
+): Promise<{ sent: number; failed: number; skipped: number }> {
+  const summary = { sent: 0, failed: 0, skipped: 0 };
+  if (!channel.isConfigured()) return summary;
+  let entries: readonly OutboxEntry[];
+  try {
+    entries = await outbox.pending();
+  } catch {
+    return summary;
+  }
+  for (const entry of entries.slice(0, limit)) {
+    if (!worthSending(entry)) {
+      summary.skipped += 1;
+      continue;
+    }
+    try {
+      summary[await sendOne(entry, channel, outbox, now)] += 1;
+    } catch {
+      summary.failed += 1;
+    }
+  }
+  return summary;
 }
 
 function shipmentFacts(s: Shipment): ShipmentFacts {

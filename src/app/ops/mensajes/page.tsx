@@ -1,7 +1,9 @@
 import Link from "next/link";
 
+import { missingEmailEnv, readResendConfig } from "@/domain/notifications/adapters/resend";
 import { renderEmail } from "@/domain/notifications/render";
 import { activeChannel, renderContextFor } from "@/server/notifications";
+import { retryEmailsAction } from "@/server/ops/actions";
 import { requireOperator } from "@/server/ops/auth";
 import { orderAccessConfigured } from "@/server/orderAccess";
 import { notificationOutbox } from "@/server/persistence";
@@ -37,15 +39,18 @@ const OUTBOX_TONE: Record<OutboxStatus, Tone> = {
 export default async function MessagesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ id?: string }>;
+  searchParams: Promise<{ id?: string; sent?: string; failed?: string }>;
 }) {
   const operator = await requireOperator();
-  const { id } = await searchParams;
+  const { id, sent, failed } = await searchParams;
   const outbox = notificationOutbox();
   const entries = await outbox.recent(100);
   const selected = id ? await outbox.get(id) : null;
   const channel = activeChannel();
   const configured = channel.isConfigured();
+  /* Names only — never a value. */
+  const missing = configured ? [] : missingEmailEnv();
+  const redirected = configured && readResendConfig()?.redirectTo != null;
   const preview = selected
     ? renderEmail(selected.message, {
         ...(await renderContextFor(selected.message.orderId)),
@@ -62,11 +67,15 @@ export default async function MessagesPage({
       <dl className={styles.statusBand}>
         <div className={styles.statusItem} data-tone={configured ? undefined : "warn"}>
           <dt className={styles.statusLabel}>Proveedor de correo</dt>
-          <dd className={styles.statusValue}>{configured ? channel.id : "Ninguno configurado"}</dd>
+          <dd className={styles.statusValue}>
+            {configured ? (redirected ? "Resend · modo prueba" : "Resend") : "Sin enviar"}
+          </dd>
           <dd className={styles.statusNote}>
             {configured
-              ? "Los mensajes se envían al registrarse."
-              : "Nada se envía. Los mensajes quedan pendientes hasta que se elija un proveedor."}
+              ? redirected
+                ? "Todo correo va a la dirección de prueba (EMAIL_REDIRECT_TO), no al cliente."
+                : "Los mensajes se envían al registrarse; los pendientes, cada día o con el botón."
+              : `Nada se envía; los mensajes quedan pendientes. Falta: ${missing.join(", ")}.`}
           </dd>
         </div>
         <div className={styles.statusItem}>
@@ -90,6 +99,19 @@ export default async function MessagesPage({
           </dd>
         </div>
       </dl>
+
+      {sent !== undefined ? (
+        <p className={styles.hint} role="status">
+          Reintento: {Number(sent) || 0} enviados, {Number(failed) || 0} fallaron.
+        </p>
+      ) : null}
+      {configured && tally.pending + tally.failed > 0 ? (
+        <form action={retryEmailsAction}>
+          <button type="submit" className={styles.button}>
+            Reintentar envíos
+          </button>
+        </form>
+      ) : null}
 
       <div className={styles.detail}>
         <div className={styles.column}>
@@ -192,7 +214,13 @@ export default async function MessagesPage({
                   </Link>
                 </dd>
                 <dt>Estado</dt>
-                <dd>{OPS.outbox[selected.status]}</dd>
+                <dd>
+                  {OPS.outbox[selected.status]}
+                  {selected.attempts > 0 ? ` · ${selected.attempts} intento(s)` : ""}
+                  {selected.lastError
+                    ? ` · ${OPS.outboxError[selected.lastError] ?? selected.lastError}`
+                    : ""}
+                </dd>
               </dl>
               <iframe
                 title={`Vista previa: ${preview.subject}`}

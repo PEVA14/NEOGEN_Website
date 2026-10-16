@@ -4901,3 +4901,38 @@ happening now. One gap found and closed: a webhook failing its signature
 (401) logged nothing — the cause of an hour's search on 2026-10-15 — and now
 emits `payment.webhook_unauthenticated` (`check:payments`). A dedicated tool
 later is a new `Sink` in `observe.ts`. D9 is covered by this.
+
+## 8bp. B6/D2 — transactional email through Resend (2026-10-15)
+
+Owner: Resend; application side now, without assuming a verified domain;
+configuration from the environment; production sending gated; integrated
+into the existing outbox, not a parallel system.
+
+- **Adapter** `domain/notifications/adapters/resend.ts`: one `fetch` to
+  `POST https://api.resend.com/emails` (no SDK), body = `renderEmail`
+  output (what the console previews), `Idempotency-Key:
+<message id>:<attempt>`, tags `kind` and `order`. Error mapping from
+  Resend's error reference (2026-10-15): 401/403 → `unconfigured`
+  (retryable), 400/422 → `rejected` (not retried), 409/429/5xx/no answer →
+  `provider_error` (retryable). Never throws.
+- **Gate** `readResendConfig`: sends only with `RESEND_API_KEY`,
+  `EMAIL_FROM` and `EMAIL_SENDING=enabled`; `EMAIL_OPERATIONS_TO` for
+  operations email; `EMAIL_REPLY_TO` optional; `EMAIL_REDIRECT_TO` for
+  Preview testing, refused on `VERCEL_ENV=production`.
+- **Outbox**: `NotificationChannel.send` gained `{ attempt }`; `dispatch`
+  and the new `retryOwed` share one send path; `worthSending` stops after a
+  `rejected` or 8 recorded failures. Retries: every order change, the daily
+  job (`emails` in its summary) and "Reintentar envíos" in `/ops/mensajes`,
+  which also shows attempts, the last error, and the names of missing
+  variables.
+- **Locale**: customer messages carry the order's locale; operations
+  messages are Spanish (unchanged architecture).
+- Tests: `check:operations` §15b (configuration, ES/EN subjects,
+  recipients, headers, redirect, error mapping, outbox failure/retry/give-up;
+  negative control on the key) and `check:payments` (a payment succeeds and
+  the order is paid while Resend is down; the retry sends one customer and
+  one operations email, never twice).
+- **Owner actions**: Resend account and API key; verify the sending domain
+  (DNS, waits on B7); choose `EMAIL_FROM`, `EMAIL_OPERATIONS_TO`,
+  `EMAIL_REPLY_TO`; then `EMAIL_SENDING=enabled`. The privacy notice must
+  name Resend as a processor.

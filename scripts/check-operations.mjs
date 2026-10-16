@@ -1458,6 +1458,222 @@ const client = {
 }
 
 /* ======================================================================== */
+/* 15b. RESEND (B6) — configuration, locale, failures, retries               */
+/* ======================================================================== */
+
+{
+  const { createResendChannel, readResendConfig, missingEmailEnv } =
+    await import("../src/domain/notifications/adapters/resend.ts");
+  const { retryOwed, worthSending, MAX_SEND_ATTEMPTS } =
+    await import("../src/domain/notifications/index.ts");
+  const { EMAIL_COPY } = await import("../src/domain/notifications/copy.ts");
+
+  /* --- configuration: off unless complete and switched on --------------- */
+  const full = {
+    RESEND_API_KEY: "re_test_key_not_real",
+    EMAIL_FROM: "NEOGEN <pedidos@example.test>",
+    EMAIL_SENDING: "enabled",
+    EMAIL_OPERATIONS_TO: "ops@example.test, second@example.test",
+  };
+  ok(readResendConfig(full) !== null, "a complete, enabled configuration sends");
+  eq(
+    readResendConfig({ ...full, EMAIL_SENDING: "" }),
+    null,
+    "without EMAIL_SENDING=enabled nothing is sent",
+  );
+  eq(readResendConfig({ ...full, EMAIL_SENDING: "true" }), null, "only the exact word enables it");
+  eq(readResendConfig({ ...full, RESEND_API_KEY: "" }), null, "without a key nothing is sent");
+  eq(readResendConfig({ ...full, EMAIL_FROM: " " }), null, "without a sender nothing is sent");
+  eq(
+    readResendConfig(full)?.operationsTo,
+    ["ops@example.test", "second@example.test"],
+    "operations recipients are a comma-separated list",
+  );
+  eq(
+    readResendConfig({ ...full, EMAIL_REDIRECT_TO: "t@example.test", VERCEL_ENV: "production" }),
+    null,
+    "a test redirect on Production refuses to send at all",
+  );
+  ok(
+    readResendConfig({ ...full, EMAIL_REDIRECT_TO: "t@example.test", VERCEL_ENV: "preview" }) !==
+      null,
+    "a test redirect works on Preview",
+  );
+  const missing = missingEmailEnv({ RESEND_API_KEY: "re_secret_value" });
+  ok(
+    missing.includes("EMAIL_FROM") && missing.includes("EMAIL_SENDING=enabled"),
+    "the console names what is missing",
+  );
+  ok(!JSON.stringify(missing).includes("re_secret_value"), "and never a value");
+
+  /* --- a fake Resend ----------------------------------------------------- */
+  const calls = [];
+  let answer = () => new Response(JSON.stringify({ id: "email-1" }), { status: 200 });
+  const fakeFetch = async (url, init) => {
+    calls.push({
+      url: String(url),
+      headers: new Headers(init.headers),
+      body: JSON.parse(init.body),
+    });
+    return answer();
+  };
+  let cfg = readResendConfig(full);
+  const ctx = async () => ({ statusUrl: null, phoneDisplay: "+52 33", phoneHref: "tel:+5233" });
+  const channel = createResendChannel({ config: () => cfg, context: ctx, fetch: fakeFetch });
+
+  const esOrder = pay(fresh());
+  const enOrder = pay(upgradeOrder({ ...legacyOrder(), locale: "en" }));
+  const [esCustomer, esInternal] = messagesOwed(esOrder, () => "Calle 1");
+  const [enCustomer, enInternal] = messagesOwed(enOrder, () => "Street 1");
+
+  /* --- locale ------------------------------------------------------------ */
+  eq(esCustomer.locale, "es", "a Spanish order's customer email is Spanish");
+  eq(enCustomer.locale, "en", "an English order's customer email is English");
+  eq(enInternal.locale, "es", "operations email is Spanish whatever the order's language");
+
+  await channel.send(enCustomer, { attempt: 0 });
+  let c = calls.at(-1);
+  eq(c.url, "https://api.resend.com/emails", "the documented endpoint");
+  eq(
+    c.body.subject,
+    EMAIL_COPY.en.kinds["order.placed.customer"].subject(enOrder.id),
+    "English subject",
+  );
+  eq(c.body.to, [enOrder.contact.email], "to the customer");
+  await channel.send(esCustomer, { attempt: 0 });
+  eq(
+    calls.at(-1).body.subject,
+    EMAIL_COPY.es.kinds["order.placed.customer"].subject(esOrder.id),
+    "Spanish subject for a Spanish order",
+  );
+  await channel.send(esInternal, { attempt: 0 });
+  c = calls.at(-1);
+  eq(c.body.to, ["ops@example.test", "second@example.test"], "operations email goes to operations");
+  eq(
+    c.body.subject,
+    EMAIL_COPY.es.kinds["order.placed.internal"].subject(esOrder.id),
+    "in Spanish",
+  );
+  ok(!c.body.to.includes(esOrder.contact.email), "never to the customer");
+
+  /* --- headers, body ------------------------------------------------------ */
+  eq(c.headers.get("authorization"), "Bearer re_test_key_not_real", "the key travels as a bearer");
+  eq(
+    c.headers.get("idempotency-key"),
+    `${esInternal.id}:0`,
+    "idempotency key: message id and attempt",
+  );
+  ok(typeof c.body.html === "string" && typeof c.body.text === "string", "HTML and plain text");
+  eq(c.body.from, full.EMAIL_FROM, "the sender comes from the environment");
+  ok(
+    c.body.tags.every((t) => /^[A-Za-z0-9_-]+$/.test(t.value)),
+    "tags use Resend's alphabet",
+  );
+
+  /* --- redirect mode ----------------------------------------------------- */
+  cfg = { ...cfg, redirectTo: "tester@example.test" };
+  await channel.send(esCustomer, { attempt: 0 });
+  eq(calls.at(-1).body.to, ["tester@example.test"], "a test redirect sends to the tester only");
+  ok(calls.at(-1).body.subject.startsWith("[TEST"), "and marks the subject");
+  cfg = readResendConfig(full);
+
+  /* --- no operations inbox ---------------------------------------------- */
+  cfg = readResendConfig({ ...full, EMAIL_OPERATIONS_TO: "" });
+  const before = calls.length;
+  const noInbox = await channel.send(esInternal, { attempt: 0 });
+  eq(noInbox.ok, false, "operations email without an inbox is not sent");
+  eq(calls.length, before, "and Resend is not called");
+  cfg = readResendConfig(full);
+
+  /* --- failures map to the outbox's codes, and nothing throws ----------- */
+  const outcome = async (status) => {
+    answer = () => new Response(JSON.stringify({ name: "x" }), { status });
+    return channel.send(esCustomer, { attempt: 1 });
+  };
+  const r403 = await outcome(403);
+  eq(
+    [r403.ok, r403.error?.code, r403.error?.retryable],
+    [false, "unconfigured", true],
+    "403 (unverified domain) is configuration, retried",
+  );
+  const r422 = await outcome(422);
+  eq(
+    [r422.error?.code, r422.error?.retryable],
+    ["rejected", false],
+    "422 rejects the message for good",
+  );
+  const r429 = await outcome(429);
+  eq([r429.error?.code, r429.error?.retryable], ["provider_error", true], "429 is retried");
+  const r500 = await outcome(500);
+  eq(r500.error?.code, "provider_error", "500 is retried");
+  answer = () => {
+    throw new TypeError("fetch failed");
+  };
+  const down = await channel.send(esCustomer, { attempt: 1 });
+  eq(down.error?.code, "provider_error", "no answer is an outage, not an exception");
+  const broken = createResendChannel({
+    config: () => cfg,
+    context: async () => {
+      throw new Error("db down");
+    },
+    fetch: fakeFetch,
+  });
+  eq(
+    (await broken.send(esCustomer)).error?.code,
+    "provider_error",
+    "an unreadable order is retried later",
+  );
+  answer = () => new Response(JSON.stringify({ id: "email-2" }), { status: 200 });
+
+  /* --- outbox: failure recorded, retried under a new key, given up on --- */
+  __resetOutbox();
+  const box = memoryOutbox();
+  answer = () => new Response("{}", { status: 500 });
+  const res = await dispatch([esCustomer], box, channel);
+  eq(
+    res.map((r) => r.status),
+    ["failed"],
+    "a failed send is reported, not thrown",
+  );
+  const failedEntry = await box.get(esCustomer.id);
+  eq(
+    [failedEntry.status, failedEntry.attempts, failedEntry.lastError],
+    ["failed", 1, "provider_error"],
+    "and recorded on the entry",
+  );
+
+  answer = () => new Response(JSON.stringify({ id: "email-3" }), { status: 200 });
+  const retried = await retryOwed(box, channel);
+  eq(retried.sent, 1, "the retry sends it");
+  eq(
+    calls.at(-1).headers.get("idempotency-key"),
+    `${esCustomer.id}:1`,
+    "under the next attempt's key",
+  );
+  eq((await box.get(esCustomer.id)).status, "sent", "and it is recorded as sent");
+  const noRepeat = calls.length;
+  await retryOwed(box, channel);
+  await dispatch([esCustomer], box, channel);
+  eq(calls.length, noRepeat, "a sent email is never sent again");
+
+  answer = () => new Response("{}", { status: 422 });
+  await dispatch([enCustomer], box, channel);
+  const rejected = await box.get(enCustomer.id);
+  eq(worthSending(rejected), false, "a rejected message is not retried");
+  const afterReject = calls.length;
+  await retryOwed(box, channel);
+  eq(calls.length, afterReject, "and the retry leaves it alone");
+
+  ok(
+    !worthSending({ ...failedEntry, attempts: MAX_SEND_ATTEMPTS, lastError: "provider_error" }),
+    "after the maximum attempts a message is given up on (it stays visible as failed)",
+  );
+  const unconfigured = createResendChannel({ config: () => null, context: ctx, fetch: fakeFetch });
+  eq((await retryOwed(box, unconfigured)).sent, 0, "with sending off, the retry does nothing");
+  eq(unconfigured.isConfigured(), false, "and the channel says it is off");
+}
+
+/* ======================================================================== */
 /* 16. ANALYTICS — the funnel carries no personal data                       */
 /* ======================================================================== */
 

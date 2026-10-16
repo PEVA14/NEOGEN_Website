@@ -125,8 +125,18 @@ export type SendResult =
 export interface NotificationChannel {
   readonly id: string;
   isConfigured(): boolean;
-  send(message: NotificationMessage): Promise<SendResult>;
+  /**
+   * `attempt` is how many sends the outbox has already recorded for this
+   * message. With the message id it makes the provider's idempotency key:
+   * a send that reached the provider but was never recorded (a crash) is
+   * repeated under the same key and deduplicated there; a recorded failure
+   * is retried under a new one.
+   */
+  send(message: NotificationMessage, meta?: { attempt: number }): Promise<SendResult>;
 }
+
+/** Recorded failures after which a message is no longer retried on its own. */
+export const MAX_SEND_ATTEMPTS = 8;
 
 export type OutboxStatus = "pending" | "sent" | "failed";
 

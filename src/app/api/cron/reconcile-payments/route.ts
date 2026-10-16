@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 
 import { paymentAvailable } from "@/payments";
+import { retryNotifications } from "@/server/notifications";
 import { reconcileInFlight } from "@/server/reconcile";
 
 /**
@@ -41,8 +42,12 @@ export async function GET(request: Request): Promise<Response> {
   if (!authorised(request.headers.get("authorization"), key)) {
     return json({ error: "unauthorized" }, 401);
   }
-  if (!paymentAvailable()) return json({ ok: true, skipped: "payments_unavailable" }, 200);
+  /* Owed emails are retried whether or not payments run here (B6). */
+  const emails = await retryNotifications();
+  if (!paymentAvailable()) {
+    return json({ ok: true, skipped: "payments_unavailable", emails }, 200);
+  }
 
   const summary = await reconcileInFlight();
-  return json({ ok: true, ...summary }, 200);
+  return json({ ok: true, ...summary, emails }, 200);
 }

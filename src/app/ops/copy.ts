@@ -276,8 +276,16 @@ export const OPS = {
     failed: "Falló",
   } satisfies Record<OutboxStatus, string>,
 
+  /* Why the last send failed, in the outbox's three codes. */
+  outboxError: {
+    unconfigured:
+      "configuración del proveedor (clave, permiso o dominio sin verificar); se reintentará",
+    rejected: "el proveedor rechazó este mensaje; no se reintenta",
+    provider_error: "el proveedor no respondió; se reintentará",
+  } as Record<string, string>,
+
   outboxReason: {
-    noProvider: "Sin proveedor de correo: no salió y no saldrá hasta configurar uno.",
+    noProvider: "El correo no está activado: no salió y no saldrá hasta completar la configuración.",
     queued: "En cola: se enviará con el proveedor configurado.",
   },
 

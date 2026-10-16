@@ -119,9 +119,19 @@ const json = (status, body) =>
     headers: { "content-type": "application/json" },
   });
 
+/* A fake Resend, off unless a test turns it on (B6). */
+const resend = { sent: [], status: 200 };
+
 globalThis.fetch = async (input, init = {}) => {
   const url = String(input);
   const headers = new Headers(init.headers);
+  if (url === "https://api.resend.com/emails") {
+    const body = JSON.parse(init.body);
+    resend.sent.push({ to: body.to, subject: body.subject, key: headers.get("idempotency-key") });
+    return resend.status === 200
+      ? json(200, { id: `email-${resend.sent.length}` })
+      : json(resend.status, { name: "application_error" });
+  }
   if (headers.get("authorization") !== `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`) {
     return json(401, { errors: [{ code: "401" }] });
   }
@@ -1108,6 +1118,50 @@ __resetOutbox();
   const { reconcileOrder } = await import("../src/server/payments.ts");
   const button = await reconcileOrder(await load(h.id), hoursLater(2));
   eq(button.outcome, "expired", "the console's check expires an overdue payment too");
+
+  /* B6 — email failures never touch the payment or the order. */
+  {
+    const { retryNotifications } = await import("../src/server/notifications.ts");
+    Object.assign(process.env, {
+      RESEND_API_KEY: "re_test_key_not_real",
+      EMAIL_FROM: "NEOGEN <pedidos@example.test>",
+      EMAIL_SENDING: "enabled",
+      EMAIL_OPERATIONS_TO: "ops@example.test",
+    });
+    resend.status = 500;
+    const o = await placed(12000);
+    const paid = await submitPayment(o.id, card("APRO"));
+    eq(paid.kind, "paid", "a payment succeeds while the email provider is down");
+    eq((await load(o.id)).state, "paid", "and the order is paid, untouched by the failure");
+    const box = await memoryOutbox().forOrder(o.id);
+    ok(
+      box.length === 2 && box.every((e) => e.status === "failed"),
+      "both emails are recorded as failed, to retry",
+    );
+
+    resend.status = 200;
+    const before = resend.sent.length;
+    const retry = await retryNotifications();
+    ok(retry.sent >= 2, "the retry sends what was owed");
+    const mine = resend.sent.slice(before).filter((s) => s.subject.includes(o.id));
+    eq(mine.length, 2, "one customer email and one operations email");
+    ok(
+      mine.some((s) => s.to.includes("ops@example.test")),
+      "operations hears about the paid order",
+    );
+    ok(
+      mine.every((s) => s.key.endsWith(":1")),
+      "retried under the next attempt's key",
+    );
+    const sentNow = resend.sent.length;
+    await retryNotifications();
+    await submitPayment(o.id, card("APRO"));
+    eq(resend.sent.length, sentNow, "nothing is sent twice");
+
+    for (const k of ["RESEND_API_KEY", "EMAIL_FROM", "EMAIL_SENDING", "EMAIL_OPERATIONS_TO"]) {
+      delete process.env[k];
+    }
+  }
 
   /* A batch is bounded: by size, and by time. */
   for (let i = 0; i < 3; i += 1) {
