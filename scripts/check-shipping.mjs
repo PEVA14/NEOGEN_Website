@@ -622,6 +622,38 @@ const parcel = provider.parcel();
     "the quote check shows no token, credential, rate id or origin value",
   );
   eq(check.parcelSent.weight, 1, "the parcel's weight is sent at the API's 1 kg minimum");
+
+  /* The quote check's form: the page loaded, then its submit got "Forbidden". */
+  const { sameOriginPost } = await import("../src/server/ops/sameOrigin.ts");
+  const PAGE = "https://neogen-git-staging.example.vercel.app/ops/diagnostico/skydropx/cotizacion";
+  const post = (h) => new Request(PAGE, { method: "POST", headers: h });
+  ok(
+    sameOriginPost(post({ origin: "null", "sec-fetch-site": "same-origin" })),
+    "the console's own form is accepted — under no-referrer the browser sends Origin: null",
+  );
+  ok(
+    sameOriginPost(post({ origin: new URL(PAGE).origin })),
+    "…a matching Origin alone is accepted",
+  );
+  ok(
+    !sameOriginPost(post({ origin: "https://evil.example", "sec-fetch-site": "cross-site" })) &&
+      !sameOriginPost(post({ origin: "null", "sec-fetch-site": "cross-site" })) &&
+      !sameOriginPost(post({ "sec-fetch-site": "same-site" })) &&
+      !sameOriginPost(post({ origin: "null" })) &&
+      !sameOriginPost(post({ origin: "https://evil.example" })) &&
+      !sameOriginPost(post({})),
+    "…a cross-site, same-site, unproven null or headerless post is still refused",
+  );
+  const { readFileSync } = await import("node:fs");
+  const routeSource = readFileSync(
+    new URL("../src/app/ops/diagnostico/skydropx/cotizacion/route.ts", import.meta.url),
+    "utf8",
+  );
+  ok(
+    routeSource.indexOf("sameOriginPost(request)") > 0 &&
+      routeSource.indexOf("sameOriginPost(request)") < routeSource.indexOf("runQuoteCheck(input)"),
+    "the quote check route refuses a foreign post before any quotation",
+  );
 }
 
 /* ======================================================================== */

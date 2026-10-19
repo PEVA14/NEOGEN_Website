@@ -1,6 +1,7 @@
 import { MX_STATES } from "@/domain/checkout/types";
 import { currentOperator, opsConfigured } from "@/server/ops/auth";
 import { signal } from "@/server/observe";
+import { sameOriginPost } from "@/server/ops/sameOrigin";
 import { runQuoteCheck, validQuoteCheckInput } from "@/shipping/adapters/skydropx/quoteCheck";
 
 export const dynamic = "force-dynamic";
@@ -50,10 +51,7 @@ export async function GET(request: Request): Promise<Response> {
 export async function POST(request: Request): Promise<Response> {
   const refused = await guard(request);
   if (refused) return refused;
-  const origin = request.headers.get("origin");
-  if (origin && origin !== new URL(request.url).origin) {
-    return new Response("Forbidden", { status: 403 });
-  }
+  if (!sameOriginPost(request)) return new Response("Forbidden", { status: 403 });
   const form = await request.formData();
   const field = (name: string) => String(form.get(name) ?? "").trim();
   const input = {
