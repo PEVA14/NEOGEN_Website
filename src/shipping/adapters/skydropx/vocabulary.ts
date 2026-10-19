@@ -35,7 +35,7 @@ export function httpsOrNull(value: unknown): string | null {
  * `price_found_*` in examples; both are accepted — a rate's `success` and
  * `total` are what decide.
  */
-const NO_PRICE = new Set([
+export const NO_PRICE = new Set([
   "pending",
   "not_applicable",
   "no_coverage",

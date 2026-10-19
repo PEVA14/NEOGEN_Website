@@ -561,6 +561,67 @@ const parcel = provider.parcel();
   eq([shown.authenticated, shown.httpStatuses], [false, [401]], "a refusal reports its status");
   ok(!leaks(shown), "…without a credential in it");
   sky.rejectToken = false;
+
+  /* The console's quote check: one quotation, the raw rates beside NEOGEN's. */
+  const { runQuoteCheck, validQuoteCheckInput } =
+    await import("../src/shipping/adapters/skydropx/quoteCheck.ts");
+  const where = { postalCode: "06700", state: "CMX", city: "Cuauhtémoc", colonia: "Roma Norte" };
+  ok(validQuoteCheckInput(where), "a normal destination is accepted");
+  ok(!validQuoteCheckInput({ ...where, state: "Ciudad de México" }), "…a state must be a code");
+  __resetSkydropxTokens();
+  const echoing = async (url, init) => {
+    const response = await fetch(url, init);
+    if (!String(url).includes("/quotations/")) return response;
+    const body = await response.clone().json();
+    return json(response.status, { ...body, note: "origen Calle Origen 1, 44100 Guadalajara" });
+  };
+  const check = await runQuoteCheck(where, { fetch: echoing });
+  eq(check.outcome, "ok", "the quote check quotes");
+  ok(
+    check.calls.every((c) => ["token", "create_quotation", "poll_quotation"].includes(c.step)) &&
+      check.calls.some((c) => c.step === "create_quotation") &&
+      check.blocked.length === 0,
+    "…reaching only the token and quotation endpoints",
+  );
+  eq([check.rateCount, check.selectableCount], [5, 2], "…and reports every raw rate, 2 offered");
+  const byCarrier = (name) => check.rates.find((r) => r.provider.provider_name === name);
+  ok(
+    !byCarrier("estafeta").customerSelectable &&
+      byCarrier("estafeta").notSelectable.includes("requires_origin_verification"),
+    "a rate needing origin verification is shown as not selectable, and why",
+  );
+  ok(
+    !byCarrier("paquetexpress").customerSelectable &&
+      byCarrier("paquetexpress").notSelectable.includes("status:tariff_price_not_found"),
+    "a tariff_price_not_found rate is shown as not selectable, and why",
+  );
+  eq(
+    [byCarrier("fedex").neogen.customerPriceBelowFreeThreshold, byCarrier("sendex").neogen.cost],
+    [185, 107],
+    "customer prices come from the provider totals, rounded up once",
+  );
+  eq(
+    [
+      byCarrier("sendex").neogen.subsidyAtFreeThreshold,
+      byCarrier("fedex").neogen.subsidyAtFreeThreshold,
+    ],
+    [107, 107],
+    "…and the free-shipping subsidy is the cheapest offered rate",
+  );
+  const out = JSON.stringify(check);
+  ok(
+    ![
+      "tok-",
+      "client-test",
+      "secret-test-not-real",
+      "rate-",
+      "Calle Origen 1",
+      "Guadalajara",
+      "44100",
+    ].some((secret) => out.includes(secret)) && out.includes("[origin]"),
+    "the quote check shows no token, credential, rate id or origin value",
+  );
+  eq(check.parcelSent.weight, 1, "the parcel's weight is sent at the API's 1 kg minimum");
 }
 
 /* ======================================================================== */

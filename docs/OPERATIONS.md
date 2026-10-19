@@ -371,6 +371,14 @@ configuration; UNVERIFIED = needs a real sandbox call.
    which format was accepted (`form` or `json`), the token's lifetime, or the
    provider's error code. Never the token, the client id or the secret. It
    works before steps 2–4 are done.
+   **Then one quotation**, once step 2 is done: `/ops/diagnostico/skydropx/cotizacion`
+   takes a destination (postal code, state, city, colonia) and, on
+   submit, asks for ONE quotation through checkout's own code. It shows the
+   origin and parcel checks (booleans, never the address), every raw rate
+   with its flags, which rates a customer would be offered and why the
+   others are not, and the customer price and subsidy NEOGEN derives. Only
+   the token and quotation endpoints can be reached — it cannot create a
+   shipment or a label.
 2. The origin (`SHIPPING_ORIGIN_NAME`, `_COMPANY`, `_PHONE`, `_EMAIL`,
    `_STREET` (street and number, ≤45), `_REFERENCE` (≤30), `_POSTAL_CODE`,
    `_STATE` (name), `_CITY`, `_NEIGHBORHOOD`), the packed order
