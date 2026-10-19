@@ -378,7 +378,13 @@ configuration; UNVERIFIED = needs a real sandbox call.
    with its flags, which rates a customer would be offered and why the
    others are not, and the customer price and subsidy NEOGEN derives. Only
    the token and quotation endpoints can be reached — it cannot create a
-   shipment or a label.
+   shipment or a label. Two waits: **como el checkout** (the 9 s budget
+   checkout uses) or **hasta completar** (polls the same one quotation until
+   Skydropx marks it complete, at most 90 s). The answer says `COMPLETED` or
+   `TIMED OUT WHILE STILL PROCESSING`, how long completion took, and how the
+   rates changed meanwhile. One submit per page load: the button locks on
+   the first click, and the server refuses a resent form (a one-time token,
+   spent before any provider call). For another quotation, reload the page.
 2. The origin (`SHIPPING_ORIGIN_NAME`, `_COMPANY`, `_PHONE`, `_EMAIL`,
    `_STREET` (street and number, ≤45), `_REFERENCE` (≤30), `_POSTAL_CODE`,
    `_STATE` (name), `_CITY`, `_NEIGHBORHOOD`), the packed order

@@ -6,7 +6,7 @@ import { siteConfig } from "@/config/site";
 
 import { carrierAllowed, readSkydropxConfig } from "./config";
 import { createSkydropxProvider, destinationFor } from "./index";
-import { NO_PRICE } from "./vocabulary";
+import { NO_PRICE, rateOptions } from "./vocabulary";
 
 import type { StoredQuote } from "@/domain/checkout/types";
 import type { SkydropxConfig } from "./config";
@@ -25,6 +25,9 @@ import type { SkydropxConfig } from "./config";
  * (present, well-formed), and any origin value the provider echoes back is
  * replaced with "[origin]".
  */
+/** The completion check's hard limit: one quotation, polled at most this long. */
+export const COMPLETION_BUDGET_MS = 90_000;
+
 export interface QuoteCheckInput {
   postalCode: string;
   /** One of `MX_STATES` codes, as checkout stores it. */
@@ -120,7 +123,15 @@ function refusalOf(body: unknown, redact: (s: string) => string) {
 
 export async function runQuoteCheck(
   input: QuoteCheckInput,
-  deps: { config?: () => SkydropxConfig | null; fetch?: typeof fetch } = {},
+  deps: {
+    config?: () => SkydropxConfig | null;
+    fetch?: typeof fetch;
+    /** Poll the ONE quotation until Skydropx says it is complete (≤ `COMPLETION_BUDGET_MS`). */
+    untilComplete?: boolean;
+    now?: () => number;
+    /** Tests only: the wait between polls. */
+    sleep?: (ms: number) => Promise<void>;
+  } = {},
 ) {
   const config = deps.config ?? (() => readSkydropxConfig());
   const cfg = config();
@@ -133,6 +144,113 @@ export async function runQuoteCheck(
   const blocked: string[] = [];
   let quotation: unknown = null;
   let refusal: unknown = null;
+  const clock = deps.now ?? Date.now;
+  const threshold = siteConfig.fulfilment.freeShippingThreshold;
+  const address = { postalCode: input.postalCode, state: input.state, city: input.city };
+
+  /* What each answer about the quotation said, as time passed — no ids. */
+  let createdAt: number | null = null;
+  let polls = 0;
+  let completedAfterMs: number | null = null;
+  type Moment = {
+    afterMs: number;
+    poll: number;
+    completed: boolean;
+    rateCount: number;
+    selectableCount: number;
+    cheapestSelectable: number | null;
+    quotationRequiresOriginVerification: unknown;
+  };
+  const timeline: Moment[] = [];
+  type RateState = {
+    afterMs: number;
+    status: string;
+    success: unknown;
+    total: unknown;
+    requiresOriginVerification: unknown;
+  };
+  const history = new Map<string, { name: string; states: RateState[] }>();
+  const rateKey = (r: Record<string, unknown>) =>
+    `${String(r.provider_name ?? "?")}:${String(r.provider_service_code ?? "?")}`;
+
+  function observe(body: unknown, afterMs: number) {
+    const b = (body ?? {}) as Record<string, unknown>;
+    const raw = Array.isArray(b.rates) ? (b.rates as Record<string, unknown>[]) : [];
+    const options = rateOptions(b).filter((o) =>
+      carrierAllowed(cfg!, o.carrierCode, o.serviceCode),
+    );
+    const methods = options.length
+      ? quotedMethods(
+          {
+            destinationKey: "check",
+            quotedAt: "",
+            quote: { provider: "skydropx", quotationId: "", expiresAt: "", options },
+            error: null,
+          },
+          address,
+          { amount: threshold - 1, currency: "MXN" },
+        )
+      : [];
+    const moment: Moment = {
+      afterMs,
+      poll: polls,
+      completed: b.is_completed === true,
+      rateCount: raw.length,
+      selectableCount: methods.length,
+      cheapestSelectable: methods.length
+        ? Math.min(...methods.map((m) => m.price?.amount ?? Infinity))
+        : null,
+      quotationRequiresOriginVerification: b.requires_origin_verification ?? null,
+    };
+    const last = timeline.at(-1);
+    const same = (a: Moment, z: Moment) =>
+      a.completed === z.completed &&
+      a.rateCount === z.rateCount &&
+      a.selectableCount === z.selectableCount &&
+      a.cheapestSelectable === z.cheapestSelectable &&
+      a.quotationRequiresOriginVerification === z.quotationRequiresOriginVerification;
+    if (!last || !same(last, moment)) timeline.push(moment);
+    if (moment.completed && completedAfterMs === null) completedAfterMs = afterMs;
+
+    const present = new Set<string>();
+    for (const r of raw) {
+      const key = rateKey(r);
+      present.add(key);
+      const state: RateState = {
+        afterMs,
+        status: String(r.status ?? ""),
+        success: r.success ?? null,
+        total: r.total ?? null,
+        requiresOriginVerification: r.requires_origin_verification ?? null,
+      };
+      const entry = history.get(key) ?? {
+        name: `${String(r.provider_display_name ?? r.provider_name ?? "?")} — ${String(r.provider_service_name ?? r.provider_service_code ?? "?")}`,
+        states: [],
+      };
+      const prev = entry.states.at(-1);
+      if (
+        !prev ||
+        prev.status !== state.status ||
+        prev.success !== state.success ||
+        prev.total !== state.total ||
+        prev.requiresOriginVerification !== state.requiresOriginVerification
+      ) {
+        entry.states.push(state);
+      }
+      history.set(key, entry);
+    }
+    for (const [key, entry] of history) {
+      if (!present.has(key) && entry.states.at(-1)?.status !== "(absent)") {
+        entry.states.push({
+          afterMs,
+          status: "(absent)",
+          success: null,
+          total: null,
+          requiresOriginVerification: null,
+        });
+      }
+    }
+  }
 
   const guarded: typeof fetch = async (target, init) => {
     const path = new URL(String(target)).pathname.replace(/\/+$/, "");
@@ -149,6 +267,8 @@ export async function runQuoteCheck(
       blocked.push(`${method} ${path.replace(/[0-9a-f-]{8,}/gi, ":id")}`);
       throw new Error("blocked by the quote check");
     }
+    if (step === "create_quotation") createdAt = clock();
+    if (step === "poll_quotation") polls += 1;
     try {
       const response = await http(target, init);
       calls.push({ step, status: response.status });
@@ -157,8 +277,10 @@ export async function runQuoteCheck(
           .clone()
           .json()
           .catch(() => null);
-        if (response.ok) quotation = body;
-        else refusal = body;
+        if (response.ok) {
+          quotation = body;
+          observe(body, clock() - (createdAt ?? clock()));
+        } else refusal = body;
       }
       return response;
     } catch (error) {
@@ -167,8 +289,14 @@ export async function runQuoteCheck(
     }
   };
 
-  const provider = createSkydropxProvider({ config: () => cfg, fetch: guarded });
-  const address = { postalCode: input.postalCode, state: input.state, city: input.city };
+  const budgetMs = deps.untilComplete ? COMPLETION_BUDGET_MS : undefined;
+  const provider = createSkydropxProvider({
+    config: () => cfg,
+    fetch: guarded,
+    now: deps.now,
+    sleep: deps.sleep,
+    quoteBudgetMs: budgetMs,
+  });
   const result = await provider.quote(
     destinationFor({ shipping: { ...address, colonia: input.colonia } as never }),
     cfg.parcel,
@@ -188,7 +316,6 @@ export async function runQuoteCheck(
         error: null,
       }
     : null;
-  const threshold = siteConfig.fulfilment.freeShippingThreshold;
   const below = stored
     ? quotedMethods(stored, address, { amount: threshold - 1, currency: "MXN" })
     : [];
@@ -229,8 +356,25 @@ export async function runQuoteCheck(
     };
   });
 
+  const finalCompleted = q.is_completed === true;
+  const changes = [...history.values()].filter((h) => h.states.length > 1);
+  const initiallyPending = [...history.values()]
+    .filter((h) => h.states[0]?.status.startsWith("pending"))
+    .map((h) => ({ rate: h.name, first: h.states[0], last: h.states.at(-1) }));
   return {
     configured: true as const,
+    completion: !quotation
+      ? "NO QUOTATION"
+      : finalCompleted
+        ? "COMPLETED"
+        : "TIMED OUT WHILE STILL PROCESSING",
+    pollMode: deps.untilComplete ? "until_complete" : "checkout_budget",
+    pollBudgetMs: budgetMs ?? "checkout default",
+    msFromCreateToCompleted: completedAfterMs,
+    pollRequests: polls,
+    timeline,
+    initiallyPending,
+    rateChanges: changes.map((h) => ({ rate: h.name, states: h.states })),
     mode: cfg.mode,
     apiHost: new URL(cfg.apiUrl).host,
     labelsAllowedHere: cfg.labelsAllowed,

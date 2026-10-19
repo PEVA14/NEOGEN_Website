@@ -94,12 +94,15 @@ export function createSkydropxProvider(
     sleep?: (ms: number) => Promise<void>;
     /** The quote's time budget is measured on this clock (tests inject one). */
     now?: () => number;
+    /** Only the console's completion check overrides it; checkout keeps the default. */
+    quoteBudgetMs?: number;
   } = {},
 ): ShippingProvider {
   const config = deps.config ?? (() => readSkydropxConfig());
   const http: Fetch = (...args) => (deps.fetch ?? fetch)(...args);
   const wait = deps.sleep ?? sleep;
   const clock = deps.now ?? Date.now;
+  const budgetMs = deps.quoteBudgetMs ?? QUOTE_BUDGET_MS;
   const fail = <T>(error: ShippingError): ShippingResult<T> => ({ ok: false, error });
 
   async function json(response: Response): Promise<unknown> {
@@ -216,7 +219,7 @@ export function createSkydropxProvider(
         const id = typeof quotation?.id === "string" ? quotation.id : null;
         if (!id) return fail({ code: "provider_error" });
 
-        while (quotation?.is_completed !== true && clock() - started < QUOTE_BUDGET_MS) {
+        while (quotation?.is_completed !== true && clock() - started < budgetMs) {
           await wait(POLL_EVERY_MS);
           const polled = await call(cfg, `/api/v1/quotations/${encodeURIComponent(id)}`, {
             method: "GET",

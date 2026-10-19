@@ -623,6 +623,95 @@ const parcel = provider.parcel();
   );
   eq(check.parcelSent.weight, 1, "the parcel's weight is sent at the API's 1 kg minimum");
 
+  /* The completion check: ONE quotation, polled until Skydropx says complete. */
+  __resetSkydropxTokens();
+  sky.quotePolls = 3;
+  let completion = await runQuoteCheck(where, { untilComplete: true, sleep: async () => {} });
+  eq(
+    [completion.completion, completion.pollRequests, completion.rateCount],
+    ["COMPLETED", 3, 5],
+    "polling until complete stops at is_completed and reports COMPLETED",
+  );
+  ok(
+    completion.msFromCreateToCompleted !== null &&
+      completion.timeline.length === 2 &&
+      completion.timeline[0].rateCount === 0 &&
+      completion.timeline[1].completed &&
+      completion.timeline[1].cheapestSelectable === 107,
+    "…with the rate counts and cheapest rate over time",
+  );
+  eq(
+    completion.calls.filter((c) => c.step === "create_quotation").length,
+    1,
+    "…from exactly one quotation",
+  );
+  let fakeNow = 0;
+  const tick = () => (fakeNow += 1000);
+  sky.quotePolls = 10_000;
+  completion = await runQuoteCheck(where, {
+    untilComplete: true,
+    now: tick,
+    sleep: async () => {},
+  });
+  ok(
+    completion.completion === "TIMED OUT WHILE STILL PROCESSING" &&
+      completion.pollRequests > 20 &&
+      completion.calls.filter((c) => c.step === "create_quotation").length === 1,
+    "a quotation that never completes is reported as TIMED OUT, never quoted again",
+  );
+  fakeNow = 0;
+  completion = await runQuoteCheck(where, { now: tick, sleep: async () => {} });
+  ok(
+    completion.completion === "TIMED OUT WHILE STILL PROCESSING" && completion.pollRequests < 10,
+    "checkout's own 9 s budget is unchanged",
+  );
+  sky.quotePolls = 1;
+
+  /* Double submit: the page locks itself; the server spends a one-time token. */
+  const { spendOnceToken, issueOnceToken } = await import("../src/server/ops/onceToken.ts");
+  const once = issueOnceToken();
+  eq(
+    [await spendOnceToken(once), await spendOnceToken(once), await spendOnceToken("forged")],
+    [true, false, false],
+    "a form's token is spent once; a resend or a forged token is refused",
+  );
+  const { quoteFormPage, QUOTE_FORM_LOCK } = await import("../src/server/ops/quoteForm.ts");
+  ok(
+    quoteFormPage(once).includes(`name="once" value="${once}"`) &&
+      quoteFormPage(once).includes(QUOTE_FORM_LOCK),
+    "the page carries its token and its lock",
+  );
+  {
+    const listeners = [];
+    const el = (extra = {}) => ({
+      disabled: false,
+      textContent: "",
+      attrs: {},
+      setAttribute(k, v) {
+        this.attrs[k] = v;
+      },
+      addEventListener: (type, fn) => listeners.push(fn),
+      ...extra,
+    });
+    const nodes = { quote: el(), go: el(), state: el() };
+    new Function("document", QUOTE_FORM_LOCK)({ getElementById: (id) => nodes[id] });
+    const submit = () => {
+      const event = {
+        prevented: false,
+        preventDefault() {
+          this.prevented = true;
+        },
+      };
+      listeners.forEach((fn) => fn(event));
+      return event.prevented;
+    };
+    eq(
+      [submit(), nodes.go.disabled, nodes.go.textContent, nodes.quote.attrs["aria-busy"], submit()],
+      [false, true, "Cotizando…", "true", true],
+      "the first click submits and locks the button; a second click is cancelled",
+    );
+  }
+
   /* The quote check's form: the page loaded, then its submit got "Forbidden". */
   const { sameOriginPost } = await import("../src/server/ops/sameOrigin.ts");
   const PAGE = "https://neogen-git-staging.example.vercel.app/ops/diagnostico/skydropx/cotizacion";
@@ -651,8 +740,9 @@ const parcel = provider.parcel();
   );
   ok(
     routeSource.indexOf("sameOriginPost(request)") > 0 &&
-      routeSource.indexOf("sameOriginPost(request)") < routeSource.indexOf("runQuoteCheck(input)"),
-    "the quote check route refuses a foreign post before any quotation",
+      routeSource.indexOf("sameOriginPost(request)") < routeSource.indexOf("spendOnceToken(") &&
+      routeSource.indexOf("spendOnceToken(") < routeSource.indexOf("runQuoteCheck(input"),
+    "the quote check route refuses a foreign post, then a resend, before any quotation",
   );
 }
 
