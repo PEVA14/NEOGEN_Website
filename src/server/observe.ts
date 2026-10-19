@@ -29,6 +29,7 @@ export type Signal =
   | "notification.enqueue_failed"
   | "notification.send_failed"
   | "shipping.provider_error"
+  | "shipping.booked"
   | "shipping.webhook_unknown"
   | "shipping.reconciled"
   | "shipping.webhook_unauthenticated"

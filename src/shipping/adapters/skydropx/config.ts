@@ -218,3 +218,59 @@ export function readSkydropxCredentials(
   if (!clientId || !clientSecret || !apiUrl || !apiUrl.startsWith("https://")) return null;
   return { mode, apiUrl, clientId, clientSecret };
 }
+
+/**
+ * READY TO BUY A LABEL? — the console's shipment-readiness check. Reads
+ * configuration only; calls nothing. Values are never returned except the
+ * Carta Porte codes and switches, which are not secrets and which the owner
+ * must be able to verify. Origin fields are reported as checks.
+ */
+export function skydropxReadiness(env: Env = process.env) {
+  const cfg = readSkydropxConfig(env);
+  const creds = readSkydropxCredentials(env);
+  const o = cfg?.origin;
+  const digits = (v: string) => v.replace(/\D/g, "");
+  const blocking = [
+    ...(!creds ? ["credentials (SKYDROPX_MODE / _CLIENT_ID / _CLIENT_SECRET / _API_URL)"] : []),
+    ...(!cfg ? ["origin or parcel (SHIPPING_ORIGIN_* / SHIPPING_PARCEL_*)"] : []),
+    ...(!get(env, "SKYDROPX_CONSIGNMENT_NOTE") ? ["SKYDROPX_CONSIGNMENT_NOTE"] : []),
+    ...(!get(env, "SKYDROPX_PACKAGE_TYPE") ? ["SKYDROPX_PACKAGE_TYPE"] : []),
+    ...(cfg && !cfg.labelsAllowed
+      ? ["labels not allowed here (live without SKYDROPX_LIVE_LABELS)"]
+      : []),
+  ];
+  return {
+    readyToBuyLabels: blocking.length === 0,
+    blocking,
+    mode: creds?.mode ?? null,
+    deployment: env.VERCEL_ENV ?? "local",
+    labelsAllowedHere: cfg?.labelsAllowed ?? false,
+    liveLabelsSwitch: get(env, "SKYDROPX_LIVE_LABELS") === "enabled",
+    cartaPorte: {
+      consignmentNote: get(env, "SKYDROPX_CONSIGNMENT_NOTE"),
+      packageType: get(env, "SKYDROPX_PACKAGE_TYPE"),
+    },
+    origin: o
+      ? {
+          nameWithin30: o.name.length <= 30,
+          companyWithin60: o.company.length <= 60,
+          streetWithin45: o.street.length <= 45,
+          referenceWithin30: o.reference.length <= 30,
+          phoneTenDigits: digits(o.phone).length === 10,
+          emailLooksValid: /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(o.email),
+          usesSavedTemplate: cfg!.originTemplateId !== null,
+        }
+      : null,
+    parcel: cfg?.parcel ?? null,
+    printingFormat: cfg?.printingFormat ?? null,
+    sandboxAutoAdvance: cfg?.autoAdvance ?? false,
+    trackingWebhook: {
+      secretConfigured: get(env, "SKYDROPX_WEBHOOK_SECRET") !== null,
+      header: get(env, "SKYDROPX_WEBHOOK_HEADER") ?? "Authorization",
+    },
+    carrierLists: {
+      allow: list(get(env, "SKYDROPX_CARRIERS_ALLOW")),
+      deny: list(get(env, "SKYDROPX_CARRIERS_DENY")),
+    },
+  };
+}

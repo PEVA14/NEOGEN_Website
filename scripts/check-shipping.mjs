@@ -755,6 +755,51 @@ const parcel = provider.parcel();
   );
 }
 
+/* ---- 2a. READY TO BUY A LABEL? (configuration only, no call) ------------- */
+{
+  const { skydropxReadiness } = await import("../src/shipping/adapters/skydropx/config.ts");
+  const ready = skydropxReadiness({ ...process.env, VERCEL_ENV: "preview" });
+  eq([ready.readyToBuyLabels, ready.blocking], [true, []], "a fully configured sandbox is ready");
+  const missing = skydropxReadiness({
+    ...process.env,
+    VERCEL_ENV: "preview",
+    SKYDROPX_CONSIGNMENT_NOTE: "",
+    SKYDROPX_PACKAGE_TYPE: "",
+  });
+  eq(
+    [missing.readyToBuyLabels, missing.blocking],
+    [false, ["SKYDROPX_CONSIGNMENT_NOTE", "SKYDROPX_PACKAGE_TYPE"]],
+    "missing Carta Porte codes are named as blocking",
+  );
+  const live = skydropxReadiness({
+    ...process.env,
+    SKYDROPX_MODE: "live",
+    VERCEL_ENV: "production",
+  });
+  ok(
+    !live.readyToBuyLabels &&
+      !live.labelsAllowedHere &&
+      live.blocking.some((b) => b.startsWith("labels not allowed")),
+    "Production stays gated without SKYDROPX_LIVE_LABELS",
+  );
+  const shown = JSON.stringify([ready, missing, live]);
+  ok(
+    ![
+      "secret-test-not-real",
+      "client-test",
+      SECRET,
+      "Calle Origen 1",
+      "Guadalajara",
+      "44100",
+      "3300000000",
+    ].some((v) => shown.includes(v)),
+    "readiness shows no credential and no origin value",
+  );
+  const callsBefore = sky.tokenRequests.length + sky.creates.length;
+  skydropxReadiness();
+  eq(sky.tokenRequests.length + sky.creates.length, callsBefore, "…and calls nothing");
+}
+
 /* ---- 2b. WHEN A QUOTE IS DONE: completion, or a stable selectable set --- */
 {
   /* The first real sandbox quotation, as a script: MX$159 at ~3 s, the cheaper
@@ -1271,6 +1316,14 @@ __resetOutbox();
     "an approved payment buys the label",
   );
   eq(sky.creates.length - before, 1, "exactly one creation request");
+  const booked = signals.filter((r) => r.signal === "shipping.booked");
+  ok(
+    booked.length === 1 &&
+      booked[0].context.orderId === o.id &&
+      booked[0].context.outcome === "booked" &&
+      !/shp-|rate-|quo-|tok-/.test(JSON.stringify(booked)),
+    "one log line says the label exists — NEOGEN's order id, no provider ids",
+  );
   const after = await load(o.id);
   eq(after.shipments.length, 1, "one shipment on the order");
   const s = after.shipments[0];
@@ -1288,6 +1341,7 @@ __resetOutbox();
   const sent = sky.creates.at(-1);
   eq(sent.unique_shipment, true, "Skydropx's own duplicate protection is requested");
   eq(sent.address_to.email, "ops@example.test", "the customer's email is not sent to Skydropx");
+  eq(sent.address_to.phone, "3300000000", "the recipient's phone goes as ten national digits");
   eq(sent.packages[0].consignment_note, "00000000", "Carta Porte codes come from configuration");
 
   /* Duplicate payment webhooks, duplicate reconciles, customer refreshes. */

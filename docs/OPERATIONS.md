@@ -419,6 +419,40 @@ configuration; UNVERIFIED = needs a real sandbox call.
 
 Tests: `check:shipping` (144 assertions against a fake Skydropx).
 
+### 6c. The first sandbox shipment, end to end (Preview)
+
+**Before it:** `/ops/diagnostico/skydropx/preparacion` (signed in; calls
+nothing) must say `readyToBuyLabels: true`. It names what blocks a label —
+in particular the two Carta Porte codes, which only the owner can declare:
+
+- `SKYDROPX_CONSIGNMENT_NOTE` — the SAT Carta Porte product code
+  (c_ClaveProdServCP) that truthfully describes what is in the box. Skydropx
+  requires it for every Mexican shipment ("Descripción del contenido del
+  paquete. Requerido para México"). Look it up in Skydropx's code list or
+  its `GET /api/v1/shipments/consignment_notes` catalogue; never pick one to
+  get past validation.
+- `SKYDROPX_PACKAGE_TYPE` — the SAT packaging code (c_TipoEmbalaje) for the
+  physical packaging, from Skydropx's packaging catalogue
+  (`GET /api/v1/shipments/packagings`), e.g. the code for a fibreboard box
+  if that is what NEOGEN ships in.
+
+Optional for the test: `SKYDROPX_SANDBOX_AUTO_ADVANCE=true` (the sandbox
+moves the parcel through its states every minute) and the tracking webhook
+(`SKYDROPX_WEBHOOK_SECRET`, plus the URL with the Preview's protection
+bypass in Skydropx). Without the webhook, the order page's "Actualizar"
+reads the shipment instead. **Vercel runs scheduled jobs in Production
+only**: on Preview a booking that fails is retried from the order page, not
+by the reconcile.
+
+**The run:** a normal checkout on Preview — an address, a carrier option on
+the delivery step, review, a Mercado Pago TEST card. When Mercado Pago
+reports the payment approved, the order turns paid and, in the same request's
+`after()`, NEOGEN records the booking and asks Skydropx for ONE shipment on
+the chosen rate (`unique_shipment`). Logs: `shipping.booked` with the order
+id. Then `/ops/pedidos/<id>`: the booking, the cost and subsidy, the label
+(once Skydropx has made it — "Actualizar" if not yet), the tracking number.
+The customer's order page shows the tracking once it exists.
+
 ## 7. Notifications
 
 Messages are **owed by state** (`messagesOwed`) and queued once each. The

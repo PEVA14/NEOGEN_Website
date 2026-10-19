@@ -96,6 +96,16 @@ export function __resetSkydropxTokens(): void {
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const clip = (value: string, max: number) => value.trim().slice(0, max);
 
+/**
+ * The recipient's phone as the shipment reference writes every example: ten
+ * national digits. Checkout stores `52` + ten (`normaliseContact`); a
+ * domestic label carries the national number. Anything else passes as is.
+ */
+export function nationalPhone(stored: string): string {
+  const digits = stored.replace(/\D/g, "");
+  return digits.length === 12 && digits.startsWith("52") ? digits.slice(2) : stored;
+}
+
 /** What must hold still before checkout offers a partial quote: ids, services, costs. */
 function selectableSignature(options: readonly RateOption[]): string {
   return options
@@ -330,7 +340,7 @@ export function createSkydropxProvider(
                 street1: clip(street, 45),
                 name: clip(a.recipient, 30),
                 company: clip(a.recipient, 60),
-                phone: order.contact.phone,
+                phone: nationalPhone(order.contact.phone),
                 /* NEOGEN's address, not the customer's (see the header). */
                 email: o.email,
                 reference: clip(a.colonia, 40),

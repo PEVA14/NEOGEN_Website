@@ -149,6 +149,11 @@ export async function bookShipment(
 
   const at = new Date().toISOString();
   if (result.ok) {
+    /* The one line that says a label exists: NEOGEN's order id, no provider ids. */
+    signal("shipping.booked", "info", {
+      orderId,
+      outcome: result.value.booking === "created" ? "booked" : "creating",
+    });
     const answered = await apply(repository, orderId, (o) =>
       answerBooking(o, shipment.id, answerFrom(result.value), at),
     );
