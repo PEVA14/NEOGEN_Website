@@ -22,6 +22,7 @@ export { Acknowledgements, type AcknowledgementItem } from "./Acknowledgements";
 export { OrderReceipt, type ReceiptCopy } from "./OrderReceipt";
 export { OrderStatus, type OrderStatusCopy } from "./OrderStatus";
 export { DeliveryOptions, type DeliveryCopy } from "./DeliveryOptions";
+export { QuoteWait, ShipTo } from "./QuoteWait";
 export { formatDays, type DayCount } from "./days";
 export { ClearBagOnOrder } from "./ClearBagOnOrder";
 export { MercadoPagoCardForm, type CardFormCopy } from "./MercadoPagoCardForm";

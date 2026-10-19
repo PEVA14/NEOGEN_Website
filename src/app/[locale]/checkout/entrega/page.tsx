@@ -1,7 +1,21 @@
-import { BlockNotice, DeliveryOptions, StepActions } from "@/components/checkout";
+import { Suspense } from "react";
+
+import {
+  BlockNotice,
+  DeliveryOptions,
+  QuoteWait,
+  ShipTo,
+  StepActions,
+} from "@/components/checkout";
 import { routes } from "@/config/routes";
 import { siteConfig } from "@/config/site";
-import { methodsFor, normaliseAddress, quotedMethods, validateAddress } from "@/domain/checkout";
+import {
+  formatAddress,
+  methodsFor,
+  normaliseAddress,
+  quotedMethods,
+  validateAddress,
+} from "@/domain/checkout";
 import { refreshShippingQuote, submitDelivery } from "@/server/checkout/actions";
 import { saveDraft } from "@/server/checkout/session";
 import { quoteForDraft, shippingQuotesEnabled } from "@/server/shipping/quote";
@@ -9,6 +23,8 @@ import { quoteForDraft, shippingQuotesEnabled } from "@/server/shipping/quote";
 import { CheckoutShell, StepHead, loadStep, stepMetadata } from "../shared";
 import styles from "../page.module.css";
 
+import type { StepContext } from "../shared";
+import type { MxAddress } from "@/domain/checkout";
 import type { Metadata } from "next";
 
 /**
@@ -55,6 +71,13 @@ export async function generateMetadata({
  * The alternative — printing a plausible number — is unacceptable in every
  * direction: too low and NEOGEN absorbs it, too high and the customer is
  * overcharged, and either way the confirmation is fiction.
+ *
+ * THE WAIT. A carrier quote can take ~10 s (the quote policy allows up to
+ * ~20 s), so the step does not wait for it: the heading and the address the
+ * quote is for render at once, and only the options stream in behind
+ * `QuoteWait`. Everything that depends on the quote — its notices, the
+ * options, the actions — lives in `DeliveryChoices`. The order summary does
+ * not depend on it: a changed address already cleared the delivery choice.
  */
 export default async function DeliveryStep({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -62,7 +85,7 @@ export default async function DeliveryStep({ params }: { params: Promise<{ local
   if (load.kind === "notice") return load.node;
 
   const { ctx } = load;
-  const { dict, tag, path } = ctx;
+  const { dict, path } = ctx;
   const copy = dict.checkout.steps.delivery;
   const quoted = copy.options.quoted;
 
@@ -70,13 +93,62 @@ export default async function DeliveryStep({ params }: { params: Promise<{ local
      but normalising through the validator keeps one definition of "valid". */
   const address =
     validateAddress(ctx.draft.address).length === 0 ? normaliseAddress(ctx.draft.address) : null;
+  const quoting = shippingQuotesEnabled();
+  const back = { href: path(routes.checkoutStep("shipping")), label: copy.back };
+
+  return (
+    <CheckoutShell ctx={ctx} step="delivery">
+      <div className={styles.step}>
+        <StepHead
+          index={copy.index}
+          title={copy.title}
+          note={quoting ? quoted.note : copy.note}
+          id="step-delivery"
+        />
+
+        {quoting && address ? (
+          <ShipTo
+            label={quoted.shipTo}
+            recipient={address.recipient}
+            address={formatAddress(address)}
+            change={{ href: back.href, label: quoted.changeAddress }}
+          />
+        ) : null}
+
+        <Suspense
+          fallback={
+            <>
+              <QuoteWait title={quoted.loading.title} note={quoted.loading.note} />
+              <StepActions submit={copy.submit} back={back} disabled />
+            </>
+          }
+        >
+          <DeliveryChoices ctx={ctx} address={address} quoting={quoting} />
+        </Suspense>
+      </div>
+    </CheckoutShell>
+  );
+}
+
+/** Everything on the step that waits for the quote. */
+async function DeliveryChoices({
+  ctx,
+  address,
+  quoting,
+}: {
+  ctx: StepContext;
+  address: MxAddress | null;
+  quoting: boolean;
+}) {
+  const { dict, tag, path } = ctx;
+  const copy = dict.checkout.steps.delivery;
+  const quoted = copy.options.quoted;
 
   /*
    * QUOTED SHIPPING (D1). With a shipping provider configured, the options
    * are the carrier rates for this address, fetched and kept on the server
    * (`quoteForDraft`). Without one, the free-threshold rule below stands.
    */
-  const quoting = shippingQuotesEnabled();
   const { draft, stored } = quoting
     ? await quoteForDraft(ctx.draft, async (d) => void (await saveDraft(d)))
     : { draft: ctx.draft, stored: null };
@@ -93,16 +165,9 @@ export default async function DeliveryStep({ params }: { params: Promise<{ local
   const free = subtotal.amount >= siteConfig.fulfilment.freeShippingThreshold;
 
   return (
-    <CheckoutShell ctx={ctx} step="delivery">
+    <>
       <form action={submitDelivery} className={styles.step} noValidate>
         <input type="hidden" name="locale" value={ctx.locale} />
-
-        <StepHead
-          index={copy.index}
-          title={copy.title}
-          note={quoting ? quoted.note : copy.note}
-          id="step-delivery"
-        />
 
         {draft.deliveryNotice === "unavailable" ? (
           <BlockNotice title={copy.title} body={quoted.unavailable} />
@@ -157,6 +222,6 @@ export default async function DeliveryStep({ params }: { params: Promise<{ local
           <StepActions submit={quoted.retry} />
         </form>
       ) : null}
-    </CheckoutShell>
+    </>
   );
 }

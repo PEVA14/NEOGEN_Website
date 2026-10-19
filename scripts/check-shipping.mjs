@@ -1660,6 +1660,68 @@ ok(
     en.checkout.steps.delivery.options.quoted.errors.no_coverage,
   "quote failures have customer copy in both languages",
 );
+
+/* The delivery step's wait: rendered at once, the options stream in. */
+{
+  const { readFileSync } = await import("node:fs");
+  const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
+  const waitCopy = (d) => d.checkout.steps.delivery.options.quoted;
+  eq(
+    [waitCopy(es).loading.title, waitCopy(en).loading.title],
+    ["Calculando opciones de envío…", "Calculating shipping options…"],
+    "the quote wait says what is happening, in both languages",
+  );
+  ok(
+    [es, en].every(
+      (d) => waitCopy(d).loading.note && waitCopy(d).shipTo && waitCopy(d).changeAddress,
+    ),
+    "…with its secondary line and the ship-to labels in both",
+  );
+  ok(
+    [es, en].every(
+      (d) =>
+        !/skydropx|api\b|poll|sondeo|estab|stabil|segundo|second|cotizaci[oó]n|quotation/i.test(
+          `${waitCopy(d).loading.title} ${waitCopy(d).loading.note}`,
+        ),
+    ),
+    "…and names no provider, mechanism or timing",
+  );
+  const page = read("../src/app/[locale]/checkout/entrega/page.tsx");
+  const step = page.slice(
+    page.indexOf("export default async function DeliveryStep"),
+    page.indexOf("async function DeliveryChoices"),
+  );
+  const choices = page.slice(page.indexOf("async function DeliveryChoices"));
+  ok(
+    !step.includes("quoteForDraft(") && choices.includes("quoteForDraft("),
+    "the step's shell never waits for the quote; only the streamed part does",
+  );
+  ok(
+    /<Suspense\s+fallback=[\s\S]*<QuoteWait[\s\S]*<DeliveryChoices[\s\S]*<\/Suspense>/.test(step) &&
+      /import \{ Suspense \} from "react";/.test(page) &&
+      step.indexOf("<ShipTo") < step.search(/<Suspense\s/),
+    "…behind the quote wait, with the address shown outside it",
+  );
+  ok(
+    [
+      "quoted.errors[quoteError]",
+      "refreshShippingQuote",
+      "quoted.editAddress",
+      "quoted.unavailable",
+    ].every((piece) => choices.includes(piece)),
+    "the failure, retry and unavailable paths are unchanged inside the streamed part",
+  );
+  const css = read("../src/components/checkout/QuoteWait.module.css");
+  ok(
+    /prefers-reduced-motion:\s*reduce[\s\S]*animation:\s*none/.test(css),
+    "the wait's only motion stops under reduced motion",
+  );
+  const wait = read("../src/components/checkout/QuoteWait.tsx");
+  ok(
+    /role="status"/.test(wait) && /aria-live="polite"/.test(wait),
+    "the wait is announced politely",
+  );
+}
 ok(
   !signals.some((s) => JSON.stringify(s).includes("Siempre Viva")),
   "no customer address in any signal",

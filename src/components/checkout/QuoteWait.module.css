@@ -1,0 +1,86 @@
+/*
+ * THE QUOTE WAIT and THE SHIP-TO LINE.
+ *
+ * The wait is framed like a delivery option — 1px chalk, zero radius — so the
+ * real options replace it in place rather than pushing the page around. One
+ * hairline runs across its top; that is the only motion, and under reduced
+ * motion it is a still, partial line.
+ */
+.wait {
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  min-block-size: 7rem;
+  overflow: hidden;
+  padding: var(--space-sm);
+  position: relative;
+}
+
+.track {
+  background: var(--border-subtle);
+  block-size: 1px;
+  inset-block-start: 0;
+  inset-inline: 0;
+  overflow: hidden;
+  position: absolute;
+}
+
+.bar {
+  animation: quote-wait 1.8s var(--ease-standard) infinite;
+  background: var(--ink-primary);
+  block-size: 100%;
+  inline-size: 28%;
+  inset-block-start: 0;
+  position: absolute;
+}
+
+@keyframes quote-wait {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(360%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar {
+    animation: none;
+  }
+}
+
+.title {
+  color: var(--ink-primary);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.shipTo {
+  border-inline-start: 2px solid var(--border-strong);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+  padding-inline-start: var(--space-sm);
+}
+
+.label {
+  color: var(--ink-muted);
+  letter-spacing: var(--tracking-label);
+  margin-block-end: var(--space-3xs);
+  text-transform: uppercase;
+}
+
+.change {
+  align-self: flex-start;
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-label);
+  margin-block-start: var(--space-3xs);
+  text-transform: uppercase;
+}
+
+.change:hover {
+  color: var(--ink-primary);
+}

@@ -2242,6 +2242,12 @@ const es = {
             editAddress: "Corregir dirección",
             unavailable:
               "El servicio de envío que habías elegido ya no está disponible. Elige otra opción.",
+            loading: {
+              title: "Calculando opciones de envío…",
+              note: "Estamos revisando las paqueterías disponibles y sus precios para tu dirección.",
+            },
+            shipTo: "Enviar a",
+            changeAddress: "Cambiar dirección",
           },
         },
         submit: "Continuar a revisión",

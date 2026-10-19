@@ -2067,6 +2067,12 @@ const en: Dictionary = {
             editAddress: "Correct the address",
             unavailable:
               "The shipping service you had chosen is no longer available. Choose another option.",
+            loading: {
+              title: "Calculating shipping options…",
+              note: "We are checking the available carriers and their prices for your address.",
+            },
+            shipTo: "Ship to",
+            changeAddress: "Change address",
           },
         },
         submit: "Continue to review",
