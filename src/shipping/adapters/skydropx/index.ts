@@ -11,6 +11,7 @@ import type {
   Parcel,
   QuoteDestination,
   QuoteResult,
+  RateOption,
   ShipmentSnapshot,
   ShippingError,
   ShippingProvider,
@@ -51,7 +52,25 @@ import type { SkydropxConfig } from "./config";
  * NEOGEN's (`SHIPPING_ORIGIN_EMAIL`).
  */
 
-const QUOTE_BUDGET_MS = 9_000;
+/*
+ * WHEN A QUOTE IS DONE — measured on the first real sandbox quotation
+ * (2026-10-19): complete after 17.7 s and 20 polls, but every rate a customer
+ * could choose, and the cheapest, were all there by 4.8 s; the rest of the
+ * wait resolved services nobody could select. Rates arrived ~2 s apart
+ * (MX$159 at ~3 s, the cheaper MX$119 at ~5 s).
+ *
+ * So checkout stops at the FIRST of:
+ *   - Skydropx says the quotation is complete;
+ *   - the SELECTABLE set — each rate's id, carrier/service and NEOGEN cost,
+ *     hence the cheapest, which sets the free-shipping subsidy — has not
+ *     changed for QUOTE_STABLE_MS (twice the gap seen between arrivals);
+ *   - QUOTE_HARD_TIMEOUT_MS. Then only a set that is ALREADY stable is
+ *     offered; a set still changing is a timeout, never a guess at the
+ *     subsidy. Every call inside is cut to the time left.
+ * The first usable rate alone never ends the wait.
+ */
+const QUOTE_HARD_TIMEOUT_MS = 20_000;
+const QUOTE_STABLE_MS = 4_000;
 const POLL_EVERY_MS = 700;
 const CALL_TIMEOUT_MS = 12_000;
 /** "Los rates son válidos por 24 horas." */
@@ -77,6 +96,14 @@ export function __resetSkydropxTokens(): void {
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const clip = (value: string, max: number) => value.trim().slice(0, max);
 
+/** What must hold still before checkout offers a partial quote: ids, services, costs. */
+function selectableSignature(options: readonly RateOption[]): string {
+  return options
+    .map((o) => `${o.rateId}|${o.carrierCode}:${o.serviceCode}|${o.cost.amount}`)
+    .sort()
+    .join(",");
+}
+
 export function destinationFor(order: Pick<Order, "shipping">): QuoteDestination {
   const a = order.shipping;
   return {
@@ -94,15 +121,18 @@ export function createSkydropxProvider(
     sleep?: (ms: number) => Promise<void>;
     /** The quote's time budget is measured on this clock (tests inject one). */
     now?: () => number;
-    /** Only the console's completion check overrides it; checkout keeps the default. */
+    /** Only the console's completion check overrides these; checkout keeps the defaults. */
     quoteBudgetMs?: number;
+    /** False: ignore early stability and poll until complete (or the budget). */
+    stopWhenStable?: boolean;
   } = {},
 ): ShippingProvider {
   const config = deps.config ?? (() => readSkydropxConfig());
   const http: Fetch = (...args) => (deps.fetch ?? fetch)(...args);
   const wait = deps.sleep ?? sleep;
   const clock = deps.now ?? Date.now;
-  const budgetMs = deps.quoteBudgetMs ?? QUOTE_BUDGET_MS;
+  const budgetMs = deps.quoteBudgetMs ?? QUOTE_HARD_TIMEOUT_MS;
+  const stopWhenStable = deps.stopWhenStable ?? true;
   const fail = <T>(error: ShippingError): ShippingResult<T> => ({ ok: false, error });
 
   async function json(response: Response): Promise<unknown> {
@@ -131,7 +161,7 @@ export function createSkydropxProvider(
   async function call(
     cfg: SkydropxConfig,
     path: string,
-    init: { method: "GET" | "POST"; body?: unknown },
+    init: { method: "GET" | "POST"; body?: unknown; timeoutMs?: number },
   ): Promise<Response | null> {
     for (const renew of [false, true]) {
       const bearer = await token(cfg, renew);
@@ -143,7 +173,7 @@ export function createSkydropxProvider(
           ...(init.body !== undefined ? { "Content-Type": "application/json" } : {}),
         },
         body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
-        signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
+        signal: AbortSignal.timeout(Math.min(CALL_TIMEOUT_MS, init.timeoutMs ?? CALL_TIMEOUT_MS)),
         cache: "no-store",
       });
       if (response.status !== 401) return response;
@@ -219,22 +249,40 @@ export function createSkydropxProvider(
         const id = typeof quotation?.id === "string" ? quotation.id : null;
         if (!id) return fail({ code: "provider_error" });
 
+        const selectable = (q: unknown) =>
+          rateOptions(q).filter((r) => carrierAllowed(cfg, r.carrierCode, r.serviceCode));
+        let signature = selectableSignature(selectable(quotation));
+        let unchangedSince = clock();
+        const stable = () => signature !== "" && clock() - unchangedSince >= QUOTE_STABLE_MS;
+
         while (quotation?.is_completed !== true && clock() - started < budgetMs) {
+          if (stopWhenStable && stable()) break;
           await wait(POLL_EVERY_MS);
-          const polled = await call(cfg, `/api/v1/quotations/${encodeURIComponent(id)}`, {
-            method: "GET",
-          });
+          const left = budgetMs - (clock() - started);
+          if (left <= 0) break;
+          let polled: Response | null = null;
+          try {
+            polled = await call(cfg, `/api/v1/quotations/${encodeURIComponent(id)}`, {
+              method: "GET",
+              timeoutMs: left,
+            });
+          } catch {
+            /* One slow or lost poll ends nothing; the deadline does. */
+            continue;
+          }
           if (!polled?.ok) continue;
           quotation = (await json(polled)) as typeof quotation;
+          const next = selectableSignature(selectable(quotation));
+          if (next !== signature) [signature, unchangedSince] = [next, clock()];
         }
 
-        const options = rateOptions(quotation).filter((r) =>
-          carrierAllowed(cfg, r.carrierCode, r.serviceCode),
-        );
+        const options = selectable(quotation);
         if (options.length === 0) {
           if (quotation?.is_completed !== true) return fail({ code: "timeout" });
           return fail({ code: "no_coverage" });
         }
+        /* Out of time while the choice — or the cheapest — was still moving. */
+        if (quotation?.is_completed !== true && !stable()) return fail({ code: "timeout" });
         return {
           ok: true,
           value: {

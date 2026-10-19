@@ -86,6 +86,9 @@ const sky = {
   tokenRequests: [],
   quoteErrorField: "address_to",
   failNext: false,
+  /** A quotation over time: [{ at (ms), completed, rates }], read on `scriptNow()`. */
+  script: null,
+  scriptNow: () => 0,
 };
 let seq = 0;
 const json = (status, body) =>
@@ -222,6 +225,7 @@ globalThis.fetch = async (input, init = {}) => {
       polls: sky.quotePolls,
       rates: sky.rates ?? defaultRates(),
       request: body,
+      script: sky.script,
     });
     return json(201, { id, is_completed: false, rates: [] });
   }
@@ -229,6 +233,11 @@ globalThis.fetch = async (input, init = {}) => {
   if (quo && method === "GET") {
     const q = sky.quotations.get(quo[1]);
     if (!q) return json(404, {});
+    if (q.script) {
+      const now = sky.scriptNow();
+      const at = q.script.filter((step) => step.at <= now).at(-1);
+      return json(200, { id: q.id, is_completed: at.completed, rates: at.rates });
+    }
     q.polls -= 1;
     return json(200, { id: q.id, is_completed: q.polls <= 0, rates: q.polls <= 0 ? q.rates : [] });
   }
@@ -663,7 +672,7 @@ const parcel = provider.parcel();
   completion = await runQuoteCheck(where, { now: tick, sleep: async () => {} });
   ok(
     completion.completion === "TIMED OUT WHILE STILL PROCESSING" && completion.pollRequests < 10,
-    "checkout's own 9 s budget is unchanged",
+    "checkout's own hard limit (20 s) still ends a quote that never completes",
   );
   sky.quotePolls = 1;
 
@@ -744,6 +753,178 @@ const parcel = provider.parcel();
       routeSource.indexOf("spendOnceToken(") < routeSource.indexOf("runQuoteCheck(input"),
     "the quote check route refuses a foreign post, then a resend, before any quotation",
   );
+}
+
+/* ---- 2b. WHEN A QUOTE IS DONE: completion, or a stable selectable set --- */
+{
+  /* The first real sandbox quotation, as a script: MX$159 at ~3 s, the cheaper
+     MX$119 at ~4.8 s, nothing selectable changes after that, completion at
+     ~17.7 s. Each poll costs 700 ms of wait plus 180 ms of answer. */
+  const rate = (provider, service, total, extra = {}) => ({
+    id: `r-${provider}-${service}`,
+    success: true,
+    status: "price_found_external",
+    currency_code: "MXN",
+    total,
+    days: 2,
+    provider_name: provider,
+    provider_display_name: provider,
+    provider_service_name: service,
+    provider_service_code: service,
+    ...extra,
+  });
+  const pending = (provider, service) => ({
+    id: `r-${provider}-${service}`,
+    success: false,
+    status: "pending_to_zone",
+    total: null,
+    provider_name: provider,
+    provider_service_code: service,
+  });
+  const at3 = [rate("paquetexpress", "sin_recoleccion", "158.72"), pending("sendex", "reg")];
+  const at5 = [
+    ...at3,
+    rate("fedex", "standard_overnight", "118.37"),
+    rate("dhl", "express", "305.71"),
+  ];
+  const done = [
+    ...at5.filter((r) => r.success),
+    { ...pending("sendex", "reg"), status: "no_coverage" },
+  ];
+  const realRun = [
+    { at: 0, completed: false, rates: [] },
+    { at: 3000, completed: false, rates: at3 },
+    { at: 4844, completed: false, rates: at5 },
+    { at: 17687, completed: true, rates: done },
+  ];
+  let t = 0;
+  let polls = 0;
+  sky.scriptNow = () => t;
+  const timed = (deps = {}) =>
+    createSkydropxProvider({
+      sleep: async (ms) => {
+        polls += 1;
+        t += ms + 180;
+      },
+      now: () => t,
+      ...deps,
+    });
+  const run = async (script, deps) => {
+    [t, polls, sky.script] = [0, 0, script];
+    const result = await timed(deps).quote(destination, parcel);
+    sky.script = null;
+    return { result, endedAt: t, polls };
+  };
+  const cheapest = (r) => Math.min(...r.value.options.map((o) => o.cost.amount));
+
+  let { result, endedAt } = await run(realRun);
+  ok(result.ok && cheapest(result) === 119, "the real run: checkout offers the MX$119 rate");
+  ok(
+    !result.value.options.some((o) => o.cost.amount === 159) || cheapest(result) === 119,
+    "…never freezing the MX$159 that arrived first as the cheapest",
+  );
+  ok(
+    endedAt >= 4844 + 4000 && endedAt < 17687,
+    `…and stops once the selectable set held still 4 s, before completion (${endedAt} ms)`,
+  );
+  eq(result.value.options.length, 3, "…with every selectable rate");
+  {
+    const methods = shipping.quotedMethods(
+      {
+        destinationKey: "k",
+        quotedAt: "",
+        quote: {
+          provider: "skydropx",
+          quotationId: "q",
+          expiresAt: "",
+          options: result.value.options,
+        },
+        error: null,
+      },
+      { city: "Cuauhtémoc", state: "CMX" },
+      { amount: 10000, currency: "MXN" },
+    );
+    eq(
+      methods.map((m) => m.subsidy.amount),
+      [119, 119, 119],
+      "…so the free-shipping subsidy is MX$119, not MX$159",
+    );
+  }
+
+  /* The first usable rate alone never ends the wait. */
+  ({ result, endedAt } = await run([
+    { at: 0, completed: false, rates: [] },
+    { at: 1000, completed: false, rates: [rate("fedex", "standard_overnight", "118.37")] },
+    { at: 30000, completed: true, rates: [rate("fedex", "standard_overnight", "118.37")] },
+  ]));
+  ok(result.ok && endedAt >= 1000 + 4000, "one early rate is offered only after holding still");
+
+  /* A cheaper rate that lands inside the window restarts it. */
+  ({ result } = await run([
+    { at: 0, completed: false, rates: [] },
+    { at: 2000, completed: false, rates: [rate("dhl", "express", "305.71")] },
+    {
+      at: 5500,
+      completed: false,
+      rates: [rate("dhl", "express", "305.71"), rate("estafeta", "terrestre", "144.13")],
+    },
+    { at: 40000, completed: true, rates: [] },
+  ]));
+  ok(result.ok && cheapest(result) === 145, "a cheaper rate 3.5 s later is still caught");
+
+  /* A price change on the same rate also restarts it. */
+  ({ result } = await run([
+    { at: 0, completed: false, rates: [rate("dhl", "express", "305.71")] },
+    { at: 3000, completed: false, rates: [rate("dhl", "express", "290.00")] },
+    { at: 40000, completed: true, rates: [] },
+  ]));
+  ok(
+    result.ok && cheapest(result) === 290,
+    "a rate whose total changes is offered at its new total",
+  );
+
+  /* Completion ends the wait at once, even before the window. */
+  ({ result, endedAt } = await run([
+    { at: 0, completed: false, rates: [] },
+    { at: 1500, completed: true, rates: [rate("fedex", "standard_overnight", "118.37")] },
+  ]));
+  ok(result.ok && endedAt < 4000, "a completed quotation is offered immediately");
+
+  /* Still changing at the hard limit: a timeout, never a guessed subsidy. */
+  const moving = Array.from({ length: 15 }, (_, i) => ({
+    at: i * 2000,
+    completed: false,
+    rates: [rate("dhl", "express", String(300 - i))],
+  }));
+  ({ result, endedAt } = await run(moving));
+  ok(
+    !result.ok && result.error.code === "timeout" && endedAt <= 20000 + 880,
+    "a selectable set still changing at 20 s is a timeout",
+  );
+
+  /* At the hard limit with a set that HAS held still: offered. */
+  ({ result } = await run(
+    [
+      { at: 0, completed: false, rates: [] },
+      { at: 2000, completed: false, rates: [rate("dhl", "express", "305.71")] },
+    ],
+    { stopWhenStable: false },
+  ));
+  ok(result.ok && cheapest(result) === 306, "a stable partial result at the hard limit is offered");
+
+  /* Nothing selectable, ever: the graceful failures are unchanged. */
+  ({ result } = await run([{ at: 0, completed: false, rates: [pending("sendex", "reg")] }]));
+  eq(result.error?.code, "timeout", "no selectable rate by the hard limit is a timeout");
+  ({ result } = await run([
+    { at: 0, completed: false, rates: [] },
+    { at: 2000, completed: true, rates: [{ ...pending("sendex", "reg"), status: "no_coverage" }] },
+  ]));
+  eq(result.error?.code, "no_coverage", "complete with nothing selectable is no coverage");
+
+  /* The console's completion mode still waits for completion. */
+  ({ result, endedAt } = await run(realRun, { stopWhenStable: false, quoteBudgetMs: 90000 }));
+  ok(result.ok && endedAt >= 17687, "the completion check still polls until complete");
+  sky.scriptNow = () => 0;
 }
 
 /* ======================================================================== */

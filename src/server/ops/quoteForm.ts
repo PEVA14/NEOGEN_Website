@@ -40,7 +40,7 @@ export function quoteFormPage(onceToken: string): string {
 <p><label>Ciudad o municipio <input name="city" required maxlength="60" autocomplete="off"></label></p>
 <p><label>Colonia <input name="colonia" required maxlength="60" autocomplete="off"></label></p>
 <fieldset><legend>Espera</legend>
-<p><label><input type="radio" name="mode" value="checkout" checked> Como el checkout (hasta 9 s; ofrece lo que haya)</label></p>
+<p><label><input type="radio" name="mode" value="checkout" checked> Como el checkout (hasta completar, o 4 s sin cambios en las tarifas elegibles; máx. 20 s)</label></p>
 <p><label><input type="radio" name="mode" value="complete"> Hasta completar (máx. ${COMPLETION_BUDGET_MS / 1000} s; mide cuánto tarda)</label></p>
 </fieldset>
 <p><button type="submit" id="go">Cotizar una vez</button> <span id="state" role="status" aria-live="polite"></span></p>

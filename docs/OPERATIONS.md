@@ -318,6 +318,18 @@ recipient's name, street and number, colonia, notes and phone. **Not** the
 customer's email — the label's contact email is `SHIPPING_ORIGIN_EMAIL`. The
 Aviso de Privacidad (B1) must name Skydropx and the carrier as recipients.
 
+**Quote policy (2026-10-19).** The first real sandbox quotation completed
+after 17.7 s and 20 polls, but every rate a customer could choose — and the
+cheapest, MX$119, which sets the free-shipping subsidy — was there by 4.8 s.
+Checkout therefore stops polling at the first of: Skydropx marks the
+quotation complete; the selectable set (each rate's id, carrier/service and
+NEOGEN cost) has not changed for **4 s**; or **20 s** have passed. At 20 s,
+only a set that has already held still is offered; one still changing is a
+timeout ("quote again"), never a guessed subsidy. The first usable rate alone
+never ends the wait. Expect about 9–10 s on a quote like the real one. The
+stored quote is still reused for 60 minutes. `/ops/diagnostico/skydropx/cotizacion`
+can still poll one quotation until it completes.
+
 ### 6b. The Skydropx contract, verified (2026-10-18)
 
 Against the official API reference (`pro.skydropx.com/es-MX/api-docs.json`,
@@ -332,7 +344,7 @@ configuration; UNVERIFIED = needs a real sandbox call.
 | `POST /api/v1/oauth/token`, client credentials, `access_token` + `expires_in`; 2 h token; 2 requests/s                                                      | VERIFIED                                 |                                                                                                                                        |
 | Token request encoding                                                                                                                                      | UNVERIFIED                               | The reference's example is form-encoded, its schema says JSON; form first, JSON on 400/415                                             |
 | `POST /api/v1/quotations` `{quotation:{address_from, address_to, parcels}}`; `area_level1/2/3` = state/city/colonia; dimensions integer ≥1 cm, weight ≥1 kg | VERIFIED                                 |                                                                                                                                        |
-| `GET /api/v1/quotations/{id}` until `is_completed`                                                                                                          | VERIFIED                                 | Polled within 9 s at ≤2 req/s                                                                                                          |
+| `GET /api/v1/quotations/{id}` until `is_completed`                                                                                                          | VERIFIED                                 | Polled at ≤2 req/s until complete, or the selectable set holds still 4 s; hard limit 20 s (§6, quote policy)                                                                                                          |
 | Rate fields `id`, `success`, `status`, `total`, `currency_code`, `days`, `provider_*`                                                                       | VERIFIED                                 | `total` includes cost, IVA and service fee                                                                                             |
 | Rate status vocabulary (pending, not_applicable, approved, no_coverage, coverage_checked, price_found_internal/external, tariff_price_not_found)            | VERIFIED                                 | Offered only with `success` and a positive `total`                                                                                     |
 | `requires_origin_verification: true` → the shipment fails                                                                                                   | VERIFIED                                 | Such rates are never offered                                                                                                           |
@@ -378,8 +390,8 @@ configuration; UNVERIFIED = needs a real sandbox call.
    with its flags, which rates a customer would be offered and why the
    others are not, and the customer price and subsidy NEOGEN derives. Only
    the token and quotation endpoints can be reached — it cannot create a
-   shipment or a label. Two waits: **como el checkout** (the 9 s budget
-   checkout uses) or **hasta completar** (polls the same one quotation until
+   shipment or a label. Two waits: **como el checkout** (checkout's own
+   policy, below) or **hasta completar** (polls the same one quotation until
    Skydropx marks it complete, at most 90 s). The answer says `COMPLETED` or
    `TIMED OUT WHILE STILL PROCESSING`, how long completion took, and how the
    rates changed meanwhile. One submit per page load: the button locks on

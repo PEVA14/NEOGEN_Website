@@ -296,6 +296,7 @@ export async function runQuoteCheck(
     now: deps.now,
     sleep: deps.sleep,
     quoteBudgetMs: budgetMs,
+    stopWhenStable: !deps.untilComplete,
   });
   const result = await provider.quote(
     destinationFor({ shipping: { ...address, colonia: input.colonia } as never }),
@@ -368,7 +369,13 @@ export async function runQuoteCheck(
       : finalCompleted
         ? "COMPLETED"
         : "TIMED OUT WHILE STILL PROCESSING",
-    pollMode: deps.untilComplete ? "until_complete" : "checkout_budget",
+    pollMode: deps.untilComplete ? "until_complete" : "checkout",
+    /* Why the wait ended: the checkout policy's own words. */
+    stoppedBecause: finalCompleted
+      ? "completed"
+      : result.ok
+        ? "selectable_set_stable"
+        : result.error.code,
     pollBudgetMs: budgetMs ?? "checkout default",
     msFromCreateToCompleted: completedAfterMs,
     pollRequests: polls,
