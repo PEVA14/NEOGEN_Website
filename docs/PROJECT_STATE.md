@@ -1,6 +1,8 @@
 # NEOGEN — Project state and handoff
 
-Last updated **2026-10-16**: **D1 — Skydropx shipping built**: quoted
+Last updated **2026-10-18**: **free-shipping subsidy, and the Skydropx
+adapter verified and corrected against its official contract** (§8bs).
+2026-10-16: **D1 — Skydropx shipping built**: quoted
 rates at checkout, one label per paid order, tracking webhooks, labels and
 cancellations in `/ops`, ES/EN customer states (§8br). 2026-10-15: **D12 — an unresolved payment is cancelled at
 Mercado Pago after an hour, and only an accepted cancellation releases its
@@ -5048,3 +5050,31 @@ sandbox API host is to be confirmed with Skydropx (the reference names only
 production). The quoted delivery step was type-checked and unit-tested but
 not walked in a browser against Skydropx; do it in the staging test
 (`OPERATIONS.md` §6a).
+
+## 8bs. Free-shipping subsidy; Skydropx contract verified (2026-10-18; `0bce22c`)
+
+**Owner policy:** at MX$10,000+ merchandise, the cheapest eligible quoted
+rate is NEOGEN's subsidy; that option is free, a faster one costs the
+customer only the difference; below the threshold the customer pays the
+rate. Server-side only (`shippingSplit`, `selectQuoted`); the subsidy's base
+is the stored quote's cheapest rate, so nothing posted can enlarge it; a
+re-quote recomputes it from the fresh rates. Persisted on the selection:
+`cost`, `subsidyBase`, `subsidy`, and the charge (`price`). ES/EN copy on
+the delivery options (free note, "you pay only the difference"), review
+and receipt; `/ops` shows cost, subsidy and charge.
+
+**Contract verification** (matrix in `OPERATIONS.md` §6b). Corrected in the
+adapter: OAuth JSON fallback (the reference contradicts itself); the
+shipments path's trailing slash; 422 parsing (`errors`, `error_code`) with
+a re-quote only for `errors.rate_id`; quote 422 blames the customer only
+for `address_to`; rates needing origin verification or without a tariff
+are never offered; `error_detail` marks a failed booking; Created/Error
+webhooks read the shipment; a repeated provider answer writes nothing (it
+used to bump `booking.updatedAt`). The fake now models the documented
+contract. `check:shipping`: 174 assertions; negative controls for the
+subsidy, the threshold, origin-verification filtering, the re-quote
+trigger and the token fallback.
+
+**Still UNVERIFIED until a real sandbox call:** the sandbox API host, the
+token request encoding, the refusal body for an expired rate, the
+`workflow_status` values, the real rate validity, webhook retry behaviour.

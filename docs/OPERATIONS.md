@@ -243,9 +243,15 @@ keeps its old free-threshold-only rule; operators can always record a
 **Checkout.** After the address, the delivery step asks Skydropx for rates
 for that address (origin and parcel from configuration) and keeps them on
 the server-side draft. The customer chooses a rate by id; carrier, cost and
-price are read from the stored quote. Customer price: **0 at a merchandise
-subtotal of MX$10,000 or more**, otherwise the rate. The real cost is kept
-on the order (`delivery.quote.cost`, then `booking.cost`). A quote is
+price are read from the stored quote. **Free shipping (owner,
+2026-10-18):** at a merchandise subtotal of MX$10,000 or more, the CHEAPEST
+eligible rate in the quote is NEOGEN's subsidy — that option is free, and a
+faster one costs the customer only the difference (Standard 160 → 0;
+Express 430 → 270). Below the threshold the customer pays the selected
+rate. The order keeps the real cost (`delivery.quote.cost`, then
+`booking.cost`), the subsidy and its base (`subsidy`, `subsidyBase`) and the
+customer's charge (`delivery.price` = `totals.shipping`); a re-quote
+recomputes the subsidy from the fresh rates. A quote is
 offered for 60 minutes; at placement a stale rate is re-quoted for the same
 carrier and service — same price continues, a new price goes back to
 review with a notice, a vanished service back to delivery. Failures (bad
@@ -311,6 +317,45 @@ the destination's postal code, state, city and colonia; for a label, the
 recipient's name, street and number, colonia, notes and phone. **Not** the
 customer's email — the label's contact email is `SHIPPING_ORIGIN_EMAIL`. The
 Aviso de Privacidad (B1) must name Skydropx and the carrier as recipients.
+
+### 6b. The Skydropx contract, verified (2026-10-18)
+
+Against the official API reference (`pro.skydropx.com/es-MX/api-docs.json`,
+OpenAPI 3.0.1 "Skydropx API v1"; identical on 10-15 and 10-18).
+VERIFIED = stated by the reference; CONFIGURABLE = deliberately left to
+configuration; UNVERIFIED = needs a real sandbox call.
+
+| Behaviour                                                                                                                                                   | Status                                   | Notes                                                                                                                                  |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Production host `https://api-pro.skydropx.com`                                                                                                              | VERIFIED                                 | The only server the reference lists                                                                                                    |
+| Sandbox API host                                                                                                                                            | CONFIGURABLE / UNVERIFIED                | The reference names only the sandbox panel `sb-pro.skydropx.com`; `SKYDROPX_API_URL` is required in sandbox — confirm it with Skydropx |
+| `POST /api/v1/oauth/token`, client credentials, `access_token` + `expires_in`; 2 h token; 2 requests/s                                                      | VERIFIED                                 |                                                                                                                                        |
+| Token request encoding                                                                                                                                      | UNVERIFIED                               | The reference's example is form-encoded, its schema says JSON; form first, JSON on 400/415                                             |
+| `POST /api/v1/quotations` `{quotation:{address_from, address_to, parcels}}`; `area_level1/2/3` = state/city/colonia; dimensions integer ≥1 cm, weight ≥1 kg | VERIFIED                                 |                                                                                                                                        |
+| `GET /api/v1/quotations/{id}` until `is_completed`                                                                                                          | VERIFIED                                 | Polled within 9 s at ≤2 req/s                                                                                                          |
+| Rate fields `id`, `success`, `status`, `total`, `currency_code`, `days`, `provider_*`                                                                       | VERIFIED                                 | `total` includes cost, IVA and service fee                                                                                             |
+| Rate status vocabulary (pending, not_applicable, approved, no_coverage, coverage_checked, price_found_internal/external, tariff_price_not_found)            | VERIFIED                                 | Offered only with `success` and a positive `total`                                                                                     |
+| `requires_origin_verification: true` → the shipment fails                                                                                                   | VERIFIED                                 | Such rates are never offered                                                                                                           |
+| Rates valid 24 h                                                                                                                                            | VERIFIED (stated)                        | The reference also ties `unique_shipment`'s 96 h cache to "the rate's lifecycle"; actual expiry UNVERIFIED                             |
+| Quote 422 `errors.address_to/address_from/parcel`                                                                                                           | VERIFIED                                 | Only `address_to` blames the customer                                                                                                  |
+| `POST /api/v1/shipments/` (trailing slash), required `rate_id`, `address_from`, `address_to`, `packages`; field limits                                      | VERIFIED                                 | Destination area comes from the quote                                                                                                  |
+| `consignment_note` and `package_type` required                                                                                                              | VERIFIED                                 | Values CONFIGURABLE (Carta Porte lists)                                                                                                |
+| `unique_shipment: true` — replay 200 for the same rate for 96 h, 409 while in progress                                                                      | VERIFIED                                 | NEOGEN's idempotency layer 2                                                                                                           |
+| Creation answers 202 and resolves asynchronously                                                                                                            | VERIFIED                                 | `sync_label_creation` exists only on the un-quoted `/rate/shipments` endpoints, not used                                               |
+| 422 `{errors, error_code}` (credits, rate not found, Carta Porte…)                                                                                          | VERIFIED (examples)                      | Mapped to reasons; re-quote only for `errors.rate_id`                                                                                  |
+| A rate refused after expiry answers `errors.rate_id`                                                                                                        | UNVERIFIED                               | Assumed from the "no existe un rate con ese id" example                                                                                |
+| `workflow_status` values                                                                                                                                    | UNVERIFIED                               | Only `pending`/`success` documented; `success` = created, `error_detail` present = failed, anything else = still creating              |
+| Package `label_url`, `tracking_number`, `tracking_url_provider`, `tracking_status` in `included`                                                            | VERIFIED                                 | Label fetched on demand, never stored                                                                                                  |
+| Package `tracking_status` uses the webhook vocabulary                                                                                                       | VERIFIED (tracking endpoint codes match) |                                                                                                                                        |
+| `POST /api/v1/shipments/{id}/cancellations` `{reason, shipment_id}` → `{success, status}`; 422 cannot cancel                                                | VERIFIED                                 |                                                                                                                                        |
+| Webhook registration in the panel (Conexiones > Webhooks), no API                                                                                           | VERIFIED                                 |                                                                                                                                        |
+| Webhook HMAC-SHA512 over the raw body, lowercase hex, `Authorization: HMAC <sig>`, header name configurable (3–25 chars)                                    | VERIFIED                                 | Bearer mode deliberately refused                                                                                                       |
+| Webhook payload `packages` with `status`, `tracking_*`, `label_url`, `returned_status`, `relationships.shipment.data.id`; status list                       | VERIFIED                                 | No event id: dedup by shipment + status                                                                                                |
+| Webhook "Created" / "Error"                                                                                                                                 | VERIFIED (listed)                        | Both read the shipment                                                                                                                 |
+| Webhook retry behaviour on non-2xx                                                                                                                          | UNVERIFIED                               | Not documented; the reconcile covers missed events                                                                                     |
+| `auto_advance` (sandbox only; created → picked_up → in_transit → last_mile → delivered each minute)                                                         | VERIFIED                                 | `SKYDROPX_SANDBOX_AUTO_ADVANCE=true`                                                                                                   |
+| `printing_format` standard/thermal                                                                                                                          | VERIFIED                                 |                                                                                                                                        |
+| Pickup: rates say `pickup_automatic`; scheduling is `/pickups`                                                                                              | VERIFIED (fields)                        | Not automated: a non-automatic carrier needs a pickup booked in Skydropx                                                               |
 
 ### 6a. Setting it up
 
