@@ -197,3 +197,24 @@ export function carrierAllowed(
   }
   return !cfg.deny.includes(carrier) && !cfg.deny.includes(both);
 }
+
+/**
+ * ONLY THE CREDENTIALS — for the console's authentication check, which must
+ * work before the origin and parcel are configured. Same rules as
+ * `readSkydropxConfig` for mode, host and the live-outside-production refusal.
+ */
+export function readSkydropxCredentials(
+  env: Env = process.env,
+): { mode: "sandbox" | "live"; apiUrl: string; clientId: string; clientSecret: string } | null {
+  const mode = get(env, "SKYDROPX_MODE");
+  if (mode !== "sandbox" && mode !== "live") return null;
+  if (mode === "live" && env.VERCEL_ENV && env.VERCEL_ENV !== "production") return null;
+  const clientId = get(env, "SKYDROPX_CLIENT_ID");
+  const clientSecret = get(env, "SKYDROPX_CLIENT_SECRET");
+  const apiUrl = (get(env, "SKYDROPX_API_URL") ?? (mode === "live" ? LIVE_API_URL : null))?.replace(
+    /\/+$/,
+    "",
+  );
+  if (!clientId || !clientSecret || !apiUrl || !apiUrl.startsWith("https://")) return null;
+  return { mode, apiUrl, clientId, clientSecret };
+}

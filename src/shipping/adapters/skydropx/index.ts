@@ -114,50 +114,14 @@ export function createSkydropxProvider(
     const key = `${cfg.apiUrl}|${cfg.clientId}`;
     const cached = tokenCache().get(key);
     if (!renew && cached && cached.expiresAt > Date.now()) return cached.token;
-    try {
-      /*
-       * The API reference disagrees with itself here: the endpoint's prose
-       * example posts `application/x-www-form-urlencoded`, its schema declares
-       * `application/json`. The documented example goes first; a 400/415 —
-       * "this format is not accepted" — is retried once as JSON. Anything
-       * else (401 bad credentials) is final.
-       */
-      const fields = {
-        grant_type: "client_credentials",
-        client_id: cfg.clientId,
-        client_secret: cfg.clientSecret,
-      };
-      const post = (contentType: string, body: string) =>
-        http(`${cfg.apiUrl}/api/v1/oauth/token`, {
-          method: "POST",
-          headers: { "Content-Type": contentType },
-          body,
-          signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
-          cache: "no-store",
-        });
-      let response = await post(
-        "application/x-www-form-urlencoded",
-        new URLSearchParams(fields).toString(),
-      );
-      if (response.status === 400 || response.status === 415) {
-        response = await post("application/json", JSON.stringify(fields));
-      }
-      if (!response.ok) return null;
-      const body = (await json(response)) as {
-        access_token?: unknown;
-        expires_in?: unknown;
-      } | null;
-      if (typeof body?.access_token !== "string") return null;
-      const lifetime = typeof body.expires_in === "number" ? body.expires_in : 7200;
-      /* Renewed with ten minutes to spare. */
-      tokenCache().set(key, {
-        token: body.access_token,
-        expiresAt: Date.now() + Math.max(60, lifetime - 600) * 1000,
-      });
-      return body.access_token;
-    } catch {
-      return null;
-    }
+    const result = await requestSkydropxToken(cfg, http);
+    if (!result.ok) return null;
+    /* Renewed with ten minutes to spare. */
+    tokenCache().set(key, {
+      token: result.token,
+      expiresAt: Date.now() + Math.max(60, (result.expiresIn ?? 7200) - 600) * 1000,
+    });
+    return result.token;
   }
 
   /** One authenticated call; a 401 renews the token once. Throws on no answer. */
@@ -495,4 +459,104 @@ export function shipmentRefusal(body: unknown): string {
     if (keys.includes("address_from") || keys.includes("printing_format")) return "configuration";
   }
   return "refused";
+}
+
+/**
+ * ONE TOKEN REQUEST — `POST /api/v1/oauth/token`, client credentials.
+ *
+ * The API reference disagrees with itself here: the endpoint's prose example
+ * posts `application/x-www-form-urlencoded`, its schema declares
+ * `application/json`. The documented example goes first; a 400/415 — "this
+ * format is not accepted" — is retried once as JSON. Anything else (401, bad
+ * credentials) is final.
+ *
+ * Shared by the adapter and the console's authentication check, so the check
+ * proves exactly the code that runs. The token is returned to the adapter
+ * only; `describeTokenAttempt` is what anything else may see.
+ */
+export type TokenAttempt =
+  | {
+      ok: true;
+      token: string;
+      status: number;
+      format: "form" | "json";
+      expiresIn: number | null;
+      tokenType: string | null;
+    }
+  | {
+      ok: false;
+      /** Status of each attempt, in order; null when there was no answer. */
+      statuses: (number | null)[];
+      /** The provider's own error CODE (`error`), never its description. */
+      error: string | null;
+    };
+
+export async function requestSkydropxToken(
+  creds: { apiUrl: string; clientId: string; clientSecret: string },
+  http: typeof fetch = fetch,
+): Promise<TokenAttempt> {
+  const fields = {
+    grant_type: "client_credentials",
+    client_id: creds.clientId,
+    client_secret: creds.clientSecret,
+  };
+  const post = async (format: "form" | "json") => {
+    try {
+      return await http(`${creds.apiUrl}/api/v1/oauth/token`, {
+        method: "POST",
+        headers: {
+          "Content-Type":
+            format === "form" ? "application/x-www-form-urlencoded" : "application/json",
+        },
+        body: format === "form" ? new URLSearchParams(fields).toString() : JSON.stringify(fields),
+        signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
+        cache: "no-store",
+      });
+    } catch {
+      return null;
+    }
+  };
+  const statuses: (number | null)[] = [];
+  let format: "form" | "json" = "form";
+  let response = await post("form");
+  statuses.push(response?.status ?? null);
+  if (response && (response.status === 400 || response.status === 415)) {
+    format = "json";
+    response = await post("json");
+    statuses.push(response?.status ?? null);
+  }
+  let body: Record<string, unknown> | null = null;
+  try {
+    body = response ? ((await response.json()) as Record<string, unknown>) : null;
+  } catch {
+    body = null;
+  }
+  if (!response?.ok || typeof body?.access_token !== "string") {
+    const error =
+      typeof body?.error === "string"
+        ? body.error.replace(/[^A-Za-z0-9_.-]/g, "").slice(0, 40)
+        : null;
+    return { ok: false, statuses, error };
+  }
+  return {
+    ok: true,
+    token: body.access_token,
+    status: response.status,
+    format,
+    expiresIn: typeof body.expires_in === "number" ? body.expires_in : null,
+    tokenType: typeof body.token_type === "string" ? body.token_type.slice(0, 20) : null,
+  };
+}
+
+/** What may be shown about a token attempt: never the token itself. */
+export function describeTokenAttempt(attempt: TokenAttempt) {
+  return attempt.ok
+    ? {
+        authenticated: true,
+        httpStatus: attempt.status,
+        formatAccepted: attempt.format,
+        tokenType: attempt.tokenType,
+        expiresInSeconds: attempt.expiresIn,
+      }
+    : { authenticated: false, httpStatuses: attempt.statuses, providerError: attempt.error };
 }

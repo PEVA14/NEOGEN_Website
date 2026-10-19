@@ -365,6 +365,12 @@ configuration; UNVERIFIED = needs a real sandbox call.
    the sandbox API host Skydropx gives you (the API reference names only
    production, `https://api-pro.skydropx.com`; confirm the sandbox host with
    Skydropx).
+   **Check the credentials before anything else:** signed in to `/ops`, open
+   `/ops/diagnostico/skydropx`. It asks Skydropx for one token — nothing
+   else, nothing billable — and shows `authenticated`, the HTTP status(es),
+   which format was accepted (`form` or `json`), the token's lifetime, or the
+   provider's error code. Never the token, the client id or the secret. It
+   works before steps 2–4 are done.
 2. The origin (`SHIPPING_ORIGIN_NAME`, `_COMPANY`, `_PHONE`, `_EMAIL`,
    `_STREET` (street and number, ≤45), `_REFERENCE` (≤30), `_POSTAL_CODE`,
    `_STATE` (name), `_CITY`, `_NEIGHBORHOOD`), the packed order

@@ -295,10 +295,15 @@ globalThis.fetch = async (input, init = {}) => {
 
 /* ---- application ---------------------------------------------------------- */
 
-const { readSkydropxConfig, carrierAllowed, missingSkydropxEnv } =
+const { readSkydropxConfig, readSkydropxCredentials, carrierAllowed, missingSkydropxEnv } =
   await import("../src/shipping/adapters/skydropx/config.ts");
-const { createSkydropxProvider, __resetSkydropxTokens, destinationFor } =
-  await import("../src/shipping/adapters/skydropx/index.ts");
+const {
+  createSkydropxProvider,
+  __resetSkydropxTokens,
+  destinationFor,
+  requestSkydropxToken,
+  describeTokenAttempt,
+} = await import("../src/shipping/adapters/skydropx/index.ts");
 const { signSkydropxBody, verifySkydropxSignature } =
   await import("../src/shipping/adapters/skydropx/signature.ts");
 const { trackingState } = await import("../src/shipping/adapters/skydropx/vocabulary.ts");
@@ -523,6 +528,39 @@ const parcel = provider.parcel();
   );
   eq(sky.tokenRequests, ["form", "json"], "…by retrying once as JSON after a 415");
   sky.tokenFormats = ["form", "json"];
+
+  /* The console's authentication check: credentials only, nothing secret out. */
+  const onlyCreds = readSkydropxCredentials({
+    SKYDROPX_MODE: "sandbox",
+    SKYDROPX_CLIENT_ID: "client-test",
+    SKYDROPX_CLIENT_SECRET: "secret-test-not-real",
+    SKYDROPX_API_URL: API,
+  });
+  ok(onlyCreds && !readSkydropxConfig({ ...onlyCreds }), "the check needs no origin or parcel");
+  eq(
+    readSkydropxCredentials({ ...process.env, SKYDROPX_MODE: "live", VERCEL_ENV: "preview" }),
+    null,
+    "…and still refuses live credentials outside Production",
+  );
+  const leaks = (shown) =>
+    ["tok-", "client-test", "secret-test-not-real"].some((s) => JSON.stringify(shown).includes(s));
+  sky.tokenRequests = [];
+  let shown = describeTokenAttempt(await requestSkydropxToken(onlyCreds));
+  eq(
+    [shown.authenticated, shown.httpStatus, shown.formatAccepted, shown.expiresInSeconds],
+    [true, 200, "form", 7200],
+    "a working token request reports status, format and lifetime",
+  );
+  ok(!leaks(shown), "…and never the token, the client id or the secret");
+  sky.tokenFormats = ["json"];
+  shown = describeTokenAttempt(await requestSkydropxToken(onlyCreds));
+  eq(shown.formatAccepted, "json", "the JSON fallback is reported as such");
+  sky.tokenFormats = ["form", "json"];
+  sky.rejectToken = true;
+  shown = describeTokenAttempt(await requestSkydropxToken(onlyCreds));
+  eq([shown.authenticated, shown.httpStatuses], [false, [401]], "a refusal reports its status");
+  ok(!leaks(shown), "…without a credential in it");
+  sky.rejectToken = false;
 }
 
 /* ======================================================================== */
