@@ -86,6 +86,18 @@ const sky = {
   tokenRequests: [],
   quoteErrorField: "address_to",
   failNext: false,
+  catalogReads: [],
+  notes: [
+    ...Array.from({ length: 25 }, (_, i) => ({
+      consignment_note: 41000000 + i,
+      description: `Frasco de prueba ${i}`,
+    })),
+    { consignment_note: 12000000, description: "Sustancia de ejemplo en polvo" },
+  ],
+  packagings: [
+    { code: "4G", name: "Caja de cartón" },
+    { code: "5H4", name: "Bolsa de película de plástico" },
+  ],
   /** A quotation over time: [{ at (ms), completed, rates }], read on `scriptNow()`. */
   script: null,
   scriptNow: () => 0,
@@ -208,6 +220,36 @@ globalThis.fetch = async (input, init = {}) => {
   }
   const auth = new Headers(init.headers).get("authorization") ?? "";
   if (!auth.startsWith("Bearer tok-")) return json(401, {});
+  if (
+    path.startsWith("/api/v1/shipments/consignment_notes") ||
+    path.startsWith("/api/v1/shipments/packagings")
+  ) {
+    sky.catalogReads.push(`${method} ${path.split("?")[0]}`);
+    const u = new URL(url);
+    const fold = (t) =>
+      t
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+    const isNotes = u.pathname.endsWith("consignment_notes");
+    const filter = u.searchParams.get(isNotes ? "description" : "name");
+    const all = isNotes ? sky.notes : sky.packagings;
+    const rows = filter
+      ? all.filter((r) => fold(r.description ?? r.name).includes(fold(filter)))
+      : all;
+    const pageNo = Number(u.searchParams.get("page") ?? 1);
+    const per = Math.min(20, Number(u.searchParams.get("per_page") ?? 20));
+    const totalPages = Math.max(1, Math.ceil(rows.length / per));
+    return json(200, {
+      data: rows.slice((pageNo - 1) * per, pageNo * per),
+      meta: {
+        current_page: pageNo,
+        next_page: pageNo < totalPages ? pageNo + 1 : null,
+        total_pages: totalPages,
+        total_count: rows.length,
+      },
+    });
+  }
   const body = init.body ? JSON.parse(init.body) : null;
 
   if (path === "/api/v1/quotations" && method === "POST") {
@@ -798,6 +840,56 @@ const parcel = provider.parcel();
   const callsBefore = sky.tokenRequests.length + sky.creates.length;
   skydropxReadiness();
   eq(sky.tokenRequests.length + sky.creates.length, callsBefore, "…and calls nothing");
+}
+
+/* ---- 2a'. CARTA PORTE CATALOGUES: read-only, nothing chosen ------------- */
+{
+  const { searchCarta, validCatalogQuery } =
+    await import("../src/shipping/adapters/skydropx/catalog.ts");
+  __resetSkydropxTokens();
+  sky.catalogReads = [];
+  const created = sky.creates.length;
+  const quotations = sky.quotations.size;
+  const found = await searchCarta(
+    { products: ["frasco", "polvo"], packaging: ["bolsa"] },
+    { sleep: async () => {} },
+  );
+  eq(
+    found.products.map((p) => [p.query, p.totalCount, p.entries.length, p.truncated]),
+    [
+      ["frasco", 25, 25, false],
+      ["polvo", 1, 1, false],
+    ],
+    "product searches page through the catalogue (20 a page)",
+  );
+  eq(
+    found.products[1].entries,
+    [{ code: "12000000", description: "Sustancia de ejemplo en polvo" }],
+    "…returning the catalogue's own code and wording",
+  );
+  eq(found.packagingAll.entries.length, 2, "the whole packaging catalogue is listed");
+  eq(
+    found.packaging[0].entries.map((e) => e.code),
+    ["5H4"],
+    "…and searched by name",
+  );
+  ok(
+    found.blocked.length === 0 &&
+      sky.catalogReads.every((r) =>
+        /^GET \/api\/v1\/shipments\/(consignment_notes|packagings)$/.test(r),
+      ) &&
+      sky.creates.length === created &&
+      sky.quotations.size === quotations,
+    "only the two catalogue GETs — no quotation, no shipment",
+  );
+  ok(
+    !JSON.stringify(found).includes("tok-") && !JSON.stringify(found).includes("secret-test"),
+    "no token or secret in the answer",
+  );
+  ok(
+    validCatalogQuery("liofilizado") && !validCatalogQuery("a") && !validCatalogQuery("x&y=1"),
+    "search terms are plain words",
+  );
 }
 
 /* ---- 2b. WHEN A QUOTE IS DONE: completion, or a stable selectable set --- */

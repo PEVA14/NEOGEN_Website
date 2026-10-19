@@ -436,6 +436,12 @@ in particular the two Carta Porte codes, which only the owner can declare:
   (`GET /api/v1/shipments/packagings`), e.g. the code for a fibreboard box
   if that is what NEOGEN ships in.
 
+Both catalogues can be searched from `/ops/diagnostico/skydropx/catalogo`
+(operators only, read-only: it can reach only the token and the two
+catalogue GETs). It lists codes with the catalogue's own wording for a set
+of neutral searches (`?productos=a,b` and `?empaque=x,y` replace them); it
+chooses nothing.
+
 Optional for the test: `SKYDROPX_SANDBOX_AUTO_ADVANCE=true` (the sandbox
 moves the parcel through its states every minute) and the tracking webhook
 (`SKYDROPX_WEBHOOK_SECRET`, plus the URL with the Preview's protection
