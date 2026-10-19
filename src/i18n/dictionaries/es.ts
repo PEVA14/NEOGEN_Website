@@ -2226,7 +2226,8 @@ const es = {
           quoted: {
             note: "Opciones de paquetería para tu dirección, con su precio de envío.",
             freeNote:
-              "Tu pedido tiene envío gratis por superar $10,000 MXN: no pagas ninguna de estas opciones.",
+              "Tu pedido tiene envío gratis: la opción más económica no tiene costo. Si eliges una más rápida, pagas solo la diferencia.",
+            upgrade: "Pagas solo la diferencia: el envío gratis cubre {subsidy}.",
             errors: {
               invalid_address:
                 "No pudimos cotizar el envío para esta dirección. Revisa el código postal, la colonia y la ciudad.",
@@ -2544,7 +2545,14 @@ const es = {
       items: { title: "Artículos", quantity: "×" },
       contact: { title: "Contacto", email: "Correo", phone: "Teléfono" },
       shipping: { title: "Envío", estimate: "Estimado" },
-      totals: { subtotal: "Subtotal", shipping: "Envío", free: "Gratis", total: "Total" },
+      totals: {
+        subtotal: "Subtotal",
+        shipping: "Envío",
+        free: "Gratis",
+        total: "Total",
+        shippingUpgrade:
+          "El envío gratis cubrió {subsidy}; pagaste solo la diferencia por un servicio más rápido.",
+      },
       estimateDays: { one: "{n} día hábil", many: "{n} días hábiles" },
       carrierDays: {
         one: "{n} día (estimado de la paquetería)",
@@ -2681,6 +2689,8 @@ const es = {
         cost: "Costo",
         free: "Gratis",
         pending: "Por confirmar",
+        freeApplied: "envío gratis aplicado",
+        upgrade: "pagas la diferencia: el envío gratis cubre {subsidy} de {cost}",
       },
       methodNames: {
         "local-priority": "Entrega prioritaria",

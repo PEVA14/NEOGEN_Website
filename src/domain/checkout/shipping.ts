@@ -42,14 +42,37 @@ export function destinationKey(
 }
 
 /**
- * WHAT THE CUSTOMER PAYS — server-authoritative.
+ * WHAT THE CUSTOMER PAYS — server-authoritative (owner, 2026-10-18).
  *
  * At or above the free-shipping threshold (MX$10,000 merchandise subtotal,
- * `siteConfig`) the customer pays 0, whatever the rate costs NEOGEN; the
- * cost stays on the selection. Below it, the customer pays the rate.
+ * `siteConfig`) NEOGEN subsidises shipping up to the CHEAPEST eligible rate
+ * in the quote: that option is free, and a faster one costs the customer
+ * only the difference. Below the threshold there is no subsidy and the
+ * customer pays the selected rate. The real cost is always kept.
+ *
+ *   Standard 160, Express 430, subtotal ≥ 10,000:
+ *     Standard → subsidy 160, customer 0
+ *     Express  → subsidy 160, customer 270
  */
-export function customerShipping(subtotal: Money, cost: Money): Money {
-  return subtotal.amount >= siteConfig.fulfilment.freeShippingThreshold ? mxn(0) : cost;
+export function shippingSplit(
+  subtotal: Money,
+  cost: Money,
+  cheapest: Money,
+): { subsidy: Money; charge: Money } {
+  const eligible = subtotal.amount >= siteConfig.fulfilment.freeShippingThreshold;
+  const subsidy = eligible ? Math.min(cheapest.amount, cost.amount) : 0;
+  return { subsidy: mxn(subsidy), charge: mxn(cost.amount - subsidy) };
+}
+
+/** The customer's charge alone. */
+export function customerShipping(subtotal: Money, cost: Money, cheapest: Money = cost): Money {
+  return shippingSplit(subtotal, cost, cheapest).charge;
+}
+
+/** The cheapest eligible rate in a stored quote — the subsidy's base. */
+export function cheapestCost(stored: StoredQuote): Money | null {
+  const costs = stored.quote?.options.map((o) => o.cost.amount) ?? [];
+  return costs.length ? mxn(Math.min(...costs)) : null;
 }
 
 /** Is this stored quote for this address, and still fresh enough to offer? */
@@ -73,6 +96,8 @@ export function quotedMethods(
   subtotal: Money,
 ): DeliveryMethod[] {
   if (!stored.quote) return [];
+  const cheapest = cheapestCost(stored);
+  if (!cheapest) return [];
   const route = routeForAddress(address);
   const seen = new Set<string>();
   return [...stored.quote.options]
@@ -85,16 +110,20 @@ export function quotedMethods(
       seen.add(key);
       return true;
     })
-    .map((o) => ({
-      id: o.rateId,
-      kind: "quoted" as const,
-      route,
-      estimateDays: o.estimateDays,
-      price: customerShipping(subtotal, o.cost),
-      basis: "quoted" as const,
-      handling: null,
-      label: { carrier: o.carrier, service: o.service },
-    }));
+    .map((o) => {
+      const split = shippingSplit(subtotal, o.cost, cheapest);
+      return {
+        id: o.rateId,
+        kind: "quoted" as const,
+        route,
+        estimateDays: o.estimateDays,
+        price: split.charge,
+        basis: "quoted" as const,
+        handling: null,
+        label: { carrier: o.carrier, service: o.service },
+        subsidy: split.subsidy,
+      };
+    });
 }
 
 /**
@@ -111,7 +140,11 @@ export function selectQuoted(
   if (!quoteUsable(stored, address, now)) return null;
   const quote = stored!.quote!;
   const option = quote.options.find((o) => o.rateId === rateId);
-  if (!option) return null;
+  const cheapest = cheapestCost(stored!);
+  if (!option || !cheapest) return null;
+  /* The subsidy comes from THIS server-side quote's cheapest rate — never
+     from anything posted, so no form can enlarge it. */
+  const split = shippingSplit(subtotal, option.cost, cheapest);
   const frozen: FrozenQuote = {
     provider: quote.provider,
     quotationId: quote.quotationId,
@@ -121,6 +154,8 @@ export function selectQuoted(
     service: option.service,
     serviceCode: option.serviceCode,
     cost: option.cost,
+    subsidyBase: cheapest,
+    subsidy: split.subsidy,
     quotedAt: stored!.quotedAt,
     expiresAt: quote.expiresAt,
     destinationKey: stored!.destinationKey,
@@ -129,7 +164,7 @@ export function selectQuoted(
     methodId: "quoted",
     route: routeForAddress(address),
     estimateDays: option.estimateDays,
-    price: customerShipping(subtotal, option.cost),
+    price: split.charge,
     quote: frozen,
   };
 }
@@ -151,13 +186,15 @@ export function selectionCurrent(
   if (now - Date.parse(q.quotedAt) > QUOTE_FRESH_MS || Date.parse(q.expiresAt) <= now) {
     return "stale";
   }
-  const price = customerShipping(subtotal, q.cost);
+  const price = customerShipping(subtotal, q.cost, q.subsidyBase);
   return selection.price?.amount === price.amount ? "ok" : "reprice";
 }
 
 /**
  * RE-QUOTE A STALE SELECTION: the same carrier and service in a fresh quote,
- * at its new cost. Null when it is no longer offered.
+ * at its new cost — and the subsidy recomputed from the FRESH set of
+ * eligible rates (the old cheapest may be gone). Null when the service is
+ * no longer offered.
  */
 export function requoteSelection(
   selection: DeliverySelection,
@@ -176,7 +213,8 @@ export function requoteSelection(
 
 /** The same rate, priced by the rule for this subtotal (the threshold moved). */
 export function repriceSelection(selection: DeliverySelection, subtotal: Money): DeliverySelection {
-  return selection.quote
-    ? { ...selection, price: customerShipping(subtotal, selection.quote.cost) }
-    : selection;
+  const q = selection.quote;
+  if (!q) return selection;
+  const split = shippingSplit(subtotal, q.cost, q.subsidyBase);
+  return { ...selection, price: split.charge, quote: { ...q, subsidy: split.subsidy } };
 }

@@ -35,7 +35,14 @@ export function httpsOrNull(value: unknown): string | null {
  * `price_found_*` in examples; both are accepted — a rate's `success` and
  * `total` are what decide.
  */
-const NO_PRICE = new Set(["pending", "not_applicable", "no_coverage", "error", "errored"]);
+const NO_PRICE = new Set([
+  "pending",
+  "not_applicable",
+  "no_coverage",
+  "tariff_price_not_found",
+  "error",
+  "errored",
+]);
 
 export function rateOptions(quotation: unknown): RateOption[] {
   const q = (quotation ?? {}) as { id?: unknown; rates?: unknown };
@@ -46,6 +53,9 @@ export function rateOptions(quotation: unknown): RateOption[] {
     const r = (raw ?? {}) as Record<string, unknown>;
     const total = num(r.total);
     if (r.success !== true || total === null || total <= 0) continue;
+    /* "Si es true, el shipment fallará al crearse hasta completar la
+       verificación" — never offer a rate whose label cannot be bought. */
+    if (r.requires_origin_verification === true) continue;
     if (NO_PRICE.has(str(r.status))) continue;
     if (str(r.currency_code) && str(r.currency_code) !== "MXN") continue;
     if (!str(r.id) || !str(r.provider_name)) continue;
@@ -138,9 +148,12 @@ export function shipmentSnapshot(body: unknown): ShipmentSnapshot | null {
   const p = (pkg?.attributes ?? {}) as Record<string, unknown>;
   const trackingStatus = str(p.tracking_status);
   const total = num(a.total);
+  /* `error_detail` is documented as present "cuando el envío falla" — a
+     failure whatever `workflow_status` says (its values are not enumerated). */
+  const failed = a.error_detail !== null && typeof a.error_detail === "object";
   return {
     providerRef: id,
-    booking: bookingState(str(a.workflow_status)),
+    booking: failed ? "failed" : bookingState(str(a.workflow_status)),
     carrier: str(a.carrier_name) || null,
     service: null,
     trackingNumber: str(p.tracking_number) || str(a.master_tracking_number) || null,

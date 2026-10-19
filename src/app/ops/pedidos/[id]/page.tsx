@@ -753,7 +753,9 @@ export default async function OrderPage({
                       <dd>
                         {money(s.booking.cost.amount)}{" "}
                         <span className={styles.muted}>
-                          · cobrado al cliente {money(order.totals.shipping.amount)}
+                          · subsidio de envío gratis{" "}
+                          {money(order.delivery.quote?.subsidy.amount ?? 0)} · cobrado al cliente{" "}
+                          {money(order.totals.shipping.amount)}
                         </span>
                       </dd>
                     </>

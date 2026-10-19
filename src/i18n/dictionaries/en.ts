@@ -2053,7 +2053,8 @@ const en: Dictionary = {
           quoted: {
             note: "Carrier options for your address, with their shipping price.",
             freeNote:
-              "Your order ships free because it is over MX$10,000: you pay for none of these options.",
+              "Your order ships free: the most economical option costs nothing. If you choose a faster one, you pay only the difference.",
+            upgrade: "You pay only the difference: free shipping covers {subsidy}.",
             errors: {
               invalid_address:
                 "We could not quote shipping for this address. Check the postal code, neighbourhood and city.",
@@ -2345,7 +2346,14 @@ const en: Dictionary = {
       items: { title: "Items", quantity: "×" },
       contact: { title: "Contact", email: "Email", phone: "Phone" },
       shipping: { title: "Shipping", estimate: "Estimate" },
-      totals: { subtotal: "Subtotal", shipping: "Shipping", free: "Free", total: "Total" },
+      totals: {
+        subtotal: "Subtotal",
+        shipping: "Shipping",
+        free: "Free",
+        total: "Total",
+        shippingUpgrade:
+          "Free shipping covered {subsidy}; you paid only the difference for a faster service.",
+      },
       estimateDays: { one: "{n} business day", many: "{n} business days" },
       carrierDays: { one: "{n} day (carrier's estimate)", many: "{n} days (carrier's estimate)" },
       acknowledgedLabel: "Declarations accepted",
@@ -2478,6 +2486,8 @@ const en: Dictionary = {
         cost: "Cost",
         free: "Free",
         pending: "To be confirmed",
+        freeApplied: "free shipping applied",
+        upgrade: "you pay the difference: free shipping covers {subsidy} of {cost}",
       },
       methodNames: {
         "local-priority": "Priority delivery",

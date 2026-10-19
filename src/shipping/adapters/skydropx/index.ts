@@ -115,17 +115,33 @@ export function createSkydropxProvider(
     const cached = tokenCache().get(key);
     if (!renew && cached && cached.expiresAt > Date.now()) return cached.token;
     try {
-      const response = await http(`${cfg.apiUrl}/api/v1/oauth/token`, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          grant_type: "client_credentials",
-          client_id: cfg.clientId,
-          client_secret: cfg.clientSecret,
-        }).toString(),
-        signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
-        cache: "no-store",
-      });
+      /*
+       * The API reference disagrees with itself here: the endpoint's prose
+       * example posts `application/x-www-form-urlencoded`, its schema declares
+       * `application/json`. The documented example goes first; a 400/415 —
+       * "this format is not accepted" — is retried once as JSON. Anything
+       * else (401 bad credentials) is final.
+       */
+      const fields = {
+        grant_type: "client_credentials",
+        client_id: cfg.clientId,
+        client_secret: cfg.clientSecret,
+      };
+      const post = (contentType: string, body: string) =>
+        http(`${cfg.apiUrl}/api/v1/oauth/token`, {
+          method: "POST",
+          headers: { "Content-Type": contentType },
+          body,
+          signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
+          cache: "no-store",
+        });
+      let response = await post(
+        "application/x-www-form-urlencoded",
+        new URLSearchParams(fields).toString(),
+      );
+      if (response.status === 400 || response.status === 415) {
+        response = await post("application/json", JSON.stringify(fields));
+      }
       if (!response.ok) return null;
       const body = (await json(response)) as {
         access_token?: unknown;
@@ -218,8 +234,19 @@ export function createSkydropxProvider(
           },
         });
         if (!created) return fail({ code: "provider_error" });
-        if (created.status === 400 || created.status === 422)
-          return fail({ code: "invalid_address" });
+        /*
+         * 422 names the fields it refused (`errors.address_to.*`,
+         * `errors.address_from.*`, `errors.parcel.*`, per the reference). Only
+         * the DESTINATION is the customer's to correct; an origin or parcel
+         * refusal is NEOGEN's configuration and must not blame the customer.
+         */
+        if (created.status === 422) {
+          const body = (await json(created)) as { errors?: Record<string, unknown> } | null;
+          return fail({
+            code: body?.errors && "address_to" in body.errors ? "invalid_address" : "configuration",
+          });
+        }
+        if (created.status === 400) return fail({ code: "configuration" });
         if (!created.ok) return fail({ code: "provider_error" });
         let quotation = (await json(created)) as { id?: unknown; is_completed?: unknown } | null;
         const id = typeof quotation?.id === "string" ? quotation.id : null;
@@ -266,7 +293,8 @@ export function createSkydropxProvider(
       const o = cfg.origin;
       const street = `${a.street} ${a.numeroExterior}${a.numeroInterior ? ` int. ${a.numeroInterior}` : ""}`;
       try {
-        const response = await call(cfg, "/api/v1/shipments", {
+        /* The path as the reference writes it, with its trailing slash. */
+        const response = await call(cfg, "/api/v1/shipments/", {
           method: "POST",
           body: {
             shipment: {
@@ -306,12 +334,7 @@ export function createSkydropxProvider(
         if (!response) return fail({ code: "provider_error" });
         if (response.status === 409) return fail({ code: "in_progress" });
         if (response.status === 400 || response.status === 422) {
-          const body = (await json(response)) as { error?: unknown } | null;
-          return fail({
-            code: "refused",
-            detail:
-              typeof body?.error === "string" ? body.error.slice(0, 60) : `http_${response.status}`,
-          });
+          return fail({ code: "refused", detail: shipmentRefusal(await json(response)) });
         }
         if (!response.ok) return fail({ code: "provider_error" });
         const snapshot = shipmentSnapshot(await json(response));
@@ -410,6 +433,10 @@ export function createSkydropxProvider(
       if (typeof shipment !== "string" || !/^[A-Za-z0-9_-]{1,80}$/.test(shipment) || !status) {
         return { kind: "malformed" };
       }
+      /* "Created" (label ready) and "Error" (the shipment could not be
+         created) are about the booking, not the parcel's movement. */
+      if (status === "created" || status === "error")
+        return { kind: "refresh", providerRef: shipment };
       const mapped = trackingState(status, returned);
       if (!mapped) return { kind: "ignored", reason: `status:${status.slice(0, 30)}` };
       const tracking =
@@ -437,3 +464,35 @@ export const skydropxProvider = createSkydropxProvider();
 
 /** The snapshot type, re-exported for the booking service. */
 export type { ShipmentSnapshot };
+
+/**
+ * WHY SKYDROPX REFUSED A SHIPMENT — from its documented 422 bodies:
+ * `{ errors: string | { field: [messages] }, error_code? }`. Reduced to a
+ * code NEOGEN acts on; the provider's prose is never stored or shown.
+ *
+ *   rate_not_found        `errors.rate_id` — the rate is gone (expired):
+ *                         the only refusal worth a re-quote
+ *   insufficient_credits  no credit or collection limit (`error_code`, or
+ *                         the documented "créditos" message): top up
+ *   carta_porte           `consignment_note` / `package_type` refused
+ *   destination           `address_to` refused
+ *   configuration         `address_from` / `printing_format` refused
+ *   refused               anything else
+ */
+export function shipmentRefusal(body: unknown): string {
+  const b = (body ?? {}) as { errors?: unknown; error_code?: unknown };
+  const code = typeof b.error_code === "string" ? b.error_code : "";
+  if (/CREDIT|DEBT_LIMIT|COLLECTION/i.test(code)) return "insufficient_credits";
+  const errors = b.errors;
+  if (typeof errors === "string") {
+    return /cr[eé]dito/i.test(errors) ? "insufficient_credits" : "refused";
+  }
+  if (errors && typeof errors === "object") {
+    const keys = Object.keys(errors);
+    if (keys.includes("rate_id")) return "rate_not_found";
+    if (keys.includes("consignment_note") || keys.includes("package_type")) return "carta_porte";
+    if (keys.includes("address_to")) return "destination";
+    if (keys.includes("address_from") || keys.includes("printing_format")) return "configuration";
+  }
+  return "refused";
+}

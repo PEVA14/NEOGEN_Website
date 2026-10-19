@@ -31,6 +31,8 @@ export interface ReviewCopy {
     cost: string;
     free: string;
     pending: string;
+    freeApplied: string;
+    upgrade: string;
   };
   methodNames: Record<Exclude<DeliverySelection["methodId"], "quoted">, string>;
   totals: { subtotal: string; shipping: string; total: string; pending: string; note: string };
@@ -244,11 +246,17 @@ export function ReviewPanel({
                 : []),
               {
                 key: copy.delivery.cost,
-                value: delivery.price
-                  ? delivery.price.amount === 0
-                    ? copy.delivery.free
-                    : formatPrice(delivery.price, localeTag)
-                  : copy.delivery.pending,
+                value: !delivery.price
+                  ? copy.delivery.pending
+                  : delivery.quote && delivery.quote.subsidy.amount > 0
+                    ? delivery.price.amount === 0
+                      ? `${copy.delivery.free} — ${copy.delivery.freeApplied}`
+                      : `${formatPrice(delivery.price, localeTag)} — ${copy.delivery.upgrade
+                          .replace("{subsidy}", formatPrice(delivery.quote.subsidy, localeTag))
+                          .replace("{cost}", formatPrice(delivery.quote.cost, localeTag))}`
+                    : delivery.price.amount === 0
+                      ? copy.delivery.free
+                      : formatPrice(delivery.price, localeTag),
               },
             ]}
           />

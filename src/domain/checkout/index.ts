@@ -55,6 +55,7 @@ export {
 } from "./delivery";
 
 export {
+  cheapestCost,
   customerShipping,
   destinationKey,
   QUOTE_FRESH_MS,
@@ -64,6 +65,7 @@ export {
   requoteSelection,
   selectionCurrent,
   selectQuoted,
+  shippingSplit,
 } from "./shipping";
 
 export {

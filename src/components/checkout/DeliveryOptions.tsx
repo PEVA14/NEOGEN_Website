@@ -15,6 +15,8 @@ export interface DeliveryCopy {
   estimateDays: DayCount;
   /** A carrier's own day count — not promised as business days. */
   carrierDays: DayCount;
+  /** Quoted shipping (D1): the line under a faster option above the free threshold. */
+  quoted?: { upgrade: string };
   cost: string;
   free: string;
   ratePending: string;
@@ -110,6 +112,16 @@ export function DeliveryOptions({
                     : copy.ratePending}
                 </Mono>
               </span>
+
+              {method.subsidy &&
+              method.subsidy.amount > 0 &&
+              method.price &&
+              method.price.amount > 0 &&
+              copy.quoted ? (
+                <Mono size="2xs" className={styles.meta}>
+                  {copy.quoted.upgrade.replace("{subsidy}", formatPrice(method.subsidy, localeTag))}
+                </Mono>
+              ) : null}
 
               {method.estimateDays !== null ? (
                 <Mono size="2xs" className={styles.meta}>

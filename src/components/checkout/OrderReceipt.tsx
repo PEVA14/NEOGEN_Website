@@ -25,7 +25,13 @@ export interface ReceiptCopy {
   items: { title: string; quantity: string };
   contact: { title: string; email: string; phone: string };
   shipping: { title: string; estimate: string };
-  totals: { subtotal: string; shipping: string; free: string; total: string };
+  totals: {
+    subtotal: string;
+    shipping: string;
+    free: string;
+    total: string;
+    shippingUpgrade: string;
+  };
   /** Singular and plural — see `formatDays`. */
   estimateDays: DayCount;
   carrierDays: DayCount;
@@ -176,6 +182,16 @@ export function OrderReceipt({
                   : formatPrice(order.totals.shipping, localeTag)}
               </Mono>
             </div>
+            {order.delivery.quote &&
+            order.delivery.quote.subsidy.amount > 0 &&
+            order.totals.shipping.amount > 0 ? (
+              <Mono size="2xs" className={styles.lineMeta}>
+                {copy.totals.shippingUpgrade.replace(
+                  "{subsidy}",
+                  formatPrice(order.delivery.quote.subsidy, localeTag),
+                )}
+              </Mono>
+            ) : null}
             <div className={`${styles.totalRow} ${styles.grand}`}>
               <Mono as="dt" size="2xs" className={styles.totalKey}>
                 {copy.totals.total}

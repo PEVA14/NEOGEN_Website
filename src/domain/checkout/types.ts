@@ -127,6 +127,17 @@ export interface FrozenQuote {
   serviceCode: string;
   /** What the provider quoted NEOGEN — the logistics cost. */
   cost: Money;
+  /**
+   * The cheapest eligible rate in the quote this selection was made from —
+   * the free-shipping subsidy's base (owner, 2026-10-18). Kept so the
+   * subsidy can be recomputed when the subtotal crosses the threshold.
+   */
+  subsidyBase: Money;
+  /**
+   * What NEOGEN pays of `cost` as free shipping: `subsidyBase` at or above
+   * the threshold, 0 below. The customer pays `cost − subsidy`.
+   */
+  subsidy: Money;
   quotedAt: string;
   expiresAt: string;
   /** Which address the rate was quoted for (`destinationKey`). */
@@ -153,13 +164,7 @@ export interface StoredQuote {
     }[];
   } | null;
   /** Present when it did not: why, for the customer's message. */
-  error:
-    | "invalid_address"
-    | "no_coverage"
-    | "timeout"
-    | "provider_error"
-    | "rate_limited"
-    | null;
+  error: "invalid_address" | "no_coverage" | "timeout" | "provider_error" | "rate_limited" | null;
 }
 
 export interface DeliveryMethod {
@@ -184,6 +189,11 @@ export interface DeliveryMethod {
   handling: null;
   /** A quoted rate's carrier and service, as the provider names them. */
   label?: { carrier: string; service: string };
+  /**
+   * Free shipping applied to this option: the whole price for the cheapest
+   * option, part of it for a faster one (the customer pays the difference).
+   */
+  subsidy?: Money;
 }
 
 export interface DeliverySelection {

@@ -1,5 +1,6 @@
 import { signal } from "@/server/observe";
-import { applyTrackingEvent } from "@/server/shipping/tracking";
+import { findByShipment } from "@/server/shipping/booking";
+import { applyTrackingEvent, refreshOrderShipment } from "@/server/shipping/tracking";
 import { activeShippingProvider } from "@/shipping";
 
 /**
@@ -40,6 +41,14 @@ export async function POST(request: Request): Promise<Response> {
       return json({ error: "invalid_payload" }, 400);
     case "ignored":
       return json({ received: true, outcome: "ignored" }, 200);
+    case "refresh": {
+      const order = await findByShipment(provider.id, verdict.providerRef);
+      if (!order) return json({ received: true, outcome: "unknown_shipment" }, 200);
+      const outcome = await refreshOrderShipment(order.id);
+      return outcome === "unreachable"
+        ? json({ error: "provider_unreachable" }, 503)
+        : json({ received: true, outcome }, 200);
+    }
     case "verified": {
       const outcome = await applyTrackingEvent(provider.id, verdict.event);
       return outcome === "failed"

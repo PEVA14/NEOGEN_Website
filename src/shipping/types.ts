@@ -96,6 +96,11 @@ export interface TrackingEvent {
 
 export type ShippingWebhookVerdict =
   | { kind: "verified"; event: TrackingEvent }
+  /**
+   * Authentic, about the shipment ITSELF (its label was created, or it
+   * could not be): read the shipment and apply what the provider says.
+   */
+  | { kind: "refresh"; providerRef: string }
   /** Authentic, but not about a parcel's movement. Acknowledge it. */
   | { kind: "ignored"; reason: string }
   | { kind: "unauthenticated" }
@@ -115,6 +120,8 @@ export type ShippingError =
   | { code: "refused"; detail: string }
   /** No answer in time — the request may or may not have arrived. */
   | { code: "timeout" }
+  /** The provider refused NEOGEN's own configuration (origin, parcel, codes). */
+  | { code: "configuration" }
   | { code: "provider_error" };
 
 export type ShippingResult<T> = { ok: true; value: T } | { ok: false; error: ShippingError };

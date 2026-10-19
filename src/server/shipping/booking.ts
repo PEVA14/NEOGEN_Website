@@ -117,7 +117,12 @@ export async function bookShipment(
   let result = await provider.createShipment(order, parcel, rateId, shipment.id);
 
   /* 3. One re-quote if the rate itself was refused (expired, or withdrawn). */
-  if (!result.ok && result.error.code === "refused" && !shipment.providerRef) {
+  if (
+    !result.ok &&
+    result.error.code === "refused" &&
+    result.error.detail === "rate_not_found" &&
+    !shipment.providerRef
+  ) {
     const q = order.delivery.quote!;
     const fresh = await provider.quote(destinationFor(order), parcel);
     const same = fresh.ok
@@ -151,8 +156,10 @@ export async function bookShipment(
     return result.value.booking === "created" ? "booked" : "creating";
   }
 
-  const code = result.error.code;
-  const retryable = code !== "refused";
+  /* A refusal is recorded by its reason (rate_not_found, insufficient_credits,
+     carta_porte…), so an operator sees what to fix. */
+  const code = result.error.code === "refused" ? result.error.detail : result.error.code;
+  const retryable = result.error.code !== "refused" && result.error.code !== "configuration";
   signal("shipping.provider_error", retryable ? "warn" : "error", {
     orderId,
     code,

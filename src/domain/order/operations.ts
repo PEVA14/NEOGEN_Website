@@ -674,7 +674,7 @@ export function answerBooking(
   }
   const url = safeTrackingUrl(answer.trackingUrl);
   const firstAnswer = shipment.booking.status !== "created" && answer.created;
-  const next = withShipment(order, shipmentId, (s) => ({
+  const change = (s: Shipment): Shipment => ({
     ...s,
     providerRef: answer.providerRef,
     carrier: answer.carrier ?? s.carrier,
@@ -687,9 +687,15 @@ export function answerBooking(
       status: answer.created ? "created" : s.booking!.status,
       cost: answer.cost ?? s.booking!.cost,
       lastError: answer.created ? null : s.booking!.lastError,
-      updatedAt: at,
+      updatedAt: s.booking!.updatedAt,
     },
-  }));
+  });
+  /* The same answer again (a repeated webhook, a refresh) writes nothing. */
+  if (JSON.stringify(change(shipment)) === JSON.stringify(shipment)) return { ok: true, order };
+  const next = withShipment(order, shipmentId, (s) => {
+    const changed = change(s);
+    return { ...changed, booking: { ...changed.booking!, updatedAt: at } };
+  });
   return {
     ok: true,
     order: firstAnswer
@@ -853,8 +859,7 @@ export function applyTracking(
       ? []
       : SHIPMENT_TRANSITIONS[current.state].includes(event.state)
         ? [event.state]
-        : current.state === "pending" &&
-            SHIPMENT_TRANSITIONS.in_transit.includes(event.state)
+        : current.state === "pending" && SHIPMENT_TRANSITIONS.in_transit.includes(event.state)
           ? ["in_transit", event.state]
           : [];
   if (current.state !== event.state && path.length === 0) {

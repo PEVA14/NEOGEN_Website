@@ -81,6 +81,11 @@ const sky = {
   refuseRates: new Set(),
   cancelMode: "ok",
   rejectToken: false,
+  /** The reference's own contradiction: some accounts may only take JSON. */
+  tokenFormats: ["form", "json"],
+  tokenRequests: [],
+  quoteErrorField: "address_to",
+  failNext: false,
 };
 let seq = 0;
 const json = (status, body) =>
@@ -121,6 +126,29 @@ const defaultRates = () => [
     provider_name: "dhl",
     provider_service_code: "standard",
   },
+  {
+    /* Priced, but the label would fail: origin not verified for this carrier. */
+    id: `rate-${++seq}`,
+    success: true,
+    status: "approved",
+    currency_code: "MXN",
+    total: "90.00",
+    days: 1,
+    provider_name: "estafeta",
+    provider_display_name: "Estafeta",
+    provider_service_name: "Dia siguiente",
+    provider_service_code: "next_day",
+    requires_origin_verification: true,
+  },
+  {
+    id: `rate-${++seq}`,
+    success: true,
+    status: "tariff_price_not_found",
+    currency_code: "MXN",
+    total: "1.00",
+    provider_name: "paquetexpress",
+    provider_service_code: "ground",
+  },
 ];
 function shipmentBody(s) {
   return {
@@ -132,6 +160,9 @@ function shipmentBody(s) {
         carrier_name: s.carrier,
         master_tracking_number: s.tracking,
         total: s.total,
+        error_detail: s.failed
+          ? { error_code: "ERR_INVALID_ADDRESS", error_message: "x", error_message_detail: null }
+          : null,
       },
     },
     included: [
@@ -158,10 +189,19 @@ globalThis.fetch = async (input, init = {}) => {
   if (!url.startsWith(API)) return json(404, {});
   const path = url.slice(API.length);
   if (path === "/api/v1/oauth/token") {
+    const type = new Headers(init.headers).get("content-type") ?? "";
+    const format = type.includes("json") ? "json" : "form";
+    sky.tokenRequests.push(format);
+    if (!sky.tokenFormats.includes(format)) return json(415, {});
+    const fields =
+      format === "json"
+        ? JSON.parse(init.body)
+        : Object.fromEntries(new URLSearchParams(init.body));
+    if (fields.grant_type !== "client_credentials" || !fields.client_id) return json(400, {});
     sky.tokens += 1;
     return sky.rejectToken
       ? json(401, {})
-      : json(200, { access_token: `tok-${sky.tokens}`, expires_in: 7200 });
+      : json(200, { access_token: `tok-${sky.tokens}`, token_type: "Bearer", expires_in: 7200 });
   }
   const auth = new Headers(init.headers).get("authorization") ?? "";
   if (!auth.startsWith("Bearer tok-")) return json(401, {});
@@ -169,7 +209,13 @@ globalThis.fetch = async (input, init = {}) => {
 
   if (path === "/api/v1/quotations" && method === "POST") {
     if (sky.quoteStatus === "throw") throw new TypeError("fetch failed");
-    if (sky.quoteStatus !== 201) return json(sky.quoteStatus, { error: "unprocessable_entity" });
+    if (sky.quoteStatus === 422) {
+      return json(422, {
+        error: "unprocessable_entity",
+        errors: { [sky.quoteErrorField]: { postal_code: ["no es válido"] } },
+      });
+    }
+    if (sky.quoteStatus !== 201) return json(sky.quoteStatus, { message: "bad request" });
     const id = `quo-${++seq}`;
     sky.quotations.set(id, {
       id,
@@ -186,11 +232,28 @@ globalThis.fetch = async (input, init = {}) => {
     q.polls -= 1;
     return json(200, { id: q.id, is_completed: q.polls <= 0, rates: q.polls <= 0 ? q.rates : [] });
   }
-  if (path === "/api/v1/shipments" && method === "POST") {
+  if (path === "/api/v1/shipments/" && method === "POST") {
     const s = body.shipment;
     sky.creates.push(s);
-    if (sky.refuseRates.has(s.rate_id)) return json(422, { error: "rate_expired" });
-    if (sky.createMode === "refuse") return json(422, { error: "unprocessable_entity" });
+    if (!s.packages?.[0]?.consignment_note || !s.packages?.[0]?.package_type) {
+      return json(422, {
+        errors: {
+          consignment_note: ["No puede estar en blanco"],
+          package_type: ["No puede estar en blanco"],
+        },
+      });
+    }
+    if (sky.refuseRates.has(s.rate_id)) {
+      return json(422, { errors: { rate_id: ["no existe un rate con ese id"] } });
+    }
+    if (sky.createMode === "credits") {
+      return json(422, {
+        errors: "No tienes los créditos suficientes para este envío. Agrega créditos y continúa.",
+      });
+    }
+    if (sky.createMode === "refuse") {
+      return json(422, { errors: { address_to: ["No puede estar en blanco"] } });
+    }
     if (sky.createMode === "in_progress") return json(409, {});
     if (sky.createMode === "down") return json(503, {});
     /* unique_shipment: the same rate is the same shipment, replayed. */
@@ -204,6 +267,11 @@ globalThis.fetch = async (input, init = {}) => {
       trackingStatus: "created",
       total: "184.20",
     };
+    if (sky.failNext) {
+      shipment.workflow = "pending";
+      shipment.failed = true;
+      sky.failNext = false;
+    }
     sky.shipments.set(shipment.id, shipment);
     if (s.unique_shipment) sky.byRate.set(s.rate_id, shipment.id);
     if (sky.createMode === "lost") throw new TypeError("fetch failed");
@@ -405,6 +473,58 @@ const parcel = provider.parcel();
   );
 }
 
+/* ---- the verified contract (2026-10-18 verification pass) --------------- */
+{
+  const q = await provider.quote(destination, parcel);
+  ok(
+    !q.value.options.some((o) => o.carrierCode === "estafeta"),
+    "a rate that requires origin verification is never offered (its label would fail)",
+  );
+  ok(
+    !q.value.options.some((o) => o.carrierCode === "paquetexpress"),
+    "a tariff_price_not_found rate is never offered",
+  );
+
+  sky.quoteStatus = 422;
+  sky.quoteErrorField = "address_from";
+  eq(
+    (await provider.quote(destination, parcel)).error?.code,
+    "configuration",
+    "a refused ORIGIN is NEOGEN's configuration, not the customer's address",
+  );
+  sky.quoteErrorField = "parcel";
+  eq(
+    (await provider.quote(destination, parcel)).error?.code,
+    "configuration",
+    "a refused parcel is configuration too",
+  );
+  sky.quoteErrorField = "address_to";
+  eq(
+    (await provider.quote(destination, parcel)).error?.code,
+    "invalid_address",
+    "only a refused DESTINATION asks the customer to correct it",
+  );
+  sky.quoteStatus = 201;
+
+  /* OAuth: the reference shows form-encoded, its schema says JSON. */
+  __resetSkydropxTokens();
+  sky.tokenRequests = [];
+  ok(
+    (await provider.quote(destination, parcel)).ok,
+    "the documented form-encoded token request works",
+  );
+  eq(sky.tokenRequests, ["form"], "form-encoded is tried first");
+  __resetSkydropxTokens();
+  sky.tokenRequests = [];
+  sky.tokenFormats = ["json"];
+  ok(
+    (await provider.quote(destination, parcel)).ok,
+    "an account that only takes JSON still authenticates",
+  );
+  eq(sky.tokenRequests, ["form", "json"], "…by retrying once as JSON after a 415");
+  sky.tokenFormats = ["form", "json"];
+}
+
 /* ======================================================================== */
 /* 3. CHECKOUT RULES — server price, tampering, expiry, re-quote             */
 /* ======================================================================== */
@@ -444,9 +564,52 @@ function stored(at = NOW, options) {
   };
 }
 {
-  const free = shipping.selectQuoted(stored(), "r-fedex", ADDRESS, mxn(12500), NOW);
-  eq(free.price, mxn(0), "≥ MX$10,000: the customer pays no shipping");
-  eq(free.quote.cost, mxn(184), "…and NEOGEN's real logistics cost is kept");
+  /* FREE-SHIPPING POLICY (owner, 2026-10-18): the cheapest eligible rate is
+     the subsidy; it is free, and a faster one costs only the difference. */
+  const standard = shipping.selectQuoted(stored(), "r-sendex", ADDRESS, mxn(12500), NOW);
+  eq(
+    [standard.price, standard.quote.cost, standard.quote.subsidy],
+    [mxn(0), mxn(106), mxn(106)],
+    "≥ MX$10,000: the cheapest option is free — subsidy = its cost",
+  );
+  const express = shipping.selectQuoted(stored(), "r-fedex", ADDRESS, mxn(12500), NOW);
+  eq(
+    [express.price, express.quote.cost, express.quote.subsidy],
+    [mxn(78), mxn(184), mxn(106)],
+    "≥ MX$10,000: a faster option costs the customer only the difference (184 − 106)",
+  );
+  const owner = shipping.selectQuoted(
+    stored(NOW, [
+      {
+        rateId: "std",
+        carrier: "A",
+        carrierCode: "a",
+        service: "Standard",
+        serviceCode: "std",
+        cost: mxn(160),
+        estimateDays: 4,
+      },
+      {
+        rateId: "exp",
+        carrier: "B",
+        carrierCode: "b",
+        service: "Express",
+        serviceCode: "exp",
+        cost: mxn(430),
+        estimateDays: 1,
+      },
+    ]),
+    "exp",
+    ADDRESS,
+    mxn(10000),
+    NOW,
+  );
+  eq(
+    [owner.quote.cost, owner.quote.subsidy, owner.price],
+    [mxn(430), mxn(160), mxn(270)],
+    "the owner's example: Express 430, subsidy 160, customer 270",
+  );
+  eq(owner.quote.subsidyBase, mxn(160), "the subsidy's base is kept for audit");
   const lines = [
     {
       variantId: "v1",
@@ -458,16 +621,35 @@ function stored(at = NOW, options) {
       lineTotal: mxn(12500),
     },
   ];
-  eq(
-    orderTotals(lines, free).total,
-    mxn(12500),
-    "the order total is products + the customer's shipping",
-  );
+  eq(orderTotals(lines, standard).total, mxn(12500), "free standard: total = products");
+  eq(orderTotals(lines, express).total, mxn(12578), "upgraded: total = products + the difference");
 
   const paid = shipping.selectQuoted(stored(), "r-sendex", ADDRESS, mxn(5000), NOW);
-  eq(paid.price, mxn(106), "< MX$10,000: the customer pays the selected rate");
+  eq(
+    [paid.price, paid.quote.subsidy],
+    [mxn(106), mxn(0)],
+    "< MX$10,000: the customer pays the full selected rate, no subsidy",
+  );
+  eq(
+    shipping.selectQuoted(stored(), "r-fedex", ADDRESS, mxn(5000), NOW).price,
+    mxn(184),
+    "< MX$10,000: the full rate for a faster option too",
+  );
   const smallLines = [{ ...lines[0], unitPrice: mxn(5000), lineTotal: mxn(5000) }];
   eq(orderTotals(smallLines, paid).total, mxn(5106), "…and it is in the total charged");
+
+  /* Tampering cannot enlarge the subsidy: its base is the stored quote's
+     cheapest rate, and nothing posted reaches it. */
+  ok(
+    shipping.quotedMethods(stored(), ADDRESS, mxn(12500)).every((m) => m.subsidy.amount <= 106),
+    "no option carries a subsidy above the cheapest rate",
+  );
+  eq(express.quote.subsidy, mxn(106), "choosing an expensive rate does not raise the subsidy");
+  eq(
+    shipping.selectQuoted(stored(), "r-fedex&subsidy=999", ADDRESS, mxn(12500), NOW),
+    null,
+    "a crafted rate id selects nothing",
+  );
 
   eq(
     shipping.selectQuoted(stored(), "r-forged", ADDRESS, mxn(5000), NOW),
@@ -523,6 +705,49 @@ function stored(at = NOW, options) {
     ["r-sendex-2", mxn(120)],
     "a re-quote keeps the carrier and service, at the new price",
   );
+  /* Above the threshold the old cheapest disappears in the re-quote: the
+     subsidy is recomputed from the NEW eligible rates, never kept stale. */
+  const upgradedOld = shipping.selectQuoted(stored(), "r-fedex", ADDRESS, mxn(12500), NOW);
+  const later = NOW + 2 * 3600 * 1000;
+  const reupgraded = shipping.requoteSelection(
+    upgradedOld,
+    stored(later, [
+      {
+        rateId: "r-fedex-2",
+        carrier: "FedEx",
+        carrierCode: "fedex",
+        service: "Express Saver",
+        serviceCode: "express_saver",
+        cost: mxn(200),
+        estimateDays: 2,
+      },
+      {
+        rateId: "r-dhl",
+        carrier: "DHL",
+        carrierCode: "dhl",
+        service: "Standard",
+        serviceCode: "standard",
+        cost: mxn(150),
+        estimateDays: 4,
+      },
+    ]),
+    ADDRESS,
+    mxn(12500),
+    later,
+  );
+  eq(
+    [reupgraded.quote.subsidy, reupgraded.price, reupgraded.quote.cost],
+    [mxn(150), mxn(50), mxn(200)],
+    "a re-quote recomputes the subsidy from the fresh cheapest rate (Sendex gone → DHL 150)",
+  );
+  eq(
+    shipping.repriceSelection(
+      shipping.selectQuoted(stored(), "r-fedex", ADDRESS, mxn(5000), NOW),
+      mxn(12500),
+    ).price,
+    mxn(78),
+    "crossing the threshold applies the subsidy from the frozen base",
+  );
   eq(
     shipping.requoteSelection(
       paid,
@@ -555,7 +780,7 @@ async function order(state = "paid", { subtotal = 12500, quote = true } = {}) {
   orderSeq += 1;
   const at = "2026-10-16T10:00:00.000Z";
   const q = await provider.quote(destination, parcel);
-  const rate = q.value.options[0];
+  const rate = [...q.value.options].sort((a, b) => a.cost.amount - b.cost.amount)[0];
   const delivery = shipping.selectQuoted(
     {
       destinationKey: shipping.destinationKey(ADDRESS),
@@ -764,6 +989,34 @@ __resetOutbox();
   sky.createMode = "ok";
 }
 
+{
+  /* Out of credit: recorded by its reason, never re-quoted. */
+  const o = await order("paid");
+  sky.createMode = "credits";
+  const quotations = sky.quotations.size;
+  eq(await bookShipment(o.id), "failed", "insufficient Skydropx credit fails the booking");
+  eq(
+    (await load(o.id)).shipments[0].booking.lastError,
+    "insufficient_credits",
+    "with the reason an operator can act on",
+  );
+  eq(sky.quotations.size, quotations, "and no re-quote is attempted for it");
+  sky.createMode = "ok";
+}
+{
+  const o = await order("paid");
+  ok(
+    o.delivery.quote.cost.amount > 0 &&
+      o.delivery.quote.subsidy.amount === o.delivery.quote.cost.amount,
+    "the order keeps the logistics cost and the subsidy it was quoted with",
+  );
+  eq(
+    o.totals.shipping,
+    mxn(0),
+    "the cheapest option above the threshold charged the customer nothing",
+  );
+}
+
 /* ======================================================================== */
 /* 5. TRACKING — verified, deduplicated, order-safe                           */
 /* ======================================================================== */
@@ -905,6 +1158,37 @@ const packageEvent = (shipmentId, status, extra = {}) => ({
     "a shipment NEOGEN has not recorded is acknowledged, not guessed",
   );
 }
+{
+  /* "Created" and "Error" webhooks are about the booking: read and apply it. */
+  const o = await order("paid");
+  sky.failNext = true;
+  await bookShipment(o.id);
+  const ref = (await load(o.id)).shipments[0].providerRef;
+  ok(ref, "the shipment id is known even when Skydropx then fails it");
+  const res = await (await hook(packageEvent(ref, "error"))).json();
+  eq(res.outcome, "refreshed", "an Error event reads the shipment");
+  const failedBooking = (await load(o.id)).shipments[0].booking;
+  eq(
+    [failedBooking.status, failedBooking.lastError],
+    ["failed", "provider_failed"],
+    "and records the failed booking",
+  );
+  ok(
+    attentionReasons(await load(o.id)).includes("shipping_failed"),
+    "flagged in the console at once, not after 30 minutes",
+  );
+
+  const o2 = await order("paid");
+  await bookShipment(o2.id);
+  const ref2 = (await load(o2.id)).shipments[0].providerRef;
+  await hook(packageEvent(ref2, "created"));
+  const events = (await load(o2.id)).events.length;
+  const again = await (await hook(packageEvent(ref2, "created"))).json();
+  eq(again.outcome, "unchanged", "a repeated Created event changes nothing");
+  eq((await load(o2.id)).events.length, events, "and writes nothing to the order");
+  eq((await load(o2.id)).shipments.length, 1, "nor creates a shipment");
+}
+
 {
   /* Refresh: a webhook that never came. */
   const o = await order("paid");

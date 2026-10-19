@@ -111,7 +111,8 @@ export async function applySnapshot(
     }
     return changed ? next : null;
   });
-  if (!result.ok) return null;
+  /* Nothing new from the provider: nothing written, nothing re-run. */
+  if (!result.ok || !result.changed) return null;
   return afterOrderChange(result.order);
 }
 
